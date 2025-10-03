@@ -7,20 +7,14 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "gio_hang_chi_tiet")
+@Table(name = "gia")
 @Data 
 @NoArgsConstructor 
 @AllArgsConstructor
-public class GioHangChiTiet {
+public class Gia {
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_gio_hang", nullable = false)
-    @ToString.Exclude 
-    @EqualsAndHashCode.Exclude
-    private GioHang gioHang;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_bien_the", nullable = false)
@@ -28,11 +22,20 @@ public class GioHangChiTiet {
     @EqualsAndHashCode.Exclude
     private BienTheSanPham bienThe;
 
-    @Column(name = "so_luong", nullable = false)
-    private Integer soLuong;
+    @Column(name = "tien_te", length = 10)
+    private String tienTe = "VND";
 
-    @Column(name = "gia_tai_thoi_diem", precision = 18, scale = 2)
-    private BigDecimal giaTaiThoiDiem;
+    @Column(name = "gia_niem_yet", precision = 18, scale = 2)
+    private BigDecimal giaNiemYet;
+
+    @Column(name = "gia_khuyen_mai", precision = 18, scale = 2)
+    private BigDecimal giaKhuyenMai;
+
+    @Column(name = "bat_dau_luc")
+    private LocalDateTime batDauLuc;
+
+    @Column(name = "ket_thuc_luc")
+    private LocalDateTime ketThucLuc;
 
     @Column(name = "tao_luc")
     private LocalDateTime taoLuc;

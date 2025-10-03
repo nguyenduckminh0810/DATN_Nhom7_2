@@ -8,15 +8,18 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "voucher")
-@Data @NoArgsConstructor @AllArgsConstructor
+@Data 
+@NoArgsConstructor 
+@AllArgsConstructor
 public class Voucher {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "ma", nullable = false, unique = true, length = 50)
     private String ma;
 
-    @Column(name = "loai", length = 50)          // percent/fixed
+    @Column(name = "loai", length = 50)
     private String loai;
 
     @Column(name = "gia_tri", precision = 18, scale = 2)
@@ -28,17 +31,17 @@ public class Voucher {
     @Column(name = "don_toi_thieu", precision = 18, scale = 2)
     private BigDecimal donToiThieu;
 
-    @Column(name = "ngay_bat_dau")
-    private LocalDateTime ngayBatDau;
+    @Column(name = "bat_dau_luc")
+    private LocalDateTime batDauLuc;
 
-    @Column(name = "ngay_ket_thuc")
-    private LocalDateTime ngayKetThuc;
+    @Column(name = "ket_thuc_luc")
+    private LocalDateTime ketThucLuc;
 
-    @Column(name = "so_luong")
-    private Integer soLuong;
+    @Column(name = "gioi_han_su_dung")
+    private Integer gioiHanSuDung;
 
-    @Column(name = "so_luong_da_dung")
-    private Integer soLuongDaDung = 0;
+    @Column(name = "dieu_kien_json", columnDefinition = "NVARCHAR(MAX)")
+    private String dieuKienJson;
 
     @Column(name = "tao_luc")
     private LocalDateTime taoLuc;

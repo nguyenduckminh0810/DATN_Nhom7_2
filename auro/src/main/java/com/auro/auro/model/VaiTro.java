@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-
 public class VaiTro {
 
     @Id
@@ -24,4 +23,13 @@ public class VaiTro {
 
     @Column(name = "ten_vai_tro", nullable = false, unique = true)
     private String tenVaiTro;
+    
+    @Column(name = "ma_vai_tro", nullable = false, unique = true, length = 20)
+    private String maVaiTro; // GUEST, CUSTOMER, STAFF, ADMIN
+    
+    @Column(name = "mo_ta", length = 255)
+    private String moTa;
+    
+    @Column(name = "quyen_han", columnDefinition = "NVARCHAR(MAX)")
+    private String quyenHan; // JSON chứa danh sách quyền hạn
 }
