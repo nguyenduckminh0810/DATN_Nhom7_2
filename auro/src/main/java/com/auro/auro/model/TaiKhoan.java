@@ -3,6 +3,8 @@ package com.auro.auro.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "tai_khoan")
 @Data
@@ -30,4 +32,10 @@ public class TaiKhoan {
 
     @Column(name = "trang_thai")
     private Boolean trangThai = true;
+
+    @Column(name = "tao_luc")
+    private LocalDateTime taoLuc;
+
+    @Column(name = "cap_nhat_luc")
+    private LocalDateTime capNhatLuc;
 }
