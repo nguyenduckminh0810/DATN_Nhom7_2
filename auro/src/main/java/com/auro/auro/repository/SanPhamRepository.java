@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
@@ -21,8 +22,11 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
     // Tìm theo slug
     Optional<SanPham> findBySlug(String slug);
     
-    // Tìm theo thương hiệu
-    Page<SanPham> findByThuongHieuContainingIgnoreCase(String thuongHieu, Pageable pageable);
+    // Methods cho Service
+    Page<SanPham> findByTenContainingIgnoreCaseAndDanhMucId(String keyword, Long danhMucId, Pageable pageable);
+    Page<SanPham> findByDanhMucId(Long danhMucId, Pageable pageable);
+    List<SanPham> findTop8ByTrangThaiOrderByTaoLucDesc(String trangThai);
+    List<SanPham> findByDanhMucIdAndTrangThai(Long danhMucId, String trangThai);
     
     // Tìm kiếm nâng cao
     @Query("""
