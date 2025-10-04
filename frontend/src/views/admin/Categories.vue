@@ -1,0 +1,1109 @@
+<template>
+  <div class="admin-categories">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">Quản lý danh mục</h1>
+        <p class="page-subtitle">Quản lý danh mục sản phẩm của cửa hàng</p>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-auro-primary" @click="showAddModal = true">
+          <i class="ph-plus me-2"></i>Thêm danh mục
+        </button>
+      </div>
+    </div>
+
+    <!-- Categories Tree View -->
+    <div class="categories-tree">
+      <div class="tree-header">
+        <h3>Cây danh mục</h3>
+        <div class="tree-actions">
+          <button class="btn btn-sm btn-outline-secondary" @click="expandAll">
+            <i class="ph-arrows-out me-1"></i>Mở rộng tất cả
+          </button>
+          <button class="btn btn-sm btn-outline-secondary" @click="collapseAll">
+            <i class="ph-arrows-in me-1"></i>Thu gọn tất cả
+          </button>
+        </div>
+      </div>
+
+      <div class="tree-content">
+        <div class="tree-list">
+          <CategoryTreeNode
+            v-for="category in rootCategories"
+            :key="category.id"
+            :category="category"
+            :level="0"
+            @edit="editCategory"
+            @delete="deleteCategory"
+            @toggle="toggleCategory"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Categories Table -->
+    <div class="categories-table">
+      <div class="table-header">
+        <h3>Danh sách danh mục</h3>
+        <div class="table-actions">
+          <div class="search-box">
+            <i class="ph-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="Tìm kiếm danh mục..."
+              v-model="searchQuery"
+            />
+          </div>
+          <select class="form-select" v-model="selectedStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Đang hoạt động</option>
+            <option value="inactive">Ngừng hoạt động</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>
+                <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
+              </th>
+              <th>Tên danh mục</th>
+              <th>Slug</th>
+              <th>Danh mục cha</th>
+              <th>Số sản phẩm</th>
+              <th>Thứ tự</th>
+              <th>Trạng thái</th>
+              <th>Ngày tạo</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="category in filteredCategories" :key="category.id">
+              <td>
+                <input type="checkbox" class="form-check-input" v-model="selectedCategories" :value="category.id">
+              </td>
+              <td>
+                <div class="category-info">
+                  <div class="category-icon">
+                    <i :class="category.icon || 'ph-folder'"></i>
+                  </div>
+                  <div class="category-details">
+                    <div class="category-name">{{ category.name }}</div>
+                    <div class="category-description">{{ category.description }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <code class="category-slug">{{ category.slug }}</code>
+              </td>
+              <td>
+                <span v-if="category.parent" class="parent-category">
+                  {{ getCategoryName(category.parent) }}
+                </span>
+                <span v-else class="text-muted">Danh mục gốc</span>
+              </td>
+              <td>
+                <span class="product-count">{{ category.productCount }}</span>
+              </td>
+              <td>
+                <span class="order-number">{{ category.order }}</span>
+              </td>
+              <td>
+                <span :class="['status-badge', getStatusClass(category.status)]">
+                  {{ getStatusText(category.status) }}
+                </span>
+              </td>
+              <td>{{ formatDate(category.createdAt) }}</td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-outline-primary" @click="editCategory(category)" title="Chỉnh sửa">
+                    <i class="ph-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success" @click="addSubCategory(category)" title="Thêm danh mục con">
+                    <i class="ph-plus"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="deleteCategory(category)" title="Xóa">
+                    <i class="ph-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div v-if="selectedCategories.length > 0" class="bulk-actions">
+      <div class="bulk-actions-content">
+        <span class="selected-count">{{ selectedCategories.length }} danh mục đã chọn</span>
+        <div class="bulk-buttons">
+          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
+            <i class="ph-check me-1"></i>Kích hoạt
+          </button>
+          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
+            <i class="ph-pause me-1"></i>Ngừng hoạt động
+          </button>
+          <button class="btn btn-sm btn-outline-danger" @click="bulkDelete">
+            <i class="ph-trash me-1"></i>Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit Category Modal -->
+    <div v-if="showAddModal" class="modal-overlay" @click="closeModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">{{ editingCategory ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới' }}</h5>
+          <button class="btn-close" @click="closeModal">
+            <i class="ph-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form @submit.prevent="saveCategory">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Tên danh mục *</label>
+                <input type="text" class="form-control" v-model="categoryForm.name" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Icon</label>
+                <select class="form-select" v-model="categoryForm.icon">
+                  <option value="ph-folder">Thư mục</option>
+                  <option value="ph-t-shirt">Áo</option>
+                  <option value="ph-bag">Quần</option>
+                  <option value="ph-watch">Đồng hồ</option>
+                  <option value="ph-sunglasses">Kính</option>
+                  <option value="ph-sneaker">Giày</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Slug *</label>
+                <input type="text" class="form-control" v-model="categoryForm.slug" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Danh mục cha</label>
+                <select class="form-select" v-model="categoryForm.parentId">
+                  <option value="">Danh mục gốc</option>
+                  <option v-for="cat in availableParents" :key="cat.id" :value="cat.id">
+                    {{ cat.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Thứ tự</label>
+                <input type="number" class="form-control" v-model.number="categoryForm.order">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" v-model="categoryForm.status">
+                  <option value="active">Đang hoạt động</option>
+                  <option value="inactive">Ngừng hoạt động</option>
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Mô tả</label>
+                <textarea class="form-control" rows="3" v-model="categoryForm.description"></textarea>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="closeModal">Hủy</button>
+          <button type="button" class="btn btn-auro-primary" @click="saveCategory">
+            {{ editingCategory ? 'Cập nhật' : 'Thêm danh mục' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+
+// Components
+const CategoryTreeNode = {
+  props: ['category', 'level'],
+  emits: ['edit', 'delete', 'toggle'],
+  template: `
+    <div class="tree-node" :style="{ paddingLeft: (level * 20) + 'px' }">
+      <div class="node-content" :class="{ expanded: category.expanded }">
+        <button class="expand-btn" @click="$emit('toggle', category)" v-if="category.children && category.children.length > 0">
+          <i :class="category.expanded ? 'ph-caret-down' : 'ph-caret-right'"></i>
+        </button>
+        <div class="node-info">
+          <div class="node-icon">
+            <i :class="category.icon || 'ph-folder'"></i>
+          </div>
+          <div class="node-details">
+            <div class="node-name">{{ category.name }}</div>
+            <div class="node-meta">{{ category.productCount }} sản phẩm</div>
+          </div>
+        </div>
+        <div class="node-actions">
+          <button class="btn btn-sm btn-outline-primary" @click="$emit('edit', category)" title="Chỉnh sửa">
+            <i class="ph-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-success" @click="$emit('addSub', category)" title="Thêm danh mục con">
+            <i class="ph-plus"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" @click="$emit('delete', category)" title="Xóa">
+            <i class="ph-trash"></i>
+          </button>
+        </div>
+      </div>
+      <div v-if="category.expanded && category.children" class="node-children">
+        <CategoryTreeNode
+          v-for="child in category.children"
+          :key="child.id"
+          :category="child"
+          :level="level + 1"
+          @edit="$emit('edit', $event)"
+          @delete="$emit('delete', $event)"
+          @toggle="$emit('toggle', $event)"
+        />
+      </div>
+    </div>
+  `
+}
+
+// Reactive data
+const searchQuery = ref('')
+const selectedStatus = ref('')
+const selectedCategories = ref([])
+const selectAll = ref(false)
+const showAddModal = ref(false)
+const editingCategory = ref(null)
+
+const categoryForm = ref({
+  name: '',
+  slug: '',
+  description: '',
+  icon: 'ph-folder',
+  parentId: '',
+  order: 0,
+  status: 'active'
+})
+
+// Mock data
+const categories = ref([
+  {
+    id: 1,
+    name: 'Áo',
+    slug: 'ao',
+    description: 'Các loại áo nam',
+    icon: 'ph-t-shirt',
+    parentId: null,
+    order: 1,
+    status: 'active',
+    productCount: 25,
+    createdAt: new Date('2024-01-15'),
+    expanded: true,
+    children: [
+      {
+        id: 11,
+        name: 'Áo sơ mi',
+        slug: 'ao-so-mi',
+        description: 'Áo sơ mi nam',
+        icon: 'ph-t-shirt',
+        parentId: 1,
+        order: 1,
+        status: 'active',
+        productCount: 15,
+        createdAt: new Date('2024-01-16'),
+        expanded: false,
+        children: []
+      },
+      {
+        id: 12,
+        name: 'Áo thun',
+        slug: 'ao-thun',
+        description: 'Áo thun nam',
+        icon: 'ph-t-shirt',
+        parentId: 1,
+        order: 2,
+        status: 'active',
+        productCount: 10,
+        createdAt: new Date('2024-01-17'),
+        expanded: false,
+        children: []
+      }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Quần',
+    slug: 'quan',
+    description: 'Các loại quần nam',
+    icon: 'ph-bag',
+    parentId: null,
+    order: 2,
+    status: 'active',
+    productCount: 18,
+    createdAt: new Date('2024-01-20'),
+    expanded: false,
+    children: [
+      {
+        id: 21,
+        name: 'Quần âu',
+        slug: 'quan-au',
+        description: 'Quần âu nam',
+        icon: 'ph-bag',
+        parentId: 2,
+        order: 1,
+        status: 'active',
+        productCount: 12,
+        createdAt: new Date('2024-01-21'),
+        expanded: false,
+        children: []
+      },
+      {
+        id: 22,
+        name: 'Quần jean',
+        slug: 'quan-jean',
+        description: 'Quần jean nam',
+        icon: 'ph-bag',
+        parentId: 2,
+        order: 2,
+        status: 'active',
+        productCount: 6,
+        createdAt: new Date('2024-01-22'),
+        expanded: false,
+        children: []
+      }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Phụ kiện',
+    slug: 'phu-kien',
+    description: 'Các phụ kiện nam',
+    icon: 'ph-watch',
+    parentId: null,
+    order: 3,
+    status: 'active',
+    productCount: 12,
+    createdAt: new Date('2024-01-25'),
+    expanded: false,
+    children: []
+  }
+])
+
+// Computed
+const rootCategories = computed(() => {
+  return categories.value.filter(cat => !cat.parentId)
+})
+
+const allCategories = computed(() => {
+  const flatten = (cats) => {
+    let result = []
+    cats.forEach(cat => {
+      result.push(cat)
+      if (cat.children && cat.children.length > 0) {
+        result = result.concat(flatten(cat.children))
+      }
+    })
+    return result
+  }
+  return flatten(categories.value)
+})
+
+const filteredCategories = computed(() => {
+  let filtered = allCategories.value
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(category =>
+      category.name.toLowerCase().includes(query) ||
+      category.slug.toLowerCase().includes(query) ||
+      category.description.toLowerCase().includes(query)
+    )
+  }
+
+  if (selectedStatus.value) {
+    filtered = filtered.filter(category => category.status === selectedStatus.value)
+  }
+
+  return filtered
+})
+
+const availableParents = computed(() => {
+  return allCategories.value.filter(cat => 
+    !editingCategory.value || cat.id !== editingCategory.value.id
+  )
+})
+
+// Methods
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('vi-VN').format(date)
+}
+
+const getCategoryName = (parentId) => {
+  const category = allCategories.value.find(cat => cat.id === parentId)
+  return category ? category.name : 'Không xác định'
+}
+
+const getStatusText = (status) => {
+  const statuses = {
+    'active': 'Đang hoạt động',
+    'inactive': 'Ngừng hoạt động'
+  }
+  return statuses[status] || status
+}
+
+const getStatusClass = (status) => {
+  const classes = {
+    'active': 'bg-success',
+    'inactive': 'bg-warning'
+  }
+  return classes[status] || 'bg-secondary'
+}
+
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedCategories.value = filteredCategories.value.map(c => c.id)
+  } else {
+    selectedCategories.value = []
+  }
+}
+
+const expandAll = () => {
+  const expand = (cats) => {
+    cats.forEach(cat => {
+      cat.expanded = true
+      if (cat.children && cat.children.length > 0) {
+        expand(cat.children)
+      }
+    })
+  }
+  expand(categories.value)
+}
+
+const collapseAll = () => {
+  const collapse = (cats) => {
+    cats.forEach(cat => {
+      cat.expanded = false
+      if (cat.children && cat.children.length > 0) {
+        collapse(cat.children)
+      }
+    })
+  }
+  collapse(categories.value)
+}
+
+const toggleCategory = (category) => {
+  category.expanded = !category.expanded
+}
+
+const editCategory = (category) => {
+  editingCategory.value = category
+  categoryForm.value = { ...category }
+  showAddModal.value = true
+}
+
+const addSubCategory = (parentCategory) => {
+  editingCategory.value = null
+  categoryForm.value = {
+    name: '',
+    slug: '',
+    description: '',
+    icon: 'ph-folder',
+    parentId: parentCategory.id,
+    order: 0,
+    status: 'active'
+  }
+  showAddModal.value = true
+}
+
+const deleteCategory = (category) => {
+  if (confirm(`Bạn có chắc chắn muốn xóa danh mục "${category.name}"?`)) {
+    // Remove from tree
+    const removeFromTree = (cats) => {
+      for (let i = 0; i < cats.length; i++) {
+        if (cats[i].id === category.id) {
+          cats.splice(i, 1)
+          return true
+        }
+        if (cats[i].children && cats[i].children.length > 0) {
+          if (removeFromTree(cats[i].children)) {
+            return true
+          }
+        }
+      }
+      return false
+    }
+    removeFromTree(categories.value)
+  }
+}
+
+const closeModal = () => {
+  showAddModal.value = false
+  editingCategory.value = null
+  categoryForm.value = {
+    name: '',
+    slug: '',
+    description: '',
+    icon: 'ph-folder',
+    parentId: '',
+    order: 0,
+    status: 'active'
+  }
+}
+
+const saveCategory = () => {
+  if (editingCategory.value) {
+    // Update existing category
+    const updateInTree = (cats) => {
+      for (let cat of cats) {
+        if (cat.id === editingCategory.value.id) {
+          Object.assign(cat, categoryForm.value)
+          return true
+        }
+        if (cat.children && cat.children.length > 0) {
+          if (updateInTree(cat.children)) {
+            return true
+          }
+        }
+      }
+      return false
+    }
+    updateInTree(categories.value)
+  } else {
+    // Add new category
+    const newCategory = {
+      ...categoryForm.value,
+      id: Date.now(),
+      productCount: 0,
+      createdAt: new Date(),
+      expanded: false,
+      children: []
+    }
+
+    if (categoryForm.value.parentId) {
+      // Add as child
+      const addToParent = (cats) => {
+        for (let cat of cats) {
+          if (cat.id === categoryForm.value.parentId) {
+            if (!cat.children) cat.children = []
+            cat.children.push(newCategory)
+            return true
+          }
+          if (cat.children && cat.children.length > 0) {
+            if (addToParent(cat.children)) {
+              return true
+            }
+          }
+        }
+        return false
+      }
+      addToParent(categories.value)
+    } else {
+      // Add as root
+      categories.value.push(newCategory)
+    }
+  }
+  
+  closeModal()
+}
+
+const bulkUpdateStatus = (status) => {
+  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedCategories.value.length} danh mục?`)) {
+    selectedCategories.value.forEach(categoryId => {
+      const updateInTree = (cats) => {
+        for (let cat of cats) {
+          if (cat.id === categoryId) {
+            cat.status = status
+            return true
+          }
+          if (cat.children && cat.children.length > 0) {
+            if (updateInTree(cat.children)) {
+              return true
+            }
+          }
+        }
+        return false
+      }
+      updateInTree(categories.value)
+    })
+    selectedCategories.value = []
+    selectAll.value = false
+  }
+}
+
+const bulkDelete = () => {
+  if (confirm(`Bạn có chắc chắn muốn xóa ${selectedCategories.value.length} danh mục?`)) {
+    selectedCategories.value.forEach(categoryId => {
+      const removeFromTree = (cats) => {
+        for (let i = 0; i < cats.length; i++) {
+          if (cats[i].id === categoryId) {
+            cats.splice(i, 1)
+            return true
+          }
+          if (cats[i].children && cats[i].children.length > 0) {
+            if (removeFromTree(cats[i].children)) {
+              return true
+            }
+          }
+        }
+        return false
+      }
+      removeFromTree(categories.value)
+    })
+    selectedCategories.value = []
+    selectAll.value = false
+  }
+}
+
+// Lifecycle
+onMounted(() => {
+  console.log('Categories page loaded')
+})
+</script>
+
+<style scoped>
+.admin-categories {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  color: #6c757d;
+  margin: 0;
+}
+
+/* Categories Tree */
+.categories-tree {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.tree-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.tree-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tree-content {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  background-color: #f8f9fa;
+}
+
+.tree-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tree-node {
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.tree-node:hover {
+  border-color: #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.node-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.expand-btn:hover {
+  background-color: #f8f9fa;
+  color: #3498db;
+}
+
+.node-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.node-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #3498db;
+}
+
+.node-details {
+  flex: 1;
+}
+
+.node-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.node-meta {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.node-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.node-actions .btn {
+  padding: 0.375rem 0.75rem;
+}
+
+.node-children {
+  border-top: 1px solid #e9ecef;
+  background-color: #f8f9fa;
+}
+
+/* Categories Table */
+.categories-table {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.table-header h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.table-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  z-index: 1;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+  width: 250px;
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 1rem 0.75rem;
+}
+
+.table td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+}
+
+.category-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.category-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #3498db;
+}
+
+.category-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.category-description {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.category-slug {
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.parent-category {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.product-count {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.order-number {
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-buttons .btn {
+  padding: 0.375rem 0.75rem;
+}
+
+/* Bulk Actions */
+.bulk-actions {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.bulk-actions-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.selected-count {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.bulk-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-close:hover {
+  background-color: #f8f9fa;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-right {
+    width: 100%;
+  }
+  
+  .header-right .btn {
+    width: 100%;
+  }
+  
+  .tree-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .table-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+  
+  .search-input {
+    width: 100%;
+  }
+  
+  .categories-table {
+    padding: 1rem;
+  }
+  
+  .table-responsive {
+    font-size: 0.9rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .bulk-actions {
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+  }
+  
+  .bulk-actions-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .bulk-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+</style>
