@@ -1,9 +1,10 @@
 <template>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top modern-navbar">
     <div class="container">
       <!-- Brand -->
       <router-link class="navbar-brand fw-bold" to="/">
-        <i class="bi bi-shop me-2"></i>AURO
+        <span class="brand-text">AURO</span>
+        <span class="brand-subtitle">MENSWEAR</span>
       </router-link>
       
       <!-- Mobile Toggle -->
@@ -15,61 +16,80 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <router-link class="nav-link" :class="{ active: $route.name === 'home' }" to="/">
-              Trang chủ
+            <router-link class="nav-link modern-nav-link" :class="{ active: $route.name === 'home' }" to="/">
+              <span>Trang chủ</span>
             </router-link>
           </li>
           <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              Sản phẩm
+            <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <span>Sản phẩm</span>
             </a>
-            <ul class="dropdown-menu">
+            <ul class="dropdown-menu modern-dropdown">
               <li>
-                <router-link class="dropdown-item" to="/category/ao">Áo</router-link>
+                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao">
+                  <i class="ph-t-shirt me-2"></i>Áo
+                </router-link>
               </li>
               <li>
-                <router-link class="dropdown-item" to="/category/quan">Quần</router-link>
+                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan">
+                  <i class="ph-bag me-2"></i>Quần
+                </router-link>
               </li>
               <li>
-                <router-link class="dropdown-item" to="/category/phu-kien">Phụ kiện</router-link>
+                <router-link class="dropdown-item modern-dropdown-item" to="/category/phu-kien">
+                  <i class="ph-watch me-2"></i>Phụ kiện
+                </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <router-link class="dropdown-item" to="/category">Tất cả sản phẩm</router-link>
+                <router-link class="dropdown-item modern-dropdown-item" to="/category">
+                  <i class="ph-grid-four me-2"></i>Tất cả sản phẩm
+                </router-link>
               </li>
             </ul>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#about">Giới thiệu</a>
+            <a class="nav-link modern-nav-link" href="#about">
+              <span>Giới thiệu</span>
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="#contact">Liên hệ</a>
+            <a class="nav-link modern-nav-link" href="#contact">
+              <span>Liên hệ</span>
+            </a>
           </li>
         </ul>
         
-        <!-- Search Bar -->
-        <form class="d-flex me-3" @submit.prevent="handleSearch">
-          <div class="input-group">
-            <input 
-              v-model="searchQuery"
-              class="form-control form-control-sm" 
-              type="search" 
-              placeholder="Tìm kiếm sản phẩm..."
-              style="width: 200px;"
-            >
-            <button class="btn btn-outline-light btn-sm" type="submit">
-              <i class="bi bi-search"></i>
-            </button>
-          </div>
-        </form>
+        <!-- Search Button -->
+        <div class="me-4">
+          <button 
+            class="btn modern-search-btn" 
+            type="button"
+            data-bs-toggle="modal" 
+            data-bs-target="#searchModal"
+          >
+            <i class="ph-magnifying-glass"></i>
+            <span class="d-none d-lg-inline ms-2">Tìm kiếm</span>
+          </button>
+        </div>
         
         <!-- Right Menu -->
         <ul class="navbar-nav">
+          <!-- Wishlist -->
+          <li class="nav-item">
+            <router-link class="nav-link modern-nav-link position-relative" to="/wishlist">
+              <i class="ph-heart"></i>
+              <span v-if="wishlistStore.itemCount > 0" class="badge modern-cart-badge">
+                {{ wishlistStore.itemCount }}
+              </span>
+            </router-link>
+          </li>
+          
           <!-- Cart -->
           <li class="nav-item">
-            <router-link class="nav-link position-relative" to="/cart">
-              <i class="bi bi-cart3"></i>
-              <span v-if="cartStore.itemCount > 0" class="badge bg-danger cart-count">
+            <router-link class="nav-link modern-nav-link position-relative" to="/cart">
+              <i class="ph-shopping-cart"></i>
+              <span v-if="cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
             </router-link>
@@ -77,30 +97,32 @@
           
           <!-- User Menu -->
           <li v-if="!isLoggedIn" class="nav-item">
-            <router-link class="nav-link" to="/login">
-              <i class="bi bi-person"></i> Đăng nhập
+            <router-link class="nav-link modern-nav-link" to="/login">
+              <i class="ph-user"></i>
+              <span class="d-none d-lg-inline ms-1">Đăng nhập</span>
             </router-link>
           </li>
           
           <li v-else class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-              <i class="bi bi-person-circle"></i> {{ user?.name || 'Tài khoản' }}
+            <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <i class="ph-user-circle"></i>
+              <span class="d-none d-lg-inline ms-1">{{ user?.name || 'Tài khoản' }}</span>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end">
+            <ul class="dropdown-menu dropdown-menu-end modern-dropdown">
               <li>
-                <router-link class="dropdown-item" to="/profile">
-                  <i class="bi bi-person me-2"></i>Thông tin cá nhân
+                <router-link class="dropdown-item modern-dropdown-item" to="/profile">
+                  <i class="ph-user me-2"></i>Thông tin cá nhân
                 </router-link>
               </li>
               <li>
-                <router-link class="dropdown-item" to="/orders">
-                  <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
+                <router-link class="dropdown-item modern-dropdown-item" to="/orders">
+                  <i class="ph-shopping-bag me-2"></i>Đơn hàng của tôi
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
-                <button class="dropdown-item" @click="handleLogout">
-                  <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
+                <button class="dropdown-item modern-dropdown-item" @click="handleLogout">
+                  <i class="ph-sign-out me-2"></i>Đăng xuất
                 </button>
               </li>
             </ul>
@@ -109,16 +131,21 @@
       </div>
     </div>
   </nav>
+
+  <!-- Search Modal -->
+  <SearchModal />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
+import { useWishlistStore } from '../../stores/wishlist'
+import SearchModal from '../ui/SearchModal.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
-const searchQuery = ref('')
+const wishlistStore = useWishlistStore()
 
 // Mock user data - replace with actual auth store
 const isLoggedIn = computed(() => {
@@ -130,14 +157,7 @@ const user = computed(() => {
   return userData ? JSON.parse(userData) : null
 })
 
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push({
-      name: 'category',
-      query: { search: searchQuery.value.trim() }
-    })
-  }
-}
+// Search functionality removed - now using SearchModal
 
 const handleLogout = () => {
   localStorage.removeItem('auro_token')
@@ -147,54 +167,201 @@ const handleLogout = () => {
 </script>
 
 <style scoped>
+/* Modern Navbar */
+.modern-navbar {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--auro-border);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+  padding: 1rem 0;
+  transition: all 0.3s ease;
+}
+
+.modern-navbar:hover {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* Brand */
 .navbar-brand {
-  font-size: 1.5rem;
-  letter-spacing: 1px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-decoration: none;
+  color: var(--auro-primary) !important;
+  transition: all 0.3s ease;
 }
 
-.navbar-nav .nav-link {
+.navbar-brand:hover {
+  color: var(--auro-accent) !important;
+  transform: translateY(-1px);
+}
+
+.brand-text {
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  line-height: 1;
+}
+
+.brand-subtitle {
+  font-size: 10px;
   font-weight: 500;
-  transition: color 0.3s ease;
+  letter-spacing: 2px;
+  color: var(--auro-text-light);
+  margin-top: -2px;
 }
 
-.navbar-nav .nav-link:hover {
-  color: #ffc107 !important;
+/* Navigation Links */
+.modern-nav-link {
+  position: relative;
+  font-weight: 500;
+  color: var(--auro-text) !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  text-decoration: none;
 }
 
-.cart-count {
+.modern-nav-link::before {
+  content: '';
   position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 0.75rem;
-  min-width: 18px;
-  height: 18px;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--auro-gradient-accent);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+}
+
+.modern-nav-link:hover::before,
+.modern-nav-link.active::before {
+  width: 80%;
+}
+
+.modern-nav-link:hover {
+  color: var(--auro-accent) !important;
+  background: rgba(212, 175, 55, 0.1);
+  transform: translateY(-1px);
+}
+
+.modern-nav-link.active {
+  color: var(--auro-accent) !important;
+  background: rgba(212, 175, 55, 0.1);
+}
+
+/* Search */
+.modern-search {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--auro-shadow);
+  border: 1px solid var(--auro-border);
+  transition: all 0.3s ease;
+}
+
+.modern-search:hover {
+  box-shadow: var(--auro-shadow-hover);
+  border-color: var(--auro-accent);
+}
+
+.modern-search-input {
+  border: none !important;
+  background: var(--auro-card);
+  padding: 12px 16px;
+  font-size: 14px;
+  width: 250px;
+}
+
+.modern-search-input:focus {
+  box-shadow: none !important;
+  background: var(--auro-light);
+}
+
+.modern-search-btn {
+  background: var(--auro-gradient-accent);
+  border: none;
+  color: var(--auro-dark);
+  padding: 12px 16px;
+  transition: all 0.3s ease;
+}
+
+.modern-search-btn:hover {
+  background: var(--auro-accent);
+  transform: scale(1.05);
+}
+
+/* Cart Badge */
+.modern-cart-badge {
+  background: var(--auro-gradient-accent) !important;
+  color: var(--auro-dark) !important;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
 }
 
-.dropdown-menu {
+/* Dropdown */
+.modern-dropdown {
   border: none;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  border-radius: 16px;
+  box-shadow: var(--auro-shadow-hover);
+  padding: 8px;
+  margin-top: 8px;
+  background: var(--auro-card);
+  border: 1px solid var(--auro-border);
 }
 
-.dropdown-item {
-  transition: background-color 0.3s ease;
+.modern-dropdown-item {
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 2px 0;
+  transition: all 0.3s ease;
+  color: var(--auro-text);
+  font-weight: 500;
 }
 
-.dropdown-item:hover {
-  background-color: #f8f9fa;
+.modern-dropdown-item:hover {
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--auro-accent);
+  transform: translateX(4px);
 }
 
 /* Mobile responsive */
 @media (max-width: 991.98px) {
-  .input-group {
+  .modern-search {
     margin-top: 1rem;
     width: 100% !important;
   }
   
-  .input-group input {
+  .modern-search-input {
     width: 100% !important;
+  }
+  
+  .brand-text {
+    font-size: 24px;
+  }
+  
+  .brand-subtitle {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 576px) {
+  .modern-navbar {
+    padding: 0.75rem 0;
+  }
+  
+  .brand-text {
+    font-size: 20px;
+    letter-spacing: 2px;
   }
 }
 </style>
