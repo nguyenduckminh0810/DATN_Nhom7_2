@@ -249,21 +249,21 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { useFiltersStore } from '../../stores/filters'
+import { useSearchStore } from '../../stores/search'
 
-const filtersStore = useFiltersStore()
+const searchStore = useSearchStore()
 
 // Local state
 const priceRange = ref({ min: 0, max: 5000000 })
 
 // Computed
-const activeFilters = computed(() => filtersStore.activeFilters)
-const hasActiveFilters = computed(() => filtersStore.hasActiveFilters)
-const activeFiltersCount = computed(() => filtersStore.activeFiltersCount)
-const availableSizes = computed(() => filtersStore.availableSizes)
-const availableColors = computed(() => filtersStore.availableColors)
-const availableBrands = computed(() => filtersStore.availableBrands)
-const priceRanges = computed(() => filtersStore.priceRanges)
+const activeFilters = computed(() => searchStore.activeFilters)
+const hasActiveFilters = computed(() => searchStore.hasActiveFilters)
+const activeFiltersCount = computed(() => searchStore.activeFiltersCount)
+const availableSizes = computed(() => searchStore.availableSizes)
+const availableColors = computed(() => searchStore.availableColors)
+const availableBrands = computed(() => searchStore.availableBrands)
+const priceRanges = computed(() => searchStore.priceRanges)
 
 // Methods
 const formatPrice = (price) => {
@@ -277,25 +277,25 @@ const formatPrice = (price) => {
 const updateMinPrice = (event) => {
   const value = parseInt(event.target.value) || 0
   priceRange.value.min = Math.max(0, Math.min(value, priceRange.value.max - 100000))
-  filtersStore.setPriceRange(priceRange.value.min, priceRange.value.max)
+  searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
 }
 
 const updateMaxPrice = (event) => {
   const value = parseInt(event.target.value) || 5000000
   priceRange.value.max = Math.min(5000000, Math.max(value, priceRange.value.min + 100000))
-  filtersStore.setPriceRange(priceRange.value.min, priceRange.value.max)
+  searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
 }
 
 const updateMinPriceFromSlider = (event) => {
   const value = parseInt(event.target.value)
   priceRange.value.min = Math.min(value, priceRange.value.max - 100000)
-  filtersStore.setPriceRange(priceRange.value.min, priceRange.value.max)
+  searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
 }
 
 const updateMaxPriceFromSlider = (event) => {
   const value = parseInt(event.target.value)
   priceRange.value.max = Math.max(value, priceRange.value.min + 100000)
-  filtersStore.setPriceRange(priceRange.value.min, priceRange.value.max)
+  searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
 }
 
 const isPriceRangeActive = (range) => {
@@ -304,27 +304,27 @@ const isPriceRangeActive = (range) => {
 
 const selectPriceRange = (range) => {
   priceRange.value = { min: range.min, max: range.max }
-  filtersStore.setPriceRange(range.min, range.max)
+  searchStore.setPriceRange(range.min, range.max)
 }
 
 const toggleSize = (size) => {
-  filtersStore.toggleSize(size)
+  searchStore.toggleSize(size)
 }
 
 const toggleColor = (color) => {
-  filtersStore.toggleColor(color)
+  searchStore.toggleColor(color)
 }
 
 const toggleBrand = (brand) => {
-  filtersStore.toggleBrand(brand)
+  searchStore.toggleBrand(brand)
 }
 
 const clearFilter = (filterType) => {
-  filtersStore.clearFilter(filterType)
+  searchStore.clearFilter(filterType)
 }
 
 const clearAllFilters = () => {
-  filtersStore.clearAllFilters()
+  searchStore.clearAllFilters()
   priceRange.value = { min: 0, max: 5000000 }
 }
 

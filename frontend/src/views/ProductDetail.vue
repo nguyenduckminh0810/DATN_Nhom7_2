@@ -365,7 +365,7 @@
             <div class="col-md-6 col-lg-3" v-for="relatedProduct in relatedProducts" :key="relatedProduct.id">
               <div class="card product-card h-100">
                 <div class="position-relative product-image-container">
-                  <OptimizedProductImage
+                  <LazyImage
                     :src="relatedProduct.image"
                     :alt="relatedProduct.name"
                     :width="500"
@@ -413,7 +413,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import ImageGallery from '../components/ui/ImageGallery.vue'
-import OptimizedProductImage from '../components/ui/OptimizedProductImage.vue'
+import LazyImage from '../components/ui/LazyImage.vue'
 import WishlistButton from '../components/ui/WishlistButton.vue'
 
 const route = useRoute()

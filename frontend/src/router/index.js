@@ -6,8 +6,6 @@ import Category from '../views/Category.vue'
 import ProductDetail from '../views/ProductDetail.vue'
 import Cart from '../views/Cart.vue'
 import Checkout from '../views/Checkout.vue'
-import Login from '../views/Login.vue'
-import Register from '../views/Register.vue'
 import Profile from '../views/Profile.vue'
 import Orders from '../views/Orders.vue'
 import SearchResults from '../views/SearchResults.vue'
@@ -56,13 +54,13 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: Login,
+      redirect: '/',
       meta: { title: 'Đăng nhập - AURO' }
     },
     {
       path: '/register',
       name: 'register',
-      component: Register,
+      redirect: '/',
       meta: { title: 'Đăng ký - AURO' }
     },
     {
@@ -159,9 +157,25 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth) {
     const token = localStorage.getItem('auro_token')
     if (!token) {
-      next({ name: 'login', query: { redirect: to.fullPath } })
+      // Store the intended route for redirect after login
+      localStorage.setItem('auro_redirect', to.fullPath)
+      // For now, just redirect to home - the popup will handle the login
+      next('/')
       return
     }
+  }
+
+  // Redirect login/register pages to home with popup trigger
+  if (to.name === 'login') {
+    localStorage.setItem('auro_show_login_popup', 'true')
+    next('/')
+    return
+  }
+
+  if (to.name === 'register') {
+    localStorage.setItem('auro_show_register_popup', 'true')
+    next('/')
+    return
   }
 
   next()

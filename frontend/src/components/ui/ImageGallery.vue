@@ -2,7 +2,7 @@
   <div class="image-gallery" :class="containerClass">
     <!-- Main Image -->
     <div class="main-image-container" :class="mainImageClass">
-      <OptimizedProductImage
+      <LazyImage
         :src="currentImage.src"
         :alt="currentImage.alt"
         :width="mainImageWidth"
@@ -60,7 +60,7 @@
           :class="{ active: index === currentIndex }"
           @click="selectImage(index)"
         >
-          <OptimizedProductImage
+          <LazyImage
             :src="image.src"
             :alt="image.alt"
             :width="thumbnailWidth"
@@ -87,7 +87,7 @@
         </button>
         
         <div class="lightbox-content">
-          <OptimizedProductImage
+          <LazyImage
             :src="currentImage.src"
             :alt="currentImage.alt"
             :width="lightboxWidth"
@@ -129,7 +129,7 @@
 
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
-import OptimizedProductImage from './OptimizedProductImage.vue'
+import LazyImage from './LazyImage.vue'
 
 const props = defineProps({
   images: {

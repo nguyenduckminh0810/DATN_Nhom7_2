@@ -38,7 +38,7 @@
           <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center gap-3">
               <span class="text-muted fw-medium">Sắp xếp theo:</span>
-              <select v-model="filtersStore.activeFilters.sortBy" class="form-select modern-select">
+              <select v-model="searchStore.activeFilters.sortBy" class="form-select modern-select">
                 <option value="relevance">Độ liên quan</option>
                 <option value="price-asc">Giá tăng dần</option>
                 <option value="price-desc">Giá giảm dần</option>
@@ -65,7 +65,7 @@
                  :class="viewMode === 'list' ? 'col-12' : 'col-md-6 col-lg-4'">
               <div class="card product-card h-100">
                 <div class="position-relative product-image-container">
-                  <OptimizedProductImage
+                  <LazyImage
                     :src="product.image || 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'"
                     :alt="product.name"
                     :width="500"
@@ -150,14 +150,14 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
-import { useFiltersStore } from '../stores/filters'
+import { useSearchStore } from '../stores/search'
 import ProductFilters from '../components/ui/ProductFilters.vue'
 import WishlistButton from '../components/ui/WishlistButton.vue'
-import OptimizedProductImage from '../components/ui/OptimizedProductImage.vue'
+import LazyImage from '../components/ui/LazyImage.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()
-const filtersStore = useFiltersStore()
+const searchStore = useSearchStore()
 
 // Reactive data
 const products = ref([])
@@ -248,7 +248,7 @@ const mockProducts = [
 // Computed properties
 const filteredProducts = computed(() => {
   // Apply filters using filters store
-  const filtered = filtersStore.applyFilters(products.value)
+  const filtered = searchStore.applyFilters(products.value)
   
   // Apply pagination
   const startIndex = (currentPage.value - 1) * itemsPerPage
@@ -257,7 +257,7 @@ const filteredProducts = computed(() => {
 })
 
 const totalPages = computed(() => {
-  const totalFiltered = filtersStore.applyFilters(products.value).length
+  const totalFiltered = searchStore.applyFilters(products.value).length
   return Math.ceil(totalFiltered / itemsPerPage)
 })
 
@@ -286,7 +286,7 @@ const addToCart = (product) => {
 }
 
 const clearFilters = () => {
-  filtersStore.clearAllFilters()
+  searchStore.clearAllFilters()
 }
 
 const changePage = (page) => {

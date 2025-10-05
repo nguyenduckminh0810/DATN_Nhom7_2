@@ -79,7 +79,7 @@
             <div class="card product-card h-100 animate-on-scroll">
               <!-- Product Image -->
               <div class="position-relative product-image-container">
-                <OptimizedProductImage
+                <LazyImage
                   :src="item.image || 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'"
                   :alt="item.name"
                   :width="500"
@@ -189,7 +189,7 @@
                 <div class="col-md-6 col-lg-3" v-for="product in relatedProducts" :key="product.id">
                   <div class="card product-card h-100">
                     <div class="position-relative product-image-container">
-                      <OptimizedProductImage
+                      <LazyImage
                         :src="product.image"
                         :alt="product.name"
                         :width="500"
@@ -234,21 +234,21 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useWishlistStore } from '../stores/wishlist'
+import { useProductStore } from '../stores/product'
 import { useCartStore } from '../stores/cart'
 import WishlistButton from '../components/ui/WishlistButton.vue'
-import OptimizedProductImage from '../components/ui/OptimizedProductImage.vue'
+import LazyImage from '../components/ui/LazyImage.vue'
 
-const wishlistStore = useWishlistStore()
+const productStore = useProductStore()
 const cartStore = useCartStore()
 
 // Local state
 const isLoading = ref(false)
 
 // Computed
-const items = computed(() => wishlistStore.items)
-const itemCount = computed(() => wishlistStore.itemCount)
-const isEmpty = computed(() => wishlistStore.isEmpty)
+const items = computed(() => productStore.wishlistItems)
+const itemCount = computed(() => productStore.wishlistCount)
+const isEmpty = computed(() => productStore.isWishlistEmpty)
 
 // Mock related products
 const relatedProducts = ref([
@@ -312,16 +312,16 @@ const addToCart = (product) => {
 }
 
 const moveToCart = (productId) => {
-  wishlistStore.moveToCart(productId)
+  productStore.moveWishlistToCart(productId)
 }
 
 const moveAllToCart = () => {
-  wishlistStore.moveAllToCart()
+  productStore.moveAllWishlistToCart()
 }
 
 const clearWishlist = () => {
   if (confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi danh sách yêu thích?')) {
-    wishlistStore.clearWishlist()
+    productStore.clearWishlist()
   }
 }
 

@@ -27,6 +27,9 @@
         <div v-if="showErrorText" class="error-text">
           {{ errorText }}
         </div>
+        <button v-if="showRetryButton" class="btn btn-sm btn-outline-primary mt-2" @click="retryLoad">
+          <i class="ph-arrow-clockwise me-1"></i>Thử lại
+        </button>
       </div>
     </div>
 
@@ -54,6 +57,15 @@
         <div class="spinner-border spinner-border-sm text-primary" role="status">
           <span class="visually-hidden">Đang tải...</span>
         </div>
+        <div v-if="loadingText" class="loading-text">{{ loadingText }}</div>
+      </div>
+    </div>
+
+    <!-- Zoom Overlay (for product detail) -->
+    <div v-if="showZoomOverlay && isHovered" class="zoom-overlay">
+      <div class="zoom-content">
+        <i class="ph-magnifying-glass-plus text-white" style="font-size: 1.5rem;"></i>
+        <div class="zoom-text">Nhấp để phóng to</div>
       </div>
     </div>
   </div>
@@ -117,6 +129,20 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  showRetryButton: {
+    type: Boolean,
+    default: true
+  },
+  // Loading options
+  loadingText: {
+    type: String,
+    default: 'Đang tải hình ảnh...'
+  },
+  // Zoom options
+  showZoomOverlay: {
+    type: Boolean,
+    default: false
+  },
   // CSS classes
   containerClass: {
     type: [String, Array, Object],
@@ -140,20 +166,26 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['load', 'error'])
+const emit = defineEmits(['load', 'error', 'retry'])
 
 // Reactive state
 const loaded = ref(false)
 const loading = ref(false)
 const error = ref(false)
+const isHovered = ref(false)
 const imageElement = ref(null)
 
 // Computed
 const optimizedSrc = computed(() => {
   if (!props.src) return ''
   
-  // If it's already a WebP image or external URL, return as is
-  if (props.src.includes('.webp') || props.src.startsWith('http')) {
+  // For external URLs (like Unsplash), return as is
+  if (props.src.startsWith('http')) {
+    return props.src
+  }
+  
+  // If it's already a WebP image, return as is
+  if (props.src.includes('.webp')) {
     return props.src
   }
   
@@ -239,6 +271,22 @@ const handleError = () => {
   emit('error', { src: props.src, element: imageElement.value })
 }
 
+const retryLoad = () => {
+  error.value = false
+  loading.value = true
+  loaded.value = false
+  emit('retry')
+  preloadImage()
+}
+
+const handleMouseEnter = () => {
+  isHovered.value = true
+}
+
+const handleMouseLeave = () => {
+  isHovered.value = false
+}
+
 const preloadImage = () => {
   if (loaded.value || loading.value) return
   
@@ -293,6 +341,15 @@ onMounted(() => {
     setTimeout(() => {
       setupIntersectionObserver()
     }, 0)
+  }
+
+  // Setup zoom overlay event listeners
+  if (props.showZoomOverlay) {
+    const container = document.querySelector('.lazy-image-container')
+    if (container) {
+      container.addEventListener('mouseenter', handleMouseEnter)
+      container.addEventListener('mouseleave', handleMouseLeave)
+    }
   }
 })
 
@@ -414,5 +471,72 @@ watch(() => props.src, () => {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Zoom overlay styles */
+.zoom-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.lazy-image-container:hover .zoom-overlay {
+  opacity: 1;
+}
+
+.zoom-content {
+  text-align: center;
+  color: white;
+}
+
+.zoom-text {
+  font-size: 0.875rem;
+  margin-top: 8px;
+  opacity: 0.9;
+}
+
+.loading-text {
+  font-size: 0.875rem;
+  margin-top: 8px;
+  color: #6c757d;
+  opacity: 0.8;
+}
+
+/* Product image specific styles */
+.lazy-image-container.product-image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.lazy-image-container.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.lazy-image-container.product-image:hover img {
+  transform: scale(1.05);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .loading-text,
+  .error-text {
+    font-size: 0.75rem;
+  }
+  
+  .zoom-overlay {
+    display: none; /* Hide zoom on mobile */
+  }
 }
 </style>
