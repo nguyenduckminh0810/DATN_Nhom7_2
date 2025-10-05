@@ -1,10 +1,17 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCartStore } from './stores/cart'
 import ClientLayout from './layouts/ClientLayout.vue'
 import Toast from './components/ui/Toast.vue'
 
+const route = useRoute()
 const cartStore = useCartStore()
+
+// Computed để xác định layout
+const isAdminRoute = computed(() => {
+  return route.path.startsWith('/admin')
+})
 
 onMounted(() => {
   cartStore.loadFromStorage()
@@ -13,7 +20,12 @@ onMounted(() => {
 
 <template>
   <div id="app">
-    <ClientLayout />
+    <!-- Chỉ hiển thị ClientLayout cho các route không phải admin -->
+    <ClientLayout v-if="!isAdminRoute" />
+    
+    <!-- Admin routes sẽ sử dụng AdminLayout thông qua router-view -->
+    <router-view v-if="isAdminRoute" />
+    
     <Toast />
   </div>
 </template>
@@ -31,7 +43,6 @@ body {
   line-height: 1.6;
   color: #1a1a1a;
   background-color: #fafafa;
-  padding-top: 80px;
 }
 
 /* Custom AURO Brand Colors - Modern Theme */

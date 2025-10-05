@@ -1,293 +1,393 @@
 <template>
-  <div class="admin-dashboard">
-    <!-- Top Navigation Bar -->
-    <div class="dashboard-navbar">
-      <div class="navbar-left">
-        <div class="search-bar">
-          <i class="ph ph-magnifying-glass"></i>
-          <input type="text" placeholder="Tìm kiếm..." class="search-input">
+  <div class="dashboard-content">
+
+      <!-- Store Overview Section -->
+      <section class="overview-section">
+        <div class="overview-grid">
+          <div class="overview-card revenue">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="ph ph-currency-dollar"></i>
         </div>
+              <div class="card-info">
+                <h3>Doanh thu hôm nay</h3>
+                <p class="card-subtitle">So với hôm qua</p>
       </div>
-      <div class="navbar-right">
-        <button class="nav-icon">
-          <i class="ph ph-gear"></i>
-        </button>
-        <button class="nav-icon">
-          <i class="ph ph-shopping-cart"></i>
-          <span class="notification-badge">1</span>
-        </button>
-        <button class="nav-icon">
-          <i class="ph ph-grid-four"></i>
-        </button>
-        <button class="nav-icon">
-          <i class="ph ph-bell"></i>
-        </button>
-        <div class="user-avatar">
-          <img src="https://via.placeholder.com/40x40/3b82f6/ffffff?text=J" alt="User" class="avatar-img">
+            </div>
+            <div class="card-content">
+              <div class="main-value">15,420,000₫</div>
+              <div class="trend positive">
+                <i class="ph ph-trend-up"></i>
+                <span>+12.5%</span>
         </div>
       </div>
     </div>
 
-    <!-- Welcome Section -->
-    <div class="welcome-section">
-      <div class="welcome-content">
-        <h1 class="welcome-title">Chào buổi chiều, Admin!</h1>
-        <p class="welcome-subtitle">Đây là tình hình hoạt động của cửa hàng AURO hôm nay</p>
-        <div class="today-metrics">
-          <div class="metric-item">
-            <span class="metric-label">Lượt truy cập hôm nay</span>
-            <span class="metric-value">1,247</span>
+          <div class="overview-card orders">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="ph ph-shopping-cart"></i>
           </div>
-          <div class="metric-item">
-            <span class="metric-label">Doanh thu hôm nay</span>
-            <span class="metric-value">15,420,000₫</span>
+              <div class="card-info">
+                <h3>Đơn hàng mới</h3>
+                <p class="card-subtitle">Trong 24h qua</p>
           </div>
         </div>
+            <div class="card-content">
+              <div class="main-value">89</div>
+              <div class="trend positive">
+                <i class="ph ph-trend-up"></i>
+                <span>+8.3%</span>
       </div>
-      <div class="welcome-illustration">
-        <div class="store-illustration">
-          <div class="store-building"></div>
-          <div class="store-tree"></div>
+            </div>
+          </div>
+
+          <div class="overview-card customers">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="ph ph-users"></i>
+              </div>
+              <div class="card-info">
+                <h3>Khách hàng mới</h3>
+                <p class="card-subtitle">Đăng ký hôm nay</p>
+              </div>
+            </div>
+            <div class="card-content">
+              <div class="main-value">23</div>
+              <div class="trend positive">
+                <i class="ph ph-trend-up"></i>
+                <span>+15.2%</span>
         </div>
       </div>
     </div>
 
-    <!-- Actionable Alerts -->
-    <div class="alerts-section">
-      <div class="alert-item">
-        <div class="alert-content">
-          <span class="alert-bullet">•</span>
-          <span class="alert-text">3 sản phẩm chưa được đăng lên Facebook</span>
+          <div class="overview-card inventory">
+            <div class="card-header">
+              <div class="card-icon">
+                <i class="ph ph-package"></i>
         </div>
-        <button class="alert-action">Xem sản phẩm ></button>
+              <div class="card-info">
+                <h3>Sản phẩm sắp hết</h3>
+                <p class="card-subtitle">Cần nhập hàng</p>
       </div>
-      <div class="alert-item">
-        <div class="alert-content">
-          <span class="alert-bullet">•</span>
-          <span class="alert-text">5 đơn hàng cần xác nhận thanh toán</span>
         </div>
-        <button class="alert-action">Xem thanh toán ></button>
+            <div class="card-content">
+              <div class="main-value">12</div>
+              <div class="trend warning">
+                <i class="ph ph-warning"></i>
+                <span>Cần nhập</span>
       </div>
-      <div class="alert-item">
-        <div class="alert-content">
-          <span class="alert-bullet">•</span>
-          <span class="alert-text">12 đơn hàng cần xử lý giao hàng</span>
         </div>
-        <button class="alert-action">Xem đơn hàng ></button>
       </div>
     </div>
+      </section>
 
-    <!-- KPI Cards -->
-    <div class="kpi-section">
-      <div class="kpi-grid">
-        <div class="kpi-card" v-for="kpi in kpiData" :key="kpi.id">
-          <div class="kpi-header">
-            <h3 class="kpi-title">{{ kpi.title }}</h3>
+      <!-- Quick Actions & Alerts -->
+      <section class="actions-alerts-section">
+        <div class="quick-actions-panel">
+          <h3>Thao tác nhanh</h3>
+          <div class="action-buttons">
+            <button class="action-btn">
+              <i class="ph ph-plus-circle"></i>
+              <span>Thêm sản phẩm</span>
+            </button>
+            <button class="action-btn">
+              <i class="ph ph-shopping-cart"></i>
+              <span>Xem đơn hàng</span>
+            </button>
+            <button class="action-btn">
+              <i class="ph ph-users"></i>
+              <span>Quản lý khách hàng</span>
+            </button>
+            <button class="action-btn">
+              <i class="ph ph-chart-bar"></i>
+              <span>Báo cáo doanh thu</span>
+            </button>
           </div>
-          <div class="kpi-content">
-            <div class="kpi-current">{{ kpi.current }}</div>
-            <div class="kpi-previous">Previous: {{ kpi.previous }}</div>
-            <div class="kpi-change" :class="kpi.changeType">
-              <i :class="kpi.changeIcon"></i>
-              {{ kpi.change }}
+            </div>
+
+        <div class="alerts-panel">
+          <h3>Cần chú ý</h3>
+          <div class="alert-list">
+            <div class="alert-item urgent">
+              <div class="alert-icon">
+                <i class="ph ph-warning"></i>
+          </div>
+              <div class="alert-content">
+                <div class="alert-title">5 đơn hàng chờ xác nhận</div>
+                <div class="alert-time">2 phút trước</div>
+        </div>
+              <button class="alert-action">Xem</button>
+      </div>
+            <div class="alert-item warning">
+              <div class="alert-icon">
+                <i class="ph ph-package"></i>
+    </div>
+              <div class="alert-content">
+                <div class="alert-title">12 sản phẩm sắp hết hàng</div>
+                <div class="alert-time">1 giờ trước</div>
+              </div>
+              <button class="alert-action">Xem</button>
+            </div>
+            <div class="alert-item info">
+              <div class="alert-icon">
+                <i class="ph ph-clock"></i>
+              </div>
+              <div class="alert-content">
+                <div class="alert-title">8 đơn hàng cần giao</div>
+                <div class="alert-time">3 giờ trước</div>
+              </div>
+              <button class="alert-action">Xem</button>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- Total Sales Chart -->
-    <div class="chart-section">
-      <div class="chart-card large">
+      <!-- Sales Analytics Section -->
+      <section class="analytics-section">
+        <div class="analytics-grid">
+          <div class="chart-card main-chart">
         <div class="chart-header">
-          <h3 class="chart-title">Tổng doanh thu</h3>
-          <div class="chart-controls">
-            <label class="chart-checkbox">
-              <input type="checkbox" checked>
-              <span class="checkmark"></span>
-              Tháng trước: 125,420,000₫
+              <div class="chart-title-section">
+                <h3>Phân tích doanh thu & đơn hàng</h3>
+                <div class="chart-metrics-toggle">
+                  <label class="metric-toggle">
+                    <input type="checkbox" v-model="showRevenue" @change="updateChartData">
+                    <span>Doanh thu</span>
             </label>
-            <label class="chart-checkbox">
-              <input type="checkbox" checked>
-              <span class="checkmark"></span>
-              Năm trước: 98,750,000₫
+                  <label class="metric-toggle">
+                    <input type="checkbox" v-model="showOrders" @change="updateChartData">
+                    <span>Số đơn hàng</span>
+                  </label>
+                  <label class="metric-toggle">
+                    <input type="checkbox" v-model="showProfit" @change="updateChartData">
+                    <span>Lợi nhuận</span>
+                  </label>
+                  <label class="metric-toggle">
+                    <input type="checkbox" v-model="showComparison" @change="updateChartData">
+                    <span>So sánh kỳ trước</span>
             </label>
+                </div>
+              </div>
+              <div class="chart-controls">
+                <div class="control-group">
+                  <label class="control-label">Khoảng thời gian:</label>
+                  <select class="time-selector" v-model="chartTimeRange" @change="updateChartData">
+                    <option value="7days">7 ngày qua</option>
+                    <option value="30days">30 ngày qua</option>
+                    <option value="3months">3 tháng qua</option>
+                    <option value="year">Năm nay</option>
+                    <option value="custom">Tùy chỉnh</option>
+                  </select>
+                </div>
+                <div class="control-group">
+                  <label class="control-label">Độ phân giải:</label>
+                  <select class="granularity-selector" v-model="chartGranularity" @change="updateChartData">
+                    <option value="daily">Theo ngày</option>
+                    <option value="weekly">Theo tuần</option>
+                    <option value="monthly">Theo tháng</option>
+                  </select>
+                </div>
+                <button class="chart-action-btn" @click="exportChartData">
+                  <i class="ph ph-download"></i>
+                  <span>Xuất dữ liệu</span>
+                </button>
           </div>
         </div>
         <div class="chart-content">
           <Chart
             type="line"
-            :data="totalSalesChartData"
-            :options="totalSalesChartOptions"
-            :height="300"
+                :data="enhancedChartData"
+                :options="enhancedChartOptions"
+                :height="350"
           />
         </div>
+            <div class="chart-insights">
+              <div class="insight-item">
+                <div class="insight-icon revenue">
+                  <i class="ph ph-trend-up"></i>
       </div>
+                <div class="insight-content">
+                  <div class="insight-title">Tăng trưởng doanh thu</div>
+                  <div class="insight-value positive">+{{ growthRate }}%</div>
+                  <div class="insight-subtitle">So với kỳ trước</div>
     </div>
-
-    <!-- Mini Charts Section -->
-    <div class="mini-charts-section">
-      <div class="mini-chart-card">
-        <div class="mini-chart-header">
-          <h4 class="mini-chart-title">Doanh thu tuần</h4>
         </div>
-        <div class="mini-chart-content">
-          <div class="mini-chart-value">47.2M₫</div>
-          <div class="mini-chart-change positive">+3.5%</div>
-          <div class="mini-chart-visual">
-            <Chart
-              type="bar"
-              :data="weeklySalesData"
-              :options="miniChartOptions"
-              :height="60"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="mini-chart-card">
-        <div class="mini-chart-header">
-          <h4 class="mini-chart-title">Thị phần sản phẩm</h4>
-        </div>
-        <div class="mini-chart-content">
-          <div class="mini-chart-value">34.6%</div>
-          <div class="mini-chart-change positive">▲ 3.5%</div>
-          <div class="mini-chart-target">Mục tiêu: 55%</div>
-          <div class="mini-chart-visual">
-            <Chart
-              type="doughnut"
-              :data="productShareData"
-              :options="miniDoughnutOptions"
-              :height="60"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="mini-chart-card">
-        <div class="mini-chart-header">
-          <h4 class="mini-chart-title">Thị trường</h4>
-        </div>
-        <div class="mini-chart-content">
-          <div class="mini-chart-value">26M₫</div>
-          <div class="mini-chart-visual">
-            <Chart
-              type="doughnut"
-              :data="marketShareData"
-              :options="marketShareOptions"
-              :height="60"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="mini-chart-card">
-        <div class="mini-chart-header">
-          <h4 class="mini-chart-title">Tổng đơn hàng</h4>
-        </div>
-        <div class="mini-chart-content">
-          <div class="mini-chart-value">1,247</div>
-          <div class="mini-chart-change positive">▲ 13.6%</div>
-          <div class="mini-chart-visual">
-            <Chart
-              type="line"
-              :data="totalOrderData"
-              :options="miniChartOptions"
-              :height="60"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Shopping Cart Metrics -->
-    <div class="cart-metrics-section">
-      <div class="cart-metrics-card">
-        <div class="cart-metrics-header">
-          <h4 class="cart-metrics-title">Chỉ số giỏ hàng</h4>
-        </div>
-        <div class="cart-metrics-content">
-          <div class="cart-metric-item" v-for="metric in cartMetrics" :key="metric.id">
-            <div class="cart-metric-info">
-              <div class="cart-metric-label">{{ metric.label }}</div>
-              <div class="cart-metric-change" :class="metric.changeType">
-                {{ metric.change }}
+              <div class="insight-item">
+                <div class="insight-icon orders">
+                  <i class="ph ph-shopping-cart"></i>
+                </div>
+                <div class="insight-content">
+                  <div class="insight-title">Đơn hàng trung bình</div>
+                  <div class="insight-value">{{ averageOrderValue }}</div>
+                  <div class="insight-subtitle">Giá trị/đơn hàng</div>
+                </div>
               </div>
-              <div class="cart-metric-count">{{ metric.count }}</div>
-            </div>
-            <div class="cart-metric-progress">
-              <div class="progress-bar" :class="metric.progressClass">
-                <div class="progress-fill" :style="{ width: metric.progress + '%' }"></div>
-              </div>
+              <div class="insight-item">
+                <div class="insight-icon profit">
+                  <i class="ph ph-chart-line-up"></i>
+                </div>
+                <div class="insight-content">
+                  <div class="insight-title">Tỷ lệ lợi nhuận</div>
+                  <div class="insight-value">{{ profitMargin }}%</div>
+                  <div class="insight-subtitle">Margin trung bình</div>
+                </div>
+          </div>
+        </div>
+      </div>
+
+          <div class="top-products-card">
+            <div class="card-header">
+              <h3>Sản phẩm bán chạy</h3>
+              <button class="view-all-btn">Xem tất cả</button>
+        </div>
+            <div class="products-list">
+              <div class="product-item" v-for="product in topProducts" :key="product.id">
+                <div class="product-image">
+                  <img :src="product.image" :alt="product.name">
+          </div>
+                <div class="product-info">
+                  <div class="product-name">{{ product.name }}</div>
+                  <div class="product-sales">{{ product.sales }} đã bán</div>
+        </div>
+                <div class="product-revenue">{{ product.revenue }}</div>
+      </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- Recent Purchases Table -->
-    <div class="recent-purchases-section">
-      <div class="recent-purchases-card">
-        <div class="recent-purchases-header">
-          <h4 class="recent-purchases-title">Giao dịch gần đây</h4>
-          <div class="recent-purchases-actions">
-            <button class="btn btn-primary btn-sm">+ Mới</button>
-            <button class="btn btn-outline-secondary btn-sm">▼ Lọc</button>
-            <button class="btn btn-outline-secondary btn-sm">Xuất</button>
+      <!-- Order Management Section -->
+      <section class="order-management-section">
+        <div class="order-grid">
+          <div class="order-status-cards">
+            <div class="status-card pending">
+              <div class="status-icon">
+                <i class="ph ph-clock"></i>
+        </div>
+              <div class="status-info">
+                <div class="status-count">23</div>
+                <div class="status-label">Chờ xử lý</div>
+              </div>
+            </div>
+            <div class="status-card processing">
+              <div class="status-icon">
+                <i class="ph ph-gear"></i>
+              </div>
+              <div class="status-info">
+                <div class="status-count">15</div>
+                <div class="status-label">Đang xử lý</div>
+              </div>
+            </div>
+            <div class="status-card shipping">
+              <div class="status-icon">
+                <i class="ph ph-truck"></i>
+              </div>
+              <div class="status-info">
+                <div class="status-count">8</div>
+                <div class="status-label">Đang giao</div>
+              </div>
+            </div>
+            <div class="status-card completed">
+              <div class="status-icon">
+                <i class="ph ph-check-circle"></i>
+              </div>
+              <div class="status-info">
+                <div class="status-count">156</div>
+                <div class="status-label">Hoàn thành</div>
           </div>
         </div>
-        <div class="recent-purchases-content">
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th><input type="checkbox" class="form-check-input"></th>
-                  <th>Khách hàng</th>
-                  <th>Email</th>
-                  <th>Sản phẩm</th>
-                  <th>Thanh toán</th>
-                  <th>Số tiền</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="purchase in recentPurchases" :key="purchase.id">
-                  <td><input type="checkbox" class="form-check-input"></td>
-                  <td>
-                    <div class="customer-info">
-                      <div class="customer-avatar">
-                        <img :src="purchase.avatar" :alt="purchase.customer" class="avatar-img">
+      </div>
+
+          <div class="recent-orders-card">
+            <div class="card-header">
+              <h3>Đơn hàng gần đây</h3>
+              <button class="view-all-btn">Xem tất cả</button>
+        </div>
+            <div class="orders-list">
+              <div class="order-item" v-for="order in recentOrders" :key="order.id">
+                <div class="order-info">
+                  <div class="order-id">#{{ order.id }}</div>
+                  <div class="customer-name">{{ order.customer }}</div>
+                  <div class="order-time">{{ order.time }}</div>
+          </div>
+                <div class="order-amount">{{ order.amount }}</div>
+                <div class="order-status" :class="order.status">
+                  {{ order.statusText }}
+        </div>
+      </div>
+    </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Customer Insights Section -->
+      <section class="customer-insights-section">
+        <div class="insights-grid">
+          <div class="customer-stats-card">
+            <div class="card-header">
+              <h3>Thống kê khách hàng</h3>
+        </div>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="ph ph-users"></i>
+              </div>
+                <div class="stat-content">
+                  <div class="stat-value">2,456</div>
+                  <div class="stat-label">Tổng khách hàng</div>
+            </div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="ph ph-user-plus"></i>
+            </div>
+                <div class="stat-content">
+                  <div class="stat-value">89</div>
+                  <div class="stat-label">Khách hàng mới</div>
+          </div>
+        </div>
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="ph ph-repeat"></i>
+      </div>
+                <div class="stat-content">
+                  <div class="stat-value">65%</div>
+                  <div class="stat-label">Tỷ lệ quay lại</div>
+    </div>
+          </div>
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="ph ph-star"></i>
+        </div>
+                <div class="stat-content">
+                  <div class="stat-value">4.8</div>
+                  <div class="stat-label">Đánh giá trung bình</div>
                       </div>
-                      <span class="customer-name">{{ purchase.customer }}</span>
                     </div>
-                  </td>
-                  <td>{{ purchase.email }}</td>
-                  <td>{{ purchase.product }}</td>
-                  <td>
-                    <span class="payment-status" :class="purchase.paymentClass">
-                      {{ purchase.paymentStatus }}
-                    </span>
-                  </td>
-                  <td>{{ purchase.amount }}</td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-secondary">
-                      <i class="ph ph-dots-three"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
-          <div class="table-pagination">
-            <div class="pagination-info">1 đến 5 của 5</div>
-            <div class="pagination-controls">
-              <button class="btn btn-sm btn-outline-secondary">Trước</button>
-              <button class="btn btn-sm btn-outline-secondary">Tiếp</button>
+            </div>
+
+          <div class="category-performance-card">
+            <div class="card-header">
+              <h3>Hiệu suất danh mục</h3>
+          </div>
+            <div class="categories-list">
+              <div class="category-item" v-for="category in categoryPerformance" :key="category.id">
+                <div class="category-info">
+                  <div class="category-name">{{ category.name }}</div>
+                  <div class="category-sales">{{ category.sales }} sản phẩm</div>
+        </div>
+                <div class="category-revenue">{{ category.revenue }}</div>
+                <div class="category-trend" :class="category.trend">
+                  <i :class="category.trendIcon"></i>
+                  <span>{{ category.change }}</span>
+      </div>
+    </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
   </div>
 </template>
 
@@ -295,202 +395,266 @@
 import { ref, onMounted, computed } from 'vue'
 import Chart from '@/components/ui/Chart.vue'
 
-// Reactive data
-const kpiData = ref([
+// Reactive state
+const showQuickAdd = ref(false)
+
+// Chart enhancement state
+const showRevenue = ref(true)
+const showOrders = ref(true)
+const showProfit = ref(false)
+const showComparison = ref(false)
+const chartTimeRange = ref('30days')
+const chartGranularity = ref('daily')
+
+// Ecommerce Data
+const topProducts = ref([
   {
     id: 1,
-    title: 'Đơn hàng',
-    current: '1,247',
-    previous: '1,156',
-    change: '7.9%',
-    changeType: 'positive',
-    changeIcon: 'ph ph-trend-up'
+    name: 'Áo sơ mi nam cao cấp',
+    image: 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=AS',
+    sales: 156,
+    revenue: '12.5M₫'
   },
   {
     id: 2,
-    title: 'Sản phẩm bán',
-    current: '2,856',
-    previous: '2,634',
-    change: '8.4%',
-    changeType: 'positive',
-    changeIcon: 'ph ph-trend-up'
+    name: 'Quần âu nam công sở',
+    image: 'https://via.placeholder.com/40x40/10b981/ffffff?text=QA',
+    sales: 134,
+    revenue: '8.9M₫'
   },
   {
     id: 3,
-    title: 'Hoàn trả',
-    current: '2,450,000₫',
-    previous: '2,890,000₫',
-    change: '-15.2%',
-    changeType: 'negative',
-    changeIcon: 'ph ph-trend-down'
+    name: 'Áo khoác nam dạ',
+    image: 'https://via.placeholder.com/40x40/f59e0b/ffffff?text=AK',
+    sales: 89,
+    revenue: '15.2M₫'
   },
   {
     id: 4,
-    title: 'Doanh thu gộp',
-    current: '125,420,000₫',
-    previous: '118,750,000₫',
-    change: '5.6%',
-    changeType: 'positive',
-    changeIcon: 'ph ph-trend-up'
-  },
-  {
-    id: 5,
-    title: 'Vận chuyển',
-    current: '8,750,000₫',
-    previous: '9,200,000₫',
-    change: '-4.9%',
-    changeType: 'negative',
-    changeIcon: 'ph ph-trend-down'
-  },
-  {
-    id: 6,
-    title: 'Đang xử lý',
-    current: '23',
-    previous: '31',
-    change: '-25.8%',
-    changeType: 'negative',
-    changeIcon: 'ph ph-trend-down'
+    name: 'Vest nam công sở',
+    image: 'https://via.placeholder.com/40x40/ef4444/ffffff?text=VS',
+    sales: 67,
+    revenue: '18.7M₫'
   }
 ])
 
-const cartMetrics = ref([
+const recentOrders = ref([
   {
-    id: 1,
-    label: 'Khởi tạo giỏ hàng',
-    change: '▲ 12.5%',
-    count: '1,247',
-    progress: 78,
-    changeType: 'positive',
-    progressClass: 'progress-blue'
-  },
-  {
-    id: 2,
-    label: 'Tỷ lệ bỏ giỏ',
-    change: '▲ 8.3%',
-    count: '156 of 1,247',
-    progress: 12,
-    changeType: 'negative',
-    progressClass: 'progress-red'
-  },
-  {
-    id: 3,
-    label: 'Tỷ lệ thoát',
-    change: '▲ 5.2%',
-    count: '89 of 1,247',
-    progress: 7,
-    changeType: 'negative',
-    progressClass: 'progress-red'
-  },
-  {
-    id: 4,
-    label: 'Tỷ lệ hoàn thành',
-    change: '▼ 3.1%',
-    count: '1,002 of 1,247',
-    progress: 80,
-    changeType: 'negative',
-    progressClass: 'progress-red'
-  },
-  {
-    id: 5,
-    label: 'Tỷ lệ doanh thu',
-    change: '▲ 15.7%',
-    count: '1,002 of 1,247',
-    progress: 80,
-    changeType: 'positive',
-    progressClass: 'progress-green'
-  }
-])
-
-const recentPurchases = ref([
-  {
-    id: 1,
+    id: 'AURO-001',
     customer: 'Nguyễn Văn An',
-    email: 'nguyenvanan@gmail.com',
-    product: 'Áo sơ mi nam cao cấp AURO',
-    paymentStatus: 'Thành công ✓',
-    paymentClass: 'success',
+    time: '5 phút trước',
     amount: '1,250,000₫',
-    avatar: 'https://via.placeholder.com/32x32/3b82f6/ffffff?text=NA'
+    status: 'pending',
+    statusText: 'Chờ xử lý'
   },
   {
-    id: 2,
+    id: 'AURO-002',
     customer: 'Trần Thị Bình',
-    email: 'tranthibinh@yahoo.com',
-    product: 'Quần âu nam công sở',
-    paymentStatus: 'Bị chặn 🚫',
-    paymentClass: 'blocked',
+    time: '15 phút trước',
     amount: '890,000₫',
-    avatar: 'https://via.placeholder.com/32x32/ef4444/ffffff?text=TB'
+    status: 'processing',
+    statusText: 'Đang xử lý'
   },
   {
-    id: 3,
+    id: 'AURO-003',
     customer: 'Lê Minh Cường',
-    email: 'leminhcuong@outlook.com',
-    product: 'Áo khoác nam dạ cao cấp',
-    paymentStatus: 'Chờ xử lý =',
-    paymentClass: 'pending',
+    time: '1 giờ trước',
     amount: '2,450,000₫',
-    avatar: 'https://via.placeholder.com/32x32/f59e0b/ffffff?text=LC'
+    status: 'shipping',
+    statusText: 'Đang giao'
   },
   {
-    id: 4,
+    id: 'AURO-004',
     customer: 'Phạm Thị Dung',
-    email: 'phamthidung@gmail.com',
-    product: 'Vest nam công sở',
-    paymentStatus: 'Thành công ✓',
-    paymentClass: 'success',
+    time: '2 giờ trước',
     amount: '3,200,000₫',
-    avatar: 'https://via.placeholder.com/32x32/10b981/ffffff?text=PD'
-  },
-  {
-    id: 5,
-    customer: 'Hoàng Văn Em',
-    email: 'hoangvanem@hotmail.com',
-    product: 'Áo polo nam thể thao',
-    paymentStatus: 'Thành công ✓',
-    paymentClass: 'success',
-    amount: '650,000₫',
-    avatar: 'https://via.placeholder.com/32x32/8b5cf6/ffffff?text=HE'
+    status: 'completed',
+    statusText: 'Hoàn thành'
   }
 ])
 
-// Chart data
-const totalSalesChartData = computed(() => ({
-  labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN', 'T2', 'T3', 'T4', 'T5'],
-  datasets: [
-    {
-      label: 'Tháng trước',
-      data: [125, 142, 138, 161, 155, 168, 172, 165, 158, 163, 159],
+const categoryPerformance = ref([
+  {
+    id: 1,
+    name: 'Áo sơ mi',
+    sales: 456,
+    revenue: '25.4M₫',
+    change: '+12.5%',
+    trend: 'positive',
+    trendIcon: 'ph ph-trend-up'
+  },
+  {
+    id: 2,
+    name: 'Quần âu',
+    sales: 389,
+    revenue: '18.9M₫',
+    change: '+8.3%',
+    trend: 'positive',
+    trendIcon: 'ph ph-trend-up'
+  },
+  {
+    id: 3,
+    name: 'Áo khoác',
+    sales: 234,
+    revenue: '22.1M₫',
+    change: '+15.2%',
+    trend: 'positive',
+    trendIcon: 'ph ph-trend-up'
+  },
+  {
+    id: 4,
+    name: 'Vest',
+    sales: 167,
+    revenue: '28.7M₫',
+    change: '-3.1%',
+    trend: 'negative',
+    trendIcon: 'ph ph-trend-down'
+  }
+])
+
+
+// Enhanced chart data
+const enhancedChartData = computed(() => {
+  const labels = generateLabels()
+  const datasets = []
+  
+  if (showRevenue.value) {
+    datasets.push({
+      label: 'Doanh thu (triệu VNĐ)',
+      data: getRevenueData(),
       borderColor: '#3b82f6',
       backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.4
-    },
-    {
-      label: 'Năm trước',
-      data: [98, 112, 108, 121, 115, 128, 132, 125, 118, 123, 119],
+      borderWidth: 3,
+      fill: showRevenue.value && !showOrders.value,
+      tension: 0.4,
+      pointRadius: 4,
+      pointBackgroundColor: '#3b82f6',
+      yAxisID: 'y'
+    })
+  }
+  
+  if (showOrders.value) {
+    datasets.push({
+      label: 'Số đơn hàng',
+      data: getOrdersData(),
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      borderWidth: 3,
+      fill: showOrders.value && !showRevenue.value,
+      tension: 0.4,
+      pointRadius: 4,
+      pointBackgroundColor: '#10b981',
+      yAxisID: 'y1'
+    })
+  }
+  
+  if (showProfit.value) {
+    datasets.push({
+      label: 'Lợi nhuận (triệu VNĐ)',
+      data: getProfitData(),
       borderColor: '#f59e0b',
       backgroundColor: 'rgba(245, 158, 11, 0.1)',
+      borderWidth: 3,
+      fill: false,
+      tension: 0.4,
+      pointRadius: 4,
+      pointBackgroundColor: '#f59e0b',
+      yAxisID: 'y'
+    })
+  }
+  
+  if (showComparison.value) {
+    datasets.push({
+      label: 'Doanh thu kỳ trước (triệu VNĐ)',
+      data: getComparisonData(),
+      borderColor: '#6b7280',
+      backgroundColor: 'rgba(107, 114, 128, 0.1)',
       borderWidth: 2,
       fill: false,
-      tension: 0.4
-    }
-  ]
-}))
+      tension: 0.4,
+      pointRadius: 3,
+      pointBackgroundColor: '#6b7280',
+      borderDash: [5, 5],
+      yAxisID: 'y'
+    })
+  }
+  
+  return {
+    labels,
+    datasets
+  }
+})
 
-const totalSalesChartOptions = computed(() => ({
+// Computed insights
+const growthRate = computed(() => {
+  const current = getCurrentPeriodRevenue()
+  const previous = getPreviousPeriodRevenue()
+  return ((current - previous) / previous * 100).toFixed(1)
+})
+
+const averageOrderValue = computed(() => {
+  const revenue = getCurrentPeriodRevenue()
+  const orders = getCurrentPeriodOrders()
+  return (revenue / orders).toFixed(0) + 'k₫'
+})
+
+const profitMargin = computed(() => {
+  const revenue = getCurrentPeriodRevenue()
+  const profit = getCurrentPeriodProfit()
+  return ((profit / revenue) * 100).toFixed(1)
+})
+
+const enhancedChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  interaction: {
+    mode: 'index',
+    intersect: false,
+  },
   plugins: {
     legend: {
-      display: false
+      display: true,
+      position: 'bottom',
+      labels: {
+        usePointStyle: true,
+        padding: 20,
+        font: {
+          size: 12
+        }
+      }
+    },
+    tooltip: {
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      titleColor: '#fff',
+      bodyColor: '#fff',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      cornerRadius: 8,
+      displayColors: true,
+      callbacks: {
+        label: function(context) {
+          let label = context.dataset.label || ''
+          if (label) {
+            label += ': '
+          }
+          if (context.dataset.label?.includes('Doanh thu') || context.dataset.label?.includes('Lợi nhuận')) {
+            label += context.parsed.y + ' triệu VNĐ'
+          } else if (context.dataset.label?.includes('đơn hàng')) {
+            label += context.parsed.y + ' đơn'
+          } else {
+            label += context.parsed.y
+          }
+          return label
+        }
+      }
     }
   },
   scales: {
     y: {
+      type: 'linear',
+      display: true,
+      position: 'left',
       beginAtZero: true,
-      max: 150,
       grid: {
         color: 'rgba(148, 163, 184, 0.1)',
         drawBorder: false
@@ -499,6 +663,27 @@ const totalSalesChartOptions = computed(() => ({
         color: '#64748b',
         font: {
           size: 11
+        },
+        callback: function(value) {
+          return value + 'M₫'
+        }
+      }
+    },
+    y1: {
+      type: 'linear',
+      display: showOrders.value,
+      position: 'right',
+      beginAtZero: true,
+      grid: {
+        drawOnChartArea: false,
+      },
+      ticks: {
+        color: '#64748b',
+        font: {
+          size: 11
+        },
+        callback: function(value) {
+          return value + ' đơn'
         }
       }
     },
@@ -517,48 +702,7 @@ const totalSalesChartOptions = computed(() => ({
   }
 }))
 
-const weeklySalesData = computed(() => ({
-  labels: ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'],
-  datasets: [{
-    data: [12, 19, 15, 25, 22, 18, 16],
-    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-    borderColor: '#3b82f6',
-    borderWidth: 1,
-    borderRadius: 4
-  }]
-}))
-
-const productShareData = computed(() => ({
-  labels: ['Hiện tại', 'Còn lại'],
-  datasets: [{
-    data: [34.6, 65.4],
-    backgroundColor: ['#3b82f6', 'rgba(59, 130, 246, 0.2)'],
-    borderWidth: 0
-  }]
-}))
-
-const marketShareData = computed(() => ({
-  labels: ['Áo sơ mi', 'Quần âu', 'Áo khoác'],
-  datasets: [{
-    data: [40, 35, 25],
-    backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
-    borderWidth: 0
-  }]
-}))
-
-const totalOrderData = computed(() => ({
-  labels: ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'],
-  datasets: [{
-    data: [312, 419, 315, 425],
-    borderColor: '#3b82f6',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    borderWidth: 2,
-    fill: true,
-    tension: 0.4,
-    pointRadius: 0
-  }]
-}))
-
+// Mini chart options for ecommerce
 const miniChartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
@@ -577,316 +721,1063 @@ const miniChartOptions = computed(() => ({
   }
 }))
 
-const miniDoughnutOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: false
-    }
-  },
-  cutout: '70%'
-}))
+// Methods
+const updateChartData = () => {
+  // Force chart re-render when data changes
+  console.log('Chart data updated')
+}
 
-const marketShareOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      position: 'bottom',
-      labels: {
-        usePointStyle: true,
-        padding: 10,
-        font: {
-          size: 10
-        }
-      }
-    }
-  },
-  cutout: '60%'
-}))
+const exportChartData = () => {
+  // Export chart data functionality
+  console.log('Exporting chart data...')
+}
+
+// Data generation methods
+const generateLabels = () => {
+  const range = chartTimeRange.value
+  const granularity = chartGranularity.value
+  
+  if (range === '7days') {
+    return Array.from({length: 7}, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (6 - i))
+      return granularity === 'daily' ? 
+        `${date.getDate()}/${date.getMonth() + 1}` : 
+        `T${i + 1}`
+    })
+  } else if (range === '30days') {
+    return Array.from({length: 30}, (_, i) => {
+      const date = new Date()
+      date.setDate(date.getDate() - (29 - i))
+      return granularity === 'daily' ? 
+        `${date.getDate()}/${date.getMonth() + 1}` : 
+        `T${i + 1}`
+    })
+  } else if (range === '3months') {
+    return ['T1', 'T2', 'T3']
+  } else if (range === 'year') {
+    return ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12']
+  }
+  
+  return ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12']
+}
+
+const getRevenueData = () => {
+  const range = chartTimeRange.value
+  if (range === '7days') {
+    return [15, 18, 12, 22, 19, 25, 28]
+  } else if (range === '30days') {
+    return Array.from({length: 30}, (_, i) => Math.floor(Math.random() * 20) + 10)
+  } else if (range === '3months') {
+    return [125, 142, 138]
+  }
+  return [125, 142, 138, 161, 155, 168, 172, 165, 158, 163, 159, 175]
+}
+
+const getOrdersData = () => {
+  const range = chartTimeRange.value
+  if (range === '7days') {
+    return [45, 52, 38, 68, 55, 72, 78]
+  } else if (range === '30days') {
+    return Array.from({length: 30}, (_, i) => Math.floor(Math.random() * 30) + 20)
+  } else if (range === '3months') {
+    return [456, 520, 480]
+  }
+  return [456, 520, 480, 580, 540, 620, 650, 600, 570, 590, 580, 620]
+}
+
+const getProfitData = () => {
+  const revenue = getRevenueData()
+  return revenue.map(val => Math.floor(val * 0.25)) // 25% profit margin
+}
+
+const getComparisonData = () => {
+  const current = getRevenueData()
+  return current.map(val => Math.floor(val * 0.85)) // 85% of current period
+}
+
+const getCurrentPeriodRevenue = () => {
+  const data = getRevenueData()
+  return data.reduce((sum, val) => sum + val, 0)
+}
+
+const getCurrentPeriodOrders = () => {
+  const data = getOrdersData()
+  return data.reduce((sum, val) => sum + val, 0)
+}
+
+const getCurrentPeriodProfit = () => {
+  const data = getProfitData()
+  return data.reduce((sum, val) => sum + val, 0)
+}
+
+const getPreviousPeriodRevenue = () => {
+  const data = getComparisonData()
+  return data.reduce((sum, val) => sum + val, 0)
+}
+
+// Methods for ecommerce dashboard
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(amount)
+}
+
+const getOrderStatusColor = (status) => {
+  const colors = {
+    pending: '#f59e0b',
+    processing: '#3b82f6',
+    shipping: '#8b5cf6',
+    completed: '#10b981'
+  }
+  return colors[status] || '#6b7280'
+}
 
 onMounted(() => {
   // Initialize dashboard
+  console.log('Modern Admin Dashboard loaded')
 })
 </script>
 
 <style scoped>
-.admin-dashboard {
+/* Dashboard Content Styles */
+.dashboard-content {
   padding: 0;
   background: #f8fafc;
-  min-height: 100vh;
+  color: #1f2937;
 }
 
-/* Top Navigation Bar */
-.dashboard-navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
+
+/* Overview Section */
+.overview-section {
+  margin-bottom: 2rem;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.overview-card {
   background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.navbar-left {
-  flex: 1;
-}
-
-.search-bar {
-  position: relative;
-  max-width: 400px;
-}
-
-.search-bar i {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #64748b;
-  font-size: 16px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 10px 12px 10px 40px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   transition: all 0.2s;
 }
 
-.search-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.overview-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-.navbar-right {
+.card-header {
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-bottom: 1rem;
 }
 
-.nav-icon {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: #f8fafc;
-  border-radius: 8px;
+.card-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: #64748b;
+  font-size: 1.25rem;
 }
 
-.nav-icon:hover {
-  background: #e2e8f0;
-  color: #374151;
+.overview-card.revenue .card-icon {
+  background: #dcfce7;
+  color: #16a34a;
 }
 
-.notification-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  background: #ef4444;
-  color: white;
-  font-size: 10px;
+.overview-card.orders .card-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.overview-card.customers .card-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.overview-card.inventory .card-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.card-info h3 {
+  font-size: 0.875rem;
   font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 10px;
-  min-width: 18px;
-  text-align: center;
+  color: #374151;
+  margin: 0 0 0.25rem 0;
 }
 
-.user-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 2px solid #e2e8f0;
-}
-
-.avatar-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Welcome Section */
-.welcome-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.card-subtitle {
+  font-size: 0.75rem;
+  color: #9ca3af;
   margin: 0;
 }
 
-.welcome-content {
-  flex: 1;
-}
-
-.welcome-title {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin: 0 0 0.5rem 0;
-  color: white;
-}
-
-.welcome-subtitle {
-  font-size: 1.1rem;
-  margin: 0 0 2rem 0;
-  opacity: 0.9;
-}
-
-.today-metrics {
+.card-content {
   display: flex;
-  gap: 2rem;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.metric-item {
+.main-value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.trend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.trend.positive {
+  color: #16a34a;
+}
+
+.trend.negative {
+  color: #dc2626;
+}
+
+.trend.warning {
+  color: #d97706;
+}
+
+/* Actions & Alerts Section */
+.actions-alerts-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.quick-actions-panel, .alerts-panel {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.quick-actions-panel h3, .alerts-panel h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.action-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.action-btn {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-}
-
-.metric-label {
-  font-size: 0.875rem;
-  opacity: 0.8;
-}
-
-.metric-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.welcome-illustration {
-  flex-shrink: 0;
-}
-
-.store-illustration {
-  position: relative;
-  width: 200px;
-  height: 120px;
-}
-
-.store-building {
-  width: 120px;
-  height: 80px;
-  background: rgba(255, 255, 255, 0.2);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  position: absolute;
-  bottom: 0;
-  left: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  color: #374151;
 }
 
-.store-tree {
-  width: 40px;
-  height: 60px;
-  background: rgba(34, 197, 94, 0.3);
-  border-radius: 20px 20px 0 0;
-  position: absolute;
-  bottom: 0;
-  right: 20px;
+.action-btn:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
-/* Alerts Section */
-.alerts-section {
-  padding: 1.5rem 2rem;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+.action-btn i {
+  font-size: 1.5rem;
+  color: #3b82f6;
+}
+
+.action-btn span {
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .alert-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f1f5f9;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
 }
 
-.alert-item:last-child {
-  border-bottom: none;
+.alert-item:hover {
+  background: #f9fafb;
+}
+
+.alert-item.urgent {
+  border-left: 4px solid #ef4444;
+}
+
+.alert-item.warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.alert-item.info {
+  border-left: 4px solid #3b82f6;
+}
+
+.alert-item .alert-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.alert-item.urgent .alert-icon {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.alert-item.warning .alert-icon {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.alert-item.info .alert-icon {
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
 .alert-content {
+  flex: 1;
+}
+
+.alert-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.alert-time {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.alert-action {
+  background: #3b82f6;
+  color: #ffffff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.alert-action:hover {
+  background: #2563eb;
+}
+
+/* Analytics Section */
+.analytics-section {
+  margin-bottom: 2rem;
+}
+
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.chart-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.chart-header {
+  margin-bottom: 1.5rem;
+}
+
+.chart-title-section {
+  margin-bottom: 1rem;
+}
+
+.chart-title-section h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 1rem 0;
+}
+
+.chart-metrics-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metric-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  transition: color 0.2s;
+}
+
+.metric-toggle:hover {
+  color: #1f2937;
+}
+
+.metric-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #3b82f6;
+}
+
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.control-group {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.alert-bullet {
-  color: #3b82f6;
-  font-weight: bold;
+.control-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
 }
 
-.alert-text {
+.time-selector, .granularity-selector {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.time-selector:focus, .granularity-selector:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.chart-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
   color: #374151;
   font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.alert-action {
+.chart-action-btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.chart-insights {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.insight-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+}
+
+.insight-item:hover {
+  background: #f3f4f6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.insight-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.insight-icon.revenue {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.insight-icon.orders {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.insight-icon.profit {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.insight-content {
+  flex: 1;
+}
+
+.insight-title {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.insight-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.insight-value.positive {
+  color: #16a34a;
+}
+
+.insight-value.negative {
+  color: #dc2626;
+}
+
+.insight-subtitle {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+.top-products-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.top-products-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.view-all-btn {
   background: none;
   border: none;
   color: #3b82f6;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  transition: background 0.2s;
+  transition: color 0.2s;
 }
 
-.alert-action:hover {
-  background: #f0f9ff;
+.view-all-btn:hover {
+  color: #2563eb;
 }
 
-/* KPI Section */
-.kpi-section {
-  padding: 2rem;
+.products-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.kpi-grid {
+.product-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.product-item:hover {
+  background: #f9fafb;
+}
+
+.product-image img {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.product-info {
+  flex: 1;
+}
+
+.product-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.product-sales {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.product-revenue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+/* Order Management Section */
+.order-management-section {
+  margin-bottom: 2rem;
+}
+
+.order-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
 }
 
-.kpi-card {
+.order-status-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.status-card {
   background: #ffffff;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
+  text-align: center;
+  transition: all 0.2s;
 }
 
-.kpi-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #64748b;
-  margin: 0 0 1rem 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.status-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
 }
 
-.kpi-current {
-  font-size: 1.5rem;
+.status-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin: 0 auto 1rem auto;
+}
+
+.status-card.pending .status-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-card.processing .status-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.status-card.shipping .status-icon {
+  background: #e9d5ff;
+  color: #8b5cf6;
+}
+
+.status-card.completed .status-icon {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.status-info {
+  text-align: center;
+}
+
+.status-count {
+  font-size: 2rem;
   font-weight: 700;
   color: #1f2937;
   margin-bottom: 0.25rem;
 }
 
-.kpi-previous {
+.status-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.recent-orders-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.order-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.order-item:hover {
+  background: #f9fafb;
+}
+
+.order-info {
+  flex: 1;
+}
+
+.order-id {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.customer-name {
+  font-size: 0.875rem;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.order-time {
   font-size: 0.75rem;
   color: #9ca3af;
+}
+
+.order-amount {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
+.order-status {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.order-status.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.order-status.processing {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.order-status.shipping {
+  background: #e9d5ff;
+  color: #8b5cf6;
+}
+
+.order-status.completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+/* Customer Insights Section */
+.customer-insights-section {
+  margin-bottom: 2rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.customer-stats-card, .category-performance-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.stat-item:hover {
+  background: #f9fafb;
+}
+
+.stat-item .stat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.category-item:hover {
+  background: #f9fafb;
+}
+
+.category-info {
+  flex: 1;
+}
+
+.category-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.category-sales {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.category-revenue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #16a34a;
+  margin-right: 1rem;
+}
+
+.category-trend {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.category-trend.positive {
+  color: #16a34a;
+}
+
+.category-trend.negative {
+  color: #dc2626;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.section-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.time-filter {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #6b7280;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.time-filter:hover {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.time-filter.active {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #ffffff;
+  }
+  
+  .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card:hover {
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-4px);
+}
+
+.kpi-card.positive {
+  border-left: 4px solid #10b981;
+}
+
+.kpi-card.negative {
+  border-left: 4px solid #ef4444;
+}
+
+.kpi-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.kpi-card.positive .kpi-icon {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.kpi-card.negative .kpi-icon {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.kpi-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1f2937;
   margin-bottom: 0.5rem;
 }
 
@@ -899,362 +1790,102 @@ onMounted(() => {
 }
 
 .kpi-change.positive {
-  color: #059669;
+  color: #10b981;
 }
 
 .kpi-change.negative {
-  color: #dc2626;
+  color: #ef4444;
 }
 
-/* Chart Section */
-.chart-section {
-  padding: 0 2rem 2rem 2rem;
+.kpi-trend {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 4rem;
+  height: 2.5rem;
 }
 
-.chart-card.large {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .order-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .insights-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+@media (max-width: 1024px) {
+  .actions-alerts-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .order-status-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.chart-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.chart-controls {
-  display: flex;
-  gap: 1rem;
-}
-
-.chart-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: #374151;
-  cursor: pointer;
-}
-
-.chart-checkbox input[type="checkbox"] {
-  margin: 0;
-}
-
-/* Mini Charts Section */
-.mini-charts-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  padding: 0 2rem 2rem 2rem;
-}
-
-.mini-chart-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-}
-
-.mini-chart-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #64748b;
-  margin: 0 0 1rem 0;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.mini-chart-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.mini-chart-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.mini-chart-change {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.mini-chart-change.positive {
-  color: #059669;
-}
-
-.mini-chart-change.negative {
-  color: #dc2626;
-}
-
-.mini-chart-target {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.mini-chart-visual {
-  height: 60px;
-  margin-top: 0.5rem;
-}
-
-/* Cart Metrics Section */
-.cart-metrics-section {
-  padding: 0 2rem 2rem 2rem;
-}
-
-.cart-metrics-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-}
-
-.cart-metrics-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1.5rem 0;
-}
-
-.cart-metric-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 0;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.cart-metric-item:last-child {
-  border-bottom: none;
-}
-
-.cart-metric-info {
-  flex: 1;
-}
-
-.cart-metric-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.25rem;
-}
-
-.cart-metric-change {
-  font-size: 0.75rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-}
-
-.cart-metric-change.positive {
-  color: #059669;
-}
-
-.cart-metric-change.negative {
-  color: #dc2626;
-}
-
-.cart-metric-count {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.cart-metric-progress {
-  width: 200px;
-  margin-left: 1rem;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background: #e5e7eb;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  transition: width 0.3s ease;
-}
-
-.progress-blue .progress-fill {
-  background: #3b82f6;
-}
-
-.progress-green .progress-fill {
-  background: #10b981;
-}
-
-.progress-red .progress-fill {
-  background: #ef4444;
-}
-
-/* Recent Purchases Section */
-.recent-purchases-section {
-  padding: 0 2rem 2rem 2rem;
-}
-
-.recent-purchases-card {
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-  overflow: hidden;
-}
-
-.recent-purchases-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.recent-purchases-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.recent-purchases-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.recent-purchases-content {
-  padding: 1.5rem;
-}
-
-.table {
-  margin: 0;
-}
-
-.table th {
-  border-top: none;
-  border-bottom: 1px solid #e2e8f0;
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
-  padding: 0.75rem;
-}
-
-.table td {
-  border-top: 1px solid #f1f5f9;
-  padding: 0.75rem;
-  vertical-align: middle;
-}
-
-.customer-info {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.customer-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.customer-name {
-  font-weight: 500;
-  color: #374151;
-}
-
-.payment-status {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.payment-status.success {
-  background: #dcfce7;
-  color: #166534;
-}
-
-.payment-status.blocked {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.payment-status.pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.table-pagination {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-
-.pagination-info {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.pagination-controls {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* Responsive */
 @media (max-width: 768px) {
-  .dashboard-navbar {
-    padding: 1rem;
-  }
-  
-  .welcome-section {
-    flex-direction: column;
-    text-align: center;
-    gap: 2rem;
-  }
-  
-  .today-metrics {
-    justify-content: center;
-  }
-  
-  .kpi-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .mini-charts-section {
-    grid-template-columns: 1fr;
-  }
-  
-  .chart-controls {
+  .chart-metrics-toggle {
     flex-direction: column;
     gap: 0.5rem;
   }
   
-  .recent-purchases-header {
+  .chart-controls {
     flex-direction: column;
-    gap: 1rem;
     align-items: stretch;
+    gap: 0.75rem;
   }
   
-  .recent-purchases-actions {
-    justify-content: center;
+  .control-group {
+    justify-content: space-between;
+  }
+  
+  .chart-insights {
+    grid-template-columns: 1fr;
+  }
+  
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actions-alerts-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .order-status-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .overview-card {
+    padding: 1rem;
+  }
+  
+  .quick-actions-panel, .alerts-panel {
+    padding: 1rem;
+  }
+  
+  .chart-card, .top-products-card {
+    padding: 1rem;
   }
 }
 </style>

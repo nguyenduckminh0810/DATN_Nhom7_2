@@ -27,6 +27,7 @@ import Footer from '../components/client/Footer.vue'
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  padding-top: 70px; /* Compensate for fixed navbar */
 }
 
 .main-content {

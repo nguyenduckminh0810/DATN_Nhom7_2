@@ -17,7 +17,7 @@ import AdminProducts from '../views/admin/Products.vue'
 import AdminCategories from '../views/admin/Categories.vue'
 import AdminOrders from '../views/admin/Orders.vue'
 import AdminUsers from '../views/admin/Users.vue'
-import AdminAnalytics from '../views/admin/Analytics.vue'
+import AdminAnalytics from '../views/admin/AnalyticsNew.vue'
 import NotFound from '../views/NotFound.vue'
 
 const router = createRouter({
