@@ -1,179 +1,326 @@
 <template>
-  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
-    <div 
-      v-for="toast in toasts" 
-      :key="toast.id"
-      class="toast show modern-toast"
-      :class="`toast-${toast.type}`"
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true"
-    >
-      <div class="toast-header">
-        <div class="toast-icon me-2">
-          <i :class="getIconClass(toast.type)"></i>
+  <Transition name="toast" appear>
+    <div v-if="isVisible" class="toast-container" :class="[`toast-${type}`, { 'toast-closable': closable }]">
+      <div class="toast-content">
+        <div class="toast-icon">
+          <i :class="iconClass"></i>
         </div>
-        <strong class="me-auto">{{ toast.title }}</strong>
-        <button 
-          type="button" 
-          class="btn-close" 
-          @click="removeToast(toast.id)"
-          aria-label="Close"
-        ></button>
+        <div class="toast-message">
+          <div class="toast-title" v-if="title">{{ title }}</div>
+          <div class="toast-text">{{ message }}</div>
+        </div>
+        <button v-if="closable" class="toast-close" @click="close">
+          <i class="ph-x"></i>
+        </button>
       </div>
-      <div class="toast-body">
-        {{ toast.message }}
+      <div v-if="progress" class="toast-progress">
+        <div class="toast-progress-bar" :style="{ width: progressWidth + '%' }"></div>
       </div>
     </div>
-  </div>
+  </Transition>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
-const toasts = ref([])
-let toastId = 0
+const props = defineProps({
+  type: {
+    type: String,
+    default: 'info',
+    validator: (value) => ['success', 'error', 'warning', 'info'].includes(value)
+  },
+  title: {
+    type: String,
+    default: ''
+  },
+  message: {
+    type: String,
+    required: true
+  },
+  duration: {
+    type: Number,
+    default: 5000
+  },
+  closable: {
+    type: Boolean,
+    default: true
+  },
+  progress: {
+    type: Boolean,
+    default: true
+  }
+})
 
-const getIconClass = (type) => {
+const emit = defineEmits(['close'])
+
+const isVisible = ref(true)
+const progressWidth = ref(100)
+let progressInterval = null
+let timeoutId = null
+
+const iconClass = computed(() => {
   const icons = {
-    success: 'ph-check-circle text-success',
-    error: 'ph-warning-circle text-danger',
-    warning: 'ph-warning text-warning',
-    info: 'ph-info text-info'
+    success: 'ph-check-circle',
+    error: 'ph-x-circle',
+    warning: 'ph-warning-circle',
+    info: 'ph-info'
   }
-  return icons[type] || icons.info
-}
+  return icons[props.type] || icons.info
+})
 
-const addToast = (toast) => {
-  const id = ++toastId
-  const newToast = {
-    id,
-    type: toast.type || 'info',
-    title: toast.title || 'Thông báo',
-    message: toast.message,
-    duration: toast.duration || 3000
+const close = () => {
+  isVisible.value = false
+  if (timeoutId) {
+    clearTimeout(timeoutId)
   }
-  
-  toasts.value.push(newToast)
-  
-  // Auto remove after duration
+  if (progressInterval) {
+    clearInterval(progressInterval)
+  }
   setTimeout(() => {
-    removeToast(id)
-  }, newToast.duration)
+    emit('close')
+  }, 300) // Wait for animation to complete
 }
 
-const removeToast = (id) => {
-  const index = toasts.value.findIndex(toast => toast.id === id)
-  if (index > -1) {
-    toasts.value.splice(index, 1)
+const startProgress = () => {
+  if (!props.progress) return
+  
+  const startTime = Date.now()
+  const updateProgress = () => {
+    const elapsed = Date.now() - startTime
+    const remaining = Math.max(0, props.duration - elapsed)
+    progressWidth.value = (remaining / props.duration) * 100
+    
+    if (remaining <= 0) {
+      close()
+    }
   }
+  
+  progressInterval = setInterval(updateProgress, 50)
 }
-
-// Expose methods globally
-const toastService = {
-  success: (message, title = 'Thành công') => addToast({ type: 'success', title, message }),
-  error: (message, title = 'Lỗi') => addToast({ type: 'error', title, message }),
-  warning: (message, title = 'Cảnh báo') => addToast({ type: 'warning', title, message }),
-  info: (message, title = 'Thông tin') => addToast({ type: 'info', title, message })
-}
-
-// Make toast service available globally
-window.$toast = toastService
 
 onMounted(() => {
-  // Register global toast service
-  window.$toast = toastService
+  if (props.duration > 0) {
+    timeoutId = setTimeout(close, props.duration)
+    startProgress()
+  }
 })
 
 onUnmounted(() => {
-  // Cleanup
-  if (window.$toast === toastService) {
-    delete window.$toast
+  if (timeoutId) {
+    clearTimeout(timeoutId)
+  }
+  if (progressInterval) {
+    clearInterval(progressInterval)
   }
 })
 </script>
 
 <style scoped>
-.modern-toast {
-  border: none;
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  min-width: 320px;
+  max-width: 500px;
+  background: white;
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-left: 4px solid;
+  z-index: 10000;
+  overflow: hidden;
   backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.95);
-  margin-bottom: 1rem;
-  min-width: 300px;
 }
 
 .toast-success {
-  border-left: 4px solid var(--auro-success, #28a745);
+  border-left-color: #10b981;
 }
 
 .toast-error {
-  border-left: 4px solid var(--auro-danger, #dc3545);
+  border-left-color: #ef4444;
 }
 
 .toast-warning {
-  border-left: 4px solid var(--auro-warning, #ffc107);
+  border-left-color: #f59e0b;
 }
 
 .toast-info {
-  border-left: 4px solid var(--auro-info, #17a2b8);
+  border-left-color: var(--auro-accent);
 }
 
-.toast-header {
-  background: transparent;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  padding: 0.75rem 1rem 0.5rem;
-}
-
-.toast-body {
-  padding: 0.5rem 1rem 0.75rem;
-  font-size: 0.9rem;
-  line-height: 1.4;
+.toast-content {
+  display: flex;
+  align-items: flex-start;
+  padding: 16px 20px;
+  gap: 12px;
 }
 
 .toast-icon {
-  width: 20px;
-  text-align: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 16px;
 }
 
-.btn-close {
-  background: none;
+.toast-success .toast-icon {
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+}
+
+.toast-error .toast-icon {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.toast-warning .toast-icon {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+}
+
+.toast-info .toast-icon {
+  background: rgba(140, 144, 126, 0.1);
+  color: var(--auro-accent);
+}
+
+.toast-message {
+  flex: 1;
+  min-width: 0;
+}
+
+.toast-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--auro-text);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.toast-text {
+  font-size: 14px;
+  color: var(--auro-text-light);
+  line-height: 1.4;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
   border: none;
-  font-size: 1.2rem;
-  opacity: 0.5;
-  transition: opacity 0.3s ease;
+  background: none;
+  color: var(--auro-text-light);
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 16px;
 }
 
-.btn-close:hover {
-  opacity: 1;
+.toast-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--auro-text);
 }
 
-/* Animation */
-.toast {
-  animation: slideInRight 0.3s ease-out;
+.toast-progress {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.05);
+  overflow: hidden;
 }
 
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+.toast-progress-bar {
+  height: 100%;
+  background: currentColor;
+  transition: width 0.1s linear;
+}
+
+.toast-success .toast-progress-bar {
+  background: #10b981;
+}
+
+.toast-error .toast-progress-bar {
+  background: #ef4444;
+}
+
+.toast-warning .toast-progress-bar {
+  background: #f59e0b;
+}
+
+.toast-info .toast-progress-bar {
+  background: var(--auro-accent);
+}
+
+/* Animations */
+.toast-enter-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    min-width: auto;
+    max-width: none;
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+  
+  .toast-content {
+    padding: 12px 16px;
+  }
+  
+  .toast-title {
+    font-size: 13px;
+  }
+  
+  .toast-text {
+    font-size: 13px;
   }
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
-  .modern-toast {
-    background: rgba(33, 37, 41, 0.95);
-    color: #fff;
+  .toast-container {
+    background: #1f2937;
+    color: white;
   }
   
-  .toast-header {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+  .toast-title {
+    color: white;
+  }
+  
+  .toast-text {
+    color: #d1d5db;
+  }
+  
+  .toast-close {
+    color: #d1d5db;
+  }
+  
+  .toast-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+  }
+  
+  .toast-progress {
+    background: rgba(255, 255, 255, 0.1);
   }
 }
 </style>

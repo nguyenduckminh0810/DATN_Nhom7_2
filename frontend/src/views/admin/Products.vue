@@ -13,59 +13,163 @@
       </div>
     </div>
 
-    <!-- Filters and Search -->
+    <!-- Advanced Filters and Search -->
     <div class="filters-section">
-      <div class="row g-3">
-        <div class="col-md-4">
-          <div class="search-box">
-            <i class="ph-magnifying-glass search-icon"></i>
-            <input
-              type="text"
-              class="form-control search-input"
-              placeholder="Tìm kiếm sản phẩm..."
-              v-model="searchQuery"
-            />
+      <!-- Quick Search -->
+      <div class="search-row">
+        <div class="search-box">
+          <i class="ph-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            class="form-control search-input"
+            placeholder="Tìm kiếm sản phẩm, SKU, mô tả..."
+            v-model="searchQuery"
+          />
+        </div>
+        <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
+          <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
+          <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
+        </button>
+        <button class="btn btn-outline-secondary" @click="clearFilters">
+          <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
+        </button>
+      </div>
+
+      <!-- Advanced Filters -->
+      <div v-if="showAdvancedFilters" class="advanced-filters">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Danh mục</label>
+            <select class="form-select" v-model="selectedCategory">
+              <option value="">Tất cả danh mục</option>
+              <option value="ao">Áo</option>
+              <option value="quan">Quần</option>
+              <option value="phu-kien">Phụ kiện</option>
+            </select>
           </div>
-        </div>
-        <div class="col-md-3">
-          <select class="form-select" v-model="selectedCategory">
-            <option value="">Tất cả danh mục</option>
-            <option value="ao">Áo</option>
-            <option value="quan">Quần</option>
-            <option value="phu-kien">Phụ kiện</option>
-          </select>
-        </div>
-        <div class="col-md-3">
-          <select class="form-select" v-model="selectedStatus">
-            <option value="">Tất cả trạng thái</option>
-            <option value="active">Đang bán</option>
-            <option value="inactive">Ngừng bán</option>
-            <option value="out-of-stock">Hết hàng</option>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <button class="btn btn-outline-secondary w-100" @click="clearFilters">
-            <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
-          </button>
+          <div class="col-md-3">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" v-model="selectedStatus">
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Đang bán</option>
+              <option value="inactive">Ngừng bán</option>
+              <option value="out-of-stock">Hết hàng</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Khoảng giá</label>
+            <div class="price-range">
+              <input type="number" class="form-control" placeholder="Từ" v-model.number="priceRange.min">
+              <span class="range-separator">-</span>
+              <input type="number" class="form-control" placeholder="Đến" v-model.number="priceRange.max">
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Tồn kho</label>
+            <select class="form-select" v-model="stockFilter">
+              <option value="">Tất cả</option>
+              <option value="in-stock">Còn hàng</option>
+              <option value="low-stock">Sắp hết hàng (< 10)</option>
+              <option value="out-of-stock">Hết hàng</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Ngày tạo</label>
+            <input type="date" class="form-control" v-model="createdDate">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Sắp xếp</label>
+            <select class="form-select" v-model="sortBy">
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="name-asc">Tên A-Z</option>
+              <option value="name-desc">Tên Z-A</option>
+              <option value="price-low">Giá thấp nhất</option>
+              <option value="price-high">Giá cao nhất</option>
+              <option value="stock-low">Tồn kho ít nhất</option>
+              <option value="stock-high">Tồn kho nhiều nhất</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Thẻ</label>
+            <div class="tag-filters">
+              <span 
+                v-for="tag in availableTags" 
+                :key="tag"
+                :class="['tag-filter', { active: selectedTags.includes(tag) }]"
+                @click="toggleTag(tag)"
+              >
+                {{ tag }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- Products Table -->
     <div class="products-table">
-      <div class="table-responsive">
+      <!-- Table Actions -->
+      <div class="table-actions">
+        <div class="view-options">
+          <span class="view-label">Hiển thị:</span>
+          <button 
+            :class="['view-btn', { active: viewMode === 'table' }]"
+            @click="viewMode = 'table'"
+            title="Dạng bảng"
+          >
+            <i class="ph-table"></i>
+          </button>
+          <button 
+            :class="['view-btn', { active: viewMode === 'grid' }]"
+            @click="viewMode = 'grid'"
+            title="Dạng lưới"
+          >
+            <i class="ph-grid-four"></i>
+          </button>
+        </div>
+        <div class="table-stats">
+          <span class="stats-text">
+            Hiển thị {{ filteredProducts.length }} / {{ products.length }} sản phẩm
+          </span>
+        </div>
+      </div>
+
+      <!-- Table View -->
+      <div v-if="viewMode === 'table'" class="table-responsive">
         <table class="table table-hover">
           <thead>
             <tr>
               <th>
                 <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
               </th>
-              <th>Sản phẩm</th>
+              <th>
+                <button class="sort-btn" @click="sortTable('name')">
+                  Sản phẩm
+                  <i :class="getSortIcon('name')"></i>
+                </button>
+              </th>
               <th>Danh mục</th>
-              <th>Giá</th>
-              <th>Tồn kho</th>
+              <th>
+                <button class="sort-btn" @click="sortTable('price')">
+                  Giá
+                  <i :class="getSortIcon('price')"></i>
+                </button>
+              </th>
+              <th>
+                <button class="sort-btn" @click="sortTable('stock')">
+                  Tồn kho
+                  <i :class="getSortIcon('stock')"></i>
+                </button>
+              </th>
+              <th>Đánh giá</th>
               <th>Trạng thái</th>
-              <th>Ngày tạo</th>
+              <th>
+                <button class="sort-btn" @click="sortTable('createdAt')">
+                  Ngày tạo
+                  <i :class="getSortIcon('createdAt')"></i>
+                </button>
+              </th>
               <th>Thao tác</th>
             </tr>
           </thead>
@@ -78,10 +182,16 @@
                 <div class="product-info">
                   <div class="product-image">
                     <img :src="product.image" :alt="product.name" class="img-fluid">
+                    <div v-if="product.isNew" class="new-badge">Mới</div>
+                    <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
                   </div>
                   <div class="product-details">
                     <div class="product-name">{{ product.name }}</div>
                     <div class="product-sku">SKU: {{ product.sku }}</div>
+                    <div v-if="product.tags && product.tags.length" class="product-tags">
+                      <span v-for="tag in product.tags.slice(0, 2)" :key="tag" class="tag">{{ tag }}</span>
+                      <span v-if="product.tags.length > 2" class="tag-more">+{{ product.tags.length - 2 }}</span>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -92,19 +202,41 @@
                 <div class="price-info">
                   <div class="current-price">{{ formatCurrency(product.price) }}</div>
                   <div v-if="product.originalPrice" class="original-price">{{ formatCurrency(product.originalPrice) }}</div>
+                  <div v-if="product.originalPrice" class="discount-percent">
+                    -{{ Math.round((1 - product.price / product.originalPrice) * 100) }}%
+                  </div>
                 </div>
               </td>
               <td>
-                <span :class="['stock-badge', getStockClass(product.stock)]">
-                  {{ product.stock }}
-                </span>
+                <div class="stock-info">
+                  <span :class="['stock-badge', getStockClass(product.stock)]">
+                    {{ product.stock }}
+                  </span>
+                  <div v-if="product.stock < 10 && product.stock > 0" class="low-stock-warning">
+                    <i class="ph-warning"></i> Sắp hết
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="rating-info">
+                  <div class="rating-stars">
+                    <i v-for="i in 5" :key="i" 
+                       :class="['star', { filled: i <= product.rating }]"></i>
+                  </div>
+                  <div class="rating-text">{{ product.rating }}/5 ({{ product.reviewCount }} đánh giá)</div>
+                </div>
               </td>
               <td>
                 <span :class="['status-badge', getStatusClass(product.status)]">
                   {{ getStatusText(product.status) }}
                 </span>
               </td>
-              <td>{{ formatDate(product.createdAt) }}</td>
+              <td>
+                <div class="date-info">
+                  <div>{{ formatDate(product.createdAt) }}</div>
+                  <div class="date-time">{{ formatTime(product.createdAt) }}</div>
+                </div>
+              </td>
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)" title="Chỉnh sửa">
@@ -112,6 +244,12 @@
                   </button>
                   <button class="btn btn-sm btn-outline-info" @click="viewProduct(product)" title="Xem chi tiết">
                     <i class="ph-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)" title="Nhân bản">
+                    <i class="ph-copy"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)" title="Đánh dấu nổi bật">
+                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)" title="Xóa">
                     <i class="ph-trash"></i>
@@ -121,6 +259,76 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Grid View -->
+      <div v-if="viewMode === 'grid'" class="products-grid">
+        <div class="row g-4">
+          <div v-for="product in filteredProducts" :key="product.id" class="col-lg-3 col-md-4 col-sm-6">
+            <div class="product-card">
+              <div class="product-card-header">
+                <input type="checkbox" class="form-check-input" v-model="selectedProducts" :value="product.id">
+                <div class="product-badges">
+                  <span v-if="product.isNew" class="badge bg-success">Mới</span>
+                  <span v-if="product.isFeatured" class="badge bg-warning">Nổi bật</span>
+                </div>
+              </div>
+              <div class="product-image-container">
+                <img :src="product.image" :alt="product.name" class="product-image">
+                <div class="product-overlay">
+                  <button class="btn btn-sm btn-light" @click="viewProduct(product)" title="Xem chi tiết">
+                    <i class="ph-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-primary" @click="editProduct(product)" title="Chỉnh sửa">
+                    <i class="ph-pencil"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="product-card-body">
+                <h6 class="product-title">{{ product.name }}</h6>
+                <div class="product-meta">
+                  <span class="product-sku">SKU: {{ product.sku }}</span>
+                  <span class="product-category">{{ getCategoryName(product.category) }}</span>
+                </div>
+                <div class="product-rating">
+                  <div class="rating-stars">
+                    <i v-for="i in 5" :key="i" 
+                       :class="['star', { filled: i <= product.rating }]"></i>
+                  </div>
+                  <span class="rating-count">({{ product.reviewCount }})</span>
+                </div>
+                <div class="product-price">
+                  <span class="current-price">{{ formatCurrency(product.price) }}</span>
+                  <span v-if="product.originalPrice" class="original-price">{{ formatCurrency(product.originalPrice) }}</span>
+                </div>
+                <div class="product-stock">
+                  <span :class="['stock-badge', getStockClass(product.stock)]">
+                    {{ product.stock }} sản phẩm
+                  </span>
+                  <span :class="['status-badge', getStatusClass(product.status)]">
+                    {{ getStatusText(product.status) }}
+                  </span>
+                </div>
+              </div>
+              <div class="product-card-footer">
+                <div class="product-actions">
+                  <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)">
+                    <i class="ph-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)">
+                    <i class="ph-copy"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)">
+                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)">
+                    <i class="ph-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -254,6 +462,19 @@ const itemsPerPage = 10
 const showAddModal = ref(false)
 const editingProduct = ref(null)
 
+// Advanced filters
+const showAdvancedFilters = ref(false)
+const priceRange = ref({ min: null, max: null })
+const stockFilter = ref('')
+const createdDate = ref('')
+const sortBy = ref('newest')
+const selectedTags = ref([])
+const viewMode = ref('table') // 'table' or 'grid'
+const tableSort = ref({ field: '', direction: 'asc' })
+
+// Available tags
+const availableTags = ref(['Bestseller', 'Sale', 'New', 'Premium', 'Limited'])
+
 const productForm = ref({
   name: '',
   sku: '',
@@ -279,7 +500,12 @@ const products = ref([
     status: 'active',
     description: 'Áo sơ mi nam chất liệu cotton 100%',
     image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-15')
+    createdAt: new Date('2024-01-15'),
+    rating: 4.5,
+    reviewCount: 128,
+    tags: ['Premium', 'Bestseller'],
+    isNew: false,
+    isFeatured: true
   },
   {
     id: 2,
@@ -292,7 +518,12 @@ const products = ref([
     status: 'active',
     description: 'Quần âu nam thiết kế hiện đại',
     image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-20')
+    createdAt: new Date('2024-01-20'),
+    rating: 4.2,
+    reviewCount: 89,
+    tags: ['Sale', 'Premium'],
+    isNew: false,
+    isFeatured: false
   },
   {
     id: 3,
@@ -305,7 +536,12 @@ const products = ref([
     status: 'out-of-stock',
     description: 'Áo khoác nam phong cách casual',
     image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-25')
+    createdAt: new Date('2024-01-25'),
+    rating: 4.8,
+    reviewCount: 67,
+    tags: ['Limited', 'Premium'],
+    isNew: false,
+    isFeatured: true
   },
   {
     id: 4,
@@ -318,7 +554,48 @@ const products = ref([
     status: 'active',
     description: 'Áo thun nam chất liệu cotton mềm mại',
     image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-02-01')
+    createdAt: new Date('2024-02-01'),
+    rating: 4.0,
+    reviewCount: 203,
+    tags: ['Sale', 'New'],
+    isNew: true,
+    isFeatured: false
+  },
+  {
+    id: 5,
+    name: 'Vest nam công sở',
+    sku: 'VST005',
+    category: 'ao',
+    price: 1200000,
+    originalPrice: 1500000,
+    stock: 8,
+    status: 'active',
+    description: 'Vest nam cao cấp cho công sở',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
+    createdAt: new Date('2024-01-10'),
+    rating: 4.7,
+    reviewCount: 45,
+    tags: ['Premium', 'Limited'],
+    isNew: false,
+    isFeatured: true
+  },
+  {
+    id: 6,
+    name: 'Quần jean nam',
+    sku: 'QJN006',
+    category: 'quan',
+    price: 380000,
+    originalPrice: 500000,
+    stock: 32,
+    status: 'active',
+    description: 'Quần jean nam phong cách trẻ trung',
+    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
+    createdAt: new Date('2024-01-18'),
+    rating: 4.3,
+    reviewCount: 156,
+    tags: ['Bestseller', 'Sale'],
+    isNew: false,
+    isFeatured: false
   }
 ])
 
@@ -326,21 +603,87 @@ const products = ref([
 const filteredProducts = computed(() => {
   let filtered = products.value
 
+  // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(product =>
       product.name.toLowerCase().includes(query) ||
-      product.sku.toLowerCase().includes(query)
+      product.sku.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query)
     )
   }
 
+  // Category filter
   if (selectedCategory.value) {
     filtered = filtered.filter(product => product.category === selectedCategory.value)
   }
 
+  // Status filter
   if (selectedStatus.value) {
     filtered = filtered.filter(product => product.status === selectedStatus.value)
   }
+
+  // Price range filter
+  if (priceRange.value.min !== null && priceRange.value.min !== '') {
+    filtered = filtered.filter(product => product.price >= priceRange.value.min)
+  }
+  if (priceRange.value.max !== null && priceRange.value.max !== '') {
+    filtered = filtered.filter(product => product.price <= priceRange.value.max)
+  }
+
+  // Stock filter
+  if (stockFilter.value) {
+    switch (stockFilter.value) {
+      case 'in-stock':
+        filtered = filtered.filter(product => product.stock > 10)
+        break
+      case 'low-stock':
+        filtered = filtered.filter(product => product.stock > 0 && product.stock <= 10)
+        break
+      case 'out-of-stock':
+        filtered = filtered.filter(product => product.stock === 0)
+        break
+    }
+  }
+
+  // Date filter
+  if (createdDate.value) {
+    const selectedDate = new Date(createdDate.value)
+    filtered = filtered.filter(product => {
+      const productDate = new Date(product.createdAt)
+      return productDate.toDateString() === selectedDate.toDateString()
+    })
+  }
+
+  // Tags filter
+  if (selectedTags.value.length > 0) {
+    filtered = filtered.filter(product =>
+      product.tags && product.tags.some(tag => selectedTags.value.includes(tag))
+    )
+  }
+
+  // Sorting
+  filtered.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'oldest':
+        return new Date(a.createdAt) - new Date(b.createdAt)
+      case 'name-asc':
+        return a.name.localeCompare(b.name)
+      case 'name-desc':
+        return b.name.localeCompare(a.name)
+      case 'price-low':
+        return a.price - b.price
+      case 'price-high':
+        return b.price - a.price
+      case 'stock-low':
+        return a.stock - b.stock
+      case 'stock-high':
+        return b.stock - a.stock
+      case 'newest':
+      default:
+        return new Date(b.createdAt) - new Date(a.createdAt)
+    }
+  })
 
   return filtered
 })
@@ -409,6 +752,62 @@ const clearFilters = () => {
   searchQuery.value = ''
   selectedCategory.value = ''
   selectedStatus.value = ''
+  priceRange.value = { min: null, max: null }
+  stockFilter.value = ''
+  createdDate.value = ''
+  selectedTags.value = []
+  sortBy.value = 'newest'
+}
+
+const toggleAdvancedFilters = () => {
+  showAdvancedFilters.value = !showAdvancedFilters.value
+}
+
+const toggleTag = (tag) => {
+  const index = selectedTags.value.indexOf(tag)
+  if (index > -1) {
+    selectedTags.value.splice(index, 1)
+  } else {
+    selectedTags.value.push(tag)
+  }
+}
+
+const sortTable = (field) => {
+  if (tableSort.value.field === field) {
+    tableSort.value.direction = tableSort.value.direction === 'asc' ? 'desc' : 'asc'
+  } else {
+    tableSort.value.field = field
+    tableSort.value.direction = 'asc'
+  }
+}
+
+const getSortIcon = (field) => {
+  if (tableSort.value.field !== field) return 'ph-caret-up-down'
+  return tableSort.value.direction === 'asc' ? 'ph-caret-up' : 'ph-caret-down'
+}
+
+const formatTime = (date) => {
+  return new Intl.DateTimeFormat('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+const duplicateProduct = (product) => {
+  const duplicatedProduct = {
+    ...product,
+    id: Date.now(),
+    name: product.name + ' (Copy)',
+    sku: product.sku + '-COPY',
+    createdAt: new Date(),
+    isNew: true,
+    isFeatured: false
+  }
+  products.value.unshift(duplicatedProduct)
+}
+
+const toggleFeatured = (product) => {
+  product.isFeatured = !product.isFeatured
 }
 
 const toggleSelectAll = () => {
@@ -546,6 +945,60 @@ onMounted(() => {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+.search-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.search-row .search-box {
+  flex: 1;
+}
+
+.advanced-filters {
+  border-top: 1px solid #e9ecef;
+  padding-top: 1.5rem;
+  margin-top: 1rem;
+}
+
+.price-range {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.range-separator {
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.tag-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag-filter {
+  padding: 0.25rem 0.75rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tag-filter:hover {
+  background: #e9ecef;
+}
+
+.tag-filter.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
 .search-box {
   position: relative;
 }
@@ -569,6 +1022,67 @@ onMounted(() => {
   padding: 1.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.view-options {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.view-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-right: 0.5rem;
+}
+
+.view-btn {
+  padding: 0.5rem;
+  border: 1px solid #dee2e6;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn:hover {
+  background: #f8f9fa;
+}
+
+.view-btn.active {
+  background: #3498db;
+  color: white;
+  border-color: #3498db;
+}
+
+.table-stats {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 600;
+  color: #2c3e50;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.sort-btn:hover {
+  color: #3498db;
 }
 
 .table {
@@ -600,10 +1114,114 @@ onMounted(() => {
   overflow: hidden;
 }
 
+.product-image {
+  position: relative;
+}
+
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.new-badge, .featured-badge {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+}
+
+.new-badge {
+  background: #28a745;
+}
+
+.featured-badge {
+  background: #ffc107;
+  color: #212529;
+}
+
+.product-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.tag {
+  padding: 0.125rem 0.375rem;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.tag-more {
+  padding: 0.125rem 0.375rem;
+  background: #e9ecef;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.discount-percent {
+  font-size: 0.75rem;
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.stock-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.low-stock-warning {
+  font-size: 0.75rem;
+  color: #fd7e14;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.rating-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.star {
+  color: #e9ecef;
+  font-size: 0.875rem;
+}
+
+.star.filled {
+  color: #ffc107;
+}
+
+.rating-text {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.date-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date-time {
+  font-size: 0.75rem;
+  color: #6c757d;
 }
 
 .product-name {
@@ -655,6 +1273,139 @@ onMounted(() => {
 }
 
 .action-buttons .btn {
+  padding: 0.375rem 0.75rem;
+}
+
+/* Grid View */
+.products-grid {
+  margin-top: 1rem;
+}
+
+.product-card {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card:hover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.product-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.product-badges {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.product-image-container {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+}
+
+.product-image-container .product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.product-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.product-card:hover .product-overlay {
+  opacity: 1;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.product-card-body {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.rating-count {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.product-price {
+  margin-bottom: 0.5rem;
+}
+
+.product-stock {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+}
+
+.product-card-footer {
+  padding: 1rem;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+}
+
+.product-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.product-actions .btn {
   padding: 0.375rem 0.75rem;
 }
 

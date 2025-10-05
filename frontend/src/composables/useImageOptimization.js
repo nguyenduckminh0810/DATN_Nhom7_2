@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 export function useImageOptimization() {
   // State
   const webpSupported = ref(false)
-  const avifSupported = ref(false)
   const loadingImages = ref(new Set())
   const loadedImages = ref(new Set())
   const failedImages = ref(new Set())
@@ -15,12 +14,6 @@ export function useImageOptimization() {
     webpCanvas.width = 1
     webpCanvas.height = 1
     webpSupported.value = webpCanvas.toDataURL('image/webp').indexOf('data:image/webp') === 0
-
-    // Check AVIF support
-    const avifCanvas = document.createElement('canvas')
-    avifCanvas.width = 1
-    avifCanvas.height = 1
-    avifSupported.value = avifCanvas.toDataURL('image/avif').indexOf('data:image/avif') === 0
   }
 
   // Generate optimized image URL
@@ -31,9 +24,7 @@ export function useImageOptimization() {
       width = null,
       height = null,
       quality = 80,
-      format = 'auto', // 'auto', 'webp', 'avif', 'original'
-      fit = 'cover', // 'cover', 'contain', 'fill', 'inside', 'outside'
-      position = 'center' // 'top', 'right top', 'right', 'right bottom', 'bottom', 'left bottom', 'left', 'left top', 'center'
+      format = 'auto' // 'auto', 'webp', 'original'
     } = options
 
     // If it's an external URL, return as is
@@ -49,16 +40,10 @@ export function useImageOptimization() {
       if (width) url.searchParams.set('w', width.toString())
       if (height) url.searchParams.set('h', height.toString())
       if (quality && quality !== 80) url.searchParams.set('q', quality.toString())
-      if (fit && fit !== 'cover') url.searchParams.set('fit', fit)
-      if (position && position !== 'center') url.searchParams.set('crop', position)
       
       // Add format
-      if (format === 'auto') {
-        if (avifSupported.value) {
-          url.searchParams.set('fm', 'avif')
-        } else if (webpSupported.value) {
-          url.searchParams.set('fm', 'webp')
-        }
+      if (format === 'auto' && webpSupported.value) {
+        url.searchParams.set('fm', 'webp')
       } else if (format !== 'original') {
         url.searchParams.set('fm', format)
       }
@@ -66,22 +51,15 @@ export function useImageOptimization() {
       return url.toString()
     }
 
-    // For local images, we can't optimize without a backend
-    // But we can add query parameters for potential backend optimization
+    // For local images, add query parameters for potential backend optimization
     const url = new URL(src, window.location.origin)
     
     if (width) url.searchParams.set('w', width.toString())
     if (height) url.searchParams.set('h', height.toString())
     if (quality && quality !== 80) url.searchParams.set('q', quality.toString())
-    if (fit && fit !== 'cover') url.searchParams.set('fit', fit)
-    if (position && position !== 'center') url.searchParams.set('pos', position)
     
-    if (format === 'auto') {
-      if (avifSupported.value) {
-        url.searchParams.set('format', 'avif')
-      } else if (webpSupported.value) {
-        url.searchParams.set('format', 'webp')
-      }
+    if (format === 'auto' && webpSupported.value) {
+      url.searchParams.set('format', 'webp')
     } else if (format !== 'original') {
       url.searchParams.set('format', format)
     }
@@ -256,7 +234,6 @@ export function useImageOptimization() {
   return {
     // State
     webpSupported,
-    avifSupported,
     loadingImages,
     loadedImages,
     failedImages,

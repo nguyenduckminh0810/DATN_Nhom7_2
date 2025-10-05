@@ -13,7 +13,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useWishlistStore } from '../../stores/wishlist'
+import { useProductStore } from '../../stores/product'
 
 const props = defineProps({
   product: {
@@ -42,10 +42,10 @@ const props = defineProps({
 
 const emit = defineEmits(['toggle'])
 
-const wishlistStore = useWishlistStore()
+const productStore = useProductStore()
 
 // Computed
-const isInWishlist = computed(() => wishlistStore.isInWishlist(props.product.id))
+const isInWishlist = computed(() => productStore.isInWishlist(props.product.id))
 
 const buttonClass = computed(() => {
   const classes = []
@@ -96,7 +96,7 @@ const buttonText = computed(() => {
 const handleToggle = () => {
   if (props.disabled) return
   
-  const success = wishlistStore.toggleItem(props.product)
+  const success = productStore.toggleWishlist(props.product)
   emit('toggle', { product: props.product, added: success })
 }
 </script>
