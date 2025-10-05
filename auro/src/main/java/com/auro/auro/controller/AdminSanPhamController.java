@@ -40,7 +40,6 @@ public class AdminSanPhamController {
         if (opt.isEmpty())
             return ResponseEntity.notFound().build();
         SanPham sp = opt.get();
-        // cập nhật những field cơ bản — chỉnh theo model của bạn
         sp.setTen(payload.getTen());
         sp.setMoTa(payload.getMoTa());
         sp.setGia(payload.getGia());
