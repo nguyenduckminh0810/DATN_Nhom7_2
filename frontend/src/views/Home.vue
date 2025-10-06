@@ -3,8 +3,8 @@
     <!-- USP Bar -->
     <UspBar />
     
-    <!-- Hero Section -->
-    <Hero />
+    
+   
     
     <!-- Hero Carousel Section -->
     <section class="hero-carousel-section">
@@ -64,7 +64,7 @@
                   </router-link>
                 </div>
                 <div class="hero-image" style="flex: 1; text-align: center;">
-                  <img :src="slide.mainImage" :alt="slide.title" class="hero-main-image" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                  <img :src="slide.mainImage" :alt="slide.title" class="hero-main-image" style="width: 100%; height: 100vh; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
                 </div>
               </div>
             </div>
@@ -83,14 +83,6 @@
 
     <!-- Categories Section -->
     <section class="categories-section section-full">
-      <!-- Header -->
-      <div class="section-header">
-        <h2 class="section-title">Danh mục sản phẩm</h2>
-        <router-link to="/san-pham" class="btn-view-all">
-          Xem tất cả
-        </router-link>
-      </div>
-
       <!-- Category Filter -->
       <div class="category-filters">
         <button 
@@ -110,8 +102,17 @@
         </button>
         
         <div class="section-list categories-grid" ref="categoriesGrid">
+          <div v-if="isLoading" v-for="n in 5" :key="n" class="category-item section-item skeleton">
+            <div class="skeleton-image"></div>
+            <div class="category-content">
+              <div class="skeleton-title"></div>
+              <div class="skeleton-description"></div>
+            </div>
+          </div>
+          
           <div 
-            v-for="category in filteredCategories" 
+            v-else
+            v-for="category in displayCategories" 
             :key="category.id"
             class="category-item section-item"
             @click="goToCategory(category.slug)"
@@ -157,23 +158,25 @@
           ‹
         </button>
         
-        <div class="products-grid" ref="featuredProductsGrid">
-          <ProductCard
-            v-for="product in featuredProducts"
-            :key="product.id"
-            :name="product.name"
-            :img="product.image"
-            :hover-img="product.hoverImage"
-            :price-now="product.price"
-            :price-old="product.originalPrice"
-            :discount="product.discount"
-            :promotional-badge="product.promotionalBadge"
-            :color-options="product.colorOptions"
-            :sizes="product.sizes"
-            :available-sizes="product.availableSizes"
-            :color-size-mapping="product.colorSizeMapping"
-          />
-        </div>
+          <div class="products-grid" ref="featuredProductsGrid" @scroll="handleFeaturedScroll">
+            <ProductCard
+              v-for="(product, index) in displayFeaturedProducts"
+              :key="`${product.id}-${index}`"
+              :id="product.id"
+              :name="product.name"
+              :img="product.image"
+              :hover-img="product.hoverImage"
+              :price-now="product.price"
+              :price-old="product.originalPrice"
+              :discount="product.discount"
+              :promotional-badge="product.promotionalBadge"
+              :color-options="product.colorOptions"
+              :sizes="product.sizes"
+              :available-sizes="product.availableSizes"
+              :color-size-mapping="product.colorSizeMapping"
+              :stock="product.stock || 10"
+            />
+          </div>
         
         <button class="next-btn" @click="scrollFeatured('next')">
           ›
@@ -380,6 +383,60 @@ const featuredProducts = ref([
       '#000000': ['M', 'L', 'XL', '2XL'],
       '#808080': ['L', 'XL', '2XL']
     }
+  },
+  {
+    id: 6,
+    name: 'Áo hoodie nam nổi bật',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a4?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    price: 499000,
+    originalPrice: 699000,
+    discount: 29,
+    promotionalBadge: 'MUA 2 GIẢM THÊM 20%',
+    colorOptions: ['#000000', '#808080', '#dc143c'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['M', 'L', 'XL', '2XL', '3XL'],
+    colorSizeMapping: {
+      '#000000': ['M', 'L', 'XL'],
+      '#808080': ['L', 'XL', '2XL'],
+      '#dc143c': ['XL', '2XL', '3XL']
+    }
+  },
+  {
+    id: 7,
+    name: 'Áo polo nam nổi bật',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    price: 329000,
+    originalPrice: 429000,
+    discount: 23,
+    promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+    colorOptions: ['#ffffff', '#000000', '#228b22'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    colorSizeMapping: {
+      '#ffffff': ['S', 'M', 'L', 'XL'],
+      '#000000': ['M', 'L', 'XL', '2XL'],
+      '#228b22': ['L', 'XL', '2XL', '3XL']
+    }
+  },
+  {
+    id: 8,
+    name: 'Quần short nam nổi bật',
+    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    price: 199000,
+    originalPrice: 299000,
+    discount: 33,
+    promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+    colorOptions: ['#000000', '#007bff', '#28a745'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['S', 'M', 'L', 'XL'],
+    colorSizeMapping: {
+      '#000000': ['S', 'M', 'L'],
+      '#007bff': ['M', 'L', 'XL'],
+      '#28a745': ['L', 'XL', '2XL']
+    }
   }
 ])
 
@@ -453,11 +510,19 @@ const allCategories = ref([
   },
   {
     id: 8,
+    name: 'ÁO HOODIE',
+    slug: 'ao-hoodie',
+    description: 'Áo hoodie nam thời trang',
+    filter: 'ao',
+    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 9,
     name: 'QUẦN JOGGER',
     slug: 'quan-jogger',
-    description: 'Quần jogger nam năng động',
+    description: 'Quần jogger nam thể thao',
     filter: 'quan',
-    image: 'https://images.unsplash.com/photo-1558769132-cb1aea1f5d8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
   }
 ])
 
@@ -466,9 +531,23 @@ const filteredCategories = computed(() => {
   return allCategories.value.filter(category => category.filter === selectedFilter.value)
 })
 
+// Display 5 categories starting from currentCategoryIndex
+const displayCategories = computed(() => {
+  if (filteredCategories.value.length === 0) return []
+  
+  const result = []
+  for (let i = 0; i < 5; i++) {
+    const index = (currentCategoryIndex.value + i) % filteredCategories.value.length
+    result.push(filteredCategories.value[index])
+  }
+  return result
+})
+
 // Methods
 const selectFilter = (filterId) => {
   selectedFilter.value = filterId
+  // Reset category index when filter changes
+  currentCategoryIndex.value = 0
 }
 
 const goToCategory = (slug) => {
@@ -478,37 +557,52 @@ const goToCategory = (slug) => {
 
 // Category navigation
 const categoriesGrid = ref(null)
+const currentCategoryIndex = ref(0)
 
 const scrollCategories = (direction) => {
-  const el = categoriesGrid.value
-  if (el) {
-    const distance = el.offsetWidth * 0.8
-    el.scrollBy({ 
-      left: direction === 'next' ? distance : -distance, 
-      behavior: 'smooth' 
-    })
+  // For fixed layout, we need to cycle through categories
+  // This will be handled by changing the displayed categories
+  if (direction === 'next') {
+    // Move to next set of categories
+    currentCategoryIndex.value = (currentCategoryIndex.value + 1) % filteredCategories.value.length
+  } else {
+    // Move to previous set of categories
+    currentCategoryIndex.value = (currentCategoryIndex.value - 1 + filteredCategories.value.length) % filteredCategories.value.length
   }
 }
 
 // Featured products navigation
 const featuredProductsGrid = ref(null)
+const currentFeaturedIndex = ref(0)
 
 const scrollFeatured = (direction) => {
-  if (featuredProductsGrid.value) {
-    const scrollAmount = featuredProductsGrid.value.offsetWidth / 1.2
-    
-    if (direction === 'prev') {
-      featuredProductsGrid.value.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      })
-    } else {
-      featuredProductsGrid.value.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      })
-    }
+  // For fixed layout, we need to cycle through products
+  // This will be handled by changing the displayed products
+  if (direction === 'next') {
+    // Move to next set of products
+    currentFeaturedIndex.value = (currentFeaturedIndex.value + 1) % featuredProducts.value.length
+  } else {
+    // Move to previous set of products
+    currentFeaturedIndex.value = (currentFeaturedIndex.value - 1 + featuredProducts.value.length) % featuredProducts.value.length
   }
+}
+
+// Display 5 featured products starting from currentFeaturedIndex
+const displayFeaturedProducts = computed(() => {
+  if (featuredProducts.value.length === 0) return []
+  
+  const result = []
+  for (let i = 0; i < 5; i++) {
+    const index = (currentFeaturedIndex.value + i) % featuredProducts.value.length
+    result.push(featuredProducts.value[index])
+  }
+  return result
+})
+
+const handleFeaturedScroll = () => {
+  // Disable scroll handling for fixed layout
+  // Cards are displayed in fixed positions with space-between
+  return
 }
 
 const formatPrice = (price) => {
@@ -593,6 +687,13 @@ onMounted(() => {
     carouselElement.addEventListener('mouseleave', startCarousel)
   }
 
+  // Initialize Featured Products index
+  nextTick(() => {
+    if (featuredProducts.value.length > 0) {
+      currentFeaturedIndex.value = 0
+    }
+  })
+
   // Skip scroll animations for better performance
   // const elements = document.querySelectorAll('.animate-on-scroll')
   // elements.forEach((el) => observer.observe(el))
@@ -605,12 +706,87 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Prevent horizontal scroll and remove extra spacing */
+.home {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+  margin: 0;
+  padding: 0;
+}
+
+/* Global reset for hero section */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Ensure no padding-top for body on hero page */
+body {
+  padding-top: 0 !important;
+}
+
+.hero, .hero * {
+  scroll-margin-top: 0;
+}
+
+/* Hero content styling */
+.hero-content-wrapper {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.hero-text, .hero-image {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.hero-main-image {
+  display: block;
+  border-radius: 24px;
+}
+
+/* Section Header - Layout: title center, button bottom right */
+.section-header {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 100%;
+  text-align: center;
+}
+
+.btn-view-all {
+  position: absolute;
+  bottom: -60px;
+  right: -350px;
+  background: #000;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.btn-view-all:hover {
+  background: #333;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 /* Hero Carousel Section */
 .hero-carousel-section {
   position: relative;
   overflow: hidden;
   height: 100vh;
-  padding-top: 120px;
+  padding-top: 0;
+  margin-top: 0;
+  width: 100%;
 }
 
 .carousel-inner {
@@ -619,6 +795,8 @@ onUnmounted(() => {
   width: 500%; /* 5 slides * 100% */
   will-change: transform;
   overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 .carousel-slide {
@@ -629,6 +807,9 @@ onUnmounted(() => {
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Custom carousel styles - no Bootstrap interference */
@@ -649,20 +830,10 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
 }
 
-/* .hero-slide::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
-  z-index: 1;
-  pointer-events: none;
-} */
 
 .hero-content {
   position: relative;
@@ -1104,6 +1275,51 @@ onUnmounted(() => {
   font-weight: 500;
 }
 
+/* Skeleton loading for categories */
+.skeleton {
+  background: #f8f9fa;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 420px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-title {
+  width: 70%;
+  height: 20px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin: 0 auto 0.5rem;
+}
+
+.skeleton-description {
+  width: 90%;
+  height: 16px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin: 0 auto;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Responsive Categories - handled by sections.css */
 
 /* Scroll animations */
@@ -1141,9 +1357,9 @@ onUnmounted(() => {
 .featured-products-section {
   padding: 4rem 0;
   background: #f8f9fa;
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
+  width: 100%;
   position: relative;
+  margin: 0;
 }
 
 
@@ -1159,10 +1375,10 @@ onUnmounted(() => {
 .products-grid {
   display: flex;
   overflow: hidden;
-  justify-content: center;
-  gap: 24px;
+  justify-content: space-between;
+  gap: 20px;
   scroll-behavior: smooth;
-  padding: 40px 60px;
+  padding: 40px 20px;
   width: 100%;
   /* Hide scrollbar */
   scrollbar-width: none;
@@ -1171,6 +1387,13 @@ onUnmounted(() => {
 
 .products-grid::-webkit-scrollbar {
   display: none;
+}
+
+/* ProductCard sizing for 5 cards layout */
+.products-grid .product-card {
+  flex: 1;
+  max-width: calc((100vw - 40px - 80px) / 5); /* 40px padding + 80px gaps (4 gaps x 20px) */
+  min-width: calc((100vw - 40px - 80px) / 5);
 }
 
 /* Carousel Navigation Buttons */
@@ -1211,20 +1434,35 @@ onUnmounted(() => {
 /* Responsive breakpoints for Featured Products */
 @media (max-width: 1400px) {
   .products-grid {
-    padding: 40px 50px;
+    padding: 40px 20px;
+  }
+  .products-grid .product-card {
+    flex: 1;
+    max-width: calc((100vw - 40px - 60px) / 4);
+    min-width: calc((100vw - 40px - 60px) / 4);
   }
 }
 
 @media (max-width: 1024px) {
   .products-grid {
-    padding: 40px 40px;
+    padding: 40px 20px;
+  }
+  .products-grid .product-card {
+    flex: 1;
+    max-width: calc((100vw - 40px - 40px) / 3);
+    min-width: calc((100vw - 40px - 40px) / 3);
   }
 }
 
 @media (max-width: 768px) {
   .products-grid {
-    padding: 40px 30px;
+    padding: 40px 20px;
     overflow-x: auto;
+  }
+  .products-grid .product-card {
+    flex: 1;
+    max-width: calc((100vw - 40px - 20px) / 2);
+    min-width: calc((100vw - 40px - 20px) / 2);
   }
   
   .prev-btn, .next-btn {
@@ -1256,6 +1494,12 @@ onUnmounted(() => {
     gap: 1rem;
     text-align: center;
     margin-bottom: 2rem;
+  }
+  
+  .btn-view-all {
+    position: static;
+    margin-top: 1rem;
+    align-self: center;
   }
   
   .section-title {

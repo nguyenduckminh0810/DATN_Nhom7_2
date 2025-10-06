@@ -1,14 +1,27 @@
 <template>
-  <div class="product-card section-item" itemscope itemtype="https://schema.org/Product">
+  <div 
+    class="product-card section-item" 
+    itemscope 
+    itemtype="https://schema.org/Product"
+    :data-product-id="props.id"
+    @mouseleave="handleCardMouseLeave"
+  >
     <!-- Image Section - Separate and larger -->
     <div class="product-image-section">
-      <div class="product-image-container" @mouseenter="showSizePopup = true" @mouseleave="showSizePopup = false">
+      <div class="image-wrapper">
+        <div 
+          class="product-image-container"
+          @mouseenter="showQuickAdd = true"
+          @mouseleave="handleMouseLeave"
+        >
+        <!-- Clickable Image for Navigation -->
         <img 
           :src="img" 
           :alt="name"
           class="product-image section-item__image"
           itemprop="image"
           loading="lazy"
+          @click="navigateToDetail"
         />
         <!-- Hover Image -->
         <img 
@@ -16,6 +29,7 @@
           :src="hoverImg" 
           :alt="name"
           class="product-image-hover"
+          @click="navigateToDetail"
         />
         <div v-if="discount" class="discount-badge">
           -{{ discount }}%
@@ -25,35 +39,27 @@
           {{ promotionalBadge }}
         </div>
         
-        <!-- Size Popup with Blur Effect -->
-        <div v-if="showSizePopup" class="size-popup">
-          <div class="size-popup-content">
-            <div class="size-popup-header">
-              <span class="size-popup-title">Thêm nhanh vào giỏ hàng +</span>
-            </div>
-            <div class="size-options">
-              <button 
-                v-for="size in sizes" 
-                :key="size"
-                class="size-option"
-                :class="{ 
-                  'unavailable': !currentSizes.includes(size),
-                  'selected': selectedSize === size
-                }"
-                @click="selectSize(size)"
-                :disabled="!currentSizes.includes(size)"
-              >
-                {{ size }}
-              </button>
-            </div>
+        <!-- Quick Add Overlay -->
+        <div 
+          class="quick-add-overlay" 
+          :class="{ 'show': showQuickAdd }"
+          @click="openVariantModal"
+          @mouseenter="handleOverlayMouseEnter"
+          @mouseleave="handleOverlayMouseLeave"
+        >
+          <div class="quick-add-content">
+            <i class="ph-plus-circle"></i>
+            <span>Thêm nhanh</span>
           </div>
+        </div>
         </div>
       </div>
     </div>
     
     <!-- Product Info Section - Separate and smaller -->
     <div class="product-info-section">
-      <h3 class="product-name" itemprop="name">{{ name }}</h3>
+      <!-- Clickable Product Name for Navigation -->
+      <h3 class="product-name" itemprop="name" @click="navigateToDetail">{{ name }}</h3>
       <div class="product-price">
         <span class="price-current" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
           <span itemprop="price" :content="priceNow">{{ formatPrice(priceNow) }}</span>
@@ -71,15 +77,53 @@
           class="color-swatch"
           :class="{ 'selected': selectedColor === color }"
           :style="{ backgroundColor: color }"
-          @click="selectColor(color)"
+          @click="selectColorForPreview(color)"
+          :title="getColorName(color)"
         ></div>
       </div>
+      
+      <!-- Action Buttons -->
+      <div class="product-actions">
+        <button 
+          class="btn-detail"
+          @click="navigateToDetail"
+        >
+          <i class="ph-eye me-1"></i>
+          Xem chi tiết
+        </button>
+        <button 
+          class="btn-add-to-cart"
+          @click="handleAddToCart"
+          :disabled="!hasVariants && !isInStock"
+        >
+          <i class="ph-shopping-cart me-1"></i>
+          {{ addToCartText }}
+        </button>
+      </div>
     </div>
+
+    <!-- Variant Modal -->
+    <VariantModal
+      :is-open="showVariantModal"
+      :product="productData"
+      :is-quick-add-mode="isQuickAddMode"
+      @close="closeVariantModal"
+      @add-to-cart="handleAddToCartSuccess"
+    />
   </div>
 </template>
 
 <script setup>
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import useCart from '../../composables/useCart'
+import VariantModal from '../ui/VariantModal.vue'
+
 const props = defineProps({
+  id: {
+    type: [String, Number],
+    required: true
+  },
   name: {
     type: String,
     required: true
@@ -123,36 +167,194 @@ const props = defineProps({
   colorSizeMapping: {
     type: Object,
     default: () => ({})
+  },
+  stock: {
+    type: Number,
+    default: 10
   }
 })
 
-import { ref, computed } from 'vue'
+const router = useRouter()
+const { addToCartWithValidation, trackAddToCart } = useCart()
 
-const showSizePopup = ref(false)
-const selectedSize = ref(null)
+// Local state
+const showVariantModal = ref(false)
 const selectedColor = ref(null)
+const isQuickAddMode = ref(false)
+const showQuickAdd = ref(false)
 
-// Computed để lấy size theo màu được chọn
-const currentSizes = computed(() => {
-  if (selectedColor.value && props.colorSizeMapping[selectedColor.value]) {
-    return props.colorSizeMapping[selectedColor.value]
+// Watch for modal state changes
+watch(showVariantModal, (newValue) => {
+  if (newValue) {
+    // Hide overlay when modal opens
+    showQuickAdd.value = false
   }
-  return props.availableSizes
 })
 
+// Computed properties
+const hasVariants = computed(() => {
+  return (props.colorOptions && props.colorOptions.length > 0) || 
+         (props.sizes && props.sizes.length > 0)
+})
+
+const isInStock = computed(() => {
+  return props.stock > 0
+})
+
+const productData = computed(() => ({
+  id: props.id,
+  name: props.name,
+  image: props.img,
+  price: props.priceNow,
+  originalPrice: props.priceOld,
+  discount: props.discount,
+  colorOptions: props.colorOptions,
+  sizes: props.sizes,
+  colorSizeMapping: props.colorSizeMapping,
+  stock: props.stock
+}))
+
+const addToCartText = computed(() => {
+  if (!isInStock.value) return 'Hết hàng'
+  if (hasVariants.value) return 'Chọn size'
+  return 'Thêm vào giỏ'
+})
+
+// Methods
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN').format(price)
 }
 
-const selectSize = (size) => {
-  if (currentSizes.value.includes(size)) {
-    selectedSize.value = size
+const getColorName = (color) => {
+  const colorNames = {
+    '#ffffff': 'Trắng',
+    '#000000': 'Đen', 
+    '#007bff': 'Xanh dương',
+    '#dc3545': 'Đỏ',
+    '#28a745': 'Xanh lá',
+    '#808080': 'Xám',
+    '#8b4513': 'Nâu',
+    '#000080': 'Xanh navy',
+    '#dc143c': 'Đỏ đậm',
+    '#228b22': 'Xanh rừng'
+  }
+  return colorNames[color] || color
+}
+
+const navigateToDetail = () => {
+  // Navigate to product detail page
+  router.push(`/product/${props.id}`)
+}
+
+const selectColorForPreview = (color) => {
+  selectedColor.value = color
+}
+
+const openVariantModal = () => {
+  if (!isInStock.value) return
+  
+  // Close any other modals first
+  document.querySelectorAll('.variant-modal-overlay').forEach(modal => {
+    modal.style.display = 'none'
+  })
+  
+  isQuickAddMode.value = false
+  showVariantModal.value = true
+}
+
+const closeVariantModal = () => {
+  showVariantModal.value = false
+  isQuickAddMode.value = false
+}
+
+const handleAddToCart = () => {
+  if (!isInStock.value) return
+  
+  if (hasVariants.value) {
+    // Open variant modal for products with variants
+    isQuickAddMode.value = false
+    showVariantModal.value = true
+  } else {
+    // Direct add to cart for products without variants
+    const productData = {
+      id: props.id,
+      name: props.name,
+      price: props.priceNow,
+      image: props.img,
+      stock: props.stock
+    }
+    
+    const success = addToCartWithValidation(productData, 1)
+    if (success) {
+      trackAddToCart(productData)
+    }
   }
 }
 
-const selectColor = (color) => {
-  selectedColor.value = color
-  selectedSize.value = null // Reset size khi chọn màu mới
+const handleAddToCartSuccess = (variantData) => {
+  // This is called when variant modal successfully adds to cart
+  closeVariantModal()
+}
+
+const handleMouseLeave = () => {
+  // Force hide when leaving image container
+  showQuickAdd.value = false
+}
+
+const handleCardMouseLeave = () => {
+  // Force hide when leaving entire card
+  showQuickAdd.value = false
+  // Also close variant modal if open
+  if (showVariantModal.value) {
+    showVariantModal.value = false
+  }
+}
+
+// Prevent hover image conflict
+const handleOverlayMouseEnter = () => {
+  // Only show if no modal is open
+  if (!showVariantModal.value) {
+    showQuickAdd.value = true
+  }
+}
+
+const handleOverlayMouseLeave = () => {
+  showQuickAdd.value = false
+}
+
+// Force hide overlay on mount and unmount
+onMounted(() => {
+  showQuickAdd.value = false
+  
+  // Add global event listener to hide overlay when clicking outside
+  document.addEventListener('click', handleGlobalClick)
+  document.addEventListener('mouseleave', handleGlobalMouseLeave)
+})
+
+onUnmounted(() => {
+  showQuickAdd.value = false
+  showVariantModal.value = false
+  
+  // Remove global event listeners
+  document.removeEventListener('click', handleGlobalClick)
+  document.removeEventListener('mouseleave', handleGlobalMouseLeave)
+})
+
+// Global event handlers
+const handleGlobalClick = (event) => {
+  // Hide overlay if clicking outside the card
+  const card = document.querySelector(`[data-product-id="${props.id}"]`)
+  if (card && !card.contains(event.target)) {
+    showQuickAdd.value = false
+  }
+}
+
+const handleGlobalMouseLeave = (event) => {
+  // Hide overlay when mouse leaves viewport
+  if (event.target === document.documentElement) {
+    showQuickAdd.value = false
+    showVariantModal.value = false
+  }
 }
 </script>
 
@@ -184,11 +386,21 @@ const selectColor = (color) => {
   flex-direction: column;
 }
 
+/* Image wrapper to contain all overlays */
+.image-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+  flex: 1;
+  isolation: isolate; /* Create new stacking context */
+}
+
 .product-image-container {
   position: relative;
   height: 580px; /* Tăng từ 550px để ảnh lớn hơn */
   overflow: hidden;
   flex: 1; /* Chiếm toàn bộ không gian của section */
+  transition: none; /* Prevent conflicts */
 }
 
 .product-image {
@@ -210,12 +422,22 @@ const selectColor = (color) => {
   z-index: 1;
 }
 
+/* Disable hover image when quick add is shown */
 .product-image-container:hover .product-image {
   opacity: 0;
 }
 
 .product-image-container:hover .product-image-hover {
   opacity: 1;
+}
+
+/* Override hover image when quick add overlay is visible */
+.quick-add-overlay.show ~ .product-image {
+  opacity: 1 !important;
+}
+
+.quick-add-overlay.show ~ .product-image-hover {
+  opacity: 0 !important;
 }
 
 .discount-badge {
@@ -301,107 +523,186 @@ const selectColor = (color) => {
 }
 
 .color-swatch {
-  width: 20px; /* Giảm từ 28px */
-  height: 20px; /* Giảm từ 28px */
-  border-radius: 50%;
+  width: 32px;
+  height: 16px;
+  border-radius: 8px;
   border: 2px solid #e9ecef;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .color-swatch:hover {
-  border-color: #007bff;
-  transform: scale(1.1);
+  border-color: #3b82f6;
+  transform: scale(1.05);
 }
 
 .color-swatch.selected {
-  border-color: #007bff;
+  border-color: #3b82f6;
   border-width: 3px;
-  transform: scale(1.1);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  transform: scale(1.05);
 }
 
-/* Size Popup with Blur Effect */
-.size-popup {
+/* Quick Add Overlay */
+.quick-add-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(147, 51, 234, 0.9));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 0 0 12px 12px;
   padding: 1rem;
-  z-index: 10;
-  animation: slideUp 0.3s ease;
+  opacity: 0;
+  transform: translateY(100%);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  cursor: pointer;
+  z-index: 15;
+  pointer-events: none;
+  will-change: transform, opacity;
+  contain: layout style paint; /* Contain the overlay */
+  max-height: 100%; /* Ensure it doesn't overflow */
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.size-popup-content {
+/* Force hide overlay when not in show state */
+.quick-add-overlay:not(.show) {
+  opacity: 0 !important;
+  transform: translateY(100%) !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+  display: none !important; /* Completely hide */
+}
+
+/* Only show when explicitly shown */
+.quick-add-overlay.show {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  pointer-events: auto !important;
+  visibility: visible !important;
+  display: block !important; /* Ensure it's visible */
+}
+
+/* Ensure smooth transitions */
+.quick-add-overlay {
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease !important;
+}
+
+/* Hide overlay when variant modal is open */
+.variant-modal-overlay ~ .quick-add-overlay {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.quick-add-content {
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.size-popup-header {
-  text-align: center;
-}
-
-.size-popup-title {
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   color: white;
-  font-size: 0.875rem;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font-size: 0.875rem;
 }
 
-.size-options {
+.quick-add-content i {
+  font-size: 1.25rem;
+}
+
+/* Product Actions */
+.product-actions {
   display: flex;
   gap: 0.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
-.size-option {
-  background: white;
-  border: 2px solid transparent;
-  border-radius: 6px;
+.btn-detail,
+.btn-add-to-cart {
+  flex: 1;
   padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #374151;
   cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 40px;
-  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
-.size-option:hover:not(.unavailable) {
-  border-color: #3b82f6;
-  background: #f8fafc;
+.btn-detail {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #e9ecef;
+}
+
+.btn-detail:hover {
+  background: #e9ecef;
+  color: #495057;
   transform: translateY(-1px);
 }
 
-.size-option.selected {
-  border-color: #3b82f6;
-  background: #3b82f6;
+.btn-add-to-cart {
+  background: #007bff;
   color: white;
 }
 
-.size-option.unavailable {
-  background: #f3f4f6;
-  color: #9ca3af;
-  cursor: not-allowed;
-  opacity: 0.5;
-  text-decoration: line-through;
+.btn-add-to-cart:hover:not(:disabled) {
+  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+.btn-add-to-cart:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Clickable elements */
+.product-name {
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.product-name:hover {
+  color: #007bff;
+}
+
+.product-image,
+.product-image-hover {
+  cursor: pointer;
+}
+
+/* Color swatch improvements */
+.color-swatch {
+  position: relative;
+}
+
+.color-swatch::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.color-swatch:hover::after {
+  opacity: 1;
 }
 
 /* Responsive breakpoints for product cards */

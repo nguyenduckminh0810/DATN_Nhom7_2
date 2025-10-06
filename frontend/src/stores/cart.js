@@ -18,17 +18,28 @@ export const useCartStore = defineStore('cart', () => {
 
   // Actions
   const addItem = (product, quantity = 1) => {
-    const existingItem = items.value.find(item => item.id === product.id)
+    // Create unique key for variant-based products
+    const itemKey = product.variantId || product.id
+    const existingItem = items.value.find(item => 
+      item.itemKey === itemKey || 
+      (item.id === product.id && !item.variantId && !product.variantId)
+    )
+    
+    const finalQuantity = product.quantity || quantity
     
     if (existingItem) {
-      existingItem.quantity += quantity
+      existingItem.quantity += finalQuantity
     } else {
       items.value.push({
         id: product.id,
+        itemKey: itemKey,
+        variantId: product.variantId || null,
+        color: product.color || null,
+        size: product.size || null,
         name: product.name,
         price: product.price,
         image: product.image,
-        quantity: quantity,
+        quantity: finalQuantity,
         addedAt: new Date().toISOString()
       })
     }
@@ -36,19 +47,19 @@ export const useCartStore = defineStore('cart', () => {
     saveToStorage()
   }
 
-  const removeItem = (productId) => {
-    const index = items.value.findIndex(item => item.id === productId)
+  const removeItem = (itemKey) => {
+    const index = items.value.findIndex(item => item.itemKey === itemKey)
     if (index > -1) {
       items.value.splice(index, 1)
       saveToStorage()
     }
   }
 
-  const updateQuantity = (productId, quantity) => {
-    const item = items.value.find(item => item.id === productId)
+  const updateQuantity = (itemKey, quantity) => {
+    const item = items.value.find(item => item.itemKey === itemKey)
     if (item) {
       if (quantity <= 0) {
-        removeItem(productId)
+        removeItem(itemKey)
       } else {
         item.quantity = quantity
         saveToStorage()
@@ -62,15 +73,29 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   const saveToStorage = () => {
-    localStorage.setItem('auro_cart', JSON.stringify(items.value))
+    localStorage.setItem('auro_cart_v1', JSON.stringify(items.value))
   }
 
   const loadFromStorage = () => {
-    const stored = localStorage.getItem('auro_cart')
+    const stored = localStorage.getItem('auro_cart_v1')
     if (stored) {
-      items.value = JSON.parse(stored)
+      try {
+        items.value = JSON.parse(stored)
+        // Ensure all items have itemKey for backward compatibility
+        items.value.forEach(item => {
+          if (!item.itemKey) {
+            item.itemKey = item.variantId || item.id
+          }
+        })
+      } catch (error) {
+        console.error('Error loading cart from storage:', error)
+        items.value = []
+      }
     }
   }
+
+  // Initialize cart from storage
+  loadFromStorage()
 
   return {
     // State

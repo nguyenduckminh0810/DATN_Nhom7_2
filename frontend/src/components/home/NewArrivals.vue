@@ -16,32 +16,32 @@
         ‹
       </button>
       
-      <div class="products-grid" ref="productsGrid">
-        <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
-          <div class="skeleton-image"></div>
-          <div class="skeleton-content">
-            <div class="skeleton-title"></div>
-            <div class="skeleton-price"></div>
+        <div class="products-grid" ref="productsGrid" @scroll="handleScroll">
+          <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
+            <div class="skeleton-image"></div>
+            <div class="skeleton-content">
+              <div class="skeleton-title"></div>
+              <div class="skeleton-price"></div>
+            </div>
           </div>
+          
+          <ProductCard
+            v-else
+            v-for="(product, index) in displayProducts"
+            :key="`${product.id}-${index}`"
+            :name="product.name"
+            :img="product.image"
+            :hover-img="product.hoverImage"
+            :price-now="product.price"
+            :price-old="product.originalPrice"
+            :discount="product.discount"
+            :promotional-badge="product.promotionalBadge"
+            :color-options="product.colorOptions"
+            :sizes="product.sizes"
+            :available-sizes="product.availableSizes"
+            :color-size-mapping="product.colorSizeMapping"
+          />
         </div>
-        
-        <ProductCard
-          v-else
-          v-for="product in products"
-          :key="product.id"
-          :name="product.name"
-          :img="product.image"
-          :hover-img="product.hoverImage"
-          :price-now="product.price"
-          :price-old="product.originalPrice"
-          :discount="product.discount"
-          :promotional-badge="product.promotionalBadge"
-          :color-options="product.colorOptions"
-          :sizes="product.sizes"
-          :available-sizes="product.availableSizes"
-          :color-size-mapping="product.colorSizeMapping"
-        />
-      </div>
       
       <button class="next-btn" @click="scrollProducts('next')">
         ›
@@ -51,12 +51,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import ProductCard from './ProductCard.vue'
 
 const products = ref([])
 const loading = ref(true)
 const productsGrid = ref(null)
+const currentIndex = ref(0)
 const showButtons = ref(false)
 
 const fetchNewArrivals = async () => {
@@ -156,6 +157,60 @@ const fetchNewArrivals = async () => {
           '#808080': ['XL', '2XL', '3XL'],
           '#8b4513': ['2XL', '3XL']
         }
+      },
+      {
+        id: 6,
+        name: 'Áo sơ mi nữ mới',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+        price: 349000,
+        originalPrice: 449000,
+        discount: 22,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 20%',
+        colorOptions: ['#ffffff', '#ff69b4', '#000000'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+        colorSizeMapping: {
+          '#ffffff': ['S', 'M', 'L'],
+          '#ff69b4': ['M', 'L', 'XL'],
+          '#000000': ['L', 'XL', '2XL']
+        }
+      },
+      {
+        id: 7,
+        name: 'Quần short nữ mới',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+        price: 229000,
+        originalPrice: 329000,
+        discount: 30,
+        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+        colorOptions: ['#ff69b4', '#007bff', '#28a745'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL'],
+        colorSizeMapping: {
+          '#ff69b4': ['S', 'M', 'L'],
+          '#007bff': ['M', 'L', 'XL'],
+          '#28a745': ['L', 'XL', '2XL']
+        }
+      },
+      {
+        id: 8,
+        name: 'Áo tank top nữ mới',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+        price: 179000,
+        originalPrice: 279000,
+        discount: 36,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+        colorOptions: ['#ff69b4', '#000000', '#ffffff'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+        colorSizeMapping: {
+          '#ff69b4': ['S', 'M', 'L'],
+          '#000000': ['M', 'L', 'XL'],
+          '#ffffff': ['L', 'XL', '2XL']
+        }
       }
     ]
   } catch (error) {
@@ -166,25 +221,56 @@ const fetchNewArrivals = async () => {
 }
 
 const scrollProducts = (direction) => {
-  if (productsGrid.value) {
-    const scrollAmount = productsGrid.value.offsetWidth / 1.2
-    
-    if (direction === 'prev') {
-      productsGrid.value.scrollBy({
-        left: -scrollAmount,
-        behavior: 'smooth'
-      })
-    } else {
-      productsGrid.value.scrollBy({
-        left: scrollAmount,
-        behavior: 'smooth'
-      })
-    }
+  // For fixed layout, we need to cycle through products
+  // This will be handled by changing the displayed products
+  if (direction === 'next') {
+    // Move to next set of products
+    currentIndex.value = (currentIndex.value + 1) % products.value.length
+  } else {
+    // Move to previous set of products
+    currentIndex.value = (currentIndex.value - 1 + products.value.length) % products.value.length
   }
+}
+
+// Display 5 products starting from currentIndex
+const displayProducts = computed(() => {
+  if (products.value.length === 0) return []
+  
+  const result = []
+  for (let i = 0; i < 5; i++) {
+    const index = (currentIndex.value + i) % products.value.length
+    result.push(products.value[index])
+  }
+  return result
+})
+
+const handleScroll = () => {
+  // Disable scroll handling for fixed layout
+  // Cards are displayed in fixed positions with space-between
+  return
 }
 
 onMounted(() => {
   fetchNewArrivals()
+})
+
+// Initialize infinite loop scroll position
+const startAutoScroll = () => {
+  if (productsGrid.value && products.value.length > 0) {
+    // Set initial scroll position to middle section for infinite loop
+    const container = productsGrid.value
+    const cardWidth = container.offsetWidth / 5
+    container.scrollLeft = products.value.length * cardWidth
+  }
+}
+
+// Watch for products to be loaded
+watch(products, () => {
+  if (products.value.length > 0) {
+    nextTick(() => {
+      startAutoScroll()
+    })
+  }
 })
 </script>
 
@@ -198,10 +284,13 @@ onMounted(() => {
 }
 
 .section-header {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 3rem;
+  width: 100%;
+  text-align: center;
 }
 
 .section-title {
@@ -213,13 +302,18 @@ onMounted(() => {
 }
 
 .btn-view-all {
-  padding: 0.75rem 1.5rem;
+  position: absolute;
+  bottom: -60px;
+  right: -350px;
   background: #000;
-  color: white;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 20px;
   text-decoration: none;
-  border-radius: 50px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   transition: all 0.3s ease;
+  z-index: 10;
 }
 
 .btn-view-all:hover {
@@ -240,10 +334,10 @@ onMounted(() => {
 .products-grid {
   display: flex;
   overflow: hidden;
-  justify-content: center;
-  gap: 24px;
+  justify-content: space-between;
+  gap: 20px;
   scroll-behavior: smooth;
-  padding: 40px 60px;
+  padding: 40px 20px;
   width: 100%;
   /* Hide scrollbar */
   scrollbar-width: none;
@@ -252,6 +346,13 @@ onMounted(() => {
 
 .products-grid::-webkit-scrollbar {
   display: none;
+}
+
+/* ProductCard sizing for 5 cards layout */
+.products-grid .product-card {
+  flex: 1;
+  max-width: calc((100vw - 40px - 80px) / 5); /* 40px padding + 80px gaps (4 gaps x 20px) */
+  min-width: calc((100vw - 40px - 80px) / 5);
 }
 
 /* Carousel Navigation Buttons */
@@ -292,20 +393,35 @@ onMounted(() => {
 /* Responsive breakpoints */
 @media (max-width: 1400px) {
   .products-grid {
-    padding: 40px 50px;
+    padding: 40px 20px;
+  }
+  .products-grid .product-card {
+    flex: 1;
+    max-width: calc((100vw - 40px - 60px) / 4);
+    min-width: calc((100vw - 40px - 60px) / 4);
   }
 }
 
 @media (max-width: 1024px) {
   .products-grid {
-    padding: 40px 40px;
+    padding: 40px 20px;
+  }
+  .products-grid .product-card {
+    flex: 1;
+    max-width: calc((100vw - 40px - 40px) / 3);
+    min-width: calc((100vw - 40px - 40px) / 3);
   }
 }
 
 @media (max-width: 768px) {
   .products-grid {
-    padding: 40px 30px;
+    padding: 40px 20px;
     overflow-x: auto;
+  }
+  .products-grid .product-card {
+    flex: 1;
+    max-width: calc((100vw - 40px - 20px) / 2);
+    min-width: calc((100vw - 40px - 20px) / 2);
   }
   
   .prev-btn, .next-btn {
@@ -400,6 +516,12 @@ onMounted(() => {
     gap: 1rem;
     text-align: center;
     margin-bottom: 2rem;
+  }
+  
+  .btn-view-all {
+    position: static;
+    margin-top: 1rem;
+    align-self: center;
   }
   
   .section-title {

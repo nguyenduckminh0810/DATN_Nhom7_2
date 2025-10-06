@@ -153,12 +153,15 @@
           
           <!-- Cart -->
           <li class="nav-item">
-            <router-link class="nav-link modern-nav-link position-relative" to="/cart">
+            <button 
+              class="nav-link modern-nav-link position-relative cart-trigger"
+              @click="toggleMiniCart"
+            >
               <i class="ph-shopping-cart"></i>
               <span v-if="cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
-            </router-link>
+            </button>
           </li>
           
           <!-- User Menu -->
@@ -214,6 +217,12 @@
     @close="closeRegisterPopup"
     @switchToLogin="handleSwitchToLogin"
   />
+  
+  <!-- Mini Cart -->
+  <MiniCart 
+    :isOpen="showMiniCart" 
+    @close="closeMiniCart"
+  />
 </template>
 
 <script setup>
@@ -224,6 +233,7 @@ import { useProductStore } from '../../stores/product'
 import SearchModal from '../ui/SearchModal.vue'
 import LoginPopup from '../ui/LoginPopup.vue'
 import RegisterPopup from '../ui/RegisterPopup.vue'
+import MiniCart from '../ui/MiniCart.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -232,6 +242,7 @@ const productStore = useProductStore()
 // Login popup state
 const showLoginPopup = ref(false)
 const showRegisterPopup = ref(false)
+const showMiniCart = ref(false)
 
 // Search state
 const searchQuery = ref('')
@@ -273,6 +284,15 @@ const handleLogout = () => {
   localStorage.removeItem('auro_token')
   localStorage.removeItem('auro_user')
   router.push('/')
+}
+
+// Mini cart methods
+const toggleMiniCart = () => {
+  showMiniCart.value = !showMiniCart.value
+}
+
+const closeMiniCart = () => {
+  showMiniCart.value = false
 }
 
 // Search handler
@@ -580,6 +600,17 @@ router-link:focus-visible {
   top: -5px;
   right: -5px;
   box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+}
+
+/* Cart Trigger Button */
+.cart-trigger {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.cart-trigger:hover {
+  color: var(--auro-accent) !important;
 }
 
 /* Dropdown Hover */
