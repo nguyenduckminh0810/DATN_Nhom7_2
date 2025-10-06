@@ -1,5 +1,11 @@
 <template>
   <div class="home">
+    <!-- USP Bar -->
+    <UspBar />
+    
+    <!-- Hero Section -->
+    <Hero />
+    
     <!-- Hero Carousel Section -->
     <section class="hero-carousel-section">
       <div class="custom-carousel">
@@ -18,7 +24,7 @@
           class="carousel-inner"
           :style="{
             transform: `translateX(-${currentIndex * 20}%)`,
-            transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)'
+            transition: isAnimating ? 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'
           }"
           @transitionend="onTransitionEnd"
         >
@@ -75,123 +81,103 @@
       </div>
     </section>
 
-    <!-- Featured Products -->
-    <section class="py-5">
-      <div class="container">
-        <div class="row">
-          <div class="col-12 text-center mb-5">
-            <h2 class="display-4 fw-bold mb-3">Sản phẩm nổi bật</h2>
-            <p class="text-muted fs-5">Những mẫu thiết kế được yêu thích nhất</p>
-            <div class="section-divider"></div>
-          </div>
-        </div>
+    <!-- Categories Section -->
+    <section class="categories-section section-full">
+      <!-- Header -->
+      <div class="section-header">
+        <h2 class="section-title">Danh mục sản phẩm</h2>
+        <router-link to="/san-pham" class="btn-view-all">
+          Xem tất cả
+        </router-link>
+      </div>
 
-        <!-- Loading skeleton for featured products -->
-        <div class="row g-4" v-if="isLoading">
-          <SkeletonLoader v-for="n in 4" :key="n" type="product" />
-        </div>
-
-        <!-- Featured products -->
-        <div class="row g-4" v-else-if="featuredProducts.length > 0">
-          <div class="col-md-6 col-lg-3" v-for="product in featuredProducts" :key="product.id">
-            <div class="card product-card h-100 animate-on-scroll">
-              <div class="position-relative product-image-container">
-                <LazyImage
-                  :src="
-                    product.image ||
-                    'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'
-                  "
-                  :alt="product.name"
-                  :width="500"
-                  :height="500"
-                  :quality="85"
-                  :webp="false"
-                  :lazy="false"
-                  container-class="product-image"
-                  image-class="card-img-top"
-                  :show-zoom-overlay="false"
-                />
-                <div class="position-absolute top-0 end-0 m-3">
-                  <span class="badge modern-discount-badge">-{{ product.discount || 20 }}%</span>
-                </div>
-                <div class="position-absolute top-0 start-0 m-3">
-                  <WishlistButton :product="product" variant="icon" size="sm" />
-                </div>
-                <div class="product-overlay">
-                  <button class="btn btn-auro-primary btn-sm" @click="addToCart(product)">
-                    <i class="bi bi-cart-plus me-1"></i>Thêm vào giỏ
-                  </button>
-                </div>
-              </div>
-              <div class="card-body d-flex flex-column">
-                <h6 class="card-title fw-bold mb-2">{{ product.name }}</h6>
-                <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description }}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <span class="price h5 mb-0">{{ formatPrice(product.price) }}</span>
-                    <small class="text-muted text-decoration-line-through ms-2">{{
-                      formatPrice(product.originalPrice || product.price * 1.2)
-                    }}</small>
-                  </div>
-                  <div class="product-rating">
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star text-warning"></i>
-                  </div>
-                </div>
-              </div>
+      <!-- Category Filter -->
+      <div class="category-filters">
+        <button 
+          v-for="filter in categoryFilters" 
+          :key="filter.id"
+          :class="['category-filter-btn', { active: selectedFilter === filter.id }]"
+          @click="selectFilter(filter.id)"
+        >
+          {{ filter.name }}
+        </button>
+      </div>
+      
+      <!-- Full-width categories carousel -->
+      <div class="categories-carousel-container">
+        <button class="section-nav-btn prev" @click="scrollCategories('prev')">
+          ‹
+        </button>
+        
+        <div class="section-list categories-grid" ref="categoriesGrid">
+          <div 
+            v-for="category in filteredCategories" 
+            :key="category.id"
+            class="category-item section-item"
+            @click="goToCategory(category.slug)"
+          >
+            <img :src="category.image" :alt="category.name" class="section-item__image"/>
+            <div class="category-content">
+              <h5 class="category-title">{{ category.name }}</h5>
+              <p class="category-description">{{ category.description }}</p>
             </div>
           </div>
         </div>
-
-        <div class="text-center mt-5">
-          <router-link to="/category" class="btn btn-auro-secondary btn-lg">
-            <i class="bi bi-arrow-right me-2"></i>Xem tất cả sản phẩm
-          </router-link>
-        </div>
+        
+        <button class="section-nav-btn next" @click="scrollCategories('next')">
+          ›
+        </button>
       </div>
     </section>
 
-    <!-- Categories -->
-    <section class="py-5 bg-light">
+    <!-- Collection By Use -->
+    <CollectionByUse />
+
+    <!-- Best Sellers -->
+    <BestSellers />
+
+    <!-- New Arrivals -->
+    <NewArrivals />
+
+    <!-- Featured Products -->
+    <section class="featured-products-section">
+      <!-- Header with container -->
       <div class="container">
-        <div class="row">
-          <div class="col-12 text-center mb-5">
-            <h2 class="display-4 fw-bold mb-3">Danh mục sản phẩm</h2>
-            <p class="text-muted fs-5">Khám phá theo từng loại sản phẩm</p>
-            <div class="section-divider"></div>
-          </div>
+        <div class="section-header">
+          <h2 class="section-title">Sản phẩm nổi bật</h2>
+          <router-link to="/san-pham?sort=featured" class="btn-view-all">
+            Xem tất cả
+          </router-link>
         </div>
-
-        <!-- Loading skeleton for categories -->
-        <div class="row g-4" v-if="isLoading">
-          <SkeletonLoader v-for="n in 3" :key="n" type="category" />
+      </div>
+      
+      <!-- Full-width products carousel -->
+      <div class="products-carousel-container">
+        <button class="prev-btn" @click="scrollFeatured('prev')">
+          ‹
+        </button>
+        
+        <div class="products-grid" ref="featuredProductsGrid">
+          <ProductCard
+            v-for="product in featuredProducts"
+            :key="product.id"
+            :name="product.name"
+            :img="product.image"
+            :hover-img="product.hoverImage"
+            :price-now="product.price"
+            :price-old="product.originalPrice"
+            :discount="product.discount"
+            :promotional-badge="product.promotionalBadge"
+            :color-options="product.colorOptions"
+            :sizes="product.sizes"
+            :available-sizes="product.availableSizes"
+            :color-size-mapping="product.colorSizeMapping"
+          />
         </div>
-
-        <!-- Categories -->
-        <div class="row g-4" v-else>
-          <div class="col-md-4" v-for="category in categories" :key="category.id">
-            <div class="card category-card h-100 animate-on-scroll">
-              <div class="card-body text-center p-5">
-                <div class="category-icon-container mb-4">
-                  <div class="category-icon">
-                    <i :class="category.icon || 'ph-grid-four'"></i>
-                  </div>
-                </div>
-                <h5 class="card-title fw-bold mb-3">{{ category.name }}</h5>
-                <p class="card-text text-muted mb-4">{{ category.description }}</p>
-                <router-link
-                  :to="`/category/${category.slug}`"
-                  class="btn btn-outline-primary category-btn"
-                >
-                  <i class="ph-arrow-right me-2"></i>Xem sản phẩm
-                </router-link>
-              </div>
-            </div>
-          </div>
-        </div>
+        
+        <button class="next-btn" @click="scrollFeatured('next')">
+          ›
+        </button>
       </div>
     </section>
   </div>
@@ -199,20 +185,27 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
-import SkeletonLoader from '../components/ui/SkeletonLoader.vue'
 import WishlistButton from '../components/ui/WishlistButton.vue'
 import LazyImage from '../components/ui/LazyImage.vue'
+import UspBar from '../components/home/UspBar.vue'
+import Hero from '../components/home/Hero.vue'
+import CollectionByUse from '../components/home/CollectionByUse.vue'
+import BestSellers from '../components/home/BestSellers.vue'
+import NewArrivals from '../components/home/NewArrivals.vue'
+import ProductCard from '../components/home/ProductCard.vue'
 
 const cartStore = useCartStore()
+const router = useRouter()
 
-// Loading state
-const isLoading = ref(true)
+// Loading state - disabled for better performance
+const isLoading = ref(false)
 const carouselInterval = ref(null)
 
 // ===== Infinite loop state =====
 const currentIndex = ref(1)       // hiển thị phần tử thật đầu tiên (sau cloneLast)
-const isAnimating = ref(true)
+const isAnimating = ref(false)
 
 // Hero carousel slides data
 const heroSlides = ref([
@@ -282,12 +275,16 @@ const visibleIndex = computed(() => {
 })
 
 const onTransitionEnd = async () => {
-  // nếu đang ở cloneFirst, nhảy tức thời về real first
+  isAnimating.value = false
+  
+  // nếu đang ở cloneFirst (index 4), nhảy tức thời về real first (index 1)
   if (currentIndex.value === extendedSlides.value.length - 1) {
+    isAnimating.value = false
     currentIndex.value = 1
   }
-  // nếu đang ở cloneLast, nhảy tức thời về real last
+  // nếu đang ở cloneLast (index 0), nhảy tức thời về real last (index 3)
   if (currentIndex.value === 0) {
+    isAnimating.value = false
     currentIndex.value = heroSlides.value.length
   }
 }
@@ -297,68 +294,222 @@ const featuredProducts = ref([
   {
     id: 1,
     name: 'Áo sơ mi nam cao cấp',
-    description: 'Áo sơ mi nam chất liệu cotton 100%',
+    image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     price: 450000,
     originalPrice: 600000,
     discount: 25,
-    image:
-      'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+    colorOptions: ['#ffffff', '#000000', '#007bff'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+    colorSizeMapping: {
+      '#ffffff': ['S', 'M', 'L', 'XL'],
+      '#000000': ['M', 'L', 'XL', '2XL'],
+      '#007bff': ['L', 'XL', '2XL', '3XL']
+    }
   },
   {
     id: 2,
     name: 'Quần âu nam',
-    description: 'Quần âu nam thiết kế hiện đại',
+    image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     price: 650000,
     originalPrice: 800000,
     discount: 19,
-    image:
-      'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+    colorOptions: ['#000000', '#808080', '#8b4513'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['M', 'L', 'XL', '2XL'],
+    colorSizeMapping: {
+      '#000000': ['M', 'L', 'XL'],
+      '#808080': ['L', 'XL', '2XL'],
+      '#8b4513': ['XL', '2XL', '3XL']
+    }
   },
   {
     id: 3,
     name: 'Áo khoác nam',
-    description: 'Áo khoác nam phong cách casual',
+    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     price: 850000,
     originalPrice: 1200000,
     discount: 29,
-    image:
-      'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
+    colorOptions: ['#000000', '#8b4513', '#808080'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['L', 'XL', '2XL', '3XL'],
+    colorSizeMapping: {
+      '#000000': ['L', 'XL', '2XL'],
+      '#8b4513': ['XL', '2XL', '3XL'],
+      '#808080': ['2XL', '3XL']
+    }
   },
   {
     id: 4,
     name: 'Áo thun nam',
-    description: 'Áo thun nam chất liệu cotton mềm mại',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
     price: 250000,
     originalPrice: 350000,
     discount: 29,
-    image:
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+    colorOptions: ['#dc3545', '#007bff', '#28a745'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+    colorSizeMapping: {
+      '#dc3545': ['S', 'M', 'L'],
+      '#007bff': ['M', 'L', 'XL', '2XL'],
+      '#28a745': ['L', 'XL', '2XL', '3XL']
+    }
   },
+  {
+    id: 5,
+    name: 'Quần jean nam',
+    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+    price: 399000,
+    originalPrice: 499000,
+    discount: 20,
+    promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+    colorOptions: ['#000080', '#000000', '#808080'],
+    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+    availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+    colorSizeMapping: {
+      '#000080': ['S', 'M', 'L', 'XL'],
+      '#000000': ['M', 'L', 'XL', '2XL'],
+      '#808080': ['L', 'XL', '2XL']
+    }
+  }
 ])
 
-const categories = ref([
+// Category filters
+const categoryFilters = ref([
+  { id: 'ao', name: 'ÁO' },
+  { id: 'quan', name: 'QUẦN' }
+])
+
+const selectedFilter = ref('ao')
+
+// All categories with images
+const allCategories = ref([
+  // ÁO categories
   {
     id: 1,
-    name: 'Áo',
-    slug: 'ao',
-    description: 'Áo sơ mi, áo thun, áo khoác cao cấp',
-    icon: 'ph-t-shirt',
+    name: 'ÁO THUN',
+    slug: 'ao-thun',
+    description: 'Áo thun nam cao cấp',
+    filter: 'ao',
+    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
   },
   {
     id: 2,
-    name: 'Quần',
-    slug: 'quan',
-    description: 'Quần âu, quần jean, quần short',
-    icon: 'ph-bag',
+    name: 'ÁO SƠ MI',
+    slug: 'ao-so-mi',
+    description: 'Áo sơ mi nam công sở',
+    filter: 'ao',
+    image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
   },
   {
     id: 3,
-    name: 'Phụ kiện',
-    slug: 'phu-kien',
-    description: 'Thắt lưng, ví, đồng hồ',
-    icon: 'ph-watch',
+    name: 'ÁO KHOÁC',
+    slug: 'ao-khoac',
+    description: 'Áo khoác nam thời trang',
+    filter: 'ao',
+    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
   },
+  {
+    id: 4,
+    name: 'ÁO POLO',
+    slug: 'ao-polo',
+    description: 'Áo polo nam cao cấp',
+    filter: 'ao',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  },
+  // QUẦN categories
+  {
+    id: 5,
+    name: 'QUẦN ÂU',
+    slug: 'quan-au',
+    description: 'Quần âu nam công sở',
+    filter: 'quan',
+    image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 6,
+    name: 'QUẦN JEAN',
+    slug: 'quan-jean',
+    description: 'Quần jean nam thời trang',
+    filter: 'quan',
+    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 7,
+    name: 'QUẦN SHORT',
+    slug: 'quan-short',
+    description: 'Quần short nam thể thao',
+    filter: 'quan',
+    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  },
+  {
+    id: 8,
+    name: 'QUẦN JOGGER',
+    slug: 'quan-jogger',
+    description: 'Quần jogger nam năng động',
+    filter: 'quan',
+    image: 'https://images.unsplash.com/photo-1558769132-cb1aea1f5d8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  }
 ])
+
+// Computed filtered categories
+const filteredCategories = computed(() => {
+  return allCategories.value.filter(category => category.filter === selectedFilter.value)
+})
+
+// Methods
+const selectFilter = (filterId) => {
+  selectedFilter.value = filterId
+}
+
+const goToCategory = (slug) => {
+  console.log('Navigating to category:', slug)
+  router.push(`/category/${slug}`)
+}
+
+// Category navigation
+const categoriesGrid = ref(null)
+
+const scrollCategories = (direction) => {
+  const el = categoriesGrid.value
+  if (el) {
+    const distance = el.offsetWidth * 0.8
+    el.scrollBy({ 
+      left: direction === 'next' ? distance : -distance, 
+      behavior: 'smooth' 
+    })
+  }
+}
+
+// Featured products navigation
+const featuredProductsGrid = ref(null)
+
+const scrollFeatured = (direction) => {
+  if (featuredProductsGrid.value) {
+    const scrollAmount = featuredProductsGrid.value.offsetWidth / 1.2
+    
+    if (direction === 'prev') {
+      featuredProductsGrid.value.scrollBy({
+        left: -scrollAmount,
+        behavior: 'smooth'
+      })
+    } else {
+      featuredProductsGrid.value.scrollBy({
+        left: scrollAmount,
+        behavior: 'smooth'
+      })
+    }
+  }
+}
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -369,14 +520,20 @@ const formatPrice = (price) => {
 
 // Carousel methods
 const goToSlide = (index) => {
+  if (isAnimating.value) return
+  isAnimating.value = true
   currentIndex.value = index + 1 // +1 vì trước nó có cloneLast
 }
 
 const nextSlide = () => {
+  if (isAnimating.value) return
+  isAnimating.value = true
   currentIndex.value += 1
 }
 
 const previousSlide = () => {
+  if (isAnimating.value) return
+  isAnimating.value = true
   currentIndex.value -= 1
 }
 
@@ -386,7 +543,9 @@ const startCarousel = () => {
     clearInterval(carouselInterval.value)
   }
   carouselInterval.value = setInterval(() => {
-    nextSlide()  // dùng hàm mới
+    if (!isAnimating.value) {
+      nextSlide()
+    }
   }, 5000)
 }
 
@@ -424,25 +583,19 @@ const observer = new IntersectionObserver((entries) => {
 }, observerOptions)
 
 onMounted(() => {
-  // Start carousel auto-advance after a delay
-  setTimeout(() => {
-    startCarousel()
-  }, 2000) // Start after 2 seconds
+  // Start carousel auto-advance immediately
+  startCarousel()
 
-  // Simulate loading data from API
-  setTimeout(() => {
-    isLoading.value = false
+  // Pause carousel on hover
+  const carouselElement = document.querySelector('.custom-carousel')
+  if (carouselElement) {
+    carouselElement.addEventListener('mouseenter', stopCarousel)
+    carouselElement.addEventListener('mouseleave', startCarousel)
+  }
 
-    // Trigger scroll animations after loading
-    setTimeout(() => {
-      const elements = document.querySelectorAll('.animate-on-scroll')
-      elements.forEach((el) => observer.observe(el))
-    }, 100)
-  }, 1500) // 1.5 seconds loading time
-
-  // TODO: Replace with actual API calls
-  // fetchFeaturedProducts()
-  // fetchCategories()
+  // Skip scroll animations for better performance
+  // const elements = document.querySelectorAll('.animate-on-scroll')
+  // elements.forEach((el) => observer.observe(el))
 })
 
 onUnmounted(() => {
@@ -496,6 +649,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  background-attachment: fixed;
 }
 
 /* .hero-slide::before {
@@ -625,7 +779,12 @@ onUnmounted(() => {
 
 /* Carousel Controls */
 .carousel-indicators {
+  position: absolute;
   bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
   z-index: 3;
 }
 
@@ -678,6 +837,17 @@ onUnmounted(() => {
 
 /* Responsive Design */
 @media (max-width: 991.98px) {
+  .hero-content-wrapper {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+  
+  .hero-text {
+    padding-right: 0 !important;
+    margin-bottom: 2rem;
+  }
+  
   .hero-title {
     font-size: 2.5rem;
   }
@@ -707,6 +877,14 @@ onUnmounted(() => {
 }
 
 @media (max-width: 576px) {
+  .hero-carousel-section {
+    padding-top: 80px;
+  }
+  
+  .hero-content-wrapper {
+    padding: 0.5rem !important;
+  }
+  
   .hero-title {
     font-size: 2rem;
   }
@@ -723,6 +901,20 @@ onUnmounted(() => {
   .badge-new {
     font-size: 0.75rem;
     padding: 0.375rem 0.75rem;
+  }
+  
+  .carousel-control-prev,
+  .carousel-control-next {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .carousel-control-prev {
+    left: 0.5rem;
+  }
+
+  .carousel-control-next {
+    right: 0.5rem;
   }
 }
 
@@ -822,90 +1014,97 @@ onUnmounted(() => {
   font-size: 14px;
 }
 
-/* Category Cards */
-.category-card {
-  background: var(--auro-card);
-  border: 1px solid var(--auro-border);
-  border-radius: 20px;
-  transition: all 0.4s ease;
+/* Categories Section - only specific styles */
+
+/* Category Filters */
+.category-filters {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.category-filter-btn {
+  padding: 12px 32px;
+  border: none;
+  background: #f8f9fa;
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: 50px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.category-filter-btn.active {
+  background: #000;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+}
+
+.category-filter-btn:hover:not(.active) {
+  background: #e9ecef;
+  color: #000;
+  transform: translateY(-1px);
+}
+
+.categories-carousel-container {
   position: relative;
-  overflow: hidden;
-}
-
-.category-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--auro-gradient-accent);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-}
-
-.category-card:hover::before {
-  transform: scaleX(1);
-}
-
-.category-card:hover {
-  transform: translateY(-8px);
-  box-shadow: var(--auro-shadow-hover);
-  border-color: var(--auro-accent);
-}
-
-.category-icon-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.category-icon {
-  width: 80px;
-  height: 80px;
-  background: var(--auro-gradient-accent);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
-  box-shadow: 0 8px 25px rgba(212, 175, 55, 0.3);
-  transition: all 0.3s ease;
+  margin: 2rem 0;
+  width: 100%;
 }
 
-.category-card:hover .category-icon {
-  transform: scale(1.1);
-  box-shadow: 0 12px 35px rgba(212, 175, 55, 0.4);
+/* Desktop responsive - handled by sections.css */
+
+/* No scrollbar needed - all items fit in one row */
+
+/* Remove any background from categories section */
+.container {
+  background: transparent !important;
 }
 
-.category-icon i {
-  font-size: 2.5rem;
-  color: var(--auro-dark);
-  transition: all 0.3s ease;
-  font-weight: 300;
+/* Force remove all backgrounds */
+.home {
+  background: transparent !important;
 }
 
-.category-card:hover .category-icon i {
-  transform: rotate(5deg);
+.home > div {
+  background: transparent !important;
 }
 
-.category-btn {
-  border-radius: 12px;
-  padding: 12px 24px;
+/* Category content styling only */
+.category-content {
+  padding: 1.5rem;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.category-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #212529;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.category-description {
+  color: #6c757d;
+  font-size: 0.9rem;
+  margin: 0;
   font-weight: 500;
-  transition: all 0.3s ease;
-  border: 2px solid var(--auro-accent);
-  color: var(--auro-accent);
-  background: transparent;
 }
 
-.category-btn:hover {
-  background: var(--auro-gradient-accent);
-  border-color: var(--auro-accent);
-  color: var(--auro-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
-}
+/* Responsive Categories - handled by sections.css */
 
 /* Scroll animations */
 .animate-on-scroll {
@@ -938,14 +1137,137 @@ onUnmounted(() => {
   background-color: var(--auro-light) !important;
 }
 
-/* Kaira Inspired Styles */
-.section-title {
-  font-family: var(--auro-heading-font);
-  font-size: 2.5rem;
-  font-weight: 400;
-  color: var(--auro-text);
-  margin-bottom: 1rem;
+/* Featured Products Section */
+.featured-products-section {
+  padding: 4rem 0;
+  background: #f8f9fa;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  position: relative;
 }
+
+
+.products-carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 0;
+  width: 100%;
+}
+
+.products-grid {
+  display: flex;
+  overflow: hidden;
+  justify-content: center;
+  gap: 24px;
+  scroll-behavior: smooth;
+  padding: 40px 60px;
+  width: 100%;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.products-grid::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carousel Navigation Buttons */
+.prev-btn, .next-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prev-btn:hover, .next-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+.prev-btn {
+  left: 16px;
+}
+
+.next-btn {
+  right: 16px;
+}
+
+/* Responsive breakpoints for Featured Products */
+@media (max-width: 1400px) {
+  .products-grid {
+    padding: 40px 50px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .products-grid {
+    padding: 40px 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-grid {
+    padding: 40px 30px;
+    overflow-x: auto;
+  }
+  
+  .prev-btn, .next-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 992px) {
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .section-header {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .products-grid {
+    gap: 14px;
+  }
+  
+  .products-carousel-container {
+    padding: 0 15px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .section-title {
+    font-size: 1.75rem;
+  }
+  
+  .featured-products-section {
+    padding: 2rem 0;
+  }
+}
+
+/* Kaira Inspired Styles */
 
 .banner-item {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);

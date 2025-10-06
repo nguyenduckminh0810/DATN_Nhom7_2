@@ -298,14 +298,29 @@ const changePage = (page) => {
 
 // Watch for route changes
 watch(() => route.params.slug, (newSlug) => {
+  console.log('Route slug changed to:', newSlug)
   if (newSlug) {
-    // Load category data based on slug
-    categoryName.value = newSlug === 'ao' ? 'Áo' : 
-                        newSlug === 'quan' ? 'Quần' : 
-                        newSlug === 'phu-kien' ? 'Phụ kiện' : 'Danh mục'
+    // Map slug to category name and filter
+    const categoryMap = {
+      'ao-thun': { name: 'ÁO THUN', filter: 'ao' },
+      'ao-so-mi': { name: 'ÁO SƠ MI', filter: 'ao' },
+      'ao-khoac': { name: 'ÁO KHOÁC', filter: 'ao' },
+      'ao-polo': { name: 'ÁO POLO', filter: 'ao' },
+      'quan-au': { name: 'QUẦN ÂU', filter: 'quan' },
+      'quan-jean': { name: 'QUẦN JEAN', filter: 'quan' },
+      'quan-short': { name: 'QUẦN SHORT', filter: 'quan' },
+      'quan-jogger': { name: 'QUẦN JOGGER', filter: 'quan' }
+    }
     
-    // Filter products by category
-    products.value = mockProducts.filter(p => p.category === newSlug)
+    const categoryInfo = categoryMap[newSlug]
+    if (categoryInfo) {
+      categoryName.value = categoryInfo.name
+      products.value = mockProducts.filter(p => p.category === categoryInfo.filter)
+      console.log('Filtered products for', categoryInfo.name, ':', products.value.length)
+    } else {
+      categoryName.value = 'Danh mục không tìm thấy'
+      products.value = []
+    }
   } else {
     // Show all products
     categoryName.value = 'Tất cả sản phẩm'
@@ -316,11 +331,28 @@ watch(() => route.params.slug, (newSlug) => {
 onMounted(() => {
   // Load products based on route
   const slug = route.params.slug
+  console.log('Mounted with slug:', slug)
   if (slug) {
-    categoryName.value = slug === 'ao' ? 'Áo' : 
-                        slug === 'quan' ? 'Quần' : 
-                        slug === 'phu-kien' ? 'Phụ kiện' : 'Danh mục'
-    products.value = mockProducts.filter(p => p.category === slug)
+    const categoryMap = {
+      'ao-thun': { name: 'ÁO THUN', filter: 'ao' },
+      'ao-so-mi': { name: 'ÁO SƠ MI', filter: 'ao' },
+      'ao-khoac': { name: 'ÁO KHOÁC', filter: 'ao' },
+      'ao-polo': { name: 'ÁO POLO', filter: 'ao' },
+      'quan-au': { name: 'QUẦN ÂU', filter: 'quan' },
+      'quan-jean': { name: 'QUẦN JEAN', filter: 'quan' },
+      'quan-short': { name: 'QUẦN SHORT', filter: 'quan' },
+      'quan-jogger': { name: 'QUẦN JOGGER', filter: 'quan' }
+    }
+    
+    const categoryInfo = categoryMap[slug]
+    if (categoryInfo) {
+      categoryName.value = categoryInfo.name
+      products.value = mockProducts.filter(p => p.category === categoryInfo.filter)
+      console.log('Mounted - Filtered products for', categoryInfo.name, ':', products.value.length)
+    } else {
+      categoryName.value = 'Danh mục không tìm thấy'
+      products.value = []
+    }
   } else {
     categoryName.value = 'Tất cả sản phẩm'
     products.value = mockProducts

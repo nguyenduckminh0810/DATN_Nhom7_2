@@ -1,0 +1,413 @@
+<template>
+  <section class="new-arrivals-section">
+    <!-- Header with container -->
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Sản phẩm mới</h2>
+        <router-link to="/san-pham?sort=createdAt" class="btn-view-all">
+          Xem tất cả
+        </router-link>
+      </div>
+    </div>
+    
+    <!-- Full-width products carousel -->
+    <div class="products-carousel-container">
+      <button class="prev-btn" @click="scrollProducts('prev')">
+        ‹
+      </button>
+      
+      <div class="products-grid" ref="productsGrid">
+        <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
+          <div class="skeleton-image"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-price"></div>
+          </div>
+        </div>
+        
+        <ProductCard
+          v-else
+          v-for="product in products"
+          :key="product.id"
+          :name="product.name"
+          :img="product.image"
+          :hover-img="product.hoverImage"
+          :price-now="product.price"
+          :price-old="product.originalPrice"
+          :discount="product.discount"
+          :promotional-badge="product.promotionalBadge"
+          :color-options="product.colorOptions"
+          :sizes="product.sizes"
+          :available-sizes="product.availableSizes"
+          :color-size-mapping="product.colorSizeMapping"
+        />
+      </div>
+      
+      <button class="next-btn" @click="scrollProducts('next')">
+        ›
+      </button>
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import ProductCard from './ProductCard.vue'
+
+const products = ref([])
+const loading = ref(true)
+const productsGrid = ref(null)
+const showButtons = ref(false)
+
+const fetchNewArrivals = async () => {
+  try {
+    loading.value = true
+    // Simulate API call - replace with actual API
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Mock data - replace with actual API call
+    products.value = [
+      {
+        id: 1,
+        name: 'Áo thun nữ mới nhất',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+        price: 199000,
+        originalPrice: 299000,
+        discount: 33,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+        colorOptions: ['#ff69b4', '#007bff', '#28a745'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL'],
+        colorSizeMapping: {
+          '#ff69b4': ['S', 'M', 'L'],
+          '#007bff': ['M', 'L', 'XL'],
+          '#28a745': ['L', 'XL', '2XL']
+        }
+      },
+      {
+        id: 2,
+        name: 'Quần jean nữ skinny',
+        image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        price: 499000,
+        originalPrice: null,
+        discount: null,
+        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+        colorOptions: ['#000080', '#000000', '#808080'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+        colorSizeMapping: {
+          '#000080': ['S', 'M', 'L', 'XL'],
+          '#000000': ['M', 'L', 'XL', '2XL'],
+          '#808080': ['L', 'XL', '2XL']
+        }
+      },
+      {
+        id: 3,
+        name: 'Áo sơ mi nữ công sở',
+        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        price: 399000,
+        originalPrice: 499000,
+        discount: 20,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
+        colorOptions: ['#000000', '#ffffff', '#ff69b4'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        colorSizeMapping: {
+          '#000000': ['S', 'M', 'L', 'XL'],
+          '#ffffff': ['M', 'L', 'XL', '2XL'],
+          '#ff69b4': ['L', 'XL', '2XL', '3XL']
+        }
+      },
+      {
+        id: 4,
+        name: 'Váy nữ dạo phố',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+        price: 299000,
+        originalPrice: null,
+        discount: null,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+        colorOptions: ['#ff69b4', '#000000', '#ffffff'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL'],
+        colorSizeMapping: {
+          '#ff69b4': ['S', 'M', 'L'],
+          '#000000': ['M', 'L', 'XL'],
+          '#ffffff': ['L', 'XL', '2XL']
+        }
+      },
+      {
+        id: 5,
+        name: 'Áo khoác nữ dài tay',
+        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
+        price: 699000,
+        originalPrice: 899000,
+        discount: 22,
+        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+        colorOptions: ['#000000', '#808080', '#8b4513'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['L', 'XL', '2XL', '3XL'],
+        colorSizeMapping: {
+          '#000000': ['L', 'XL', '2XL'],
+          '#808080': ['XL', '2XL', '3XL'],
+          '#8b4513': ['2XL', '3XL']
+        }
+      }
+    ]
+  } catch (error) {
+    console.error('Error fetching new arrivals:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const scrollProducts = (direction) => {
+  if (productsGrid.value) {
+    const scrollAmount = productsGrid.value.offsetWidth / 1.2
+    
+    if (direction === 'prev') {
+      productsGrid.value.scrollBy({
+        left: -scrollAmount,
+        behavior: 'smooth'
+      })
+    } else {
+      productsGrid.value.scrollBy({
+        left: scrollAmount,
+        behavior: 'smooth'
+      })
+    }
+  }
+}
+
+onMounted(() => {
+  fetchNewArrivals()
+})
+</script>
+
+<style scoped>
+.new-arrivals-section {
+  padding: 4rem 0;
+  background: #fff;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  position: relative;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #212529;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.btn-view-all {
+  padding: 0.75rem 1.5rem;
+  background: #000;
+  color: white;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-view-all:hover {
+  background: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.products-carousel-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2rem 0;
+  width: 100%;
+}
+
+.products-grid {
+  display: flex;
+  overflow: hidden;
+  justify-content: center;
+  gap: 24px;
+  scroll-behavior: smooth;
+  padding: 40px 60px;
+  width: 100%;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.products-grid::-webkit-scrollbar {
+  display: none;
+}
+
+/* Carousel Navigation Buttons */
+.prev-btn, .next-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #fff;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.prev-btn:hover, .next-btn:hover {
+  background: #000;
+  color: #fff;
+}
+
+.prev-btn {
+  left: 16px;
+}
+
+.next-btn {
+  right: 16px;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 1400px) {
+  .products-grid {
+    padding: 40px 50px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .products-grid {
+    padding: 40px 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-grid {
+    padding: 40px 30px;
+    overflow-x: auto;
+  }
+  
+  .prev-btn, .next-btn {
+    display: none;
+  }
+}
+
+/* Skeleton loading styles */
+.skeleton {
+  background: #f8f9fa;
+  border-radius: 24px;
+  overflow: hidden;
+  width: 500px;
+  height: 650px; /* Giảm từ 700px để phù hợp với layout mới */
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 580px; /* Tăng từ 550px để phù hợp với ảnh lớn hơn */
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.skeleton-content {
+  padding: 1rem; /* Giảm padding để phù hợp với product-info-section */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* Giảm gap như product-info-section */
+  border-top: 1px solid #f0f0f0; /* Đường phân cách */
+}
+
+.skeleton-title {
+  height: 1.5rem; /* Giảm từ 2rem */
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 0; /* Bỏ margin vì đã có gap */
+}
+
+.skeleton-price {
+  height: 1.25rem; /* Giảm từ 1.5rem */
+  width: 60%;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Responsive carousel layout */
+@media (max-width: 992px) {
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .section-header {
+    margin-bottom: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-grid {
+    gap: 16px;
+  }
+  
+  .products-carousel-container {
+    padding: 0 20px;
+  }
+}
+
+@media (max-width: 576px) {
+  .products-grid {
+    gap: 14px;
+  }
+  
+  .products-carousel-container {
+    padding: 0 15px;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .section-title {
+    font-size: 1.75rem;
+  }
+  
+  .new-arrivals-section {
+    padding: 2rem 0;
+  }
+}
+</style>

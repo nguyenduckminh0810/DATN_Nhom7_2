@@ -361,10 +361,39 @@ const initializeDropdownHover = () => {
   transform: translateY(-1px);
 }
 
+.navbar-brand:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.navbar-brand:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .brand-container {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.brand-container:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.brand-container:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove focus outline for all router-links */
+a:focus,
+a:focus-visible,
+router-link:focus,
+router-link:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .brand-icon {
