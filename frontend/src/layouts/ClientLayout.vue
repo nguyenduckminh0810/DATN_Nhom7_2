@@ -5,7 +5,11 @@
     
     <!-- Main Content -->
     <main class="main-content">
-      <router-view />
+      <router-view v-slot="{ Component, route }">
+        <transition name="page" mode="out-in">
+          <component :is="Component" :key="route.path" />
+        </transition>
+      </router-view>
     </main>
     
     <!-- Footer -->
@@ -27,5 +31,21 @@ import Footer from '../components/client/Footer.vue'
 
 .main-content {
   flex: 1;
+}
+
+/* Page transition animations */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.4s ease-in-out;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
 }
 </style>

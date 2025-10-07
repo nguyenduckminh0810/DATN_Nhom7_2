@@ -1,0 +1,1265 @@
+<template>
+  <div class="admin-users">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">Quản lý người dùng</h1>
+        <p class="page-subtitle">Quản lý tài khoản khách hàng và nhân viên</p>
+      </div>
+      <div class="header-right">
+        <div class="header-stats">
+          <div class="stat-item">
+            <span class="stat-label">Tổng người dùng:</span>
+            <span class="stat-value">{{ totalUsers }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Khách hàng:</span>
+            <span class="stat-value text-primary">{{ customerCount }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Nhân viên:</span>
+            <span class="stat-value text-success">{{ staffCount }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="filters-section">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="search-box">
+            <i class="ph-magnifying-glass search-icon"></i>
+            <input
+              type="text"
+              class="form-control search-input"
+              placeholder="Tìm kiếm người dùng..."
+              v-model="searchQuery"
+            />
+          </div>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" v-model="selectedRole">
+            <option value="">Tất cả vai trò</option>
+            <option value="customer">Khách hàng</option>
+            <option value="staff">Nhân viên</option>
+            <option value="admin">Quản trị viên</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" v-model="selectedStatus">
+            <option value="">Tất cả trạng thái</option>
+            <option value="active">Hoạt động</option>
+            <option value="inactive">Ngừng hoạt động</option>
+            <option value="banned">Bị cấm</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <select class="form-select" v-model="sortBy">
+            <option value="newest">Mới nhất</option>
+            <option value="oldest">Cũ nhất</option>
+            <option value="name-asc">Tên A-Z</option>
+            <option value="name-desc">Tên Z-A</option>
+            <option value="orders-high">Đơn hàng nhiều nhất</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input type="date" class="form-control" v-model="selectedDate">
+        </div>
+        <div class="col-md-1">
+          <button class="btn btn-outline-secondary w-100" @click="clearFilters">
+            <i class="ph-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="users-table">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>
+                <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
+              </th>
+              <th>Người dùng</th>
+              <th>Liên hệ</th>
+              <th>Vai trò</th>
+              <th>Đơn hàng</th>
+              <th>Tổng chi tiêu</th>
+              <th>Trạng thái</th>
+              <th>Ngày tham gia</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="user in paginatedUsers" :key="user.id">
+              <td>
+                <input type="checkbox" class="form-check-input" v-model="selectedUsers" :value="user.id">
+              </td>
+              <td>
+                <div class="user-info">
+                  <div class="user-avatar">
+                    <img :src="user.avatar || 'https://via.placeholder.com/40/3498db/ffffff?text=' + user.name.charAt(0)" 
+                         :alt="user.name" class="avatar-img">
+                    <span :class="['status-indicator', getStatusClass(user.status)]"></span>
+                  </div>
+                  <div class="user-details">
+                    <div class="user-name">{{ user.name }}</div>
+                    <div class="user-id">ID: {{ user.id }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="contact-info">
+                  <div class="contact-email">{{ user.email }}</div>
+                  <div class="contact-phone">{{ user.phone || 'Chưa cập nhật' }}</div>
+                </div>
+              </td>
+              <td>
+                <span :class="['role-badge', getRoleClass(user.role)]">
+                  {{ getRoleText(user.role) }}
+                </span>
+              </td>
+              <td>
+                <div class="order-stats">
+                  <div class="order-count">{{ user.orderCount }} đơn</div>
+                  <div class="order-value">{{ formatCurrency(user.totalSpent) }}</div>
+                </div>
+              </td>
+              <td>
+                <div class="spending-info">
+                  <div class="total-spent">{{ formatCurrency(user.totalSpent) }}</div>
+                  <div class="avg-order">{{ formatCurrency(user.avgOrderValue) }}/đơn</div>
+                </div>
+              </td>
+              <td>
+                <span :class="['status-badge', getStatusClass(user.status)]">
+                  {{ getStatusText(user.status) }}
+                </span>
+              </td>
+              <td>
+                <div class="join-date">
+                  <div>{{ formatDate(user.createdAt) }}</div>
+                  <div class="join-time">{{ formatTime(user.createdAt) }}</div>
+                </div>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn btn-sm btn-outline-primary" @click="viewUser(user)" title="Xem chi tiết">
+                    <i class="ph-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-success" @click="editUser(user)" title="Chỉnh sửa">
+                    <i class="ph-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-warning" @click="resetPassword(user)" title="Đặt lại mật khẩu">
+                    <i class="ph-key"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="toggleUserStatus(user)" title="Thay đổi trạng thái">
+                    <i :class="user.status === 'active' ? 'ph-pause' : 'ph-play'"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section">
+      <div class="row align-items-center">
+        <div class="col-md-6">
+          <div class="pagination-info">
+            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, totalItems) }} 
+            trong tổng số {{ totalItems }} người dùng
+          </div>
+        </div>
+        <div class="col-md-6">
+          <nav>
+            <ul class="pagination justify-content-end">
+              <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">Trước</a>
+              </li>
+              <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: currentPage === page }">
+                <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
+              </li>
+              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">Sau</a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div v-if="selectedUsers.length > 0" class="bulk-actions">
+      <div class="bulk-actions-content">
+        <span class="selected-count">{{ selectedUsers.length }} người dùng đã chọn</span>
+        <div class="bulk-buttons">
+          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
+            <i class="ph-check me-1"></i>Kích hoạt
+          </button>
+          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
+            <i class="ph-pause me-1"></i>Ngừng hoạt động
+          </button>
+          <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('banned')">
+            <i class="ph-ban me-1"></i>Cấm
+          </button>
+          <button class="btn btn-sm btn-outline-info" @click="bulkExport">
+            <i class="ph-download me-1"></i>Xuất dữ liệu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div v-if="showUserModal" class="modal-overlay" @click="closeUserModal">
+      <div class="modal-content modal-lg" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">Chi tiết người dùng: {{ selectedUser?.name }}</h5>
+          <button class="btn-close" @click="closeUserModal">
+            <i class="ph-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" v-if="selectedUser">
+          <div class="row">
+            <!-- User Profile -->
+            <div class="col-md-4">
+              <div class="user-profile-card">
+                <div class="profile-avatar">
+                  <img :src="selectedUser.avatar || 'https://via.placeholder.com/120/3498db/ffffff?text=' + selectedUser.name.charAt(0)" 
+                       :alt="selectedUser.name" class="avatar-large">
+                  <span :class="['status-indicator-large', getStatusClass(selectedUser.status)]"></span>
+                </div>
+                <h5 class="profile-name">{{ selectedUser.name }}</h5>
+                <p class="profile-role">
+                  <span :class="['role-badge', getRoleClass(selectedUser.role)]">
+                    {{ getRoleText(selectedUser.role) }}
+                  </span>
+                </p>
+                <div class="profile-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">Đơn hàng:</span>
+                    <span class="stat-value">{{ selectedUser.orderCount }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Tổng chi tiêu:</span>
+                    <span class="stat-value">{{ formatCurrency(selectedUser.totalSpent) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Details -->
+            <div class="col-md-8">
+              <div class="user-details-tabs">
+                <ul class="nav nav-tabs" role="tablist">
+                  <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#profile-tab">
+                      Thông tin cá nhân
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders-tab">
+                      Đơn hàng ({{ selectedUser.orderCount }})
+                    </button>
+                  </li>
+                  <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity-tab">
+                      Hoạt động
+                    </button>
+                  </li>
+                </ul>
+
+                <div class="tab-content">
+                  <!-- Profile Tab -->
+                  <div class="tab-pane fade show active" id="profile-tab">
+                    <div class="profile-details">
+                      <table class="table table-sm">
+                        <tbody>
+                          <tr>
+                            <td>Họ tên:</td>
+                            <td>{{ selectedUser.name }}</td>
+                          </tr>
+                          <tr>
+                            <td>Email:</td>
+                            <td>{{ selectedUser.email }}</td>
+                          </tr>
+                          <tr>
+                            <td>Số điện thoại:</td>
+                            <td>{{ selectedUser.phone || 'Chưa cập nhật' }}</td>
+                          </tr>
+                          <tr>
+                            <td>Địa chỉ:</td>
+                            <td>{{ selectedUser.address || 'Chưa cập nhật' }}</td>
+                          </tr>
+                          <tr>
+                            <td>Ngày sinh:</td>
+                            <td>{{ selectedUser.birthday ? formatDate(selectedUser.birthday) : 'Chưa cập nhật' }}</td>
+                          </tr>
+                          <tr>
+                            <td>Giới tính:</td>
+                            <td>{{ selectedUser.gender || 'Chưa cập nhật' }}</td>
+                          </tr>
+                          <tr>
+                            <td>Ngày tham gia:</td>
+                            <td>{{ formatDateTime(selectedUser.createdAt) }}</td>
+                          </tr>
+                          <tr>
+                            <td>Lần đăng nhập cuối:</td>
+                            <td>{{ selectedUser.lastLogin ? formatDateTime(selectedUser.lastLogin) : 'Chưa đăng nhập' }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Orders Tab -->
+                  <div class="tab-pane fade" id="orders-tab">
+                    <div class="orders-list">
+                      <div v-if="selectedUser.orders && selectedUser.orders.length > 0" class="table-responsive">
+                        <table class="table table-sm">
+                          <thead>
+                            <tr>
+                              <th>Mã đơn</th>
+                              <th>Ngày đặt</th>
+                              <th>Tổng tiền</th>
+                              <th>Trạng thái</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr v-for="order in selectedUser.orders" :key="order.id">
+                              <td>#{{ order.orderNumber }}</td>
+                              <td>{{ formatDate(order.createdAt) }}</td>
+                              <td>{{ formatCurrency(order.total) }}</td>
+                              <td>
+                                <span :class="['status-badge', getStatusClass(order.status)]">
+                                  {{ getStatusText(order.status) }}
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      <div v-else class="empty-state">
+                        <i class="ph-shopping-bag display-4 text-muted"></i>
+                        <p class="text-muted">Chưa có đơn hàng nào</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Activity Tab -->
+                  <div class="tab-pane fade" id="activity-tab">
+                    <div class="activity-list">
+                      <div v-if="selectedUser.activities && selectedUser.activities.length > 0">
+                        <div v-for="activity in selectedUser.activities" :key="activity.id" class="activity-item">
+                          <div class="activity-icon">
+                            <i :class="getActivityIcon(activity.type)"></i>
+                          </div>
+                          <div class="activity-content">
+                            <div class="activity-description">{{ activity.description }}</div>
+                            <div class="activity-time">{{ formatDateTime(activity.createdAt) }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="empty-state">
+                        <i class="ph-clock display-4 text-muted"></i>
+                        <p class="text-muted">Chưa có hoạt động nào</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="closeUserModal">Đóng</button>
+          <button type="button" class="btn btn-warning" @click="resetPassword(selectedUser)">
+            <i class="ph-key me-1"></i>Đặt lại mật khẩu
+          </button>
+          <button type="button" class="btn btn-primary" @click="editUser(selectedUser)">
+            <i class="ph-pencil me-1"></i>Chỉnh sửa
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+
+// Reactive data
+const searchQuery = ref('')
+const selectedRole = ref('')
+const selectedStatus = ref('')
+const selectedDate = ref('')
+const sortBy = ref('newest')
+const selectedUsers = ref([])
+const selectAll = ref(false)
+const currentPage = ref(1)
+const itemsPerPage = 10
+const showUserModal = ref(false)
+const selectedUser = ref(null)
+
+// Mock data
+const users = ref([
+  {
+    id: 1,
+    name: 'Nguyễn Văn A',
+    email: 'nguyenvana@email.com',
+    phone: '0123456789',
+    address: '123 Đường ABC, Quận 1, TP.HCM',
+    birthday: new Date('1990-05-15'),
+    gender: 'Nam',
+    role: 'customer',
+    status: 'active',
+    avatar: null,
+    orderCount: 5,
+    totalSpent: 2500000,
+    avgOrderValue: 500000,
+    createdAt: new Date('2024-01-10'),
+    lastLogin: new Date('2024-01-20'),
+    orders: [
+      { id: 1, orderNumber: 'ORD-001', total: 450000, status: 'delivered', createdAt: new Date('2024-01-15') },
+      { id: 2, orderNumber: 'ORD-002', total: 650000, status: 'shipped', createdAt: new Date('2024-01-18') }
+    ],
+    activities: [
+      { id: 1, type: 'login', description: 'Đăng nhập vào hệ thống', createdAt: new Date('2024-01-20') },
+      { id: 2, type: 'order', description: 'Đặt đơn hàng #ORD-002', createdAt: new Date('2024-01-18') }
+    ]
+  },
+  {
+    id: 2,
+    name: 'Trần Thị B',
+    email: 'tranthib@email.com',
+    phone: '0987654321',
+    address: '456 Đường XYZ, Quận 2, TP.HCM',
+    birthday: new Date('1985-08-22'),
+    gender: 'Nữ',
+    role: 'customer',
+    status: 'active',
+    avatar: null,
+    orderCount: 3,
+    totalSpent: 1200000,
+    avgOrderValue: 400000,
+    createdAt: new Date('2024-01-12'),
+    lastLogin: new Date('2024-01-19'),
+    orders: [
+      { id: 3, orderNumber: 'ORD-003', total: 350000, status: 'delivered', createdAt: new Date('2024-01-16') }
+    ],
+    activities: [
+      { id: 3, type: 'login', description: 'Đăng nhập vào hệ thống', createdAt: new Date('2024-01-19') }
+    ]
+  },
+  {
+    id: 3,
+    name: 'Lê Văn C',
+    email: 'levanc@email.com',
+    phone: '0369852147',
+    address: '789 Đường DEF, Quận 3, TP.HCM',
+    birthday: new Date('1992-12-10'),
+    gender: 'Nam',
+    role: 'staff',
+    status: 'active',
+    avatar: null,
+    orderCount: 0,
+    totalSpent: 0,
+    avgOrderValue: 0,
+    createdAt: new Date('2024-01-05'),
+    lastLogin: new Date('2024-01-21'),
+    orders: [],
+    activities: [
+      { id: 4, type: 'login', description: 'Đăng nhập vào hệ thống', createdAt: new Date('2024-01-21') }
+    ]
+  },
+  {
+    id: 4,
+    name: 'Phạm Thị D',
+    email: 'phamthid@email.com',
+    phone: '0741852963',
+    address: '321 Đường GHI, Quận 4, TP.HCM',
+    birthday: new Date('1988-03-25'),
+    gender: 'Nữ',
+    role: 'admin',
+    status: 'active',
+    avatar: null,
+    orderCount: 0,
+    totalSpent: 0,
+    avgOrderValue: 0,
+    createdAt: new Date('2024-01-01'),
+    lastLogin: new Date('2024-01-21'),
+    orders: [],
+    activities: [
+      { id: 5, type: 'login', description: 'Đăng nhập vào hệ thống', createdAt: new Date('2024-01-21') }
+    ]
+  }
+])
+
+// Computed
+const totalUsers = computed(() => users.value.length)
+const customerCount = computed(() => users.value.filter(user => user.role === 'customer').length)
+const staffCount = computed(() => users.value.filter(user => user.role === 'staff' || user.role === 'admin').length)
+
+const filteredUsers = computed(() => {
+  let filtered = users.value
+
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(user =>
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.phone?.toLowerCase().includes(query)
+    )
+  }
+
+  if (selectedRole.value) {
+    filtered = filtered.filter(user => user.role === selectedRole.value)
+  }
+
+  if (selectedStatus.value) {
+    filtered = filtered.filter(user => user.status === selectedStatus.value)
+  }
+
+  if (selectedDate.value) {
+    const selected = new Date(selectedDate.value)
+    filtered = filtered.filter(user => {
+      const userDate = new Date(user.createdAt)
+      return userDate.toDateString() === selected.toDateString()
+    })
+  }
+
+  // Sorting
+  filtered.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'oldest':
+        return new Date(a.createdAt) - new Date(b.createdAt)
+      case 'name-asc':
+        return a.name.localeCompare(b.name)
+      case 'name-desc':
+        return b.name.localeCompare(a.name)
+      case 'orders-high':
+        return b.orderCount - a.orderCount
+      case 'newest':
+      default:
+        return new Date(b.createdAt) - new Date(a.createdAt)
+    }
+  })
+
+  return filtered
+})
+
+const totalItems = computed(() => filteredUsers.value.length)
+const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
+
+const visiblePages = computed(() => {
+  const pages = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, start + 4)
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  
+  return pages
+})
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredUsers.value.slice(start, end)
+})
+
+// Methods
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(amount)
+}
+
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('vi-VN').format(date)
+}
+
+const formatTime = (date) => {
+  return new Intl.DateTimeFormat('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+const formatDateTime = (date) => {
+  return new Intl.DateTimeFormat('vi-VN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+const getRoleText = (role) => {
+  const roles = {
+    'customer': 'Khách hàng',
+    'staff': 'Nhân viên',
+    'admin': 'Quản trị viên'
+  }
+  return roles[role] || role
+}
+
+const getRoleClass = (role) => {
+  const classes = {
+    'customer': 'bg-primary',
+    'staff': 'bg-success',
+    'admin': 'bg-danger'
+  }
+  return classes[role] || 'bg-secondary'
+}
+
+const getStatusText = (status) => {
+  const statuses = {
+    'active': 'Hoạt động',
+    'inactive': 'Ngừng hoạt động',
+    'banned': 'Bị cấm'
+  }
+  return statuses[status] || status
+}
+
+const getStatusClass = (status) => {
+  const classes = {
+    'active': 'bg-success',
+    'inactive': 'bg-warning',
+    'banned': 'bg-danger'
+  }
+  return classes[status] || 'bg-secondary'
+}
+
+const getActivityIcon = (type) => {
+  const icons = {
+    'login': 'ph-sign-in',
+    'order': 'ph-shopping-bag',
+    'profile': 'ph-user',
+    'password': 'ph-key'
+  }
+  return icons[type] || 'ph-circle'
+}
+
+const clearFilters = () => {
+  searchQuery.value = ''
+  selectedRole.value = ''
+  selectedStatus.value = ''
+  selectedDate.value = ''
+  sortBy.value = 'newest'
+}
+
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedUsers.value = paginatedUsers.value.map(u => u.id)
+  } else {
+    selectedUsers.value = []
+  }
+}
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const viewUser = (user) => {
+  selectedUser.value = user
+  showUserModal.value = true
+}
+
+const closeUserModal = () => {
+  showUserModal.value = false
+  selectedUser.value = null
+}
+
+const editUser = (user) => {
+  console.log('Edit user:', user)
+  // Implement edit functionality
+}
+
+const resetPassword = (user) => {
+  if (confirm(`Bạn có chắc chắn muốn đặt lại mật khẩu cho ${user.name}?`)) {
+    console.log('Reset password for:', user)
+    // Implement reset password functionality
+  }
+}
+
+const toggleUserStatus = (user) => {
+  const newStatus = user.status === 'active' ? 'inactive' : 'active'
+  user.status = newStatus
+  console.log(`User ${user.name} status changed to ${newStatus}`)
+}
+
+const bulkUpdateStatus = (status) => {
+  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedUsers.value.length} người dùng?`)) {
+    selectedUsers.value.forEach(userId => {
+      const user = users.value.find(u => u.id === userId)
+      if (user) {
+        user.status = status
+      }
+    })
+    selectedUsers.value = []
+    selectAll.value = false
+  }
+}
+
+const bulkExport = () => {
+  console.log('Export users:', selectedUsers.value)
+  // Implement export functionality
+}
+
+// Lifecycle
+onMounted(() => {
+  console.log('Users page loaded')
+})
+</script>
+
+<style scoped>
+.admin-users {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  color: #6c757d;
+  margin: 0;
+}
+
+.header-stats {
+  display: flex;
+  gap: 2rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  z-index: 1;
+}
+
+.search-input {
+  padding-left: 2.5rem;
+}
+
+.users-table {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  border-top: none;
+  font-weight: 600;
+  color: #2c3e50;
+  padding: 1rem 0.75rem;
+}
+
+.table td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-avatar {
+  position: relative;
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.status-indicator {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.status-indicator-large {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 3px solid white;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.user-id {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.contact-email {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.contact-phone {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.role-badge,
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+}
+
+.order-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.order-count {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.order-value {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.spending-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.total-spent {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.avg-order {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.join-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.join-time {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-buttons .btn {
+  padding: 0.375rem 0.75rem;
+}
+
+.pagination-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.pagination-info {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.bulk-actions {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+}
+
+.bulk-actions-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.selected-count {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.bulk-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-content.modal-lg {
+  max-width: 1000px;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.btn-close:hover {
+  background-color: #f8f9fa;
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+/* User Profile Card */
+.user-profile-card {
+  text-align: center;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.profile-avatar {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1rem;
+}
+
+.avatar-large {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.profile-role {
+  margin-bottom: 1.5rem;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  gap: 1rem;
+}
+
+.profile-stats .stat-item {
+  text-align: center;
+}
+
+.profile-stats .stat-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.profile-stats .stat-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Tabs */
+.user-details-tabs {
+  margin-top: 1rem;
+}
+
+.nav-tabs {
+  border-bottom: 2px solid #e9ecef;
+}
+
+.nav-tabs .nav-link {
+  border: none;
+  color: #6c757d;
+  font-weight: 500;
+  padding: 0.75rem 1rem;
+  border-radius: 0;
+}
+
+.nav-tabs .nav-link.active {
+  color: #3498db;
+  border-bottom: 2px solid #3498db;
+  background: none;
+}
+
+.tab-content {
+  padding: 1.5rem 0;
+}
+
+.profile-details table {
+  margin-bottom: 0;
+}
+
+.profile-details td {
+  padding: 0.75rem 0;
+  border: none;
+}
+
+.profile-details td:first-child {
+  font-weight: 600;
+  color: #6c757d;
+  width: 40%;
+}
+
+/* Activity */
+.activity-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3498db;
+  font-size: 1.2rem;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-description {
+  font-weight: 500;
+  color: #2c3e50;
+  margin-bottom: 0.25rem;
+}
+
+.activity-time {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .header-stats {
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .users-table {
+    padding: 1rem;
+  }
+  
+  .table-responsive {
+    font-size: 0.9rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .bulk-actions {
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+  }
+  
+  .bulk-actions-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .bulk-buttons {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .user-profile-card {
+    padding: 1rem;
+  }
+  
+  .profile-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+</style>

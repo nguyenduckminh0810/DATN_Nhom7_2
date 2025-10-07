@@ -21,6 +21,9 @@
     "@vueuse/core": "^13.9.0",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.2",
+    "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.0",
+    "phosphor-icons": "^1.4.2",
     "pinia": "^3.0.3",
     "vue": "^3.5.22",
     "vue-router": "^4.5.1"

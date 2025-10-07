@@ -10,6 +10,14 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Profile from '../views/Profile.vue'
 import Orders from '../views/Orders.vue'
+import SearchResults from '../views/SearchResults.vue'
+import Wishlist from '../views/Wishlist.vue'
+import AdminDashboard from '../views/admin/Dashboard.vue'
+import AdminProducts from '../views/admin/Products.vue'
+import AdminCategories from '../views/admin/Categories.vue'
+import AdminOrders from '../views/admin/Orders.vue'
+import AdminUsers from '../views/admin/Users.vue'
+import AdminAnalytics from '../views/admin/Analytics.vue'
 import NotFound from '../views/NotFound.vue'
 
 const router = createRouter({
@@ -68,6 +76,61 @@ const router = createRouter({
       name: 'orders',
       component: Orders,
       meta: { title: 'Đơn hàng của tôi - AURO', requiresAuth: true }
+    },
+    {
+      path: '/search',
+      name: 'search',
+      component: SearchResults,
+      meta: { title: 'Tìm kiếm - AURO' }
+    },
+    {
+      path: '/wishlist',
+      name: 'wishlist',
+      component: Wishlist,
+      meta: { title: 'Danh sách yêu thích - AURO' }
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: () => import('../layouts/AdminLayout.vue'),
+      children: [
+        {
+          path: '',
+          name: 'admin-dashboard',
+          component: AdminDashboard,
+          meta: { title: 'Admin Dashboard - AURO' }
+        },
+        {
+          path: 'products',
+          name: 'admin-products',
+          component: AdminProducts,
+          meta: { title: 'Quản lý sản phẩm - AURO' }
+        },
+        {
+          path: 'categories',
+          name: 'admin-categories',
+          component: AdminCategories,
+          meta: { title: 'Quản lý danh mục - AURO' }
+        },
+        {
+          path: 'orders',
+          name: 'admin-orders',
+          component: AdminOrders,
+          meta: { title: 'Quản lý đơn hàng - AURO' }
+        },
+        {
+          path: 'users',
+          name: 'admin-users',
+          component: AdminUsers,
+          meta: { title: 'Quản lý người dùng - AURO' }
+        },
+        {
+          path: 'analytics',
+          name: 'admin-analytics',
+          component: AdminAnalytics,
+          meta: { title: 'Thống kê & Báo cáo - AURO' }
+        }
+      ]
     },
     {
       path: '/:pathMatch(.*)*',
