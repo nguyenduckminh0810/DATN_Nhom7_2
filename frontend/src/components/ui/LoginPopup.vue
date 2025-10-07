@@ -251,6 +251,10 @@ const handleLogin = async () => {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+/* Add font-family to the container or body if needed */
+.login-popup-container {
   font-family: var(--auro-body-font);
 }
 
