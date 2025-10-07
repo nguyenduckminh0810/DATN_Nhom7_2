@@ -11,33 +11,37 @@ import java.util.List;
 import java.util.Optional;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
-    Page<SanPham> findByDanhMuc_Id(Long idDanhMuc, Pageable pageable);
+        Page<SanPham> findByDanhMuc_Id(Long idDanhMuc, Pageable pageable);
 
-    Page<SanPham> findByTenContainingIgnoreCase(String keyword, Pageable pageable);
+        Page<SanPham> findByTenContainingIgnoreCase(String keyword, Pageable pageable);
 
-    Page<SanPham> findByTrangThaiTrue(Pageable pageable);
+        Page<SanPham> findByTrangThaiTrue(Pageable pageable);
 
-    long countByDanhMuc_Id(Long idDanhMuc);
-    
-    // Tìm theo slug
-    Optional<SanPham> findBySlug(String slug);
-    
-    // Methods cho Service
-    Page<SanPham> findByTenContainingIgnoreCaseAndDanhMucId(String keyword, Long danhMucId, Pageable pageable);
-    Page<SanPham> findByDanhMucId(Long danhMucId, Pageable pageable);
-    List<SanPham> findTop8ByTrangThaiOrderByTaoLucDesc(String trangThai);
-    List<SanPham> findByDanhMucIdAndTrangThai(Long danhMucId, String trangThai);
-    
-    // Tìm kiếm nâng cao
-    @Query("""
-            SELECT s FROM SanPham s 
-            WHERE s.trangThai = true 
-            AND (:keyword IS NULL OR LOWER(s.ten) LIKE LOWER(CONCAT('%', :keyword, '%')))
-            AND (:thuongHieu IS NULL OR LOWER(s.thuongHieu) LIKE LOWER(CONCAT('%', :thuongHieu, '%')))
-            AND (:idDanhMuc IS NULL OR s.danhMuc.id = :idDanhMuc)
-            """)
-    Page<SanPham> findAdvanced(@Param("keyword") String keyword, 
-                               @Param("thuongHieu") String thuongHieu, 
-                               @Param("idDanhMuc") Long idDanhMuc, 
-                               Pageable pageable);
+        long countByDanhMuc_Id(Long idDanhMuc);
+
+        // Tìm theo slug
+        Optional<SanPham> findBySlug(String slug);
+
+        // Methods cho Service
+        Page<SanPham> findByTenContainingIgnoreCaseAndDanhMucId(String keyword, Long danhMucId, Pageable pageable);
+
+        Page<SanPham> findByDanhMucId(Long danhMucId, Pageable pageable);
+
+        // sửa kiểu param trangThai từ String -> Boolean
+        List<SanPham> findTop8ByTrangThaiOrderByTaoLucDesc(Boolean trangThai);
+
+        List<SanPham> findByDanhMucIdAndTrangThai(Long danhMucId, Boolean trangThai);
+
+        // Tìm kiếm nâng cao
+        @Query("""
+                        SELECT s FROM SanPham s
+                        WHERE s.trangThai = true
+                        AND (:keyword IS NULL OR LOWER(s.ten) LIKE LOWER(CONCAT('%', :keyword, '%')))
+                        AND (:thuongHieu IS NULL OR LOWER(s.thuongHieu) LIKE LOWER(CONCAT('%', :thuongHieu, '%')))
+                        AND (:idDanhMuc IS NULL OR s.danhMuc.id = :idDanhMuc)
+                        """)
+        Page<SanPham> findAdvanced(@Param("keyword") String keyword,
+                        @Param("thuongHieu") String thuongHieu,
+                        @Param("idDanhMuc") Long idDanhMuc,
+                        Pageable pageable);
 }

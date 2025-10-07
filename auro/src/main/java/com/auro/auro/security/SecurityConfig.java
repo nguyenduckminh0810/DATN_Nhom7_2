@@ -3,6 +3,7 @@ package com.auro.auro.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -18,8 +19,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
 
@@ -35,45 +36,47 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                // Public endpoints - ai cũng truy cập được
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/categories/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
-                
-                // Guest endpoints - khách vãng lai
-                .requestMatchers("/api/guest/**").permitAll()
-                .requestMatchers("/api/cart/**").permitAll() // Guest có thể dùng giỏ hàng
-                .requestMatchers("/api/checkout/**").permitAll() // Guest có thể thanh toán
-                
-                // Customer endpoints - khách đã đăng ký
-                .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers("/api/voucher/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                .requestMatchers("/api/orders/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                
-                // Staff endpoints - nhân viên
-                .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers("/api/inventory/**").hasAnyRole("STAFF", "ADMIN")
-                .requestMatchers("/api/orders/manage/**").hasAnyRole("STAFF", "ADMIN")
-                
-                // Admin endpoints - quản lý
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/users/**").hasRole("ADMIN")
-                .requestMatchers("/api/reports/**").hasRole("ADMIN")
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .authorizeHttpRequests(auth -> auth
+                        // Public endpoints - ai cũng truy cập được
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
+                        .requestMatchers("/api/categories/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
 
-                .requestMatchers("/api/test/**").permitAll()
+                        // Guest endpoints - khách vãng lai
+                        .requestMatchers("/api/guest/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll() // Guest có thể dùng giỏ hàng
+                        .requestMatchers("/api/checkout/**").permitAll() // Guest có thể thanh toán
 
-                // All other requests need authentication
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        // Customer endpoints - khách đã đăng ký
+                        .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/voucher/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/orders/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+
+                        // Staff endpoints - nhân viên
+                        .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/api/inventory/**").hasAnyRole("STAFF", "ADMIN")
+                        .requestMatchers("/api/orders/manage/**").hasAnyRole("STAFF", "ADMIN")
+
+                        // Admin endpoints - quản lý
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/test/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/san-pham/**").permitAll() // cho phép tất cả POST đến
+                                                                                          // /api/san-pham
+                        // .requestMatchers("/api/san-pham/**").permitAll() // hoặc nếu muốn mọi method
+                        // cho /api/san-pham công khai (dev)
+
+                        // All other requests need authentication
+                        .anyRequest().authenticated())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -98,14 +101,13 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOrigin("http://localhost:5173"); // frontend origin
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
 }
