@@ -230,10 +230,10 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
 import { useProductStore } from '../../stores/product'
-import SearchModal from '../ui/SearchModal.vue'
-import LoginPopup from '../ui/LoginPopup.vue'
-import RegisterPopup from '../ui/RegisterPopup.vue'
-import MiniCart from '../ui/MiniCart.vue'
+import SearchModal from '../common/SearchModal.vue'
+import LoginPopup from '../auth/LoginPopup.vue'
+import RegisterPopup from '../auth/RegisterPopup.vue'
+import MiniCart from '../cart/MiniCart.vue'
 
 const router = useRouter()
 const cartStore = useCartStore()

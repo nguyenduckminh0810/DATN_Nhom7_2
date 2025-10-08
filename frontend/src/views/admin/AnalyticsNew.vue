@@ -524,7 +524,7 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import Chart from '@/components/ui/Chart.vue'
+import Chart from '@/components/admin/Chart.vue'
 
 // Reactive data
 const showAdvancedFilters = ref(false)

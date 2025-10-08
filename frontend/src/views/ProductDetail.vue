@@ -100,34 +100,53 @@
             <div class="product-variants mb-4">
               <!-- Size Selection -->
               <div class="variant-group mb-3">
-                <h6 class="mb-2">Kích thước</h6>
+                <h6 class="mb-2">
+                  Kích thước
+                  <span v-if="selectedSize" class="text-primary ms-2">- {{ selectedSize }}</span>
+                  <span v-if="selectedColor" class="text-muted ms-2" style="font-size: 0.875rem;">
+                    ({{ availableSizesForColor.length }} size khả dụng)
+                  </span>
+                </h6>
                 <div class="size-options">
                   <button
                     v-for="size in availableSizes"
                     :key="size"
                     class="btn btn-outline-secondary size-btn"
-                    :class="{ active: selectedSize === size }"
+                    :class="{ 
+                      active: selectedSize === size,
+                      disabled: !isSizeAvailable(size)
+                    }"
+                    :disabled="!isSizeAvailable(size)"
                     @click="selectSize(size)"
                   >
                     {{ size }}
+                    
                   </button>
                 </div>
               </div>
 
               <!-- Color Selection -->
               <div class="variant-group mb-3">
-                <h6 class="mb-2">Màu sắc</h6>
+                <h6 class="mb-2">
+                  Màu sắc
+                  <span v-if="selectedColor" class="text-primary ms-2">- {{ getColorName(selectedColor) }}</span>
+                </h6>
                 <div class="color-options">
                   <button
                     v-for="color in availableColors"
                     :key="color"
                     class="btn color-btn"
-                    :class="{ active: selectedColor === color }"
+                    :class="{ 
+                      active: selectedColor === color,
+                      disabled: !isColorAvailable(color)
+                    }"
                     :style="{ backgroundColor: getColorCode(color) }"
-                    :title="color"
+                    :title="getColorName(color)"
+                    :disabled="!isColorAvailable(color)"
                     @click="selectColor(color)"
                   >
-                    <i v-if="selectedColor === color" class="ph-check text-white"></i>
+                    <i v-if="selectedColor === color" class="ph-check" 
+                       :style="{ color: color === '#ffffff' ? '#000' : '#fff' }"></i>
                   </button>
                 </div>
               </div>
@@ -145,13 +164,26 @@
                   class="form-control quantity-input"
                   v-model.number="quantity"
                   min="1"
-                  :max="product.stock || 10"
+                  :max="currentVariantStock"
                 />
-                <button class="btn btn-outline-secondary" @click="increaseQuantity" :disabled="quantity >= (product.stock || 10)">
+                <button class="btn btn-outline-secondary" @click="increaseQuantity" :disabled="quantity >= currentVariantStock">
                   <i class="ph-plus"></i>
                 </button>
               </div>
-              <small class="text-muted">Còn {{ product.stock || 10 }} sản phẩm</small>
+              <small class="text-muted" v-if="selectedColor && selectedSize">
+                <span v-if="currentVariantStock > 0">
+                  Còn {{ currentVariantStock }} sản phẩm ({{ getColorName(selectedColor) }} - {{ selectedSize }})
+                </span>
+                <span v-else class="text-danger">
+                  <i class="ph-warning me-1"></i>Hết hàng
+                </span>
+              </small>
+              <small class="text-muted" v-else-if="totalStock > 0">
+                Tổng còn {{ totalStock }} sản phẩm (chọn màu và size để xem chi tiết)
+              </small>
+              <small class="text-danger" v-else>
+                <i class="ph-warning me-1"></i>Sản phẩm tạm hết hàng
+              </small>
             </div>
 
             <!-- Action Buttons -->
@@ -160,9 +192,15 @@
                 <button
                   class="btn btn-auro-primary flex-grow-1"
                   @click="addToCart"
-                  :disabled="!selectedSize || !selectedColor"
+                  :disabled="!canAddToCart"
+                  :class="{ 'btn-disabled': !canAddToCart }"
                 >
-                  <i class="ph-shopping-cart me-2"></i>Thêm vào giỏ hàng
+                  <i class="ph-shopping-cart me-2"></i>
+                  <span v-if="!selectedColor && !selectedSize">Chọn màu và size</span>
+                  <span v-else-if="!selectedColor">Chọn màu sắc</span>
+                  <span v-else-if="!selectedSize">Chọn kích thước</span>
+                  <span v-else-if="currentVariantStock <= 0">Hết hàng</span>
+                  <span v-else>Thêm vào giỏ hàng</span>
                 </button>
                 <WishlistButton
                   :product="product"
@@ -409,12 +447,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
-import ImageGallery from '../components/ui/ImageGallery.vue'
-import LazyImage from '../components/ui/LazyImage.vue'
-import WishlistButton from '../components/ui/WishlistButton.vue'
+import ImageGallery from '../components/common/ImageGallery.vue'
+import LazyImage from '../components/common/LazyImage.vue'
+import WishlistButton from '../components/product/WishlistButton.vue'
+import { 
+  getColorName, 
+  getColorHex,
+  buildColorSizeMapping,
+  getAvailableColors,
+  getAvailableSizes,
+  getVariantStock,
+  getTotalStock,
+  isVariantAvailable
+} from '../utils/colorMapping'
 
 const route = useRoute()
 const cartStore = useCartStore()
@@ -427,7 +475,7 @@ const selectedSize = ref('')
 const selectedColor = ref('')
 const quantity = ref(1)
 
-// Mock data
+// Mock data với variants structure
 const mockProduct = {
   id: 1,
   name: 'Áo sơ mi nam cao cấp',
@@ -435,11 +483,27 @@ const mockProduct = {
   price: 450000,
   originalPrice: 600000,
   discount: 25,
-  stock: 10,
   images: [
     'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80',
     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80'
+  ],
+  // Variants with stock tracking
+  variants: [
+    { color: 'Trắng', size: 'S', stock: 5 },
+    { color: 'Trắng', size: 'M', stock: 8 },
+    { color: 'Trắng', size: 'L', stock: 3 },
+    { color: 'Trắng', size: 'XL', stock: 2 },
+    { color: 'Đen', size: 'M', stock: 6 },
+    { color: 'Đen', size: 'L', stock: 4 },
+    { color: 'Đen', size: 'XL', stock: 7 },
+    { color: 'Đen', size: 'XXL', stock: 3 },
+    { color: 'Xám', size: 'S', stock: 0 }, // Out of stock
+    { color: 'Xám', size: 'M', stock: 4 },
+    { color: 'Xám', size: 'L', stock: 6 },
+    { color: 'Xanh navy', size: 'L', stock: 2 },
+    { color: 'Xanh navy', size: 'XL', stock: 5 },
+    { color: 'Xanh navy', size: 'XXL', stock: 8 }
   ]
 }
 
@@ -482,8 +546,65 @@ const relatedProducts = ref([
   }
 ])
 
-const availableSizes = ref(['S', 'M', 'L', 'XL', 'XXL'])
-const availableColors = ref(['Đen', 'Trắng', 'Xám', 'Xanh navy'])
+// Computed: Dynamic color-size mapping from variants
+const colorSizeMapping = computed(() => {
+  if (!product.value?.variants) return {}
+  return buildColorSizeMapping(product.value.variants)
+})
+
+// Computed: Available colors (hex codes) with stock
+const availableColors = computed(() => {
+  if (!product.value?.variants) return []
+  return getAvailableColors(product.value.variants)
+})
+
+// Computed: Available sizes with stock
+const availableSizes = computed(() => {
+  if (!product.value?.variants) return []
+  return getAvailableSizes(product.value.variants)
+})
+
+// Computed: Available sizes for selected color
+const availableSizesForColor = computed(() => {
+  if (!selectedColor.value || !colorSizeMapping.value) {
+    return availableSizes.value
+  }
+  return colorSizeMapping.value[selectedColor.value] || []
+})
+
+// Computed: Available colors for selected size
+const availableColorsForSize = computed(() => {
+  if (!selectedSize.value || !colorSizeMapping.value) {
+    return availableColors.value
+  }
+  return availableColors.value.filter(color => 
+    colorSizeMapping.value[color]?.includes(selectedSize.value)
+  )
+})
+
+// Computed: Current variant stock
+const currentVariantStock = computed(() => {
+  if (!selectedColor.value || !selectedSize.value || !product.value?.variants) {
+    return getTotalStock(product.value?.variants || [])
+  }
+  return getVariantStock(product.value.variants, selectedColor.value, selectedSize.value)
+})
+
+// Computed: Total stock
+const totalStock = computed(() => {
+  return getTotalStock(product.value?.variants || [])
+})
+
+// Computed: Check if can add to cart
+const canAddToCart = computed(() => {
+  // Must have color and size selected
+  if (!selectedColor.value || !selectedSize.value) return false
+  // Must have stock
+  if (currentVariantStock.value <= 0) return false
+  // Quantity must be valid
+  if (quantity.value < 1 || quantity.value > currentVariantStock.value) return false
+  return true
+})
 
 // Computed
 const productImages = computed(() => {
@@ -503,26 +624,66 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
-const getColorCode = (colorName) => {
-  const colorMap = {
-    'Đen': '#212529',
-    'Trắng': '#f8f9fa',
-    'Xám': '#6c757d',
-    'Xanh navy': '#001f3f',
-  }
-  return colorMap[colorName] || '#ccc'
+const getColorCode = (hexColor) => {
+  // Color is already in hex format
+  return hexColor
 }
 
 const selectSize = (size) => {
+  // Check if size is available for current color
+  if (selectedColor.value && !availableSizesForColor.value.includes(size)) {
+    return // Don't select unavailable size
+  }
   selectedSize.value = size
+  
+  // Reset quantity if exceeds new stock
+  if (quantity.value > currentVariantStock.value) {
+    quantity.value = Math.min(quantity.value, currentVariantStock.value)
+  }
 }
 
 const selectColor = (color) => {
+  // Check if color is available
+  if (!availableColors.value.includes(color)) {
+    return // Don't select unavailable color
+  }
+  
   selectedColor.value = color
+  
+  // Reset size if current size is not available for new color
+  if (selectedSize.value && !availableSizesForColor.value.includes(selectedSize.value)) {
+    selectedSize.value = ''
+  }
+  
+  // Reset quantity
+  if (quantity.value > currentVariantStock.value) {
+    quantity.value = Math.min(1, currentVariantStock.value)
+  }
+}
+
+// Check if size is available
+const isSizeAvailable = (size) => {
+  if (!selectedColor.value) {
+    // No color selected, check if size exists in any variant
+    return availableSizes.value.includes(size)
+  }
+  // Color selected, check if size is available for that color
+  return availableSizesForColor.value.includes(size)
+}
+
+// Check if color is available
+const isColorAvailable = (color) => {
+  if (!selectedSize.value) {
+    // No size selected, check if color has any stock
+    return availableColors.value.includes(color)
+  }
+  // Size selected, check if color is available for that size
+  return availableColorsForSize.value.includes(color)
 }
 
 const increaseQuantity = () => {
-  if (quantity.value < (product.value?.stock || 10)) {
+  const maxStock = currentVariantStock.value || 10
+  if (quantity.value < maxStock) {
     quantity.value++
   }
 }
@@ -536,11 +697,40 @@ const decreaseQuantity = () => {
 const addToCart = (productToAdd = product.value) => {
   if (!productToAdd) return
   
+  // Validate selections
+  if (!selectedColor.value || !selectedSize.value) {
+    if (window.$toast) {
+      window.$toast.error('Vui lòng chọn màu sắc và kích thước', 'Thiếu thông tin')
+    }
+    return
+  }
+  
+  // Check stock
+  if (currentVariantStock.value <= 0) {
+    if (window.$toast) {
+      window.$toast.error('Sản phẩm này hiện đã hết hàng', 'Hết hàng')
+    }
+    return
+  }
+  
+  // Check quantity
+  if (quantity.value > currentVariantStock.value) {
+    if (window.$toast) {
+      window.$toast.error(
+        `Chỉ còn ${currentVariantStock.value} sản phẩm trong kho`,
+        'Vượt quá số lượng'
+      )
+    }
+    return
+  }
+  
   const cartItem = {
     ...productToAdd,
     selectedSize: selectedSize.value,
     selectedColor: selectedColor.value,
-    quantity: quantity.value
+    selectedColorName: getColorName(selectedColor.value),
+    quantity: quantity.value,
+    variantStock: currentVariantStock.value
   }
   
   cartStore.addItem(cartItem)
@@ -548,10 +738,15 @@ const addToCart = (productToAdd = product.value) => {
   // Show success toast
   if (window.$toast) {
     window.$toast.success(
-      `${productToAdd.name} đã được thêm vào giỏ hàng`,
+      `${productToAdd.name} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
       'Thêm vào giỏ hàng thành công'
     )
   }
+  
+  // Reset selections
+  selectedColor.value = ''
+  selectedSize.value = ''
+  quantity.value = 1
 }
 
 const handleImageChange = (data) => {
@@ -565,6 +760,24 @@ const handleLightboxOpen = (data) => {
 const handleLightboxClose = () => {
   console.log('Lightbox closed')
 }
+
+// Watch quantity changes
+watch(quantity, (newQty) => {
+  const maxStock = currentVariantStock.value || 10
+  if (newQty > maxStock) {
+    quantity.value = maxStock
+  } else if (newQty < 1) {
+    quantity.value = 1
+  }
+})
+
+// Watch for color/size changes to update stock display
+watch([selectedColor, selectedSize], () => {
+  // Validate quantity against new stock
+  if (currentVariantStock.value > 0 && quantity.value > currentVariantStock.value) {
+    quantity.value = currentVariantStock.value
+  }
+})
 
 // Lifecycle
 onMounted(() => {
@@ -639,6 +852,24 @@ onMounted(() => {
   color: white;
 }
 
+.size-btn.disabled,
+.size-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  background-color: #f8f9fa;
+  position: relative;
+}
+
+.unavailable-mark {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  color: #dc3545;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
 .color-options {
   display: flex;
   gap: 0.5rem;
@@ -661,6 +892,25 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(var(--auro-primary-rgb), 0.3);
 }
 
+.color-btn.disabled,
+.color-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  position: relative;
+}
+
+.color-btn.disabled::after {
+  content: '✕';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #dc3545;
+  font-weight: bold;
+  font-size: 1.2rem;
+  text-shadow: 0 0 3px white;
+}
+
 .quantity-controls {
   display: flex;
   align-items: center;
@@ -677,6 +927,14 @@ onMounted(() => {
   border-radius: 12px;
   padding: 12px 24px;
   font-weight: 500;
+}
+
+.btn-disabled,
+.btn-auro-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
 }
 
 .product-features {

@@ -117,7 +117,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import useCart from '../../composables/useCart'
-import VariantModal from '../ui/VariantModal.vue'
+import VariantModal from './VariantModal.vue'
 
 const props = defineProps({
   id: {

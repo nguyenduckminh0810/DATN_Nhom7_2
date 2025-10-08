@@ -131,8 +131,6 @@
       </div>
     </section>
 
-    <!-- Collection By Use -->
-    <CollectionByUse />
 
     <!-- Best Sellers -->
     <BestSellers />
@@ -190,14 +188,13 @@
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
-import WishlistButton from '../components/ui/WishlistButton.vue'
-import LazyImage from '../components/ui/LazyImage.vue'
+import WishlistButton from '../components/product/WishlistButton.vue'
+import LazyImage from '../components/common/LazyImage.vue'
 import UspBar from '../components/home/UspBar.vue'
 import Hero from '../components/home/Hero.vue'
-import CollectionByUse from '../components/home/CollectionByUse.vue'
 import BestSellers from '../components/home/BestSellers.vue'
 import NewArrivals from '../components/home/NewArrivals.vue'
-import ProductCard from '../components/home/ProductCard.vue'
+import ProductCard from '../components/product/ProductCard.vue'
 
 const cartStore = useCartStore()
 const router = useRouter()

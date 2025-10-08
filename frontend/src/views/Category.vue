@@ -151,9 +151,9 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useSearchStore } from '../stores/search'
-import ProductFilters from '../components/ui/ProductFilters.vue'
-import WishlistButton from '../components/ui/WishlistButton.vue'
-import LazyImage from '../components/ui/LazyImage.vue'
+import ProductFilters from '../components/product/ProductFilters.vue'
+import WishlistButton from '../components/product/WishlistButton.vue'
+import LazyImage from '../components/common/LazyImage.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()

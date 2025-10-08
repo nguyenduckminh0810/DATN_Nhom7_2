@@ -747,7 +747,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import Chart from '@/components/ui/Chart.vue'
+import Chart from '@/components/admin/Chart.vue'
 
 // Reactive data
 const startDate = ref(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])

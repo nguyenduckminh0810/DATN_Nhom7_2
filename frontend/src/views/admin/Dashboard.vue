@@ -393,7 +393,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import Chart from '@/components/ui/Chart.vue'
+import Chart from '@/components/admin/Chart.vue'
 
 // Reactive state
 const showQuickAdd = ref(false)

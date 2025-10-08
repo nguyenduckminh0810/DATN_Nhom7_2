@@ -50,7 +50,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
-import ProductCard from './ProductCard.vue'
+import ProductCard from '../product/ProductCard.vue'
 
 const products = ref([])
 const loading = ref(true)
