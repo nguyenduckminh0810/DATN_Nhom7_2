@@ -327,7 +327,6 @@ const clearWishlist = () => {
 
 const handleWishlistToggle = (data) => {
   // Handle wishlist toggle event if needed
-  console.log('Wishlist toggle:', data)
 }
 
 // Lifecycle

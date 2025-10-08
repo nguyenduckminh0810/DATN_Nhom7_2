@@ -148,102 +148,107 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useSearchStore } from '../stores/search'
+import { useProductStore } from '../stores/product'
 import ProductFilters from '../components/product/ProductFilters.vue'
 import WishlistButton from '../components/product/WishlistButton.vue'
 import LazyImage from '../components/common/LazyImage.vue'
 
 const route = useRoute()
+const router = useRouter()
 const cartStore = useCartStore()
 const searchStore = useSearchStore()
+const productStore = useProductStore()
 
 // Reactive data
 const products = ref([])
 const categoryName = ref('')
+const isLoading = ref(true)
+const error = ref(null)
 const viewMode = ref('grid')
-// Remove sortBy - now using filters store
 const currentPage = ref(1)
 const itemsPerPage = 12
 
-// Remove old filter variables - now using filters store
+// Category slug to ID mapping (will be replaced with API call to get category by slug)
+const categorySlugMap = {
+  'ao-thun': { name: 'ÁO THUN', id: 'ao-thun' },
+  'ao-so-mi': { name: 'ÁO SƠ MI', id: 'ao-so-mi' },
+  'ao-khoac': { name: 'ÁO KHOÁC', id: 'ao-khoac' },
+  'ao-polo': { name: 'ÁO POLO', id: 'ao-polo' },
+  'quan-au': { name: 'QUẦN ÂU', id: 'quan-au' },
+  'quan-jean': { name: 'QUẦN JEAN', id: 'quan-jean' },
+  'quan-short': { name: 'QUẦN SHORT', id: 'quan-short' },
+  'quan-jogger': { name: 'QUẦN JOGGER', id: 'quan-jogger' }
+}
 
-// Mock data
-const mockProducts = [
-  {
-    id: 1,
-    name: 'Áo sơ mi nam cao cấp',
-    description: 'Áo sơ mi nam chất liệu cotton 100%',
-    price: 450000,
-    originalPrice: 600000,
-    discount: 25,
-    image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    category: 'ao',
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['Trắng', 'Xanh navy']
-  },
-  {
-    id: 2,
-    name: 'Quần âu nam',
-    description: 'Quần âu nam thiết kế hiện đại',
-    price: 650000,
-    originalPrice: 800000,
-    discount: 19,
-    image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    category: 'quan',
-    sizes: ['M', 'L', 'XL'],
-    colors: ['Đen', 'Xám']
-  },
-  {
-    id: 3,
-    name: 'Áo khoác nam',
-    description: 'Áo khoác nam phong cách casual',
-    price: 850000,
-    originalPrice: 1200000,
-    discount: 29,
-    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    category: 'ao',
-    sizes: ['M', 'L', 'XL', 'XXL'],
-    colors: ['Đen', 'Xám', 'Nâu']
-  },
-  {
-    id: 4,
-    name: 'Áo thun nam',
-    description: 'Áo thun nam chất liệu cotton mềm mại',
-    price: 250000,
-    originalPrice: 350000,
-    discount: 29,
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    category: 'ao',
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['Trắng', 'Đen', 'Xám']
-  },
-  {
-    id: 5,
-    name: 'Quần jean nam',
-    description: 'Quần jean nam phong cách trẻ trung',
-    price: 550000,
-    originalPrice: 750000,
-    discount: 27,
-    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    category: 'quan',
-    sizes: ['S', 'M', 'L', 'XL', 'XXL'],
-    colors: ['Xanh navy', 'Đen']
-  },
-  {
-    id: 6,
-    name: 'Áo polo nam',
-    description: 'Áo polo nam chất liệu cotton cao cấp',
-    price: 350000,
-    originalPrice: 450000,
-    discount: 22,
-    image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    category: 'ao',
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['Trắng', 'Xanh navy', 'Đỏ']
+// API Functions
+const fetchProductsByCategory = async (categorySlug) => {
+  try {
+    isLoading.value = true
+    error.value = null
+    
+    const categoryInfo = categorySlugMap[categorySlug]
+    
+    if (categoryInfo) {
+      categoryName.value = categoryInfo.name
+      
+      // Fetch products by category
+      const result = await productStore.fetchProductsByCategory(categoryInfo.id)
+      
+      if (result.success && result.data?.products) {
+        products.value = result.data.products
+      } else {
+        error.value = result.message || 'Không thể tải danh sách sản phẩm'
+        products.value = []
+        if (window.$toast) {
+          window.$toast.error(error.value, 'Lỗi tải dữ liệu')
+        }
+      }
+    } else {
+      categoryName.value = 'Danh mục không tìm thấy'
+      products.value = []
+      error.value = 'Danh mục không tồn tại'
+    }
+  } catch (err) {
+    error.value = err.message || 'Có lỗi xảy ra khi tải sản phẩm'
+    products.value = []
+    if (window.$toast) {
+      window.$toast.error(error.value, 'Lỗi')
+    }
+  } finally {
+    isLoading.value = false
   }
-]
+}
+
+const fetchAllProducts = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+    categoryName.value = 'Tất cả sản phẩm'
+    
+    const result = await productStore.fetchProducts()
+    
+    if (result.success && result.data?.products) {
+      products.value = result.data.products
+    } else {
+      error.value = result.message || 'Không thể tải danh sách sản phẩm'
+      products.value = []
+      if (window.$toast) {
+        window.$toast.error(error.value, 'Lỗi tải dữ liệu')
+      }
+    }
+  } catch (err) {
+    error.value = err.message || 'Có lỗi xảy ra khi tải sản phẩm'
+    products.value = []
+    if (window.$toast) {
+      window.$toast.error(error.value, 'Lỗi')
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // Computed properties
 const filteredProducts = computed(() => {
@@ -298,64 +303,24 @@ const changePage = (page) => {
 
 // Watch for route changes
 watch(() => route.params.slug, (newSlug) => {
-  console.log('Route slug changed to:', newSlug)
+  // Reset to first page when category changes
+  currentPage.value = 1
+  
   if (newSlug) {
-    // Map slug to category name and filter
-    const categoryMap = {
-      'ao-thun': { name: 'ÁO THUN', filter: 'ao' },
-      'ao-so-mi': { name: 'ÁO SƠ MI', filter: 'ao' },
-      'ao-khoac': { name: 'ÁO KHOÁC', filter: 'ao' },
-      'ao-polo': { name: 'ÁO POLO', filter: 'ao' },
-      'quan-au': { name: 'QUẦN ÂU', filter: 'quan' },
-      'quan-jean': { name: 'QUẦN JEAN', filter: 'quan' },
-      'quan-short': { name: 'QUẦN SHORT', filter: 'quan' },
-      'quan-jogger': { name: 'QUẦN JOGGER', filter: 'quan' }
-    }
-    
-    const categoryInfo = categoryMap[newSlug]
-    if (categoryInfo) {
-      categoryName.value = categoryInfo.name
-      products.value = mockProducts.filter(p => p.category === categoryInfo.filter)
-      console.log('Filtered products for', categoryInfo.name, ':', products.value.length)
-    } else {
-      categoryName.value = 'Danh mục không tìm thấy'
-      products.value = []
-    }
+    fetchProductsByCategory(newSlug)
   } else {
-    // Show all products
-    categoryName.value = 'Tất cả sản phẩm'
-    products.value = mockProducts
+    fetchAllProducts()
   }
-}, { immediate: true })
+}, { immediate: false })
 
+// Lifecycle
 onMounted(() => {
-  // Load products based on route
   const slug = route.params.slug
-  console.log('Mounted with slug:', slug)
+  
   if (slug) {
-    const categoryMap = {
-      'ao-thun': { name: 'ÁO THUN', filter: 'ao' },
-      'ao-so-mi': { name: 'ÁO SƠ MI', filter: 'ao' },
-      'ao-khoac': { name: 'ÁO KHOÁC', filter: 'ao' },
-      'ao-polo': { name: 'ÁO POLO', filter: 'ao' },
-      'quan-au': { name: 'QUẦN ÂU', filter: 'quan' },
-      'quan-jean': { name: 'QUẦN JEAN', filter: 'quan' },
-      'quan-short': { name: 'QUẦN SHORT', filter: 'quan' },
-      'quan-jogger': { name: 'QUẦN JOGGER', filter: 'quan' }
-    }
-    
-    const categoryInfo = categoryMap[slug]
-    if (categoryInfo) {
-      categoryName.value = categoryInfo.name
-      products.value = mockProducts.filter(p => p.category === categoryInfo.filter)
-      console.log('Mounted - Filtered products for', categoryInfo.name, ':', products.value.length)
-    } else {
-      categoryName.value = 'Danh mục không tìm thấy'
-      products.value = []
-    }
+    fetchProductsByCategory(slug)
   } else {
-    categoryName.value = 'Tất cả sản phẩm'
-    products.value = mockProducts
+    fetchAllProducts()
   }
 })
 </script>

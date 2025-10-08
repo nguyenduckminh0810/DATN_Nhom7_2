@@ -1016,7 +1016,7 @@ const bulkUpdateStatus = (status) => {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Orders page loaded')
+  // Initialize orders page
 })
 </script>
 

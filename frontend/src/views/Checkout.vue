@@ -355,7 +355,6 @@ const handleCheckout = async () => {
     }
     
     // TODO: Send order to API
-    console.log('Order data:', orderData)
     
     // Clear cart
     cartStore.clearCart()

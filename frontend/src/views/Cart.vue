@@ -80,7 +80,7 @@
                   <!-- Price -->
                   <div class="col-md-2">
                     <div class="cart-price">
-                      <span class="price-amount">{{ formatPrice(item.price) }}</span>
+                      <span class="price-amount">{{ cartStore.formatPrice(item.price) }}</span>
                       <small class="price-unit text-muted">đ</small>
                     </div>
                   </div>
@@ -108,7 +108,7 @@
                   <div class="col-md-2">
                     <div class="cart-total-actions">
                       <div class="cart-total">
-                        <span class="total-amount fw-bold">{{ formatPrice(item.price * item.quantity) }}</span>
+                        <span class="total-amount fw-bold">{{ cartStore.formatPrice(item.price * item.quantity) }}</span>
                       </div>
                       <button class="btn btn-outline-danger btn-sm remove-btn" 
                               @click="removeItemFromCart(item.itemKey)">
@@ -142,24 +142,24 @@
               <div class="summary-section">
                 <div class="summary-item">
                   <span class="summary-label">Tạm tính:</span>
-                  <span class="summary-value">{{ formatPrice(totalPrice) }}</span>
+                  <span class="summary-value">{{ cartStore.formatPrice(totalPrice) }}</span>
                 </div>
                 
                 <div class="summary-item">
                   <span class="summary-label">Phí vận chuyển:</span>
-                  <span class="summary-value">{{ formatPrice(shippingFee) }}</span>
+                  <span class="summary-value">{{ cartStore.formatPrice(shippingFee) }}</span>
                 </div>
                 
                 <div v-if="discountAmount > 0" class="summary-item discount-item">
                   <span class="summary-label">Giảm giá:</span>
-                  <span class="summary-value">-{{ formatPrice(discountAmount) }}</span>
+                  <span class="summary-value">-{{ cartStore.formatPrice(discountAmount) }}</span>
                 </div>
                 
                 <div class="summary-divider"></div>
                 
                 <div class="summary-total">
                   <span class="total-label">Tổng cộng:</span>
-                  <span class="total-value">{{ formatPrice(finalTotal) }}</span>
+                  <span class="total-value">{{ cartStore.formatPrice(finalTotal) }}</span>
                 </div>
               </div>
 
@@ -273,12 +273,6 @@ const finalTotal = computed(() => {
 })
 
 // Methods
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
-}
 
 const getColorName = (color) => {
   const colorNames = {

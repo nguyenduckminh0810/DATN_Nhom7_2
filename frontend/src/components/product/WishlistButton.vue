@@ -6,8 +6,8 @@
     @click="handleToggle"
     :disabled="disabled"
   >
-    <i :class="iconClass"></i>
-    <span v-if="showText" class="ms-1">{{ buttonText }}</span>
+    <span class="heart-icon">{{ isInWishlist ? '❤️' : '🤍' }}</span>
+    <span v-if="showText">{{ buttonText }}</span>
   </button>
 </template>
 
@@ -63,7 +63,7 @@ const buttonClass = computed(() => {
   } else if (props.variant === 'text') {
     classes.push('btn-link', 'text-decoration-none', 'p-0')
   } else {
-    classes.push('btn-outline-primary')
+    classes.push('btn-outline-secondary')
   }
   
   // Active state
@@ -74,13 +74,6 @@ const buttonClass = computed(() => {
   return classes.join(' ')
 })
 
-const iconClass = computed(() => {
-  const baseClass = 'ph'
-  const iconName = isInWishlist.value ? 'heart-fill' : 'heart'
-  const colorClass = isInWishlist.value ? 'text-danger' : ''
-  
-  return `${baseClass} ${iconName} ${colorClass}`.trim()
-})
 
 const buttonTitle = computed(() => {
   return isInWishlist.value 
@@ -107,6 +100,8 @@ const handleToggle = () => {
   border-radius: 8px;
   position: relative;
   overflow: hidden;
+  border: 2px solid #dee2e6 !important;
+  font-weight: 500;
 }
 
 .wishlist-btn:hover {
@@ -115,13 +110,33 @@ const handleToggle = () => {
 
 .wishlist-btn.active {
   background-color: rgba(220, 53, 69, 0.1);
-  border-color: #dc3545;
+  border-color: #dc3545 !important;
   color: #dc3545;
 }
 
 .wishlist-btn.active:hover {
   background-color: rgba(220, 53, 69, 0.2);
-  border-color: #dc3545;
+  border-color: #dc3545 !important;
+  color: #dc3545;
+}
+
+/* Button variant specific styling */
+.wishlist-btn.btn-outline-secondary {
+  border: 2px solid #dee2e6 !important;
+  color: #6c757d;
+  background-color: transparent;
+  padding: 12px 20px;
+}
+
+.wishlist-btn.btn-outline-secondary:hover {
+  border: 2px solid #dc3545 !important;
+  color: #dc3545;
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.wishlist-btn.btn-outline-secondary.active {
+  border: 2px solid #dc3545 !important;
+  background-color: rgba(220, 53, 69, 0.1);
   color: #dc3545;
 }
 
@@ -137,16 +152,20 @@ const handleToggle = () => {
   color: #dc3545;
 }
 
-/* Icon animation */
-.wishlist-btn i {
+/* Heart icon styling */
+.heart-icon {
+  font-size: 1.3em;
+  display: inline-block;
+  margin-right: 8px;
   transition: all 0.3s ease;
+  user-select: none;
 }
 
-.wishlist-btn:hover i {
+.wishlist-btn:hover .heart-icon {
   transform: scale(1.1);
 }
 
-.wishlist-btn.active i {
+.wishlist-btn.active .heart-icon {
   animation: heartbeat 0.6s ease-in-out;
 }
 

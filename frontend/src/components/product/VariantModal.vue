@@ -127,10 +127,6 @@
         </div>
 
         <!-- Quick Add Notice -->
-        <div v-if="isQuickAddMode" class="quick-add-notice">
-          <i class="ph-lightning me-2"></i>
-          <span>Chế độ thêm nhanh: Chọn đủ size + màu để tự động thêm vào giỏ</span>
-        </div>
       </div>
     </div>
   </div>
@@ -148,10 +144,6 @@ const props = defineProps({
   product: {
     type: Object,
     required: true
-  },
-  isQuickAddMode: {
-    type: Boolean,
-    default: false
   },
   preselectedColor: {
     type: String,
@@ -276,12 +268,6 @@ const selectColor = (color) => {
     selectedSize.value = null
   }
   
-  // Quick add logic
-  if (props.isQuickAddMode && selectedSize.value && canAddToCart.value) {
-    nextTick(() => {
-      handleAddToCart()
-    })
-  }
 }
 
 const selectSize = (size) => {
@@ -289,12 +275,6 @@ const selectSize = (size) => {
   
   selectedSize.value = size
   
-  // Quick add logic
-  if (props.isQuickAddMode && selectedColor.value && canAddToCart.value) {
-    nextTick(() => {
-      handleAddToCart()
-    })
-  }
 }
 
 const increaseQuantity = () => {
@@ -355,12 +335,6 @@ watch(() => props.isOpen, (isOpen) => {
     selectedSize.value = props.preselectedSize || null
     quantity.value = 1
     
-    // If preselected, trigger quick add if enabled
-    if (props.isQuickAddMode && selectedColor.value && selectedSize.value) {
-      nextTick(() => {
-        handleAddToCart()
-      })
-    }
   }
 })
 
@@ -684,17 +658,6 @@ watch(quantity, (newQty) => {
   opacity: 0.6;
 }
 
-.quick-add-notice {
-  margin-top: 1rem;
-  padding: 0.75rem;
-  background: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.3);
-  border-radius: 8px;
-  font-size: 0.875rem;
-  color: #856404;
-  display: flex;
-  align-items: center;
-}
 
 /* Animations */
 @keyframes fadeIn {

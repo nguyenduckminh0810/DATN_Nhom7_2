@@ -188,6 +188,7 @@
 import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
+import { useProductStore } from '../stores/product'
 import WishlistButton from '../components/product/WishlistButton.vue'
 import LazyImage from '../components/common/LazyImage.vue'
 import UspBar from '../components/home/UspBar.vue'
@@ -197,7 +198,183 @@ import NewArrivals from '../components/home/NewArrivals.vue'
 import ProductCard from '../components/product/ProductCard.vue'
 
 const cartStore = useCartStore()
+const productStore = useProductStore()
 const router = useRouter()
+
+// State
+const featuredProducts = ref([])
+const isLoadingFeatured = ref(true)
+const featuredError = ref(null)
+
+// API Function
+const fetchFeaturedProducts = async () => {
+  try {
+    isLoadingFeatured.value = true
+    featuredError.value = null
+    
+    const result = await productStore.fetchFeaturedProducts()
+    
+    if (result.success && result.data?.products) {
+      featuredProducts.value = result.data.products
+    } else {
+      // Fallback mock data for development when API is not ready
+      console.warn('API not available, using mock data for Featured Products')
+      featuredProducts.value = [
+        {
+          id: 1,
+          name: 'Áo thun nam cao cấp',
+          image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&h=600&fit=crop',
+          price: 299000,
+          originalPrice: 399000,
+          discount: 25,
+          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+          colorOptions: ['#dc3545', '#007bff', '#28a745'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+          colorSizeMapping: {
+            '#dc3545': ['S', 'M', 'L'],
+            '#007bff': ['M', 'L', 'XL', '2XL'],
+            '#28a745': ['L', 'XL', '2XL', '3XL']
+          }
+        },
+        {
+          id: 2,
+          name: 'Quần short nữ thể thao',
+          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+          price: 199000,
+          originalPrice: 299000,
+          discount: 33,
+          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+          colorOptions: ['#ff69b4', '#007bff', '#000000'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL'],
+          colorSizeMapping: {
+            '#ff69b4': ['S', 'M', 'L'],
+            '#007bff': ['M', 'L', 'XL'],
+            '#000000': ['L', 'XL', '2XL']
+          }
+        },
+        {
+          id: 3,
+          name: 'Áo khoác nam dài tay',
+          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
+          price: 599000,
+          originalPrice: 799000,
+          discount: 25,
+          promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
+          colorOptions: ['#000000', '#808080', '#8b4513'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['L', 'XL', '2XL', '3XL'],
+          colorSizeMapping: {
+            '#000000': ['L', 'XL', '2XL'],
+            '#808080': ['XL', '2XL', '3XL'],
+            '#8b4513': ['2XL', '3XL']
+          }
+        },
+        {
+          id: 4,
+          name: 'Váy nữ công sở',
+          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+          price: 399000,
+          originalPrice: 499000,
+          discount: 20,
+          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+          colorOptions: ['#000000', '#ffffff', '#ff69b4'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+          colorSizeMapping: {
+            '#000000': ['S', 'M', 'L'],
+            '#ffffff': ['M', 'L', 'XL'],
+            '#ff69b4': ['L', 'XL', '2XL']
+          }
+        },
+        {
+          id: 5,
+          name: 'Áo sơ mi nam trắng',
+          image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=500&h=600&fit=crop',
+          price: 249000,
+          originalPrice: 349000,
+          discount: 29,
+          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+          colorOptions: ['#ffffff', '#000000', '#007bff'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          colorSizeMapping: {
+            '#ffffff': ['S', 'M', 'L', 'XL'],
+            '#000000': ['M', 'L', 'XL', '2XL'],
+            '#007bff': ['L', 'XL', '2XL', '3XL']
+          }
+        }
+      ]
+    }
+  } catch (err) {
+    // Fallback mock data for development
+    console.warn('API error, using mock data for Featured Products:', err.message)
+    featuredProducts.value = [
+      {
+        id: 1,
+        name: 'Áo thun nam cao cấp',
+        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&h=600&fit=crop',
+        price: 299000,
+        originalPrice: 399000,
+        discount: 25,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+        colorOptions: ['#dc3545', '#007bff', '#28a745'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+        colorSizeMapping: {
+          '#dc3545': ['S', 'M', 'L'],
+          '#007bff': ['M', 'L', 'XL', '2XL'],
+          '#28a745': ['L', 'XL', '2XL', '3XL']
+        }
+      },
+      {
+        id: 2,
+        name: 'Quần short nữ thể thao',
+        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+        price: 199000,
+        originalPrice: 299000,
+        discount: 33,
+        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+        colorOptions: ['#ff69b4', '#007bff', '#000000'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['S', 'M', 'L', 'XL'],
+        colorSizeMapping: {
+          '#ff69b4': ['S', 'M', 'L'],
+          '#007bff': ['M', 'L', 'XL'],
+          '#000000': ['L', 'XL', '2XL']
+        }
+      },
+      {
+        id: 3,
+        name: 'Áo khoác nam dài tay',
+        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
+        hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
+        price: 599000,
+        originalPrice: 799000,
+        discount: 25,
+        promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
+        colorOptions: ['#000000', '#808080', '#8b4513'],
+        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+        availableSizes: ['L', 'XL', '2XL', '3XL'],
+        colorSizeMapping: {
+          '#000000': ['L', 'XL', '2XL'],
+          '#808080': ['XL', '2XL', '3XL'],
+          '#8b4513': ['2XL', '3XL']
+        }
+      }
+    ]
+  } finally {
+    isLoadingFeatured.value = false
+  }
+}
 
 // Loading state - disabled for better performance
 const isLoading = ref(false)
@@ -289,153 +466,7 @@ const onTransitionEnd = async () => {
   }
 }
 
-// Mock data
-const featuredProducts = ref([
-  {
-    id: 1,
-    name: 'Áo sơ mi nam cao cấp',
-    image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 450000,
-    originalPrice: 600000,
-    discount: 25,
-    promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-    colorOptions: ['#ffffff', '#000000', '#007bff'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-    colorSizeMapping: {
-      '#ffffff': ['S', 'M', 'L', 'XL'],
-      '#000000': ['M', 'L', 'XL', '2XL'],
-      '#007bff': ['L', 'XL', '2XL', '3XL']
-    }
-  },
-  {
-    id: 2,
-    name: 'Quần âu nam',
-    image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 650000,
-    originalPrice: 800000,
-    discount: 19,
-    promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-    colorOptions: ['#000000', '#808080', '#8b4513'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['M', 'L', 'XL', '2XL'],
-    colorSizeMapping: {
-      '#000000': ['M', 'L', 'XL'],
-      '#808080': ['L', 'XL', '2XL'],
-      '#8b4513': ['XL', '2XL', '3XL']
-    }
-  },
-  {
-    id: 3,
-    name: 'Áo khoác nam',
-    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 850000,
-    originalPrice: 1200000,
-    discount: 29,
-    promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-    colorOptions: ['#000000', '#8b4513', '#808080'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['L', 'XL', '2XL', '3XL'],
-    colorSizeMapping: {
-      '#000000': ['L', 'XL', '2XL'],
-      '#8b4513': ['XL', '2XL', '3XL'],
-      '#808080': ['2XL', '3XL']
-    }
-  },
-  {
-    id: 4,
-    name: 'Áo thun nam',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 250000,
-    originalPrice: 350000,
-    discount: 29,
-    promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-    colorOptions: ['#dc3545', '#007bff', '#28a745'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-    colorSizeMapping: {
-      '#dc3545': ['S', 'M', 'L'],
-      '#007bff': ['M', 'L', 'XL', '2XL'],
-      '#28a745': ['L', 'XL', '2XL', '3XL']
-    }
-  },
-  {
-    id: 5,
-    name: 'Quần jean nam',
-    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 399000,
-    originalPrice: 499000,
-    discount: 20,
-    promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-    colorOptions: ['#000080', '#000000', '#808080'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-    colorSizeMapping: {
-      '#000080': ['S', 'M', 'L', 'XL'],
-      '#000000': ['M', 'L', 'XL', '2XL'],
-      '#808080': ['L', 'XL', '2XL']
-    }
-  },
-  {
-    id: 6,
-    name: 'Áo hoodie nam nổi bật',
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a4?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 499000,
-    originalPrice: 699000,
-    discount: 29,
-    promotionalBadge: 'MUA 2 GIẢM THÊM 20%',
-    colorOptions: ['#000000', '#808080', '#dc143c'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['M', 'L', 'XL', '2XL', '3XL'],
-    colorSizeMapping: {
-      '#000000': ['M', 'L', 'XL'],
-      '#808080': ['L', 'XL', '2XL'],
-      '#dc143c': ['XL', '2XL', '3XL']
-    }
-  },
-  {
-    id: 7,
-    name: 'Áo polo nam nổi bật',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 329000,
-    originalPrice: 429000,
-    discount: 23,
-    promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-    colorOptions: ['#ffffff', '#000000', '#228b22'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    colorSizeMapping: {
-      '#ffffff': ['S', 'M', 'L', 'XL'],
-      '#000000': ['M', 'L', 'XL', '2XL'],
-      '#228b22': ['L', 'XL', '2XL', '3XL']
-    }
-  },
-  {
-    id: 8,
-    name: 'Quần short nam nổi bật',
-    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-    price: 199000,
-    originalPrice: 299000,
-    discount: 33,
-    promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-    colorOptions: ['#000000', '#007bff', '#28a745'],
-    sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-    availableSizes: ['S', 'M', 'L', 'XL'],
-    colorSizeMapping: {
-      '#000000': ['S', 'M', 'L'],
-      '#007bff': ['M', 'L', 'XL'],
-      '#28a745': ['L', 'XL', '2XL']
-    }
-  }
-])
+// No more mock featured products - using API
 
 // Category filters
 const categoryFilters = ref([
@@ -548,7 +579,6 @@ const selectFilter = (filterId) => {
 }
 
 const goToCategory = (slug) => {
-  console.log('Navigating to category:', slug)
   router.push(`/category/${slug}`)
 }
 
@@ -673,7 +703,10 @@ const observer = new IntersectionObserver((entries) => {
   })
 }, observerOptions)
 
-onMounted(() => {
+onMounted(async () => {
+  // Fetch featured products from API
+  await fetchFeaturedProducts()
+  
   // Start carousel auto-advance immediately
   startCarousel()
 

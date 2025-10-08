@@ -1,253 +1,384 @@
 <template>
-  <div class="skeleton-loader" :class="[`skeleton-${type}`, { 'skeleton-animated': animated }]">
-    <!-- Product Card Skeleton -->
-    <div v-if="type === 'product'" class="skeleton-product">
-      <div class="skeleton-image"></div>
-      <div class="skeleton-content">
-        <div class="skeleton-title"></div>
-        <div class="skeleton-price"></div>
-        <div class="skeleton-rating"></div>
+  <div 
+    class="skeleton-loader"
+    :class="skeletonClass"
+    :style="skeletonStyle"
+  >
+    <div 
+      v-if="variant === 'text'"
+      class="skeleton-text"
+      :style="{ width: width || '100%' }"
+    ></div>
+
+    <div 
+      v-else-if="variant === 'circle'"
+      class="skeleton-circle"
+      :style="circleStyle"
+    ></div>
+
+    <div 
+      v-else-if="variant === 'rect'"
+      class="skeleton-rect"
+      :style="rectStyle"
+    ></div>
+
+    <div 
+      v-else-if="variant === 'card'"
+      class="skeleton-card"
+    >
+      <div class="skeleton-card-image"></div>
+      <div class="skeleton-card-content">
+        <div class="skeleton-text skeleton-text-title"></div>
+        <div class="skeleton-text skeleton-text-subtitle"></div>
+        <div class="skeleton-text skeleton-text-description"></div>
       </div>
     </div>
 
-    <!-- Category Card Skeleton -->
-    <div v-else-if="type === 'category'" class="skeleton-category">
-      <div class="skeleton-image"></div>
-      <div class="skeleton-content">
-        <div class="skeleton-title"></div>
-        <div class="skeleton-description"></div>
+    <div 
+      v-else-if="variant === 'product'"
+      class="skeleton-product"
+    >
+      <div class="skeleton-product-image"></div>
+      <div class="skeleton-product-content">
+        <div class="skeleton-text skeleton-text-title"></div>
+        <div class="skeleton-text skeleton-text-price"></div>
+        <div class="skeleton-product-colors">
+          <div class="skeleton-circle skeleton-circle-small"></div>
+          <div class="skeleton-circle skeleton-circle-small"></div>
+          <div class="skeleton-circle skeleton-circle-small"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Text Skeleton -->
-    <div v-else-if="type === 'text'" class="skeleton-text">
-      <div v-for="i in lines" :key="i" class="skeleton-line" :style="{ width: getRandomWidth() }"></div>
-    </div>
-
-    <!-- Avatar Skeleton -->
-    <div v-else-if="type === 'avatar'" class="skeleton-avatar" :style="{ width: size, height: size }"></div>
-
-    <!-- Button Skeleton -->
-    <div v-else-if="type === 'button'" class="skeleton-button" :style="{ width: width, height: height }"></div>
-
-    <!-- Card Skeleton -->
-    <div v-else-if="type === 'card'" class="skeleton-card">
-      <div class="skeleton-header"></div>
-      <div class="skeleton-body">
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line"></div>
-        <div class="skeleton-line" style="width: 60%"></div>
+    <div 
+      v-else-if="variant === 'list'"
+      class="skeleton-list"
+    >
+      <div 
+        v-for="i in count"
+        :key="i"
+        class="skeleton-list-item"
+      >
+        <div class="skeleton-circle skeleton-circle-small"></div>
+        <div class="skeleton-list-text">
+          <div class="skeleton-text skeleton-text-title"></div>
+          <div class="skeleton-text skeleton-text-subtitle"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Default Skeleton -->
-    <div v-else class="skeleton-default" :style="{ width: width, height: height }"></div>
+    <div 
+      v-else-if="variant === 'avatar'"
+      class="skeleton-avatar"
+    >
+      <div class="skeleton-circle skeleton-circle-medium"></div>
+      <div class="skeleton-avatar-text">
+        <div class="skeleton-text skeleton-text-name"></div>
+        <div class="skeleton-text skeleton-text-subtitle"></div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { defineProps } from 'vue'
+import { computed } from 'vue'
 
 const props = defineProps({
-  type: {
+  // Variant type
+  variant: {
     type: String,
-    default: 'default',
-    validator: (value) => ['default', 'product', 'category', 'text', 'avatar', 'button', 'card'].includes(value)
+    default: 'text',
+    validator: (value) => [
+      'text', 'circle', 'rect', 'card', 'product', 'list', 'avatar'
+    ].includes(value)
   },
+  
+  // Dimensions
   width: {
-    type: String,
-    default: '100%'
+    type: [String, Number],
+    default: null
   },
   height: {
-    type: String,
-    default: '20px'
+    type: [String, Number],
+    default: null
   },
-  size: {
-    type: String,
-    default: '40px'
-  },
-  lines: {
-    type: Number,
-    default: 3
-  },
+  
+  // Animation
   animated: {
     type: Boolean,
     default: true
+  },
+  
+  // List count
+  count: {
+    type: Number,
+    default: 3
+  },
+  
+  // Rounded corners
+  rounded: {
+    type: [Boolean, String],
+    default: false
   }
 })
 
-const getRandomWidth = () => {
-  const widths = ['100%', '80%', '60%', '90%', '70%']
-  return widths[Math.floor(Math.random() * widths.length)]
-}
+// Computed
+const skeletonClass = computed(() => [
+  'skeleton-loader',
+  {
+    'skeleton-animated': props.animated,
+    [`skeleton-rounded-${props.rounded}`]: typeof props.rounded === 'string'
+  }
+])
+
+const skeletonStyle = computed(() => {
+  const style = {}
+  
+  if (props.width && typeof props.width === 'number') {
+    style.width = `${props.width}px`
+  } else if (props.width) {
+    style.width = props.width
+  }
+  
+  if (props.height && typeof props.height === 'number') {
+    style.height = `${props.height}px`
+  } else if (props.height) {
+    style.height = props.height
+  }
+  
+  if (props.rounded === true) {
+    style.borderRadius = '0.5rem'
+  }
+  
+  return style
+})
+
+const circleStyle = computed(() => {
+  const size = props.width || props.height || 40
+  const sizeValue = typeof size === 'number' ? `${size}px` : size
+  
+  return {
+    width: sizeValue,
+    height: sizeValue
+  }
+})
+
+const rectStyle = computed(() => {
+  return {
+    width: props.width ? (typeof props.width === 'number' ? `${props.width}px` : props.width) : '100%',
+    height: props.height ? (typeof props.height === 'number' ? `${props.height}px` : props.height) : '120px'
+  }
+})
 </script>
 
 <style scoped>
 .skeleton-loader {
-  display: inline-block;
   position: relative;
   overflow: hidden;
 }
 
-.skeleton-animated::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-  animation: skeleton-shimmer 1.5s infinite;
+/* Base skeleton elements */
+.skeleton-text,
+.skeleton-circle,
+.skeleton-rect {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
 }
 
-@keyframes skeleton-shimmer {
-  0% {
-    left: -100%;
-  }
-  100% {
-    left: 100%;
-  }
+.skeleton-animated .skeleton-text,
+.skeleton-animated .skeleton-circle,
+.skeleton-animated .skeleton-rect,
+.skeleton-animated .skeleton-card-image,
+.skeleton-animated .skeleton-product-image {
+  animation: shimmer 1.5s infinite;
 }
 
-/* Product Skeleton */
-.skeleton-product {
-  background: var(--auro-card);
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: var(--auro-shadow);
+/* Text skeleton */
+.skeleton-text {
+  height: 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.skeleton-image {
+.skeleton-text-title {
+  width: 70%;
+  height: 1.25rem;
+}
+
+.skeleton-text-subtitle {
+  width: 50%;
+  height: 1rem;
+  margin-top: 0.5rem;
+}
+
+.skeleton-text-description {
+  width: 90%;
+  height: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+.skeleton-text-price {
+  width: 40%;
+  height: 1.125rem;
+  margin-top: 0.5rem;
+}
+
+.skeleton-text-name {
+  width: 60%;
+  height: 1rem;
+}
+
+/* Circle skeleton */
+.skeleton-circle {
+  border-radius: 50%;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+}
+
+.skeleton-circle-small {
+  width: 32px;
+  height: 32px;
+}
+
+.skeleton-circle-medium {
+  width: 48px;
+  height: 48px;
+}
+
+/* Rect skeleton */
+.skeleton-rect {
+  border-radius: 0.5rem;
+}
+
+/* Card skeleton */
+.skeleton-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: white;
+}
+
+.skeleton-card-image {
   width: 100%;
   height: 200px;
-  background: var(--auro-hover);
-  border-radius: 8px;
-  margin-bottom: 1rem;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
 }
 
-.skeleton-title {
-  width: 80%;
-  height: 16px;
-  background: var(--auro-hover);
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-}
-
-.skeleton-price {
-  width: 40%;
-  height: 14px;
-  background: var(--auro-hover);
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-}
-
-.skeleton-rating {
-  width: 60%;
-  height: 12px;
-  background: var(--auro-hover);
-  border-radius: 4px;
-}
-
-/* Category Skeleton */
-.skeleton-category {
-  background: var(--auro-card);
-  border-radius: 12px;
+.skeleton-card-content {
   padding: 1.5rem;
-  text-align: center;
-  box-shadow: var(--auro-shadow);
 }
 
-.skeleton-category .skeleton-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  margin: 0 auto 1rem;
+/* Product skeleton */
+.skeleton-product {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: white;
 }
 
-.skeleton-category .skeleton-title {
-  width: 70%;
-  margin: 0 auto 0.5rem;
-}
-
-.skeleton-description {
-  width: 90%;
-  height: 12px;
-  background: var(--auro-hover);
-  border-radius: 4px;
-  margin: 0 auto;
-}
-
-/* Text Skeleton */
-.skeleton-text {
+.skeleton-product-image {
   width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
 }
 
-.skeleton-line {
-  height: 12px;
-  background: var(--auro-hover);
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
+.skeleton-product-content {
+  padding: 1rem;
 }
 
-.skeleton-line:last-child {
-  margin-bottom: 0;
+.skeleton-product-colors {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 
-/* Avatar Skeleton */
+/* List skeleton */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: white;
+}
+
+.skeleton-list-text {
+  flex: 1;
+}
+
+/* Avatar skeleton */
 .skeleton-avatar {
-  border-radius: 50%;
-  background: var(--auro-hover);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-/* Button Skeleton */
-.skeleton-button {
-  border-radius: 8px;
-  background: var(--auro-hover);
+.skeleton-avatar-text {
+  flex: 1;
 }
 
-/* Card Skeleton */
-.skeleton-card {
-  background: var(--auro-card);
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: var(--auro-shadow);
+/* Rounded variants */
+.skeleton-rounded-sm {
+  border-radius: 0.25rem;
 }
 
-.skeleton-header {
-  width: 100%;
-  height: 20px;
-  background: var(--auro-hover);
-  border-radius: 4px;
-  margin-bottom: 1rem;
+.skeleton-rounded-md {
+  border-radius: 0.5rem;
 }
 
-.skeleton-body .skeleton-line {
-  margin-bottom: 0.75rem;
+.skeleton-rounded-lg {
+  border-radius: 0.75rem;
 }
 
-/* Default Skeleton */
-.skeleton-default {
-  background: var(--auro-hover);
-  border-radius: 4px;
+.skeleton-rounded-xl {
+  border-radius: 1rem;
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .skeleton-animated::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+.skeleton-rounded-full {
+  border-radius: 9999px;
+}
+
+/* Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .skeleton-card-image,
+  .skeleton-product-image {
+    height: 180px;
   }
   
-  .skeleton-image,
-  .skeleton-title,
-  .skeleton-price,
-  .skeleton-rating,
-  .skeleton-description,
-  .skeleton-line,
-  .skeleton-avatar,
-  .skeleton-button,
-  .skeleton-header,
-  .skeleton-default {
-    background: rgba(255, 255, 255, 0.1);
+  .skeleton-card-content,
+  .skeleton-product-content {
+    padding: 1rem;
+  }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-animated .skeleton-text,
+  .skeleton-animated .skeleton-circle,
+  .skeleton-animated .skeleton-rect,
+  .skeleton-animated .skeleton-card-image,
+  .skeleton-animated .skeleton-product-image {
+    animation: none;
+    background: #f3f4f6;
   }
 }
 </style>

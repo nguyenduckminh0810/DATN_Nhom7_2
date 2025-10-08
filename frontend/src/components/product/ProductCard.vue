@@ -11,23 +11,23 @@
       <div class="image-wrapper">
         <div 
           class="product-image-container"
-          @mouseenter="showQuickAdd = true"
-          @mouseleave="handleMouseLeave"
         >
         <!-- Clickable Image for Navigation -->
-        <img 
+        <LazyImage 
           :src="img" 
           :alt="name"
+          :aspect-ratio="1"
           class="product-image section-item__image"
           itemprop="image"
-          loading="lazy"
           @click="navigateToDetail"
+          @load="handleImageLoad"
         />
         <!-- Hover Image -->
-        <img 
+        <LazyImage 
           v-if="hoverImg"
           :src="hoverImg" 
           :alt="name"
+          :aspect-ratio="1"
           class="product-image-hover"
           @click="navigateToDetail"
         />
@@ -39,19 +39,6 @@
           {{ promotionalBadge }}
         </div>
         
-        <!-- Quick Add Overlay -->
-        <div 
-          class="quick-add-overlay" 
-          :class="{ 'show': showQuickAdd }"
-          @click="openVariantModal"
-          @mouseenter="handleOverlayMouseEnter"
-          @mouseleave="handleOverlayMouseLeave"
-        >
-          <div class="quick-add-content">
-            <i class="ph-plus-circle"></i>
-            <span>Thêm nhanh</span>
-          </div>
-        </div>
         </div>
       </div>
     </div>
@@ -106,7 +93,6 @@
     <VariantModal
       :is-open="showVariantModal"
       :product="productData"
-      :is-quick-add-mode="isQuickAddMode"
       @close="closeVariantModal"
       @add-to-cart="handleAddToCartSuccess"
     />
@@ -118,6 +104,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import useCart from '../../composables/useCart'
 import VariantModal from './VariantModal.vue'
+import LazyImage from '../common/LazyImage.vue'
 
 const props = defineProps({
   id: {
@@ -180,15 +167,10 @@ const { addToCartWithValidation, trackAddToCart } = useCart()
 // Local state
 const showVariantModal = ref(false)
 const selectedColor = ref(null)
-const isQuickAddMode = ref(false)
-const showQuickAdd = ref(false)
 
 // Watch for modal state changes
 watch(showVariantModal, (newValue) => {
-  if (newValue) {
-    // Hide overlay when modal opens
-    showQuickAdd.value = false
-  }
+  // Modal state management
 })
 
 // Computed properties
@@ -250,21 +232,9 @@ const selectColorForPreview = (color) => {
   selectedColor.value = color
 }
 
-const openVariantModal = () => {
-  if (!isInStock.value) return
-  
-  // Close any other modals first
-  document.querySelectorAll('.variant-modal-overlay').forEach(modal => {
-    modal.style.display = 'none'
-  })
-  
-  isQuickAddMode.value = false
-  showVariantModal.value = true
-}
 
 const closeVariantModal = () => {
   showVariantModal.value = false
-  isQuickAddMode.value = false
 }
 
 const handleAddToCart = () => {
@@ -272,7 +242,6 @@ const handleAddToCart = () => {
   
   if (hasVariants.value) {
     // Open variant modal for products with variants
-    isQuickAddMode.value = false
     showVariantModal.value = true
   } else {
     // Direct add to cart for products without variants
@@ -296,43 +265,28 @@ const handleAddToCartSuccess = (variantData) => {
   closeVariantModal()
 }
 
-const handleMouseLeave = () => {
-  // Force hide when leaving image container
-  showQuickAdd.value = false
+
+const handleImageLoad = () => {
+  // Track image load performance
+  // This could be used for analytics or performance monitoring
 }
 
 const handleCardMouseLeave = () => {
-  // Force hide when leaving entire card
-  showQuickAdd.value = false
-  // Also close variant modal if open
+  // Close variant modal if open
   if (showVariantModal.value) {
     showVariantModal.value = false
   }
 }
 
-// Prevent hover image conflict
-const handleOverlayMouseEnter = () => {
-  // Only show if no modal is open
-  if (!showVariantModal.value) {
-    showQuickAdd.value = true
-  }
-}
 
-const handleOverlayMouseLeave = () => {
-  showQuickAdd.value = false
-}
-
-// Force hide overlay on mount and unmount
+// Lifecycle hooks
 onMounted(() => {
-  showQuickAdd.value = false
-  
-  // Add global event listener to hide overlay when clicking outside
+  // Add global event listener to handle clicks outside
   document.addEventListener('click', handleGlobalClick)
   document.addEventListener('mouseleave', handleGlobalMouseLeave)
 })
 
 onUnmounted(() => {
-  showQuickAdd.value = false
   showVariantModal.value = false
   
   // Remove global event listeners
@@ -342,17 +296,16 @@ onUnmounted(() => {
 
 // Global event handlers
 const handleGlobalClick = (event) => {
-  // Hide overlay if clicking outside the card
+  // Close modal if clicking outside the card
   const card = document.querySelector(`[data-product-id="${props.id}"]`)
   if (card && !card.contains(event.target)) {
-    showQuickAdd.value = false
+    showVariantModal.value = false
   }
 }
 
 const handleGlobalMouseLeave = (event) => {
-  // Hide overlay when mouse leaves viewport
+  // Close modal when mouse leaves viewport
   if (event.target === document.documentElement) {
-    showQuickAdd.value = false
     showVariantModal.value = false
   }
 }
@@ -422,7 +375,6 @@ const handleGlobalMouseLeave = (event) => {
   z-index: 1;
 }
 
-/* Disable hover image when quick add is shown */
 .product-image-container:hover .product-image {
   opacity: 0;
 }
@@ -431,14 +383,6 @@ const handleGlobalMouseLeave = (event) => {
   opacity: 1;
 }
 
-/* Override hover image when quick add overlay is visible */
-.quick-add-overlay.show ~ .product-image {
-  opacity: 1 !important;
-}
-
-.quick-add-overlay.show ~ .product-image-hover {
-  opacity: 0 !important;
-}
 
 .discount-badge {
   position: absolute;
@@ -543,73 +487,6 @@ const handleGlobalMouseLeave = (event) => {
   transform: scale(1.05);
 }
 
-/* Quick Add Overlay */
-.quick-add-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 0 0 12px 12px;
-  padding: 1rem;
-  opacity: 0;
-  transform: translateY(100%);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  cursor: pointer;
-  z-index: 15;
-  pointer-events: none;
-  will-change: transform, opacity;
-  contain: layout style paint; /* Contain the overlay */
-  max-height: 100%; /* Ensure it doesn't overflow */
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Force hide overlay when not in show state */
-.quick-add-overlay:not(.show) {
-  opacity: 0 !important;
-  transform: translateY(100%) !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
-  display: none !important; /* Completely hide */
-}
-
-/* Only show when explicitly shown */
-.quick-add-overlay.show {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-  visibility: visible !important;
-  display: block !important; /* Ensure it's visible */
-}
-
-/* Ensure smooth transitions */
-.quick-add-overlay {
-  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s ease !important;
-}
-
-/* Hide overlay when variant modal is open */
-.variant-modal-overlay ~ .quick-add-overlay {
-  display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-}
-
-.quick-add-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  color: white;
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.quick-add-content i {
-  font-size: 1.25rem;
-}
 
 /* Product Actions */
 .product-actions {

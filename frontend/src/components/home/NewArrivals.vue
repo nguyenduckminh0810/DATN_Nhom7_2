@@ -52,10 +52,14 @@
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { useProductStore } from '../../stores/product'
 import ProductCard from '../product/ProductCard.vue'
+
+const productStore = useProductStore()
 
 const products = ref([])
 const loading = ref(true)
+const error = ref(null)
 const productsGrid = ref(null)
 const currentIndex = ref(0)
 const showButtons = ref(false)
@@ -63,10 +67,112 @@ const showButtons = ref(false)
 const fetchNewArrivals = async () => {
   try {
     loading.value = true
-    // Simulate API call - replace with actual API
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    error.value = null
     
-    // Mock data - replace with actual API call
+    // Fetch new arrivals from API
+    const result = await productStore.fetchProducts({ sort: 'newest', limit: 10 })
+    
+    if (result.success && result.data?.products) {
+      products.value = result.data.products
+    } else {
+      // Fallback mock data for development when API is not ready
+      console.warn('API not available, using mock data for NewArrivals')
+      products.value = [
+        {
+          id: 1,
+          name: 'Áo thun nữ mới nhất',
+          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+          price: 199000,
+          originalPrice: 299000,
+          discount: 33,
+          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+          colorOptions: ['#ff69b4', '#007bff', '#28a745'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL'],
+          colorSizeMapping: {
+            '#ff69b4': ['S', 'M', 'L'],
+            '#007bff': ['M', 'L', 'XL'],
+            '#28a745': ['L', 'XL', '2XL']
+          }
+        },
+        {
+          id: 2,
+          name: 'Quần jean nữ skinny',
+          image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+          price: 499000,
+          originalPrice: null,
+          discount: null,
+          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+          colorOptions: ['#000080', '#000000', '#808080'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
+          colorSizeMapping: {
+            '#000080': ['S', 'M', 'L', 'XL'],
+            '#000000': ['M', 'L', 'XL', '2XL'],
+            '#808080': ['L', 'XL', '2XL']
+          }
+        },
+        {
+          id: 3,
+          name: 'Áo sơ mi nữ công sở',
+          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+          price: 399000,
+          originalPrice: 499000,
+          discount: 20,
+          promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
+          colorOptions: ['#000000', '#ffffff', '#ff69b4'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          colorSizeMapping: {
+            '#000000': ['S', 'M', 'L', 'XL'],
+            '#ffffff': ['M', 'L', 'XL', '2XL'],
+            '#ff69b4': ['L', 'XL', '2XL', '3XL']
+          }
+        },
+        {
+          id: 4,
+          name: 'Váy nữ dạo phố',
+          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
+          price: 299000,
+          originalPrice: null,
+          discount: null,
+          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
+          colorOptions: ['#ff69b4', '#000000', '#ffffff'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['S', 'M', 'L', 'XL'],
+          colorSizeMapping: {
+            '#ff69b4': ['S', 'M', 'L'],
+            '#000000': ['M', 'L', 'XL'],
+            '#ffffff': ['L', 'XL', '2XL']
+          }
+        },
+        {
+          id: 5,
+          name: 'Áo khoác nữ dài tay',
+          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
+          hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
+          price: 699000,
+          originalPrice: 899000,
+          discount: 22,
+          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
+          colorOptions: ['#000000', '#808080', '#8b4513'],
+          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+          availableSizes: ['L', 'XL', '2XL', '3XL'],
+          colorSizeMapping: {
+            '#000000': ['L', 'XL', '2XL'],
+            '#808080': ['XL', '2XL', '3XL'],
+            '#8b4513': ['2XL', '3XL']
+          }
+        }
+      ]
+    }
+  } catch (err) {
+    // Fallback mock data for development
+    console.warn('API error, using mock data for NewArrivals:', err.message)
     products.value = [
       {
         id: 1,
@@ -121,100 +227,8 @@ const fetchNewArrivals = async () => {
           '#ffffff': ['M', 'L', 'XL', '2XL'],
           '#ff69b4': ['L', 'XL', '2XL', '3XL']
         }
-      },
-      {
-        id: 4,
-        name: 'Váy nữ dạo phố',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 299000,
-        originalPrice: null,
-        discount: null,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-        colorOptions: ['#ff69b4', '#000000', '#ffffff'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#000000': ['M', 'L', 'XL'],
-          '#ffffff': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 5,
-        name: 'Áo khoác nữ dài tay',
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-        price: 699000,
-        originalPrice: 899000,
-        discount: 22,
-        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-        colorOptions: ['#000000', '#808080', '#8b4513'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['L', 'XL', '2XL', '3XL'],
-        colorSizeMapping: {
-          '#000000': ['L', 'XL', '2XL'],
-          '#808080': ['XL', '2XL', '3XL'],
-          '#8b4513': ['2XL', '3XL']
-        }
-      },
-      {
-        id: 6,
-        name: 'Áo sơ mi nữ mới',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 349000,
-        originalPrice: 449000,
-        discount: 22,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 20%',
-        colorOptions: ['#ffffff', '#ff69b4', '#000000'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-        colorSizeMapping: {
-          '#ffffff': ['S', 'M', 'L'],
-          '#ff69b4': ['M', 'L', 'XL'],
-          '#000000': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 7,
-        name: 'Quần short nữ mới',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 229000,
-        originalPrice: 329000,
-        discount: 30,
-        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-        colorOptions: ['#ff69b4', '#007bff', '#28a745'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL'],
-          '#28a745': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 8,
-        name: 'Áo tank top nữ mới',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 179000,
-        originalPrice: 279000,
-        discount: 36,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-        colorOptions: ['#ff69b4', '#000000', '#ffffff'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#000000': ['M', 'L', 'XL'],
-          '#ffffff': ['L', 'XL', '2XL']
-        }
       }
     ]
-  } catch (error) {
-    console.error('Error fetching new arrivals:', error)
   } finally {
     loading.value = false
   }
@@ -435,36 +449,36 @@ watch(products, () => {
   border-radius: 24px;
   overflow: hidden;
   width: 500px;
-  height: 650px; /* Giảm từ 700px để phù hợp với layout mới */
+  height: 650px;
 }
 
 .skeleton-image {
   width: 100%;
-  height: 580px; /* Tăng từ 550px để phù hợp với ảnh lớn hơn */
+  height: 580px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .skeleton-content {
-  padding: 1rem; /* Giảm padding để phù hợp với product-info-section */
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem; /* Giảm gap như product-info-section */
-  border-top: 1px solid #f0f0f0; /* Đường phân cách */
+  gap: 0.5rem;
+  border-top: 1px solid #f0f0f0;
 }
 
 .skeleton-title {
-  height: 1.5rem; /* Giảm từ 2rem */
+  height: 1.5rem;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
-  margin-bottom: 0; /* Bỏ margin vì đã có gap */
+  margin-bottom: 0;
 }
 
 .skeleton-price {
-  height: 1.25rem; /* Giảm từ 1.5rem */
+  height: 1.25rem;
   width: 60%;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;

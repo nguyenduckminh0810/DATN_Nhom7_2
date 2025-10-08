@@ -166,7 +166,6 @@ export function useCart() {
   // Analytics tracking
   const trackCartEvent = (event, data = {}) => {
     // Implement analytics tracking
-    console.log('Cart Event:', event, data)
     
     // Example: Google Analytics 4
     if (window.gtag) {

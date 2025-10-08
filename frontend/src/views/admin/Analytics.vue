@@ -1469,17 +1469,14 @@ const formatDate = (date) => {
 }
 
 const updateAnalytics = () => {
-  console.log('Updating analytics for period:', startDate.value, 'to', endDate.value)
   // Implement analytics update logic
 }
 
 const exportReport = (type) => {
-  console.log('Exporting report:', type)
   // Implement report export logic
 }
 
 const exportData = (format) => {
-  console.log('Exporting data in format:', format)
   // Implement data export logic
 }
 
@@ -1489,9 +1486,7 @@ const toggleAdvancedFilters = () => {
 }
 
 const applyFilters = () => {
-  console.log('Applying filters:', {
-    startDate: startDate.value,
-    endDate: endDate.value,
+  // Apply filters with date range
     granularity: chartGranularity.value,
     comparison: comparisonPeriod.value,
     reportType: reportType.value
@@ -1510,7 +1505,6 @@ const toggleRealtime = () => {
 
 const refreshData = () => {
   lastUpdated.value = new Date().toLocaleTimeString('vi-VN')
-  console.log('Refreshing analytics data...')
   // Implement data refresh logic
 }
 
@@ -1519,12 +1513,10 @@ const toggleChartType = () => {
 }
 
 const exportChart = () => {
-  console.log('Exporting chart as image...')
   // Implement chart export logic
 }
 
 const viewTopProducts = () => {
-  console.log('Viewing all top products...')
   // Navigate to products page with filter
 }
 
@@ -1572,7 +1564,6 @@ const generateDetailedReport = () => {
     generatedBy: 'Admin Dashboard'
   }
   
-  console.log('Generated detailed report:', reportData)
   // Here you would typically send this data to a backend service to generate a PDF/Excel report
   
   // For demo purposes, show success message
@@ -1580,12 +1571,10 @@ const generateDetailedReport = () => {
 }
 
 const startRealtimeUpdates = () => {
-  console.log('Starting real-time updates...')
   // Implement real-time data updates
 }
 
 const stopRealtimeUpdates = () => {
-  console.log('Stopping real-time updates...')
   // Stop real-time data updates
 }
 
@@ -1703,7 +1692,7 @@ const getPerformanceInsights = () => {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Analytics page loaded')
+  // Initialize analytics page
 })
 </script>
 

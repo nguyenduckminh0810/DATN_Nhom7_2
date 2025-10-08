@@ -880,11 +880,11 @@ const toggleAdvancedFilters = () => {
 }
 
 const applyDateRange = () => {
-  console.log('Applying date range:', selectedDateRange.value)
+  // Apply date range filter
 }
 
 const applyFilters = () => {
-  console.log('Applying filters...')
+  // Apply filters
 }
 
 const resetFilters = () => {
@@ -895,12 +895,12 @@ const resetFilters = () => {
 }
 
 const exportReport = () => {
-  console.log('Exporting report...')
+  // Export report functionality
 }
 
 const refreshData = () => {
   lastUpdated.value = new Date()
-  console.log('Refreshing data...')
+  // Refresh data
 }
 
 const toggleRealtime = () => {
@@ -912,11 +912,11 @@ const toggleChartType = () => {
 }
 
 const exportChart = () => {
-  console.log('Exporting chart...')
+  // Export chart functionality
 }
 
 const viewTopProducts = () => {
-  console.log('Viewing all top products...')
+  // Navigate to all top products
 }
 
 const formatCurrency = (amount) => {
@@ -977,7 +977,7 @@ const formatMetricValue = (value, metric) => {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Advanced Analytics loaded')
+  // Initialize advanced analytics
 })
 </script>
 

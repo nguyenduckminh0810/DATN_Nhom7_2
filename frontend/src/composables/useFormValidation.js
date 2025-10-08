@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue'
+import { ERROR_MESSAGES, SUCCESS_MESSAGES, WARNING_MESSAGES } from '../utils/errorMessages.js'
 
 export const useFormValidation = (schema, initialValues = {}) => {
   const values = ref({ ...initialValues })
@@ -29,7 +30,7 @@ export const useFormValidation = (schema, initialValues = {}) => {
 
     // Required validation
     if (fieldSchema.required && (!value || value.toString().trim() === '')) {
-      fieldErrors.push(`${fieldSchema.label || fieldName} là bắt buộc`)
+      fieldErrors.push(fieldSchema.requiredMessage || ERROR_MESSAGES.REQUIRED_FIELD)
     }
 
     // Skip other validations if field is empty and not required
@@ -44,19 +45,19 @@ export const useFormValidation = (schema, initialValues = {}) => {
 
     // Min length validation
     if (fieldSchema.minLength && value.toString().length < fieldSchema.minLength) {
-      fieldErrors.push(`${fieldSchema.label || fieldName} phải có ít nhất ${fieldSchema.minLength} ký tự`)
+      fieldErrors.push(fieldSchema.minLengthMessage || `${fieldSchema.label || fieldName} phải có ít nhất ${fieldSchema.minLength} ký tự`)
     }
 
     // Max length validation
     if (fieldSchema.maxLength && value.toString().length > fieldSchema.maxLength) {
-      fieldErrors.push(`${fieldSchema.label || fieldName} không được vượt quá ${fieldSchema.maxLength} ký tự`)
+      fieldErrors.push(fieldSchema.maxLengthMessage || `${fieldSchema.label || fieldName} không được vượt quá ${fieldSchema.maxLength} ký tự`)
     }
 
     // Email validation
     if (fieldSchema.type === 'email') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
       if (!emailRegex.test(value)) {
-        fieldErrors.push('Email không hợp lệ')
+        fieldErrors.push(fieldSchema.emailMessage || ERROR_MESSAGES.INVALID_EMAIL)
       }
     }
 
@@ -64,21 +65,21 @@ export const useFormValidation = (schema, initialValues = {}) => {
     if (fieldSchema.type === 'phone') {
       const phoneRegex = /^[0-9]{10,11}$/
       if (!phoneRegex.test(value.replace(/\s/g, ''))) {
-        fieldErrors.push('Số điện thoại không hợp lệ')
+        fieldErrors.push(fieldSchema.phoneMessage || ERROR_MESSAGES.INVALID_PHONE)
       }
     }
 
     // Number validation
     if (fieldSchema.type === 'number') {
       if (isNaN(value) || value === '') {
-        fieldErrors.push(`${fieldSchema.label || fieldName} phải là số`)
+        fieldErrors.push(fieldSchema.numberMessage || `${fieldSchema.label || fieldName} phải là số`)
       } else {
         const numValue = parseFloat(value)
         if (fieldSchema.min !== undefined && numValue < fieldSchema.min) {
-          fieldErrors.push(`${fieldSchema.label || fieldName} phải lớn hơn hoặc bằng ${fieldSchema.min}`)
+          fieldErrors.push(fieldSchema.minMessage || `${fieldSchema.label || fieldName} phải lớn hơn hoặc bằng ${fieldSchema.min}`)
         }
         if (fieldSchema.max !== undefined && numValue > fieldSchema.max) {
-          fieldErrors.push(`${fieldSchema.label || fieldName} phải nhỏ hơn hoặc bằng ${fieldSchema.max}`)
+          fieldErrors.push(fieldSchema.maxMessage || `${fieldSchema.label || fieldName} phải nhỏ hơn hoặc bằng ${fieldSchema.max}`)
         }
       }
     }
@@ -220,19 +221,23 @@ export const useFormValidation = (schema, initialValues = {}) => {
   }
 }
 
-// Common validation schemas
+// Enhanced validation schemas with standardized messages
 export const validationSchemas = {
   login: {
     email: {
       label: 'Email',
       type: 'email',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập email',
+      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
     },
     password: {
       label: 'Mật khẩu',
       type: 'password',
       required: true,
-      minLength: 6
+      minLength: 6,
+      requiredMessage: 'Vui lòng nhập mật khẩu',
+      minLengthMessage: ERROR_MESSAGES.PASSWORD_TOO_SHORT
     }
   },
 
@@ -241,32 +246,43 @@ export const validationSchemas = {
       label: 'Họ và tên',
       required: true,
       minLength: 2,
-      maxLength: 50
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập họ và tên',
+      minLengthMessage: 'Họ và tên phải có ít nhất 2 ký tự',
+      maxLengthMessage: 'Họ và tên không được vượt quá 50 ký tự'
     },
     email: {
       label: 'Email',
       type: 'email',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập email',
+      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
     },
     phone: {
       label: 'Số điện thoại',
       type: 'phone',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập số điện thoại',
+      phoneMessage: ERROR_MESSAGES.INVALID_PHONE
     },
     password: {
       label: 'Mật khẩu',
       type: 'password',
       required: true,
       minLength: 6,
-      maxLength: 50
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập mật khẩu',
+      minLengthMessage: ERROR_MESSAGES.PASSWORD_TOO_SHORT,
+      maxLengthMessage: 'Mật khẩu không được vượt quá 50 ký tự'
     },
     confirmPassword: {
       label: 'Xác nhận mật khẩu',
       type: 'password',
       required: true,
+      requiredMessage: 'Vui lòng xác nhận mật khẩu',
       validate: (value, allValues) => {
         if (value !== allValues.password) {
-          return 'Mật khẩu xác nhận không khớp'
+          return ERROR_MESSAGES.PASSWORD_MISMATCH
         }
         return null
       }
@@ -278,21 +294,29 @@ export const validationSchemas = {
       label: 'Họ và tên',
       required: true,
       minLength: 2,
-      maxLength: 50
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập họ và tên',
+      minLengthMessage: 'Họ và tên phải có ít nhất 2 ký tự',
+      maxLengthMessage: 'Họ và tên không được vượt quá 50 ký tự'
     },
     email: {
       label: 'Email',
       type: 'email',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập email',
+      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
     },
     phone: {
       label: 'Số điện thoại',
       type: 'phone',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập số điện thoại',
+      phoneMessage: ERROR_MESSAGES.INVALID_PHONE
     },
     address: {
       label: 'Địa chỉ',
-      maxLength: 200
+      maxLength: 200,
+      maxLengthMessage: 'Địa chỉ không được vượt quá 200 ký tự'
     }
   },
 
@@ -301,24 +325,35 @@ export const validationSchemas = {
       label: 'Họ và tên',
       required: true,
       minLength: 2,
-      maxLength: 50
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập họ và tên',
+      minLengthMessage: 'Họ và tên phải có ít nhất 2 ký tự',
+      maxLengthMessage: 'Họ và tên không được vượt quá 50 ký tự'
     },
     email: {
       label: 'Email',
       type: 'email',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập email',
+      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
     },
     subject: {
       label: 'Chủ đề',
       required: true,
       minLength: 5,
-      maxLength: 100
+      maxLength: 100,
+      requiredMessage: 'Vui lòng nhập chủ đề',
+      minLengthMessage: 'Chủ đề phải có ít nhất 5 ký tự',
+      maxLengthMessage: 'Chủ đề không được vượt quá 100 ký tự'
     },
     message: {
       label: 'Nội dung',
       required: true,
       minLength: 10,
-      maxLength: 1000
+      maxLength: 1000,
+      requiredMessage: 'Vui lòng nhập nội dung',
+      minLengthMessage: 'Nội dung phải có ít nhất 10 ký tự',
+      maxLengthMessage: 'Nội dung không được vượt quá 1000 ký tự'
     }
   },
 
@@ -326,7 +361,91 @@ export const validationSchemas = {
     email: {
       label: 'Email',
       type: 'email',
-      required: true
+      required: true,
+      requiredMessage: 'Vui lòng nhập email',
+      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
+    }
+  },
+
+  // Additional schemas for checkout and other forms
+  checkout: {
+    fullName: {
+      label: 'Họ và tên',
+      required: true,
+      minLength: 2,
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập họ và tên',
+      minLengthMessage: 'Họ và tên phải có ít nhất 2 ký tự',
+      maxLengthMessage: 'Họ và tên không được vượt quá 50 ký tự'
+    },
+    email: {
+      label: 'Email',
+      type: 'email',
+      required: true,
+      requiredMessage: 'Vui lòng nhập email',
+      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
+    },
+    phone: {
+      label: 'Số điện thoại',
+      type: 'phone',
+      required: true,
+      requiredMessage: 'Vui lòng nhập số điện thoại',
+      phoneMessage: ERROR_MESSAGES.INVALID_PHONE
+    },
+    address: {
+      label: 'Địa chỉ',
+      required: true,
+      minLength: 10,
+      maxLength: 200,
+      requiredMessage: 'Vui lòng nhập địa chỉ',
+      minLengthMessage: 'Địa chỉ phải có ít nhất 10 ký tự',
+      maxLengthMessage: 'Địa chỉ không được vượt quá 200 ký tự'
+    },
+    city: {
+      label: 'Thành phố',
+      required: true,
+      minLength: 2,
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập thành phố',
+      minLengthMessage: 'Tên thành phố phải có ít nhất 2 ký tự',
+      maxLengthMessage: 'Tên thành phố không được vượt quá 50 ký tự'
+    },
+    notes: {
+      label: 'Ghi chú',
+      maxLength: 500,
+      maxLengthMessage: 'Ghi chú không được vượt quá 500 ký tự'
+    }
+  },
+
+  // Password change form
+  changePassword: {
+    currentPassword: {
+      label: 'Mật khẩu hiện tại',
+      type: 'password',
+      required: true,
+      requiredMessage: 'Vui lòng nhập mật khẩu hiện tại'
+    },
+    newPassword: {
+      label: 'Mật khẩu mới',
+      type: 'password',
+      required: true,
+      minLength: 6,
+      maxLength: 50,
+      requiredMessage: 'Vui lòng nhập mật khẩu mới',
+      minLengthMessage: ERROR_MESSAGES.PASSWORD_TOO_SHORT,
+      maxLengthMessage: 'Mật khẩu không được vượt quá 50 ký tự'
+    },
+    confirmPassword: {
+      label: 'Xác nhận mật khẩu mới',
+      type: 'password',
+      required: true,
+      requiredMessage: 'Vui lòng xác nhận mật khẩu mới',
+      validate: (value, allValues) => {
+        if (value !== allValues.newPassword) {
+          return ERROR_MESSAGES.PASSWORD_MISMATCH
+        }
+        return null
+      }
     }
   }
 }

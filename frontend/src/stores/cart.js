@@ -7,39 +7,57 @@ export const useCartStore = defineStore('cart', () => {
 
   // Getters
   const itemCount = computed(() => {
-    return items.value.reduce((total, item) => total + item.quantity, 0)
+    return items.value.reduce((total, item) => {
+      const quantity = parseInt(item.quantity) || 0
+      return total + quantity
+    }, 0)
   })
 
   const totalPrice = computed(() => {
-    return items.value.reduce((total, item) => total + (item.price * item.quantity), 0)
+    return items.value.reduce((total, item) => {
+      const price = parseFloat(item.price) || 0
+      const quantity = parseInt(item.quantity) || 0
+      return total + (price * quantity)
+    }, 0)
   })
 
   const isEmpty = computed(() => items.value.length === 0)
 
   // Actions
   const addItem = (product, quantity = 1) => {
+    // Validate and sanitize product data
+    const sanitizedProduct = {
+      id: product.id || null,
+      name: product.name || 'Sản phẩm không tên',
+      price: parseFloat(product.price) || 0,
+      image: product.image || '',
+      variantId: product.variantId || null,
+      color: product.color || null,
+      size: product.size || null,
+      quantity: parseInt(product.quantity) || parseInt(quantity) || 1
+    }
+
     // Create unique key for variant-based products
-    const itemKey = product.variantId || product.id
+    const itemKey = sanitizedProduct.variantId || sanitizedProduct.id
     const existingItem = items.value.find(item => 
       item.itemKey === itemKey || 
-      (item.id === product.id && !item.variantId && !product.variantId)
+      (item.id === sanitizedProduct.id && !item.variantId && !sanitizedProduct.variantId)
     )
     
-    const finalQuantity = product.quantity || quantity
-    
     if (existingItem) {
-      existingItem.quantity += finalQuantity
+      existingItem.quantity += sanitizedProduct.quantity
+      existingItem.price = sanitizedProduct.price // Update price in case it changed
     } else {
       items.value.push({
-        id: product.id,
+        id: sanitizedProduct.id,
         itemKey: itemKey,
-        variantId: product.variantId || null,
-        color: product.color || null,
-        size: product.size || null,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        quantity: finalQuantity,
+        variantId: sanitizedProduct.variantId,
+        color: sanitizedProduct.color,
+        size: sanitizedProduct.size,
+        name: sanitizedProduct.name,
+        price: sanitizedProduct.price,
+        image: sanitizedProduct.image,
+        quantity: sanitizedProduct.quantity,
         addedAt: new Date().toISOString()
       })
     }
@@ -94,6 +112,16 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  // Utility function to format price
+  const formatPrice = (price) => {
+    const numPrice = parseFloat(price) || 0
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0
+    }).format(numPrice)
+  }
+
   // Initialize cart from storage
   loadFromStorage()
 
@@ -112,6 +140,7 @@ export const useCartStore = defineStore('cart', () => {
     updateQuantity,
     clearCart,
     saveToStorage,
-    loadFromStorage
+    loadFromStorage,
+    formatPrice
   }
 })

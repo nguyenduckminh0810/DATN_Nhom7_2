@@ -1,22 +1,24 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Import views
-import Home from '../views/Home.vue'
-import Category from '../views/Category.vue'
-import ProductDetail from '../views/ProductDetail.vue'
-import Cart from '../views/Cart.vue'
-import Checkout from '../views/Checkout.vue'
-import Profile from '../views/Profile.vue'
-import Orders from '../views/Orders.vue'
-import SearchResults from '../views/SearchResults.vue'
-import Wishlist from '../views/Wishlist.vue'
-import AdminDashboard from '../views/admin/Dashboard.vue'
-import AdminProducts from '../views/admin/Products.vue'
-import AdminCategories from '../views/admin/Categories.vue'
-import AdminOrders from '../views/admin/Orders.vue'
-import AdminUsers from '../views/admin/Users.vue'
-import AdminAnalytics from '../views/admin/AnalyticsNew.vue'
-import NotFound from '../views/NotFound.vue'
+// Lazy load views for better performance with code splitting
+const Home = () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
+const Category = () => import(/* webpackChunkName: "category" */ '../views/Category.vue')
+const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/ProductDetail.vue')
+const Cart = () => import(/* webpackChunkName: "cart" */ '../views/Cart.vue')
+const Checkout = () => import(/* webpackChunkName: "checkout" */ '../views/Checkout.vue')
+const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
+const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
+const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
+const Wishlist = () => import(/* webpackChunkName: "wishlist" */ '../views/Wishlist.vue')
+const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
+
+// Admin routes - lazy loaded separately with admin chunk
+const AdminDashboard = () => import(/* webpackChunkName: "admin" */ '../views/admin/Dashboard.vue')
+const AdminProducts = () => import(/* webpackChunkName: "admin" */ '../views/admin/Products.vue')
+const AdminCategories = () => import(/* webpackChunkName: "admin" */ '../views/admin/Categories.vue')
+const AdminOrders = () => import(/* webpackChunkName: "admin" */ '../views/admin/Orders.vue')
+const AdminUsers = () => import(/* webpackChunkName: "admin" */ '../views/admin/Users.vue')
+const AdminAnalytics = () => import(/* webpackChunkName: "admin" */ '../views/admin/AnalyticsNew.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),

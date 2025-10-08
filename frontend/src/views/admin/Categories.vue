@@ -777,7 +777,6 @@ const handleDrop = (event) => {
   event.preventDefault()
   if (draggedCategory.value) {
     // Handle drop logic here
-    console.log('Dropped category:', draggedCategory.value)
   }
 }
 
@@ -813,7 +812,6 @@ const duplicateCategory = (category) => {
 
 const viewCategoryProducts = (category) => {
   // Navigate to products filtered by category
-  console.log('View products for category:', category)
 }
 
 const addSubCategory = (parentCategory) => {
@@ -947,7 +945,7 @@ const saveCategory = () => {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Categories page loaded')
+  // Initialize categories page
 })
 </script>
 

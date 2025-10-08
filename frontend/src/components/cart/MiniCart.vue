@@ -53,7 +53,7 @@
 
               <!-- Price and Quantity -->
               <div class="item-details">
-                <span class="item-price">{{ formatPrice(item.price) }}₫</span>
+                <span class="item-price">{{ cartStore.formatPrice(item.price) }}</span>
                 <div class="quantity-controls">
                   <button 
                     class="qty-btn minus"
@@ -91,7 +91,7 @@
         <div class="cart-total">
           <div class="total-row">
             <span>Tạm tính:</span>
-            <span class="total-amount">{{ formatPrice(cartStore.totalPrice) }}₫</span>
+            <span class="total-amount">{{ cartStore.formatPrice(cartStore.totalPrice) }}</span>
           </div>
           <div class="total-note">
             <small>Miễn phí vận chuyển cho đơn từ 500.000₫</small>
@@ -135,9 +135,6 @@ const emit = defineEmits(['close'])
 const cartStore = useCartStore()
 
 // Methods
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN').format(price)
-}
 
 const getColorName = (color) => {
   const colorNames = {
