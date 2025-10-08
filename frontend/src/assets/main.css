@@ -294,6 +294,101 @@ p {
   outline: none;
 }
 
+/* Remove focus outline for all clickable elements */
+a:focus,
+a:focus-visible,
+button:focus,
+button:focus-visible,
+router-link:focus,
+router-link:focus-visible,
+.navbar-brand:focus,
+.navbar-brand:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Override Bootstrap focus styles */
+.navbar-brand:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.navbar-brand:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Remove any border or outline that might appear on click */
+.navbar-brand:active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* Ensure proper sizing for all elements */
+* {
+  box-sizing: border-box;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Ensure text is readable */
+h1, h2, h3, h4, h5, h6 {
+  font-size: revert;
+  font-weight: revert;
+  line-height: revert;
+  color: revert;
+  margin-bottom: revert;
+}
+
+p {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Ensure buttons are properly sized */
+.btn {
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+}
+
+/* Ensure no background or border appears on click */
+.navbar-brand:focus,
+.navbar-brand:active,
+.navbar-brand:visited {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove problematic selectors that might affect layout */
+
+/* Only target specific debug elements that are unlikely to affect layout */
+[data-debug="true"],
+[data-testid="debug"] {
+  display: none !important;
+}
+
+/* Ensure no element appears on click - more specific selectors */
+a:focus,
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .form-label {
   font-weight: 500;
   color: var(--neutral-700);

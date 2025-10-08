@@ -832,7 +832,6 @@ const editProduct = (product) => {
 
 const viewProduct = (product) => {
   // Navigate to product detail
-  console.log('View product:', product)
 }
 
 const deleteProduct = (product) => {
@@ -908,7 +907,7 @@ const bulkDelete = () => {
 
 // Lifecycle
 onMounted(() => {
-  console.log('Products page loaded')
+  // Initialize products page
 })
 </script>
 

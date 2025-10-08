@@ -1,8 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiService from '../services/api'
+import { handleApiError, handleNetworkError } from '../utils/errorHandler'
+import { useApiCache } from '../composables/useCache'
 
 export const useProductStore = defineStore('product', () => {
+  // Cache instance
+  const apiCache = useApiCache({
+    ttl: 5 * 60 * 1000, // 5 minutes
+    maxSize: 100
+  })
+
   // Product State
   const products = ref([])
   const featuredProducts = ref([])
@@ -48,6 +56,13 @@ export const useProductStore = defineStore('product', () => {
     error.value = null
   }
 
+  // Standardized error handling
+  const handleError = (err, context = 'Product') => {
+    const errorResult = handleApiError(err, context)
+    setError(errorResult.message)
+    return { success: false, message: errorResult.message }
+  }
+
   const setProducts = (newProducts) => {
     products.value = newProducts
   }
@@ -82,19 +97,34 @@ export const useProductStore = defineStore('product', () => {
       setLoading(true)
       clearError()
 
+      // Create cache key from parameters
+      const cacheKey = `products_${JSON.stringify(params)}`
+      
+      // Try to get from cache first
+      const cached = apiCache.get(cacheKey)
+      if (cached) {
+        setProducts(cached.products)
+        setPagination(cached.pagination)
+        setLoading(false)
+        return { success: true, data: cached, fromCache: true }
+      }
+
       const response = await apiService.products.getAll(params)
       
       if (response.success) {
         setProducts(response.data.products)
         setPagination(response.data.pagination)
+        
+        // Cache the response
+        apiCache.set(cacheKey, response.data)
+        
         return { success: true, data: response.data }
       } else {
         setError(response.message)
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -116,8 +146,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -129,18 +158,32 @@ export const useProductStore = defineStore('product', () => {
       setLoading(true)
       clearError()
 
+      // Create cache key
+      const cacheKey = `product_${id}`
+      
+      // Try to get from cache first
+      const cached = apiCache.get(cacheKey)
+      if (cached) {
+        setCurrentProduct(cached.product)
+        setLoading(false)
+        return { success: true, data: cached, fromCache: true }
+      }
+
       const response = await apiService.products.getById(id)
       
       if (response.success) {
         setCurrentProduct(response.data.product)
+        
+        // Cache the response
+        apiCache.set(cacheKey, response.data)
+        
         return { success: true, data: response.data }
       } else {
         setError(response.message)
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -163,8 +206,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -187,8 +229,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -210,8 +251,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -233,8 +273,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -257,8 +296,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -280,8 +318,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }
@@ -302,8 +339,7 @@ export const useProductStore = defineStore('product', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      setError(err.message)
-      return { success: false, message: err.message }
+      return handleError(err, 'Products')
     } finally {
       setLoading(false)
     }

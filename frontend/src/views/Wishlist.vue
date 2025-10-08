@@ -236,8 +236,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useProductStore } from '../stores/product'
 import { useCartStore } from '../stores/cart'
-import WishlistButton from '../components/ui/WishlistButton.vue'
-import LazyImage from '../components/ui/LazyImage.vue'
+import WishlistButton from '../components/product/WishlistButton.vue'
+import LazyImage from '../components/common/LazyImage.vue'
 
 const productStore = useProductStore()
 const cartStore = useCartStore()
@@ -327,7 +327,6 @@ const clearWishlist = () => {
 
 const handleWishlistToggle = (data) => {
   // Handle wishlist toggle event if needed
-  console.log('Wishlist toggle:', data)
 }
 
 // Lifecycle

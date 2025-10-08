@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginPopup from '../../../components/ui/LoginPopup.vue'
+import LoginPopup from '../../../components/auth/LoginPopup.vue'
 
 // Mock the stores and composables
 vi.mock('../../../stores/user.js', () => ({

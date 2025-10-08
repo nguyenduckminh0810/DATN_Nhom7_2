@@ -25,7 +25,7 @@
       </div>
 
       <!-- Empty Cart -->
-      <div v-if="cartStore.isEmpty" class="empty-cart-state">
+      <div v-if="isEmpty" class="empty-cart-state">
         <div class="empty-cart-content">
           <i class="bi bi-cart-x display-1 text-muted mb-4"></i>
           <h4 class="mb-3">Giỏ hàng trống</h4>
@@ -43,11 +43,11 @@
           <div class="card modern-cart-card">
             <div class="card-header modern-cart-header">
               <h5 class="mb-0">
-                <i class="bi bi-cart-check me-2"></i>Sản phẩm trong giỏ hàng ({{ cartStore.itemCount }} sản phẩm)
+                <i class="ph-shopping-cart me-2"></i>Sản phẩm trong giỏ hàng ({{ itemCount }} sản phẩm)
               </h5>
             </div>
             <div class="card-body p-0">
-              <div v-for="item in cartStore.items" :key="item.id" class="cart-item modern-cart-item">
+              <div v-for="item in items" :key="item.itemKey" class="cart-item modern-cart-item">
                 <div class="row align-items-center p-4">
                   <!-- Product Image -->
                   <div class="col-md-2">
@@ -62,11 +62,16 @@
                     <div class="cart-product-info">
                       <h6 class="mb-2 fw-bold">{{ item.name }}</h6>
                       <div class="product-attributes">
-                        <span v-if="item.selectedSize" class="attribute-badge">
-                          <i class="bi bi-rulers me-1"></i>{{ item.selectedSize }}
+                        <span v-if="item.size" class="attribute-badge">
+                          <i class="ph-ruler me-1"></i>Size {{ item.size }}
                         </span>
-                        <span v-if="item.selectedColor" class="attribute-badge">
-                          <i class="bi bi-palette me-1"></i>{{ item.selectedColor }}
+                        <span v-if="item.color" class="attribute-badge">
+                          <i class="ph-palette me-1"></i>
+                          <span 
+                            class="color-dot me-1" 
+                            :style="{ backgroundColor: item.color }"
+                          ></span>
+                          {{ getColorName(item.color) }}
                         </span>
                       </div>
                     </div>
@@ -75,7 +80,7 @@
                   <!-- Price -->
                   <div class="col-md-2">
                     <div class="cart-price">
-                      <span class="price-amount">{{ formatPrice(item.price) }}</span>
+                      <span class="price-amount">{{ cartStore.formatPrice(item.price) }}</span>
                       <small class="price-unit text-muted">đ</small>
                     </div>
                   </div>
@@ -84,16 +89,16 @@
                   <div class="col-md-2">
                     <div class="cart-quantity-controls">
                       <button class="btn btn-outline-secondary quantity-btn" 
-                              @click="updateQuantity(item.id, item.quantity - 1)">
+                              @click="updateItemQuantity(item.itemKey, item.quantity - 1)">
                         -
                       </button>
                       <input type="number" 
                              class="form-control quantity-input" 
                              v-model.number="item.quantity"
-                             @change="updateQuantity(item.id, item.quantity)"
+                             @change="updateItemQuantity(item.itemKey, item.quantity)"
                              min="1">
                       <button class="btn btn-outline-secondary quantity-btn" 
-                              @click="updateQuantity(item.id, item.quantity + 1)">
+                              @click="updateItemQuantity(item.itemKey, item.quantity + 1)">
                         +
                       </button>
                     </div>
@@ -103,11 +108,11 @@
                   <div class="col-md-2">
                     <div class="cart-total-actions">
                       <div class="cart-total">
-                        <span class="total-amount fw-bold">{{ formatPrice(item.price * item.quantity) }}</span>
+                        <span class="total-amount fw-bold">{{ cartStore.formatPrice(item.price * item.quantity) }}</span>
                       </div>
                       <button class="btn btn-outline-danger btn-sm remove-btn" 
-                              @click="removeItem(item.id)">
-                        <i class="bi bi-trash"></i>
+                              @click="removeItemFromCart(item.itemKey)">
+                        <i class="ph-trash"></i>
                       </button>
                     </div>
                   </div>
@@ -137,24 +142,24 @@
               <div class="summary-section">
                 <div class="summary-item">
                   <span class="summary-label">Tạm tính:</span>
-                  <span class="summary-value">{{ formatPrice(cartStore.totalPrice) }}</span>
+                  <span class="summary-value">{{ cartStore.formatPrice(totalPrice) }}</span>
                 </div>
                 
                 <div class="summary-item">
                   <span class="summary-label">Phí vận chuyển:</span>
-                  <span class="summary-value">{{ formatPrice(shippingFee) }}</span>
+                  <span class="summary-value">{{ cartStore.formatPrice(shippingFee) }}</span>
                 </div>
                 
                 <div v-if="discountAmount > 0" class="summary-item discount-item">
                   <span class="summary-label">Giảm giá:</span>
-                  <span class="summary-value">-{{ formatPrice(discountAmount) }}</span>
+                  <span class="summary-value">-{{ cartStore.formatPrice(discountAmount) }}</span>
                 </div>
                 
                 <div class="summary-divider"></div>
                 
                 <div class="summary-total">
                   <span class="total-label">Tổng cộng:</span>
-                  <span class="total-value">{{ formatPrice(finalTotal) }}</span>
+                  <span class="total-value">{{ cartStore.formatPrice(finalTotal) }}</span>
                 </div>
               </div>
 
@@ -239,9 +244,19 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useCartStore } from '../stores/cart'
+import useCart from '../composables/useCart'
+import authUtils from '../utils/auth'
 
-const cartStore = useCartStore()
+const { 
+  items, 
+  itemCount, 
+  totalPrice, 
+  isEmpty, 
+  updateQuantity, 
+  removeItem, 
+  canApplyVoucher, 
+  applyVoucher: applyVoucherToCart 
+} = useCart()
 
 // Reactive data
 const voucherCode = ref('')
@@ -250,31 +265,41 @@ const discountAmount = ref(0)
 
 // Computed
 const shippingFee = computed(() => {
-  return cartStore.totalPrice >= 500000 ? 0 : 30000
+  return totalPrice.value >= 500000 ? 0 : 30000
 })
 
 const finalTotal = computed(() => {
-  return cartStore.totalPrice + shippingFee.value - discountAmount.value
+  return totalPrice.value + shippingFee.value - discountAmount.value
 })
 
 // Methods
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
+
+const getColorName = (color) => {
+  const colorNames = {
+    '#ffffff': 'Trắng',
+    '#000000': 'Đen', 
+    '#007bff': 'Xanh dương',
+    '#dc3545': 'Đỏ',
+    '#28a745': 'Xanh lá',
+    '#808080': 'Xám',
+    '#8b4513': 'Nâu',
+    '#000080': 'Xanh navy',
+    '#dc143c': 'Đỏ đậm',
+    '#228b22': 'Xanh rừng'
+  }
+  return colorNames[color] || color
 }
 
-const updateQuantity = (itemId, newQuantity) => {
+const updateItemQuantity = (itemKey, newQuantity) => {
   if (newQuantity <= 0) {
-    removeItem(itemId)
+    removeItemFromCart(itemKey)
   } else {
-    cartStore.updateQuantity(itemId, newQuantity)
+    updateQuantity(itemKey, newQuantity)
   }
 }
 
-const removeItem = (itemId) => {
-  cartStore.removeItem(itemId)
+const removeItemFromCart = (itemKey) => {
+  removeItem(itemKey)
   
   // Show success toast
   if (window.$toast) {
@@ -286,46 +311,66 @@ const removeItem = (itemId) => {
 }
 
 const applyVoucher = () => {
-  // Mock voucher validation
-  const validVouchers = {
-    'WELCOME10': { discount: 0.1, type: 'percent' },
-    'SAVE50K': { discount: 50000, type: 'fixed' },
-    'NEWUSER': { discount: 0.15, type: 'percent' }
+  // Check if user can apply voucher
+  if (!canApplyVoucher()) {
+    const restriction = authUtils.getVoucherRestrictionMessage()
+    voucherMessage.value = {
+      type: 'error',
+      text: restriction.message
+    }
+    
+    if (window.$toast) {
+      window.$toast.warning(restriction.message, restriction.title)
+    }
+    return
   }
 
-  const voucher = validVouchers[voucherCode.value.toUpperCase()]
-  
-  if (voucher) {
-    if (voucher.type === 'percent') {
-      discountAmount.value = cartStore.totalPrice * voucher.discount
+  // Apply voucher using composable
+  const success = applyVoucherToCart(voucherCode.value, (code) => {
+    // Mock voucher validation
+    const validVouchers = {
+      'WELCOME10': { discount: 0.1, type: 'percent' },
+      'SAVE50K': { discount: 50000, type: 'fixed' },
+      'NEWUSER': { discount: 0.15, type: 'percent' }
+    }
+
+    const voucher = validVouchers[code.toUpperCase()]
+    
+    if (voucher) {
+      if (voucher.type === 'percent') {
+        discountAmount.value = totalPrice.value * voucher.discount
+      } else {
+        discountAmount.value = voucher.discount
+      }
+      
+      voucherMessage.value = {
+        type: 'success',
+        text: `Áp dụng thành công mã giảm giá ${code}`
+      }
+      
+      return true
     } else {
-      discountAmount.value = voucher.discount
+      discountAmount.value = 0
+      voucherMessage.value = {
+        type: 'error',
+        text: 'Mã giảm giá không hợp lệ'
+      }
+      
+      if (window.$toast) {
+        window.$toast.error(
+          'Mã voucher không hợp lệ hoặc đã hết hạn',
+          'Lỗi voucher'
+        )
+      }
+      return false
     }
-    
-    voucherMessage.value = {
-      type: 'success',
-      text: `Áp dụng thành công mã giảm giá ${voucherCode.value}`
-    }
-    
-    // Show success toast
+  })
+
+  if (success) {
     if (window.$toast) {
       window.$toast.success(
         `Áp dụng thành công mã giảm giá ${voucherCode.value}`,
         'Áp dụng voucher'
-      )
-    }
-  } else {
-    discountAmount.value = 0
-    voucherMessage.value = {
-      type: 'error',
-      text: 'Mã giảm giá không hợp lệ'
-    }
-    
-    // Show error toast
-    if (window.$toast) {
-      window.$toast.error(
-        'Mã voucher không hợp lệ hoặc đã hết hạn',
-        'Lỗi voucher'
       )
     }
   }
@@ -436,6 +481,16 @@ const applyVoucher = () => {
   border-radius: 12px;
   font-size: 12px;
   border: 1px solid var(--auro-border);
+  display: flex;
+  align-items: center;
+}
+
+.color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #e9ecef;
+  flex-shrink: 0;
 }
 
 /* Price */

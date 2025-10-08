@@ -1069,13 +1069,11 @@ const closeUserModal = () => {
 }
 
 const editUser = (user) => {
-  console.log('Edit user:', user)
   // Implement edit functionality
 }
 
 const resetPassword = (user) => {
   if (confirm(`Bạn có chắc chắn muốn đặt lại mật khẩu cho ${user.name}?`)) {
-    console.log('Reset password for:', user)
     // Implement reset password functionality
   }
 }
@@ -1083,7 +1081,6 @@ const resetPassword = (user) => {
 const toggleUserStatus = (user) => {
   const newStatus = user.status === 'active' ? 'inactive' : 'active'
   user.status = newStatus
-  console.log(`User ${user.name} status changed to ${newStatus}`)
 }
 
 const bulkUpdateStatus = (status) => {
@@ -1100,13 +1097,12 @@ const bulkUpdateStatus = (status) => {
 }
 
 const bulkExport = () => {
-  console.log('Export users:', selectedUsers.value)
   // Implement export functionality
 }
 
 // Lifecycle
 onMounted(() => {
-  console.log('Users page loaded')
+  // Initialize users page
 })
 </script>
 

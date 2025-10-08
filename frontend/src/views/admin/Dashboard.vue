@@ -393,7 +393,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import Chart from '@/components/ui/Chart.vue'
+import Chart from '@/components/admin/Chart.vue'
 
 // Reactive state
 const showQuickAdd = ref(false)
@@ -724,12 +724,10 @@ const miniChartOptions = computed(() => ({
 // Methods
 const updateChartData = () => {
   // Force chart re-render when data changes
-  console.log('Chart data updated')
 }
 
 const exportChartData = () => {
   // Export chart data functionality
-  console.log('Exporting chart data...')
 }
 
 // Data generation methods
@@ -836,7 +834,6 @@ const getOrderStatusColor = (status) => {
 
 onMounted(() => {
   // Initialize dashboard
-  console.log('Modern Admin Dashboard loaded')
 })
 </script>
 

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiService from '../services/api'
+import { handleApiError, handleAuthError } from '../utils/errorHandler'
 
 export const useUserStore = defineStore('user', () => {
   // State
@@ -50,8 +51,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -73,8 +73,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -122,8 +121,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -143,8 +141,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -165,8 +162,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -186,8 +182,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -207,8 +202,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -229,8 +223,7 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      error.value = err.message
-      return { success: false, message: err.message }
+      return handleError(err, 'Login')
     } finally {
       isLoading.value = false
     }
@@ -255,6 +248,13 @@ export const useUserStore = defineStore('user', () => {
 
   const clearError = () => {
     error.value = null
+  }
+
+  // Standardized error handling
+  const handleError = (err, context = 'User') => {
+    const errorResult = handleApiError(err, context)
+    error.value = errorResult.message
+    return { success: false, message: errorResult.message }
   }
 
   // Initialize

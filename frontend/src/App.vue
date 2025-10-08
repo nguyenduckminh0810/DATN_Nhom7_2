@@ -6,7 +6,7 @@ import { useUserStore } from './stores/user'
 import { useSEO } from './composables/useSEO'
 import { useToast } from './composables/useToast'
 import ClientLayout from './layouts/ClientLayout.vue'
-import Toast from './components/ui/Toast.vue'
+import Toast from './components/common/Toast.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()
