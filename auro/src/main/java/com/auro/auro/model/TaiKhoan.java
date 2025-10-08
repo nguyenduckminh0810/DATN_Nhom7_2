@@ -24,7 +24,7 @@ public class TaiKhoan {
     @Column(name = "mat_khau_hash", nullable = false, length = 255)
     private String matKhauHash;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_vai_tro", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

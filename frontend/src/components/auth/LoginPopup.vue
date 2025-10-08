@@ -71,7 +71,7 @@
             <div class="form-group">
               <input 
                 :type="showPassword ? 'text' : 'password'" 
-                v-model="form.password" 
+                v-model="form.matKhau" 
                 class="form-input" 
                 placeholder="Mật khẩu"
                 required
@@ -142,11 +142,8 @@ const {
 // Reactive data
 const showPassword = ref(false)
 
-const form = ref({
-  login: '',
-  password: '',
-  rememberMe: false
-})
+// Sử dụng values từ useFormValidation thay vì form riêng
+const form = values
 
 // Methods
 const closePopup = () => {
@@ -171,8 +168,8 @@ const handleLogin = async () => {
   const result = await handleSubmit(async (formData) => {
     try {
       const response = await userStore.login({
-        email: formData.email,
-        password: formData.password
+        login: formData.login,
+        matKhau: formData.matKhau
       })
       
       if (response.success) {

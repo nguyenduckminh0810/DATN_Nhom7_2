@@ -17,7 +17,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        String roleCode = tk.getVaiTro() != null ? tk.getVaiTro().getMaVaiTro() : "GUEST";
+        String roleCode = tk.getVaiTro() != null ? tk.getVaiTro().getMa() : "GUEST";
         return Set.of(new SimpleGrantedAuthority("ROLE_" + roleCode));
     }
 
@@ -57,18 +57,18 @@ public class CustomUserDetails implements UserDetails {
     
     // Helper methods
     public boolean isGuest() {
-        return tk.getVaiTro() == null || "GUEST".equals(tk.getVaiTro().getMaVaiTro());
+        return tk.getVaiTro() == null || "GUEST".equals(tk.getVaiTro().getMa());
     }
     
     public boolean isCustomer() {
-        return "CUSTOMER".equals(tk.getVaiTro().getMaVaiTro());
+        return "CUSTOMER".equals(tk.getVaiTro().getMa());
     }
     
     public boolean isStaff() {
-        return "STAFF".equals(tk.getVaiTro().getMaVaiTro());
+        return "STAFF".equals(tk.getVaiTro().getMa());
     }
     
     public boolean isAdmin() {
-        return "ADMIN".equals(tk.getVaiTro().getMaVaiTro());
+        return "ADMIN".equals(tk.getVaiTro().getMa());
     }
 }
