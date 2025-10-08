@@ -39,15 +39,19 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints - ai cũng truy cập được
-                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/auth/register").permitAll()  
+                .requestMatchers("/api/auth/login").permitAll()     
+                .requestMatchers("/api/auth/logout").permitAll()    
+                // .requestMatchers("/api/auth/**").permitAll()     
+                
                 .requestMatchers("/api/products/**").permitAll()
                 .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 
                 // Guest endpoints - khách vãng lai
                 .requestMatchers("/api/guest/**").permitAll()
-                .requestMatchers("/api/cart/**").permitAll() // Guest có thể dùng giỏ hàng
-                .requestMatchers("/api/checkout/**").permitAll() // Guest có thể thanh toán
+                .requestMatchers("/api/cart/**").permitAll()
+                .requestMatchers("/api/checkout/**").permitAll()
                 
                 // Customer endpoints - khách đã đăng ký
                 .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
@@ -63,10 +67,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                 .requestMatchers("/api/reports/**").hasRole("ADMIN")
-
+    
                 .requestMatchers("/api/test/**").permitAll()
-
-                // All other requests need authentication
+    
+                // All other requests need authentication (bao gồm /api/auth/me)
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -74,7 +78,7 @@ public class SecurityConfig {
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+    
         return http.build();
     }
 
@@ -82,7 +86,7 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        // authProvider.setPasswordEncoder(passwordEncoder());
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 

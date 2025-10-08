@@ -21,15 +21,9 @@ public class VaiTro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ten_vai_tro", nullable = false, unique = true)
-    private String tenVaiTro;
-    
-    @Column(name = "ma_vai_tro", nullable = false, unique = true, length = 20)
-    private String maVaiTro; // GUEST, CUSTOMER, STAFF, ADMIN
-    
-    @Column(name = "mo_ta", length = 255)
-    private String moTa;
-    
-    @Column(name = "quyen_han", columnDefinition = "NVARCHAR(MAX)")
-    private String quyenHan; // JSON chứa danh sách quyền hạn
+    @Column(name = "ma", nullable = false, unique = true)
+    private String ma; // CUS, GST, STF, ADM
+
+    @Column(name = "ten", nullable = false)
+    private String ten; // Khách hàng, Khách vãng lai, Nhân viên, Quản trị viên
 }

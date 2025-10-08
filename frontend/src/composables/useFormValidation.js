@@ -167,7 +167,6 @@ export const useFormValidation = (schema, initialValues = {}) => {
       await onSubmit(values.value)
       return true
     } catch (error) {
-      console.error('Form submission error:', error)
       return false
     } finally {
       isSubmitting.value = false
@@ -224,14 +223,14 @@ export const useFormValidation = (schema, initialValues = {}) => {
 // Enhanced validation schemas with standardized messages
 export const validationSchemas = {
   login: {
-    email: {
-      label: 'Email',
-      type: 'email',
+    login: {
+      label: 'Email hoặc số điện thoại',
+      type: 'text',
       required: true,
-      requiredMessage: 'Vui lòng nhập email',
-      emailMessage: ERROR_MESSAGES.INVALID_EMAIL
+      requiredMessage: 'Vui lòng nhập email hoặc số điện thoại',
+      
     },
-    password: {
+    matKhau: {
       label: 'Mật khẩu',
       type: 'password',
       required: true,

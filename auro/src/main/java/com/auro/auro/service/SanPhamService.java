@@ -43,11 +43,11 @@ public class SanPhamService {
 
     public List<SanPham> getFeaturedSanPham() {
         // Lấy 8 sản phẩm nổi bật (có thể thay đổi logic này)
-        return sanPhamRepository.findTop8ByTrangThaiOrderByTaoLucDesc("active");
+        return sanPhamRepository.findTop8ByTrangThaiOrderByTaoLucDesc(true);
     }
 
     public List<SanPham> getSanPhamByDanhMuc(Long danhMucId) {
-        return sanPhamRepository.findByDanhMucIdAndTrangThai(danhMucId, "active");
+        return sanPhamRepository.findByDanhMucIdAndTrangThai(danhMucId, true);
     }
 
     public SanPham createSanPham(SanPham sanPham) {

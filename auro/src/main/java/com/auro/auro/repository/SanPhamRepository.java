@@ -25,8 +25,8 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
     // Methods cho Service
     Page<SanPham> findByTenContainingIgnoreCaseAndDanhMucId(String keyword, Long danhMucId, Pageable pageable);
     Page<SanPham> findByDanhMucId(Long danhMucId, Pageable pageable);
-    List<SanPham> findTop8ByTrangThaiOrderByTaoLucDesc(String trangThai);
-    List<SanPham> findByDanhMucIdAndTrangThai(Long danhMucId, String trangThai);
+    List<SanPham> findTop8ByTrangThaiOrderByTaoLucDesc(Boolean trangThai);
+    List<SanPham> findByDanhMucIdAndTrangThai(Long danhMucId, Boolean trangThai);
     
     // Tìm kiếm nâng cao
     @Query("""

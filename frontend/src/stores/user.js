@@ -43,7 +43,7 @@ export const useUserStore = defineStore('user', () => {
       const response = await apiService.auth.login(credentials)
       
       if (response.success) {
-        setToken(response.data.token)
+        setToken(response.data.accessToken)
         setUser(response.data.user)
         return { success: true, data: response.data }
       } else {
@@ -65,7 +65,7 @@ export const useUserStore = defineStore('user', () => {
       const response = await apiService.auth.register(userData)
       
       if (response.success) {
-        setToken(response.data.token)
+        setToken(response.data.accessToken)
         setUser(response.data.user)
         return { success: true, data: response.data }
       } else {
@@ -95,7 +95,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const response = await apiService.auth.refresh()
       if (response.success) {
-        setToken(response.data.token)
+        setToken(response.data.accessToken)
         return true
       }
       return false

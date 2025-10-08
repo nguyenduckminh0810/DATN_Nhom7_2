@@ -226,44 +226,37 @@ const handleRegister = async () => {
   }
 
   isSubmitting.value = true
+
+try {
+  const response = await userStore.register({
+    email: form.value.email,
+    soDienThoai: form.value.phone,
+    matKhau: form.value.password,
+    hoTen: form.value.fullName,
+    loaiTaiKhoan: 'CUSTOMER'
+  })
   
-  try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
+  if (response.success) {
+    success('Đăng ký thành công!')
     
-    // Mock registration
-    const userData = {
-      id: Date.now(),
-      name: form.value.fullName,
-      email: form.value.email,
-      phone: form.value.phone,
-      role: 'CUSTOMER'
-    }
-    
-    // Store user data
-    localStorage.setItem('auro_token', 'mock-jwt-token')
-    localStorage.setItem('auro_user', JSON.stringify(userData))
-    
-    // Check for redirect URL
+    // Handle redirect
     const redirectUrl = localStorage.getItem('auro_redirect')
     if (redirectUrl) {
       localStorage.removeItem('auro_redirect')
       closePopup()
       router.push(redirectUrl)
     } else {
-      // Close popup and refresh page to update navbar
       closePopup()
       window.location.reload()
     }
-    
-    alert('Đăng ký thành công! Chào mừng bạn đến với AURO!')
-    
-  } catch (error) {
-    console.error('Register error:', error)
-    alert('Có lỗi xảy ra khi đăng ký. Vui lòng thử lại.')
-  } finally {
-    isSubmitting.value = false
+  } else {
+    error(response.message || 'Đăng ký thất bại!')
   }
+} catch (err) {
+  error('Có lỗi xảy ra khi đăng ký!')
+} finally {
+  isSubmitting.value = false
+}
 }
 </script>
 
