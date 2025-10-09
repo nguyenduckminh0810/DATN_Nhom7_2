@@ -15,10 +15,10 @@ public class TaiKhoan {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "email", nullable = false, unique = true, length = 150)
+    @Column(name = "email", nullable = true, length = 150)
     private String email;
 
-    @Column(name = "so_dien_thoai", length = 20)
+    @Column(name = "so_dien_thoai", nullable = true, length = 20)
     private String soDienThoai;
 
     @Column(name = "mat_khau_hash", nullable = false, length = 255)
