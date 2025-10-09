@@ -234,10 +234,14 @@ import SearchModal from '../common/SearchModal.vue'
 import LoginPopup from '../auth/LoginPopup.vue'
 import RegisterPopup from '../auth/RegisterPopup.vue'
 import MiniCart from '../cart/MiniCart.vue'
+import { useUserStore } from '../../stores/user'
+import { useToast } from '../../composables/useToast'
 
 const router = useRouter()
+const userStore = useUserStore()
 const cartStore = useCartStore()
 const productStore = useProductStore()
+const { success, error } = useToast()
 
 // Login popup state
 const showLoginPopup = ref(false)
@@ -248,14 +252,8 @@ const showMiniCart = ref(false)
 const searchQuery = ref('')
 
 // Mock user data - replace with actual auth store
-const isLoggedIn = computed(() => {
-  return localStorage.getItem('auro_token') !== null
-})
-
-const user = computed(() => {
-  const userData = localStorage.getItem('auro_user')
-  return userData ? JSON.parse(userData) : null
-})
+const isLoggedIn = computed(() => userStore.isAuthenticated)
+const user = computed(() => userStore.user)
 
 // Login popup methods
 const openLoginPopup = () => {
@@ -280,10 +278,17 @@ const handleSwitchToLogin = () => {
   showLoginPopup.value = true
 }
 
-const handleLogout = () => {
-  localStorage.removeItem('auro_token')
-  localStorage.removeItem('auro_user')
-  router.push('/')
+const handleLogout = async () => {
+  try {
+    await userStore.logout()
+    success('Đăng xuất thành công!')
+    setTimeout(() => {
+      router.push('/')
+    }, 500)
+  } catch (err) {
+    error('Có lỗi khi đăng xuất. Vui lòng thử lại.')
+    console.error('Logout error:', error)
+  }
 }
 
 // Mini cart methods

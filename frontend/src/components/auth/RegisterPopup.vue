@@ -59,68 +59,90 @@
           <!-- Form -->
           <form @submit.prevent="handleRegister">
             <div class="form-group">
-              <input 
-                v-model="form.fullName" 
-                type="text" 
-                class="form-input" 
-                placeholder="Họ và tên"
-                required
-              >
-            </div>
+  <input 
+    v-model="form.fullName" 
+    type="text" 
+    class="form-input" 
+    :class="{ 'input-error': validationErrors.fullName }"
+    placeholder="Họ và tên"
+    @input="clearError('fullName')"
+  >
+  <span v-if="validationErrors.fullName" class="error-message">
+    {{ validationErrors.fullName }}
+  </span>
+</div>
 
-            <div class="form-group">
-              <input 
-                v-model="form.email" 
-                type="email" 
-                class="form-input" 
-                placeholder="Email"
-                required
-              >
-            </div>
-
-            <div class="form-group">
-              <input 
-                v-model="form.phone" 
-                type="tel" 
-                class="form-input" 
-                placeholder="Số điện thoại"
-                required
-              >
-            </div>
             
-            <div class="form-group">
-              <input 
-                :type="showPassword ? 'text' : 'password'" 
-                v-model="form.password" 
-                class="form-input" 
-                placeholder="Mật khẩu"
-                required
-              >
-              <button 
-                type="button" 
-                class="password-toggle" 
-                @click="showPassword = !showPassword"
-              >
-                <span class="toggle-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
-              </button>
-            </div>
 
-            <div class="form-group">
-              <input 
-                :type="showConfirmPassword ? 'text' : 'password'" 
-                v-model="form.confirmPassword" 
-                class="form-input" 
-                placeholder="Xác nhận mật khẩu"
-                required
-              >
-              <button 
-                type="button" 
-                class="password-toggle" 
-                @click="showConfirmPassword = !showConfirmPassword"
-              >
-                <span class="toggle-icon">{{ showConfirmPassword ? '🙈' : '👁️' }}</span>
-              </button>
-            </div>
+<div class="form-group">
+  <input 
+    v-model="form.email" 
+    type="email" 
+    class="form-input" 
+    :class="{ 'input-error': validationErrors.email }"
+    placeholder="Email (tùy chọn)"
+    @input="clearError('email')"
+  >
+  <span v-if="validationErrors.email" class="error-message">
+    {{ validationErrors.email }}
+  </span>
+</div>
+
+<div class="form-group">
+  <input 
+    v-model="form.phone" 
+    type="tel" 
+    class="form-input" 
+    :class="{ 'input-error': validationErrors.phone }"
+    placeholder="Số điện thoại (tùy chọn)"
+    @input="clearError('phone')"
+  >
+  <span v-if="validationErrors.phone" class="error-message">
+    {{ validationErrors.phone }}
+  </span>
+</div>
+
+<div class="form-group">
+  <input 
+    :type="showPassword ? 'text' : 'password'" 
+    v-model="form.password" 
+    class="form-input" 
+    :class="{ 'input-error': validationErrors.password }"
+    placeholder="Mật khẩu"
+    @input="clearError('password')"
+  >
+  <button 
+    type="button" 
+    class="password-toggle" 
+    @click="showPassword = !showPassword"
+  >
+    <span class="toggle-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
+  </button>
+  <span v-if="validationErrors.password" class="error-message">
+    {{ validationErrors.password }}
+  </span>
+</div>
+
+<div class="form-group">
+  <input 
+    :type="showConfirmPassword ? 'text' : 'password'" 
+    v-model="form.confirmPassword" 
+    class="form-input" 
+    :class="{ 'input-error': validationErrors.confirmPassword }"
+    placeholder="Xác nhận mật khẩu"
+    @input="clearError('confirmPassword')"
+  >
+  <button 
+    type="button" 
+    class="password-toggle" 
+    @click="showConfirmPassword = !showConfirmPassword"
+  >
+    <span class="toggle-icon">{{ showConfirmPassword ? '🙈' : '👁️' }}</span>
+  </button>
+  <span v-if="validationErrors.confirmPassword" class="error-message">
+    {{ validationErrors.confirmPassword }}
+  </span>
+</div>
 
             <!-- Terms and Conditions -->
             <div class="terms-section">
@@ -139,6 +161,8 @@
                 </span>
               </label>
             </div>
+
+            
 
             <button 
               type="submit" 
@@ -164,6 +188,8 @@
 <script setup>
 import { ref, defineEmits, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '../../stores/user'
+import { useToast } from '../../composables/useToast'
 
 const props = defineProps({
   isOpen: {
@@ -174,6 +200,8 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'switchToLogin'])
 const router = useRouter()
+const userStore = useUserStore()
+const { success, error } = useToast()
 
 // Reactive data
 const isSubmitting = ref(false)
@@ -189,6 +217,36 @@ const form = ref({
   acceptTerms: false
 })
 
+const validationErrors = ref({
+  email: '',
+  phone: '',
+  password: '',
+  confirmPassword: '',
+  fullName: ''
+})
+
+const clearError = (field) => {
+  validationErrors.value[field] = ''
+}
+
+const validateEmail = (email) => {
+  if (!email) return true // Optional field
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email)
+}
+
+const validatePhone = (phone) => {
+  if (!phone) return true // Optional field
+  const phoneRegex = /^(0|\+84)[0-9]{9,10}$/
+  return phoneRegex.test(phone)
+}
+
+const validateContactInfo = () => {
+  const hasEmail = form.value.email && form.value.email.trim()
+  const hasPhone = form.value.phone && form.value.phone.trim()
+  return hasEmail || hasPhone
+}
+
 // Methods
 const closePopup = () => {
   emit('close')
@@ -199,64 +257,101 @@ const switchToLogin = () => {
 }
 
 const handleForgotPassword = () => {
-  // TODO: Implement forgot password functionality
   alert('Chức năng quên mật khẩu sẽ được triển khai')
 }
 
 const handleSocialRegister = (provider) => {
-  // TODO: Implement social register
   alert(`Đăng ký với ${provider} sẽ được triển khai`)
 }
 
 const handleRegister = async () => {
-  // Validation
-  if (form.value.password !== form.value.confirmPassword) {
-    alert('Mật khẩu xác nhận không khớp')
-    return
+  Object.keys(validationErrors.value).forEach(key => {
+    validationErrors.value[key] = ''
+  })
+
+  let hasError = false
+
+  if (!form.value.fullName || form.value.fullName.trim().length < 2) {
+    validationErrors.value.fullName = 'Họ tên phải có ít nhất 2 ký tự'
+    hasError = true
   }
 
-  if (form.value.password.length < 6) {
-    alert('Mật khẩu phải có ít nhất 6 ký tự')
-    return
+  if (!validateContactInfo()) {
+    validationErrors.value.email = 'Phải nhập ít nhất Email hoặc Số điện thoại'
+    validationErrors.value.phone = 'Phải nhập ít nhất Email hoặc Số điện thoại'
+    hasError = true
+  } else {
+    if (form.value.email && form.value.email.trim() && !validateEmail(form.value.email)) {
+      validationErrors.value.email = 'Email không hợp lệ'
+      hasError = true
+    }
+
+    if (form.value.phone && form.value.phone.trim() && !validatePhone(form.value.phone)) {
+      validationErrors.value.phone = 'Số điện thoại không hợp lệ (VD: 0912345678 hoặc +84912345678)'
+      hasError = true
+    }
+  }
+
+  if (!form.value.password || form.value.password.length < 6) {
+    validationErrors.value.password = 'Mật khẩu phải có ít nhất 6 ký tự'
+    hasError = true
+  }
+
+  if (form.value.password !== form.value.confirmPassword) {
+    validationErrors.value.confirmPassword = 'Mật khẩu xác nhận không khớp'
+    hasError = true
   }
 
   if (!form.value.acceptTerms) {
-    alert('Vui lòng đồng ý với điều khoản sử dụng')
+    error('Vui lòng đồng ý với điều khoản sử dụng')
+    return
+  }
+
+  if (hasError) {
+    error('Vui lòng kiểm tra lại thông tin')
     return
   }
 
   isSubmitting.value = true
 
-try {
-  const response = await userStore.register({
-    email: form.value.email,
-    soDienThoai: form.value.phone,
-    matKhau: form.value.password,
-    hoTen: form.value.fullName,
-    loaiTaiKhoan: 'CUSTOMER'
-  })
-  
-  if (response.success) {
-    success('Đăng ký thành công!')
-    
-    // Handle redirect
-    const redirectUrl = localStorage.getItem('auro_redirect')
-    if (redirectUrl) {
-      localStorage.removeItem('auro_redirect')
-      closePopup()
-      router.push(redirectUrl)
-    } else {
-      closePopup()
-      window.location.reload()
+  try {
+    const registerData = {
+      hoTen: form.value.fullName.trim(),
+      matKhau: form.value.password,
+      loaiTaiKhoan: 'CUSTOMER'
     }
-  } else {
-    error(response.message || 'Đăng ký thất bại!')
+
+    if (form.value.email && form.value.email.trim()) {
+      registerData.email = form.value.email.trim()
+    }
+
+    if (form.value.phone && form.value.phone.trim()) {
+      registerData.soDienThoai = form.value.phone.trim()
+    }
+
+    const response = await userStore.register(registerData)
+    
+    if (response.success) {
+      success('Đăng ký thành công! 🎉')
+      
+      const redirectUrl = localStorage.getItem('auro_redirect')
+      if (redirectUrl) {
+        localStorage.removeItem('auro_redirect')
+        closePopup()
+        router.push(redirectUrl)
+      } else {
+        closePopup()
+        window.location.reload()
+      }
+    } else {
+      error(response.message || 'Đăng ký thất bại!')
+    }
+  } catch (err) {
+    console.error('Register error:', err)
+    error('Có lỗi xảy ra khi đăng ký. Vui lòng thử lại!')
+  } finally {
+    isSubmitting.value = false
   }
-} catch (err) {
-  error('Có lỗi xảy ra khi đăng ký!')
-} finally {
-  isSubmitting.value = false
-}
 }
 </script>
 
@@ -683,5 +778,25 @@ try {
     flex-direction: column;
     gap: 10px;
   }
+
+.error-message {
+  display: block;
+  color: #dc3545;
+  font-size: 13px;
+  margin-top: 5px;
+  margin-left: 5px;
+  font-weight: 500;
+}
+
+.input-error {
+  border-color: #dc3545 !important;
+  background-color: #fff5f5 !important;
+}
+
+.input-error:focus {
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1) !important;
+}
+
 }
 </style>

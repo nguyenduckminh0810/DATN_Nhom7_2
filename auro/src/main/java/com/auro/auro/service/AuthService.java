@@ -25,11 +25,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final TaiKhoanRepository taiKhoanRepository;
@@ -45,10 +46,10 @@ public class AuthService {
     public JwtResponse dangKy(DangKyRequest request) {
         
         //Validate
-        if ((request.getEmail() == null || request.getEmail().trim().isEmpty()) && 
-            (request.getSoDienThoai() == null || request.getSoDienThoai().trim().isEmpty())) {
-            throw new BadRequestException("Phải nhập ít nhất email hoặc số điện thoại");
-        }
+        // if ((request.getEmail() == null || request.getEmail().trim().isEmpty()) && 
+        //     (request.getSoDienThoai() == null || request.getSoDienThoai().trim().isEmpty())) {
+        //     throw new BadRequestException("Phải nhập ít nhất email hoặc số điện thoại");
+        // }
 
         // check trùng
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
@@ -110,6 +111,17 @@ public class AuthService {
         } else {
             throw new BadRequestException("Loại tài khoản không hợp lệ: " + maVaiTro);
         }
+
+        String username = savedTaiKhoan.getEmail() != null ? 
+                  savedTaiKhoan.getEmail() : 
+                  savedTaiKhoan.getSoDienThoai();
+
+                  log.info("=== DEBUG REGISTRATION ===");
+                  log.info("Email: {}", savedTaiKhoan.getEmail());
+                  log.info("SoDienThoai: {}", savedTaiKhoan.getSoDienThoai());
+                  log.info("Username: {}", username);
+                  log.info("Username length: {}", username != null ? username.length() : "NULL");
+                  log.info("========================");
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(savedTaiKhoan.getEmail() != null ? 

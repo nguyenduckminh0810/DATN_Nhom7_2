@@ -187,9 +187,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
+import { useToast } from '../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+const { success, error } = useToast()
 
 // Reactive state
 const sidebarCollapsed = ref(false)
@@ -237,9 +241,17 @@ const toggleNotifications = () => {
   showNotifications.value = !showNotifications.value
 }
 
-const logout = () => {
-  // Handle logout
-  router.push('/login')
+const logout = async () => {
+  try {
+    await userStore.logout()
+    success('Đăng xuất thành công! 👋')
+    setTimeout(() => {
+      router.push('/login')
+    }, 500)
+  } catch (err) {
+    error('Có lỗi khi đăng xuất. Vui lòng thử lại.')
+    console.error('Logout error:', error)
+  }
 }
 
 const handleResize = () => {

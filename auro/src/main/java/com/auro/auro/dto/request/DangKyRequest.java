@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.AssertTrue;
 
 @Data
 @NoArgsConstructor
@@ -28,6 +29,12 @@ public class DangKyRequest {
     @NotBlank(message = "Họ tên không được để trống")
     @Size(min = 2, max = 50, message = "Họ tên phải có từ 2 - 50 ký tự")
     private String hoTen;
+
+    @AssertTrue(message = "Phải cung cấp ít nhất email hoặc số điện thoại")
+    private boolean isContactInfoValid() {
+        return (email != null && !email.trim().isEmpty()) || 
+               (soDienThoai != null && !soDienThoai.trim().isEmpty());
+    }
 
     private String loaiTaiKhoan = "CUSTOMER";
 }
