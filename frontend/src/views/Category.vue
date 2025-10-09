@@ -59,66 +59,68 @@
             </div>
           </div>
 
+          <!-- Loading State -->
+          <div v-if="isLoading" :class="['row', viewMode === 'list' ? 'g-3' : 'g-4']">
+            <div 
+              v-for="n in 12" 
+              :key="`skeleton-${n}`" 
+              :class="viewMode === 'list' ? 'col-12' : 'col-md-6 col-lg-4'"
+            >
+              <SkeletonLoader variant="product" />
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="col-12">
+            <div class="alert alert-danger text-center">
+              <i class="ph-warning-circle me-2"></i>{{ error }}
+              <button 
+                @click="route.params.slug ? fetchProductsByCategory(route.params.slug) : fetchAllProducts()" 
+                class="btn btn-sm btn-outline-danger ms-3"
+              >
+                <i class="ph-arrow-clockwise me-1"></i>Thử lại
+              </button>
+            </div>
+          </div>
+
           <!-- Products -->
-          <div v-if="filteredProducts.length > 0" :class="['row', viewMode === 'list' ? 'g-3' : 'g-4']">
+          <div v-else-if="filteredProducts.length > 0" :class="['row', viewMode === 'list' ? 'g-3' : 'g-4']">
             <div v-for="product in filteredProducts" :key="product.id" 
                  :class="viewMode === 'list' ? 'col-12' : 'col-md-6 col-lg-4'">
-              <div class="card product-card h-100">
-                <div class="position-relative product-image-container">
-                  <LazyImage
-                    :src="product.image || 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'"
-                    :alt="product.name"
-                    :width="500"
-                    :height="500"
-                    :quality="85"
-                    :webp="true"
-                    :lazy="true"
-                    container-class="product-image"
-                    image-class="card-img-top"
-                    show-zoom-overlay="true"
-                  />
-                  <div class="position-absolute top-0 end-0 m-3">
-                    <span class="badge modern-discount-badge">-{{ product.discount || 20 }}%</span>
-                  </div>
-                  <div class="position-absolute top-0 start-0 m-3">
-                    <WishlistButton :product="product" variant="icon" size="sm" />
-                  </div>
-                  <div class="product-overlay">
-                    <button class="btn btn-auro-primary btn-sm" @click="addToCart(product)">
-                      <i class="bi bi-cart-plus me-1"></i>Thêm vào giỏ
-                    </button>
-                  </div>
-                </div>
-                <div class="card-body d-flex flex-column">
-                  <h6 class="card-title fw-bold mb-2">{{ product.name }}</h6>
-                  <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description }}</p>
-                  <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                      <span class="price h5 mb-0">{{ formatPrice(product.price) }}</span>
-                      <small class="text-muted text-decoration-line-through ms-2">{{ formatPrice(product.originalPrice || product.price * 1.2) }}</small>
-                    </div>
-                    <div class="product-rating">
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star text-warning"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProductCard
+                :id="product.id"
+                :name="product.name || product.ten"
+                :img="product.image || product.hinhAnh || 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'"
+                :priceNow="product.price || product.gia"
+                :priceOld="product.originalPrice || product.giaGoc"
+                :discount="product.discount || product.giamGia"
+                :promotionalBadge="product.promotionalBadge"
+                :colorOptions="product.colorOptions || product.mauSac"
+                :sizes="product.sizes || product.kichCo"
+                :stock="product.stock || product.tonKho"
+              />
             </div>
           </div>
 
           <!-- No Products -->
           <div v-else class="text-center py-5">
             <div class="empty-state">
-              <i class="bi bi-search display-1 text-muted mb-4"></i>
-              <h5 class="mt-3 mb-3">Không tìm thấy sản phẩm</h5>
-              <p class="text-muted mb-4">Hãy thử điều chỉnh bộ lọc của bạn</p>
-              <button @click="clearFilters" class="btn btn-auro-primary">
-                <i class="bi bi-arrow-clockwise me-2"></i>Xóa bộ lọc
-              </button>
+              <div class="empty-state-icon">
+                <i class="ph-magnifying-glass-x"></i>
+              </div>
+              <h3 class="empty-state-title">Không tìm thấy sản phẩm</h3>
+              <p class="empty-state-description">
+                Chúng tôi không tìm thấy sản phẩm nào phù hợp với tiêu chí của bạn.<br>
+                Hãy thử điều chỉnh bộ lọc hoặc xem các sản phẩm khác.
+              </p>
+              <div class="empty-state-actions">
+                <button @click="clearFilters" class="btn btn-primary btn-lg">
+                  <i class="ph-funnel-simple me-2"></i>Xóa bộ lọc
+                </button>
+                <router-link to="/" class="btn btn-outline-secondary btn-lg ms-3">
+                  <i class="ph-house me-2"></i>Về trang chủ
+                </router-link>
+              </div>
             </div>
           </div>
 
@@ -153,8 +155,8 @@ import { useCartStore } from '../stores/cart'
 import { useSearchStore } from '../stores/search'
 import { useProductStore } from '../stores/product'
 import ProductFilters from '../components/product/ProductFilters.vue'
-import WishlistButton from '../components/product/WishlistButton.vue'
-import LazyImage from '../components/common/LazyImage.vue'
+import ProductCard from '../components/product/ProductCard.vue'
+import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -199,6 +201,7 @@ const fetchProductsByCategory = async (categorySlug) => {
       
       if (result.success && result.data?.products) {
         products.value = result.data.products
+        console.log('🎯 Category products loaded:', products.value.map(p => ({ id: p.id, name: p.name })))
       } else {
         error.value = result.message || 'Không thể tải danh sách sản phẩm'
         products.value = []
@@ -232,6 +235,7 @@ const fetchAllProducts = async () => {
     
     if (result.success && result.data?.products) {
       products.value = result.data.products
+      console.log('🎯 All products loaded:', products.value.map(p => ({ id: p.id, name: p.name })))
     } else {
       error.value = result.message || 'Không thể tải danh sách sản phẩm'
       products.value = []
@@ -489,10 +493,63 @@ onMounted(() => {
 
 /* Empty State */
 .empty-state {
-  padding: 3rem;
-  background: var(--auro-card);
-  border-radius: 20px;
-  border: 1px solid var(--auro-border);
+  padding: 4rem 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.empty-state-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 2rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state-icon i {
+  font-size: 2.5rem;
+  color: #6c757d;
+}
+
+.empty-state-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 1rem;
+}
+
+.empty-state-description {
+  font-size: 1rem;
+  color: #6c757d;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.empty-state-actions .btn {
+  min-width: 160px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.empty-state-actions .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 /* Pagination */
@@ -536,5 +593,186 @@ onMounted(() => {
   .modern-select {
     min-width: 150px;
   }
+}
+
+/* Desktop Optimization */
+.category {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.container {
+  max-width: 1400px;
+}
+
+.category-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  padding: 3rem 2rem;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.category-header h1 {
+  background: linear-gradient(135deg, #212529 0%, #495057 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.category-header p {
+  font-size: 1.125rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.section-divider {
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  border-radius: 2px;
+  margin: 1.5rem auto 0;
+}
+
+/* Desktop Grid Layout */
+.col-lg-3 {
+  min-width: 280px;
+}
+
+.col-lg-9 {
+  min-width: 900px;
+}
+
+/* Enhanced Filter Cards */
+.filter-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.filter-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.filter-card-header {
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 20px 20px 0 0;
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+/* Enhanced Product Grid - Compact */
+.product-grid {
+  gap: 1.5rem; /* Giảm từ 2rem */
+}
+
+.row {
+  --bs-gutter-x: 1.5rem; /* Giảm gutter */
+}
+
+.product-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 20px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.product-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced Sort & View Controls */
+.sort-controls {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.modern-select {
+  border-radius: 12px;
+  border: 2px solid #e9ecef;
+  padding: 0.75rem 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.modern-select:focus {
+  border-color: #B8860B;
+  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.25);
+}
+
+.modern-view-btn {
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 2px solid #e9ecef;
+}
+
+.modern-view-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced Pagination */
+.modern-pagination {
+  margin-top: 3rem;
+}
+
+.modern-pagination .page-link {
+  border-radius: 12px;
+  margin: 0 0.25rem;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e9ecef;
+  color: #495057;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.modern-pagination .page-link:hover {
+  background: #B8860B;
+  border-color: #B8860B;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
+}
+
+.modern-pagination .page-item.active .page-link {
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  border-color: #B8860B;
+  color: white;
+}
+
+/* Enhanced Breadcrumb */
+.modern-breadcrumb {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.breadcrumb-link {
+  color: #6c757d;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.breadcrumb-link:hover {
+  color: #B8860B;
 }
 </style>

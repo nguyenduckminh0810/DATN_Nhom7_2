@@ -31,6 +31,12 @@
           class="product-image-hover"
           @click="navigateToDetail"
         />
+        <!-- Wishlist Button -->
+        <button class="wishlist-button" @click="toggleWishlist" :class="{ active: isInWishlist }">
+          <i class="ph-heart-fill" v-if="isInWishlist"></i>
+          <i class="ph-heart" v-else></i>
+        </button>
+        
         <div v-if="discount" class="discount-badge">
           -{{ discount }}%
         </div>
@@ -103,6 +109,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import useCart from '../../composables/useCart'
+import { useProductStore } from '../../stores/product'
+import { useCartStore } from '../../stores/cart'
 import VariantModal from './VariantModal.vue'
 import LazyImage from '../common/LazyImage.vue'
 
@@ -168,6 +176,10 @@ const { addToCartWithValidation, trackAddToCart } = useCart()
 const showVariantModal = ref(false)
 const selectedColor = ref(null)
 
+// Store instances
+const productStore = useProductStore()
+const cartStore = useCartStore()
+
 // Watch for modal state changes
 watch(showVariantModal, (newValue) => {
   // Modal state management
@@ -202,6 +214,11 @@ const addToCartText = computed(() => {
   return 'Thêm vào giỏ'
 })
 
+// Wishlist computed
+const isInWishlist = computed(() => {
+  return productStore.isInWishlist(props.id)
+})
+
 // Methods
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN').format(price)
@@ -232,11 +249,11 @@ const selectColorForPreview = (color) => {
   selectedColor.value = color
 }
 
-
 const closeVariantModal = () => {
   showVariantModal.value = false
 }
 
+// Add to cart method
 const handleAddToCart = () => {
   if (!isInStock.value) return
   
@@ -308,6 +325,31 @@ const handleGlobalMouseLeave = (event) => {
   if (event.target === document.documentElement) {
     showVariantModal.value = false
   }
+}
+
+// Wishlist methods
+const toggleWishlist = (event) => {
+  // Prevent event bubbling
+  event.preventDefault()
+  event.stopPropagation()
+  
+  const product = {
+    id: props.id,
+    name: props.name,
+    image: props.img,
+    price: props.priceNow,
+    originalPrice: props.priceOld,
+    discount: props.discount
+  }
+  
+  console.log('🎯 Toggle wishlist for product:', product.id, product.name)
+  console.log('🎯 Current wishlist items:', productStore.wishlistItems.map(item => item.id))
+  
+  const success = productStore.toggleWishlist(product)
+  
+  console.log('🎯 Toggle result:', success)
+  console.log('🎯 Wishlist after toggle:', productStore.wishlistItems.map(item => item.id))
+  console.log('🎯 Is in wishlist:', productStore.isInWishlist(props.id))
 }
 </script>
 
@@ -386,28 +428,114 @@ const handleGlobalMouseLeave = (event) => {
 
 .discount-badge {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: #dc3545;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
   color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  z-index: 10; /* Tăng z-index */
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+  border: 2px solid white;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .promotional-badge {
   position: absolute;
-  bottom: 1rem;
-  left: 1rem;
-  background: #007bff;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
   color: white;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 600;
-  max-width: 80%;
+  font-weight: 700;
+  max-width: 85%;
   line-height: 1.2;
+  z-index: 10; /* Tăng z-index */
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
+  border: 2px solid white;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Hover effects cho badges */
+.product-card:hover .discount-badge {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.product-card:hover .promotional-badge {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.4);
+  background: linear-gradient(135deg, #DAA520 0%, #FFD700 100%);
+}
+
+/* Wishlist Button */
+.wishlist-button {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: rgba(255, 255, 255, 0.9);
+  color: #6c757d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.wishlist-button:hover {
+  background: rgba(255, 255, 255, 1);
+  color: #dc3545;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.wishlist-button.active {
+  background: #dc3545;
+  color: white;
+  border-color: #dc3545;
+}
+
+.wishlist-button.active:hover {
+  background: #c82333;
+  border-color: #c82333;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.wishlist-button i {
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.wishlist-button:hover i {
+  transform: scale(1.1);
+}
+
+.wishlist-button.active i {
+  animation: heartBeat 0.6s ease-in-out;
+}
+
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); }
+  50% { transform: scale(1); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 /* Product Info Section - Separate and smaller */
@@ -429,6 +557,7 @@ const handleGlobalMouseLeave = (event) => {
   line-height: 1.3; /* Giảm line-height */
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 2rem; /* Giảm từ 2.5rem */
@@ -582,84 +711,156 @@ const handleGlobalMouseLeave = (event) => {
   opacity: 1;
 }
 
-/* Responsive breakpoints for product cards */
-@media (max-width: 1400px) {
-  .product-card {
-    flex: 0 0 calc((100vw - 100px) / 4); /* 4 sản phẩm */
-    max-width: 350px; /* Tăng từ 300px */
-  }
+/* Desktop Optimized Product Cards - Compact */
+.product-card {
+  flex: 0 0 calc((100vw - 120px) / 5); /* 5 sản phẩm trên desktop */
+  max-width: 280px;
+  min-width: 260px;
+  min-height: 480px; /* Giảm từ 680px */
+  background: white;
+  border-radius: 16px; /* Giảm từ 20px */
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-@media (max-width: 1024px) {
-  .product-card {
-    flex: 0 0 calc((100vw - 80px) / 3); /* 3 sản phẩm */
-    max-width: 320px; /* Tăng từ 280px */
-  }
+.product-card:hover {
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.15);
+  border-color: rgba(184, 134, 11, 0.2);
 }
 
-@media (max-width: 768px) {
-  .product-card {
-    flex: 0 0 calc((100vw - 60px) / 2); /* 2 sản phẩm */
-    max-width: 280px;
-    min-height: 550px; /* Giảm từ 600px */
-  }
-  
-  .product-image-container {
-    height: 450px; /* Tăng từ 400px để ảnh lớn hơn */
-  }
-  
-  .product-image {
-    height: 450px; /* Tăng từ 400px */
-  }
-  
-  .product-info-section {
-    padding: 0.75rem; /* Giảm padding cho mobile */
-  }
-  
-  .product-name {
-    font-size: 0.875rem; /* Giảm cho mobile */
-    min-height: 1.75rem; /* Giảm cho mobile */
-  }
-  
-  .price-current {
-    font-size: 1.125rem; /* Giảm cho mobile */
-  }
-  
-  .price-old {
-    font-size: 0.875rem; /* Giảm cho mobile */
-  }
+.product-image-container {
+  height: 380px; /* Giảm từ 600px */
+  overflow: hidden;
+  position: relative;
+  z-index: 1; /* Đảm bảo container có z-index */
 }
 
-@media (max-width: 576px) {
-  .product-card {
-    flex: 0 0 calc((100vw - 40px) / 2);
-    max-width: 220px;
-    min-height: 450px; /* Giảm từ 500px */
-  }
-  
-  .product-image-container {
-    height: 350px; /* Giữ nguyên để ảnh lớn */
-  }
-  
-  .product-image {
-    height: 350px; /* Giữ nguyên */
-  }
-  
-  .product-info-section {
-    padding: 0.5rem; /* Giảm padding cho mobile nhỏ */
-  }
-  
-  .product-name {
-    font-size: 0.875rem; /* Giảm cho mobile nhỏ */
-    min-height: 1.5rem; /* Giảm cho mobile nhỏ */
-  }
-  
-  .price-current {
-    font-size: 1rem; /* Giảm cho mobile nhỏ */
-  }
-  
-  .price-old {
-    font-size: 0.75rem; /* Giảm cho mobile nhỏ */
-  }
+.product-image {
+  height: 380px; /* Giảm từ 600px */
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.05);
+}
+
+.product-info-section {
+  padding: 1rem; /* Giảm từ 1.5rem */
+  background: white;
+  border-top: 1px solid #f0f0f0;
+}
+
+.product-name {
+  font-size: 1rem; /* Giảm từ 1.125rem */
+  font-weight: 700;
+  color: #212529;
+  margin-bottom: 0.5rem; /* Giảm từ 0.75rem */
+  line-height: 1.3;
+  min-height: 2rem; /* Giảm từ 2.5rem */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-price {
+  margin-bottom: 0.75rem; /* Giảm từ 1rem */
+}
+
+.price-current {
+  font-size: 1.25rem; /* Giảm từ 1.5rem */
+  font-weight: 800;
+  color: #dc3545;
+}
+
+.price-old {
+  font-size: 1rem; /* Giảm từ 1.125rem */
+  color: #6c757d;
+  text-decoration: line-through;
+  margin-left: 0.5rem; /* Giảm từ 0.75rem */
+}
+
+.discount-text {
+  font-size: 0.875rem; /* Giảm từ 1rem */
+  color: #dc3545;
+  font-weight: 700;
+  margin-left: 0.25rem; /* Giảm từ 0.5rem */
+}
+
+.color-options {
+  margin-bottom: 0.75rem; /* Giảm từ 1.25rem */
+  gap: 0.5rem; /* Giảm từ 0.75rem */
+}
+
+.color-swatch {
+  width: 36px;
+  height: 18px;
+  border-radius: 10px;
+  border: 3px solid #e9ecef;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.color-swatch:hover {
+  border-color: #B8860B;
+  transform: scale(1.1);
+}
+
+.color-swatch.selected {
+  border-color: #B8860B;
+  border-width: 4px;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.3);
+  transform: scale(1.1);
+}
+
+.product-actions {
+  gap: 0.5rem; /* Giảm từ 0.75rem */
+}
+
+.btn-detail,
+.btn-add-to-cart {
+  padding: 0.625rem 0.875rem; /* Giảm từ 0.75rem 1rem */
+  border-radius: 10px; /* Giảm từ 12px */
+  font-size: 0.85rem; /* Giảm từ 0.9rem */
+  font-weight: 600; /* Giảm từ 700 */
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.btn-detail {
+  background: #f8f9fa;
+  color: #6c757d;
+  border-color: #e9ecef;
+}
+
+.btn-detail:hover {
+  background: #e9ecef;
+  color: #495057;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-add-to-cart {
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  color: white;
+  border-color: #B8860B;
+}
+
+.btn-add-to-cart:hover:not(:disabled) {
+  background: linear-gradient(135deg, #DAA520 0%, #FFD700 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(184, 134, 11, 0.4);
+}
+
+.btn-add-to-cart:disabled {
+  background: #6c757d;
+  border-color: #6c757d;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

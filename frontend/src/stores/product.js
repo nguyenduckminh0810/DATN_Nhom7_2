@@ -460,6 +460,9 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
+  // Initialize wishlist from localStorage when store is created
+  loadWishlistFromStorage()
+
   // Clear all data
   const clearAll = () => {
     products.value = []

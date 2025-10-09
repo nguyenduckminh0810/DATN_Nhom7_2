@@ -102,14 +102,16 @@
         </button>
         
         <div class="section-list categories-grid" ref="categoriesGrid">
-          <div v-if="isLoading" v-for="n in 5" :key="n" class="category-item section-item skeleton">
-            <div class="skeleton-image"></div>
-            <div class="category-content">
-              <div class="skeleton-title"></div>
-              <div class="skeleton-description"></div>
-            </div>
-          </div>
+          <!-- Loading state -->
+          <SkeletonLoader 
+            v-if="isLoading" 
+            v-for="n in 5" 
+            :key="`category-skeleton-${n}`" 
+            variant="card" 
+            class="category-item section-item" 
+          />
           
+          <!-- Categories -->
           <div 
             v-else
             v-for="category in displayCategories" 
@@ -156,25 +158,43 @@
           ‹
         </button>
         
-          <div class="products-grid" ref="featuredProductsGrid" @scroll="handleFeaturedScroll">
-            <ProductCard
-              v-for="(product, index) in displayFeaturedProducts"
-              :key="`${product.id}-${index}`"
-              :id="product.id"
-              :name="product.name"
-              :img="product.image"
-              :hover-img="product.hoverImage"
-              :price-now="product.price"
-              :price-old="product.originalPrice"
-              :discount="product.discount"
-              :promotional-badge="product.promotionalBadge"
-              :color-options="product.colorOptions"
-              :sizes="product.sizes"
-              :available-sizes="product.availableSizes"
-              :color-size-mapping="product.colorSizeMapping"
-              :stock="product.stock || 10"
-            />
-          </div>
+          <<div class="products-grid" ref="featuredProductsGrid">
+  <!-- Loading state -->
+  <SkeletonLoader 
+    v-if="isLoadingFeatured" 
+    v-for="n in 5" 
+    :key="`skeleton-${n}`" 
+    variant="product" 
+  />
+  
+  <!-- Error state -->
+  <div v-else-if="featuredError" class="col-12 text-center py-5">
+    <div class="alert alert-danger d-inline-block">
+      <i class="ph-warning-circle me-2"></i>
+      {{ featuredError }}
+    </div>
+  </div>
+  
+  <!-- Products -->
+  <ProductCard
+    v-else
+    v-for="(product, index) in displayFeaturedProducts"
+    :key="`${product.id}-${index}`"
+    :id="product.id"
+    :name="product.name"
+    :img="product.image"
+    :hover-img="product.hoverImage"
+    :price-now="product.price"
+    :price-old="product.originalPrice"
+    :discount="product.discount"
+    :promotional-badge="product.promotionalBadge"
+    :color-options="product.colorOptions"
+    :sizes="product.sizes"
+    :available-sizes="product.availableSizes"
+    :color-size-mapping="product.colorSizeMapping"
+    :stock="product.stock || 10"
+  />
+</div>
         
         <button class="next-btn" @click="scrollFeatured('next')">
           ›
@@ -196,6 +216,7 @@ import Hero from '../components/home/Hero.vue'
 import BestSellers from '../components/home/BestSellers.vue'
 import NewArrivals from '../components/home/NewArrivals.vue'
 import ProductCard from '../components/product/ProductCard.vue'
+import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 
 const cartStore = useCartStore()
 const productStore = useProductStore()
@@ -1306,49 +1327,7 @@ body {
 }
 
 /* Skeleton loading for categories */
-.skeleton {
-  background: #f8f9fa;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-}
 
-.skeleton-image {
-  width: 100%;
-  height: 420px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.skeleton-title {
-  width: 70%;
-  height: 20px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-  margin: 0 auto 0.5rem;
-}
-
-.skeleton-description {
-  width: 90%;
-  height: 16px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-  margin: 0 auto;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
 
 /* Responsive Categories - handled by sections.css */
 

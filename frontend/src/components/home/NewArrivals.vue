@@ -29,6 +29,7 @@
             v-else
             v-for="(product, index) in displayProducts"
             :key="`${product.id}-${index}`"
+            :id="product.id"
             :name="product.name"
             :img="product.image"
             :hover-img="product.hoverImage"
