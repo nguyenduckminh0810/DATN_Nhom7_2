@@ -8,7 +8,7 @@
       </div>
       <div class="header-right">
         <button class="btn btn-auro-primary" @click="showAddModal = true">
-          <i class="ph-plus me-2"></i>Thêm sản phẩm
+          <i class="bi bi-plus me-2"></i>Thêm sản phẩm
         </button>
       </div>
     </div>
@@ -18,7 +18,7 @@
       <!-- Quick Search -->
       <div class="search-row">
         <div class="search-box">
-          <i class="ph-magnifying-glass search-icon"></i>
+          <i class="bi bi-search search-icon"></i>
           <input
             type="text"
             class="form-control search-input"
@@ -27,11 +27,11 @@
           />
         </div>
         <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
-          <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
-          <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
+          <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
+          <i :class="showAdvancedFilters ? 'bi bi-caret-up' : 'bi bi-caret-down'" class="ms-1"></i>
         </button>
         <button class="btn btn-outline-secondary" @click="clearFilters">
-          <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
+          <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
         </button>
       </div>
 
@@ -118,14 +118,14 @@
             @click="viewMode = 'table'"
             title="Dạng bảng"
           >
-            <i class="ph-table"></i>
+            <i class="bi bi-table"></i>
           </button>
           <button 
             :class="['view-btn', { active: viewMode === 'grid' }]"
             @click="viewMode = 'grid'"
             title="Dạng lưới"
           >
-            <i class="ph-grid-four"></i>
+            <i class="bi bi-grid-3x3-gap"></i>
           </button>
         </div>
         <div class="table-stats">
@@ -213,7 +213,7 @@
                     {{ product.stock }}
                   </span>
                   <div v-if="product.stock < 10 && product.stock > 0" class="low-stock-warning">
-                    <i class="ph-warning"></i> Sắp hết
+                    <i class="bi bi-exclamation-triangle"></i> Sắp hết
                   </div>
                 </div>
               </td>
@@ -240,19 +240,19 @@
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)" title="Chỉnh sửa">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-info" @click="viewProduct(product)" title="Xem chi tiết">
-                    <i class="ph-eye"></i>
+                    <i class="bi bi-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)" title="Nhân bản">
-                    <i class="ph-copy"></i>
+                    <i class="bi bi-copy"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)" title="Đánh dấu nổi bật">
-                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
+                    <i :class="product.isFeatured ? 'bi bi-star-fill' : 'bi bi-star'"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)" title="Xóa">
-                    <i class="ph-trash"></i>
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </td>
@@ -277,10 +277,10 @@
                 <img :src="product.image" :alt="product.name" class="product-image">
                 <div class="product-overlay">
                   <button class="btn btn-sm btn-light" @click="viewProduct(product)" title="Xem chi tiết">
-                    <i class="ph-eye"></i>
+                    <i class="bi bi-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-primary" @click="editProduct(product)" title="Chỉnh sửa">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                 </div>
               </div>
@@ -313,16 +313,16 @@
               <div class="product-card-footer">
                 <div class="product-actions">
                   <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)">
-                    <i class="ph-copy"></i>
+                    <i class="bi bi-copy"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)">
-                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
+                    <i :class="product.isFeatured ? 'bi bi-star-fill' : 'bi bi-star'"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)">
-                    <i class="ph-trash"></i>
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </div>
@@ -365,13 +365,13 @@
         <span class="selected-count">{{ selectedProducts.length }} sản phẩm đã chọn</span>
         <div class="bulk-buttons">
           <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
-            <i class="ph-check me-1"></i>Kích hoạt
+            <i class="bi bi-check me-1"></i>Kích hoạt
           </button>
           <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
-            <i class="ph-pause me-1"></i>Ngừng bán
+            <i class="bi bi-pause me-1"></i>Ngừng bán
           </button>
           <button class="btn btn-sm btn-outline-danger" @click="bulkDelete">
-            <i class="ph-trash me-1"></i>Xóa
+            <i class="bi bi-trash me-1"></i>Xóa
           </button>
         </div>
       </div>
@@ -383,7 +383,7 @@
         <div class="modal-header">
           <h5 class="modal-title">{{ editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới' }}</h5>
           <button class="btn-close" @click="closeModal">
-            <i class="ph-x"></i>
+            <i class="bi bi-x"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -782,8 +782,8 @@ const sortTable = (field) => {
 }
 
 const getSortIcon = (field) => {
-  if (tableSort.value.field !== field) return 'ph-caret-up-down'
-  return tableSort.value.direction === 'asc' ? 'ph-caret-up' : 'ph-caret-down'
+  if (tableSort.value.field !== field) return 'bi bi-caret-up-down'
+  return tableSort.value.direction === 'asc' ? 'bi bi-caret-up' : 'bi bi-caret-down'
 }
 
 const formatTime = (date) => {

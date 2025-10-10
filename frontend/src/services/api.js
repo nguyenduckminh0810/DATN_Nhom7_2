@@ -211,13 +211,6 @@ class ApiService {
     getStatus: (id) => this.get(`/orders/${id}/status`)
   }
 
-  // Wishlist endpoints
-  wishlist = {
-    get: () => this.get('/wishlist'),
-    addItem: (productId) => this.post('/wishlist/items', { productId }),
-    removeItem: (productId) => this.delete(`/wishlist/items/${productId}`),
-    clear: () => this.delete('/wishlist')
-  }
 
   // Payment endpoints
   payment = {

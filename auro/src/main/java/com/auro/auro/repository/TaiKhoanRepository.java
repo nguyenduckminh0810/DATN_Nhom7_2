@@ -16,10 +16,19 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
 
     boolean existsBySoDienThoai(String soDienThoai);
 
-    // Đăng nhập chỉ nhận tài khoản đang hoạt động
-    Optional<TaiKhoan> findByEmailAndTrangThaiTrue(String email);
-    
-    // Tìm kiếm bằng email hoặc số điện thoại (chỉ tài khoản hoạt động)
-    @Query("SELECT t FROM TaiKhoan t WHERE (t.email = :login OR t.soDienThoai = :login) AND t.trangThai = true")
-    Optional<TaiKhoan> findByEmailOrSoDienThoaiAndTrangThaiTrue(@Param("login") String login);
+// Tìm kiếm bằng email 
+@Query("SELECT t FROM TaiKhoan t WHERE t.email = :login AND t.trangThai = true")
+Optional<TaiKhoan> findByEmailAndTrangThaiTrue(@Param("login") String login);
+
+// Tìm kiếm bằng số điện thoại 
+@Query("SELECT t FROM TaiKhoan t WHERE t.soDienThoai = :login AND t.trangThai = true")
+Optional<TaiKhoan> findBySoDienThoaiAndTrangThaiTrue(@Param("login") String login);
+
+default Optional<TaiKhoan> findByEmailOrSoDienThoaiAndTrangThaiTrue(String login) {
+    Optional<TaiKhoan> byEmail = findByEmailAndTrangThaiTrue(login);
+    if (byEmail.isPresent()) {
+        return byEmail;
+    }
+    return findBySoDienThoaiAndTrangThaiTrue(login);
+}
 }

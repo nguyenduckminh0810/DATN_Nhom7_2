@@ -4,7 +4,7 @@
     <div class="variant-modal-container" @click.stop>
       <!-- Close Button -->
       <button class="close-btn" @click="closeModal" aria-label="Đóng">
-        <i class="ph-x"></i>
+        <i class="bi bi-x"></i>
       </button>
 
       <!-- Modal Content -->
@@ -89,7 +89,7 @@
                 @click="decreaseQuantity"
                 :disabled="quantity <= 1"
               >
-                <i class="ph-minus"></i>
+                <i class="bi bi-dash"></i>
               </button>
               <input 
                 type="number" 
@@ -104,7 +104,7 @@
                 @click="increaseQuantity"
                 :disabled="quantity >= maxQuantity"
               >
-                <i class="ph-plus"></i>
+                <i class="bi bi-plus"></i>
               </button>
             </div>
             <div v-if="maxQuantity > 0" class="stock-info">
@@ -121,7 +121,7 @@
             :disabled="!canAddToCart"
             @click="handleAddToCart"
           >
-            <i class="ph-shopping-cart me-2"></i>
+            <i class="bi bi-cart3 me-2"></i>
             {{ addToCartText }}
           </button>
         </div>

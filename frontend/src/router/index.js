@@ -5,11 +5,9 @@ const Home = () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
 const Category = () => import(/* webpackChunkName: "category" */ '../views/Category.vue')
 const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/ProductDetailNew.vue')
 const Cart = () => import(/* webpackChunkName: "cart" */ '../views/Cart.vue')
-const Checkout = () => import(/* webpackChunkName: "checkout" */ '../views/Checkout.vue')
 const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
 const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
-const Wishlist = () => import(/* webpackChunkName: "wishlist" */ '../views/Wishlist.vue')
 const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
 
 // Admin routes - lazy loaded separately with admin chunk
@@ -48,12 +46,6 @@ const router = createRouter({
       meta: { title: 'Giỏ hàng - AURO' }
     },
     {
-      path: '/checkout',
-      name: 'checkout',
-      component: Checkout,
-      meta: { title: 'Thanh toán - AURO' }
-    },
-    {
       path: '/login',
       name: 'login',
       redirect: '/',
@@ -82,12 +74,6 @@ const router = createRouter({
       name: 'search',
       component: SearchResults,
       meta: { title: 'Tìm kiếm - AURO' }
-    },
-    {
-      path: '/wishlist',
-      name: 'wishlist',
-      component: Wishlist,
-      meta: { title: 'Danh sách yêu thích - AURO' }
     },
     {
       path: '/admin',

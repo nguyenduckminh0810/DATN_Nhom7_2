@@ -53,7 +53,7 @@
     <!-- Care Instructions -->
     <div class="care-instructions">
       <h3 class="section-title">
-        <i class="ph-heart"></i>
+        <i class="bi bi-heart"></i>
         Bí Quyết Giữ Sản Phẩm Bền Đẹp
       </h3>
       
@@ -64,25 +64,25 @@
         
         <div class="care-list">
           <div class="care-item">
-            <i class="ph-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
             <span>Giặt máy ở chế độ nhẹ, nhiệt độ nước không quá 30°C</span>
           </div>
           <div class="care-item">
-            <i class="ph-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
             <span>Không sử dụng hóa chất tẩy rửa mạnh</span>
           </div>
           <div class="care-item">
-            <i class="ph-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
             <span>Phơi ở nơi thoáng mát, tránh ánh nắng trực tiếp</span>
           </div>
           <div class="care-item">
-            <i class="ph-check-circle"></i>
+            <i class="bi bi-check-circle"></i>
             <span>Ủi ở nhiệt độ thấp, không ủi trực tiếp lên hình in</span>
           </div>
         </div>
         
         <div class="care-tip">
-          <i class="ph-lightbulb"></i>
+          <i class="bi bi-lightbulb"></i>
           <span>Mẹo nhỏ: Để sản phẩm luôn như mới, hãy giặt riêng với các sản phẩm cùng màu</span>
         </div>
       </div>
@@ -91,7 +91,7 @@
     <!-- Styling Tips -->
     <div class="styling-tips">
       <h3 class="section-title">
-        <i class="ph-palette"></i>
+        <i class="bi bi-palette"></i>
         Gợi Ý Phối Đồ
       </h3>
       
@@ -103,7 +103,7 @@
         <div class="styling-options">
           <div class="styling-option">
             <div class="styling-icon">
-              <i class="ph-briefcase"></i>
+              <i class="bi bi-briefcase"></i>
             </div>
             <div class="styling-info">
               <h4>Phong cách công sở</h4>
@@ -113,7 +113,7 @@
           
           <div class="styling-option">
             <div class="styling-icon">
-              <i class="ph-lightning"></i>
+              <i class="bi bi-lightning"></i>
             </div>
             <div class="styling-info">
               <h4>Phong cách thể thao</h4>
@@ -123,7 +123,7 @@
           
           <div class="styling-option">
             <div class="styling-icon">
-              <i class="ph-coffee"></i>
+              <i class="bi bi-cup-hot"></i>
             </div>
             <div class="styling-info">
               <h4>Phong cách casual</h4>
@@ -137,7 +137,7 @@
     <!-- Size Chart -->
     <div class="size-chart-section">
       <h3 class="section-title">
-        <i class="ph-ruler"></i>
+        <i class="bi bi-rulers"></i>
         Bảng Size
       </h3>
       
@@ -166,7 +166,7 @@
         </div>
         
         <div class="size-guide-tip">
-          <i class="ph-info"></i>
+          <i class="bi bi-info-circle"></i>
           <span>Không chắc chắn về size? Liên hệ hotline 1900.272737 để được tư vấn miễn phí</span>
         </div>
       </div>

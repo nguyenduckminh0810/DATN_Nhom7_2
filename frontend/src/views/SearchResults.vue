@@ -18,7 +18,7 @@
         <div class="col-12">
           <div class="search-header">
             <h2 class="mb-3">
-              <i class="ph-magnifying-glass me-2"></i>
+              <i class="bi bi-search me-2"></i>
               Kết quả tìm kiếm
             </h2>
             
@@ -26,7 +26,7 @@
             <div class="search-input-container mb-4">
               <div class="input-group">
                 <span class="input-group-text bg-transparent border-0">
-                  <i class="ph-magnifying-glass text-muted"></i>
+                  <i class="bi bi-search text-muted"></i>
                 </span>
                 <input 
                   type="text" 
@@ -41,7 +41,7 @@
                   @click="performSearch"
                   :disabled="!searchQuery.trim()"
                 >
-                  <i class="ph-magnifying-glass"></i>
+                  <i class="bi bi-search"></i>
                 </button>
               </div>
             </div>
@@ -86,7 +86,7 @@
       <!-- No Results -->
       <div v-else-if="searchQuery.trim() && !hasResults" class="no-results text-center py-5">
         <div class="no-results-icon mb-4">
-          <i class="ph-magnifying-glass text-muted" style="font-size: 4rem;"></i>
+          <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
         </div>
         <h4 class="mb-3">Không tìm thấy sản phẩm</h4>
         <p class="text-muted mb-4">
@@ -103,7 +103,7 @@
         </div>
         <div class="mt-4">
           <router-link to="/category" class="btn btn-auro-primary">
-            <i class="ph-grid-four me-2"></i>Xem tất cả sản phẩm
+            <i class="bi bi-grid-3x3-gap me-2"></i>Xem tất cả sản phẩm
           </router-link>
         </div>
       </div>
@@ -120,7 +120,7 @@
                 </div>
                 <div class="product-overlay">
                   <button class="btn btn-auro-primary btn-sm" @click="addToCart(product)">
-                    <i class="ph-shopping-cart me-1"></i>Thêm vào giỏ
+                    <i class="bi bi-cart3 me-1"></i>Thêm vào giỏ
                   </button>
                 </div>
               </div>
@@ -135,11 +135,11 @@
                     </small>
                   </div>
                   <div class="product-rating">
-                    <i class="ph-star-fill text-warning"></i>
-                    <i class="ph-star-fill text-warning"></i>
-                    <i class="ph-star-fill text-warning"></i>
-                    <i class="ph-star-fill text-warning"></i>
-                    <i class="ph-star text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star-fill text-warning"></i>
+                    <i class="bi bi-star text-warning"></i>
                     <small class="ms-1 text-muted">(4.5)</small>
                   </div>
                 </div>
@@ -155,7 +155,7 @@
       <!-- Empty State (No search query) -->
       <div v-else class="empty-state text-center py-5">
         <div class="empty-state-icon mb-4">
-          <i class="ph-magnifying-glass text-muted" style="font-size: 4rem;"></i>
+          <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
         </div>
         <h4 class="mb-3">Tìm kiếm sản phẩm</h4>
         <p class="text-muted mb-4">

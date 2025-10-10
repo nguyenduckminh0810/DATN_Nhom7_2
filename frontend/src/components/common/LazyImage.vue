@@ -65,7 +65,7 @@ const props = defineProps({
   },
   placeholderIcon: {
     type: String,
-    default: 'ph-image'
+    default: 'bi bi-image'
   },
   placeholderText: {
     type: String,
@@ -79,7 +79,7 @@ const props = defineProps({
   // Error handling
   errorIcon: {
     type: String,
-    default: 'ph-warning-circle'
+    default: 'bi bi-exclamation-triangle-fill'
   },
   errorText: {
     type: String,

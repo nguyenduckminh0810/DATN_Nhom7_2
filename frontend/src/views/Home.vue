@@ -54,13 +54,13 @@
                   <div class="hero-promo" v-if="slide.promo" style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
                     <span class="promo-text" style="color: white; flex: 1;">{{ slide.promo }}</span>
                     <div class="promo-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                      <i class="ph-plus-circle" style="color: #cd7f32; font-size: 1.5rem;"></i>
+                      <i class="bi bi-plus-circle" style="color: #cd7f32; font-size: 1.5rem;"></i>
                       <img :src="slide.promoImage" :alt="slide.promoItem" class="promo-image" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
                     </div>
                   </div>
                   <router-link :to="slide.ctaLink" class="btn-hero-cta" style="background: #cd7f32; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
                     {{ slide.ctaText }}
-                    <i class="ph-arrow-right" style="font-size: 1.25rem;"></i>
+                    <i class="bi bi-arrow-right" style="font-size: 1.25rem;"></i>
                   </router-link>
                 </div>
                 <div class="hero-image" style="flex: 1; text-align: center;">
@@ -73,10 +73,10 @@
         </div>
 
         <button class="carousel-control-prev" type="button" @click="previousSlide" style="position: absolute; left: 2rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s ease;">
-          <i class="ph-caret-left" style="font-size: 1.5rem;"></i>
+          <i class="bi bi-caret-left" style="font-size: 1.5rem;"></i>
         </button>
         <button class="carousel-control-next" type="button" @click="nextSlide" style="position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s ease;">
-          <i class="ph-caret-right" style="font-size: 1.5rem;"></i>
+          <i class="bi bi-caret-right" style="font-size: 1.5rem;"></i>
         </button>
       </div>
     </section>
@@ -102,14 +102,16 @@
         </button>
         
         <div class="section-list categories-grid" ref="categoriesGrid">
-          <div v-if="isLoading" v-for="n in 5" :key="n" class="category-item section-item skeleton">
-            <div class="skeleton-image"></div>
-            <div class="category-content">
-              <div class="skeleton-title"></div>
-              <div class="skeleton-description"></div>
-            </div>
-          </div>
+          <!-- Loading state -->
+          <SkeletonLoader 
+            v-if="isLoading" 
+            v-for="n in 5" 
+            :key="`category-skeleton-${n}`" 
+            variant="card" 
+            class="category-item section-item" 
+          />
           
+          <!-- Categories -->
           <div 
             v-else
             v-for="category in displayCategories" 
@@ -156,25 +158,43 @@
           ‹
         </button>
         
-          <div class="products-grid" ref="featuredProductsGrid" @scroll="handleFeaturedScroll">
-            <ProductCard
-              v-for="(product, index) in displayFeaturedProducts"
-              :key="`${product.id}-${index}`"
-              :id="product.id"
-              :name="product.name"
-              :img="product.image"
-              :hover-img="product.hoverImage"
-              :price-now="product.price"
-              :price-old="product.originalPrice"
-              :discount="product.discount"
-              :promotional-badge="product.promotionalBadge"
-              :color-options="product.colorOptions"
-              :sizes="product.sizes"
-              :available-sizes="product.availableSizes"
-              :color-size-mapping="product.colorSizeMapping"
-              :stock="product.stock || 10"
-            />
-          </div>
+          <<div class="products-grid" ref="featuredProductsGrid">
+  <!-- Loading state -->
+  <SkeletonLoader 
+    v-if="isLoadingFeatured" 
+    v-for="n in 5" 
+    :key="`skeleton-${n}`" 
+    variant="product" 
+  />
+  
+  <!-- Error state -->
+  <div v-else-if="featuredError" class="col-12 text-center py-5">
+    <div class="alert alert-danger d-inline-block">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      {{ featuredError }}
+    </div>
+  </div>
+  
+  <!-- Products -->
+  <ProductCard
+    v-else
+    v-for="(product, index) in displayFeaturedProducts"
+    :key="`${product.id}-${index}`"
+    :id="product.id"
+    :name="product.name"
+    :img="product.image"
+    :hover-img="product.hoverImage"
+    :price-now="product.price"
+    :price-old="product.originalPrice"
+    :discount="product.discount"
+    :promotional-badge="product.promotionalBadge"
+    :color-options="product.colorOptions"
+    :sizes="product.sizes"
+    :available-sizes="product.availableSizes"
+    :color-size-mapping="product.colorSizeMapping"
+    :stock="product.stock || 10"
+  />
+</div>
         
         <button class="next-btn" @click="scrollFeatured('next')">
           ›
@@ -189,13 +209,13 @@ import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useProductStore } from '../stores/product'
-import WishlistButton from '../components/product/WishlistButton.vue'
 import LazyImage from '../components/common/LazyImage.vue'
 import UspBar from '../components/home/UspBar.vue'
 import Hero from '../components/home/Hero.vue'
 import BestSellers from '../components/home/BestSellers.vue'
 import NewArrivals from '../components/home/NewArrivals.vue'
 import ProductCard from '../components/product/ProductCard.vue'
+import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 
 const cartStore = useCartStore()
 const productStore = useProductStore()
@@ -1306,49 +1326,7 @@ body {
 }
 
 /* Skeleton loading for categories */
-.skeleton {
-  background: #f8f9fa;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
-}
 
-.skeleton-image {
-  width: 100%;
-  height: 420px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-.skeleton-title {
-  width: 70%;
-  height: 20px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-  margin: 0 auto 0.5rem;
-}
-
-.skeleton-description {
-  width: 90%;
-  height: 16px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 4px;
-  margin: 0 auto;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
 
 /* Responsive Categories - handled by sections.css */
 

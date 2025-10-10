@@ -24,7 +24,7 @@
         @click="previousImage"
         :disabled="currentIndex === 0"
       >
-        <i class="ph-caret-left"></i>
+        <i class="bi bi-caret-left"></i>
       </button>
       <button 
         v-if="showNavigation && images.length > 1"
@@ -32,7 +32,7 @@
         @click="nextImage"
         :disabled="currentIndex === images.length - 1"
       >
-        <i class="ph-caret-right"></i>
+        <i class="bi bi-caret-right"></i>
       </button>
 
       <!-- Image Counter -->
@@ -46,7 +46,7 @@
         class="zoom-button"
         @click="openLightbox"
       >
-        <i class="ph-magnifying-glass-plus"></i>
+        <i class="bi bi-search"></i>
       </button>
     </div>
 
@@ -83,7 +83,7 @@
     >
       <div class="lightbox-container" @click.stop>
         <button class="lightbox-close" @click="closeLightbox">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
         
         <div class="lightbox-content">
@@ -107,7 +107,7 @@
           @click="previousImage"
           :disabled="currentIndex === 0"
         >
-          <i class="ph-caret-left"></i>
+          <i class="bi bi-caret-left"></i>
         </button>
         <button 
           v-if="images.length > 1"
@@ -115,7 +115,7 @@
           @click="nextImage"
           :disabled="currentIndex === images.length - 1"
         >
-          <i class="ph-caret-right"></i>
+          <i class="bi bi-caret-right"></i>
         </button>
 
         <!-- Lightbox Counter -->

@@ -4,11 +4,11 @@
     <aside class="admin-sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="sidebar-header">
         <div class="brand">
-          <i class="ph-storefront"></i>
+          <i class="bi bi-shop"></i>
           <span v-if="!sidebarCollapsed" class="brand-text">AURO Admin</span>
         </div>
         <button class="sidebar-toggle" @click="toggleSidebar">
-          <i class="ph-list"></i>
+          <i class="bi bi-list"></i>
         </button>
       </div>
 
@@ -16,28 +16,28 @@
         <ul class="nav-list">
           <li class="nav-item">
             <router-link to="/admin" class="nav-link" :class="{ active: $route.path === '/admin' }">
-              <i class="ph-house"></i>
+              <i class="bi bi-house"></i>
               <span v-if="!sidebarCollapsed">Dashboard</span>
             </router-link>
           </li>
           
           <li class="nav-item">
             <router-link to="/admin/products" class="nav-link" :class="{ active: $route.path.startsWith('/admin/products') }">
-              <i class="ph-package"></i>
+              <i class="bi bi-box"></i>
               <span v-if="!sidebarCollapsed">Sản phẩm</span>
             </router-link>
           </li>
           
           <li class="nav-item">
             <router-link to="/admin/categories" class="nav-link" :class="{ active: $route.path.startsWith('/admin/categories') }">
-              <i class="ph-folder"></i>
+              <i class="bi bi-folder"></i>
               <span v-if="!sidebarCollapsed">Danh mục</span>
             </router-link>
           </li>
           
           <li class="nav-item">
             <router-link to="/admin/orders" class="nav-link" :class="{ active: $route.path.startsWith('/admin/orders') }">
-              <i class="ph-shopping-cart"></i>
+              <i class="bi bi-cart3"></i>
               <span v-if="!sidebarCollapsed">Đơn hàng</span>
               <span v-if="!sidebarCollapsed" class="badge bg-danger">3</span>
             </router-link>
@@ -45,21 +45,21 @@
           
           <li class="nav-item">
             <router-link to="/admin/users" class="nav-link" :class="{ active: $route.path.startsWith('/admin/users') }">
-              <i class="ph-users"></i>
+              <i class="bi bi-people"></i>
               <span v-if="!sidebarCollapsed">Người dùng</span>
             </router-link>
           </li>
           
           <li class="nav-item">
             <router-link to="/admin/analytics" class="nav-link" :class="{ active: $route.path.startsWith('/admin/analytics') }">
-              <i class="ph-chart-bar"></i>
+              <i class="bi bi-bar-chart"></i>
               <span v-if="!sidebarCollapsed">Thống kê</span>
             </router-link>
           </li>
           
           <li class="nav-item">
             <router-link to="/admin/settings" class="nav-link" :class="{ active: $route.path.startsWith('/admin/settings') }">
-              <i class="ph-gear"></i>
+              <i class="bi bi-gear"></i>
               <span v-if="!sidebarCollapsed">Cài đặt</span>
             </router-link>
           </li>
@@ -69,7 +69,7 @@
       <div class="sidebar-footer">
         <div class="user-info">
           <div class="user-avatar">
-            <i class="ph-user-circle"></i>
+            <i class="bi bi-person-circle"></i>
           </div>
           <div v-if="!sidebarCollapsed" class="user-details">
             <div class="user-name">Admin User</div>
@@ -85,7 +85,7 @@
       <header class="admin-header">
         <div class="header-left">
           <button class="mobile-sidebar-toggle" @click="toggleSidebar">
-            <i class="ph-list"></i>
+            <i class="bi bi-list"></i>
           </button>
           <div class="breadcrumb">
             <span class="breadcrumb-item">{{ currentPageTitle }}</span>
@@ -96,7 +96,7 @@
           <!-- Search -->
           <div class="header-search">
             <div class="search-input-group">
-              <i class="ph-magnifying-glass search-icon"></i>
+              <i class="bi bi-search search-icon"></i>
               <input type="text" class="search-input" placeholder="Tìm kiếm...">
             </div>
           </div>
@@ -104,7 +104,7 @@
           <!-- Notifications -->
           <div class="header-notifications">
             <button class="notification-btn" @click="toggleNotifications">
-              <i class="ph-bell"></i>
+              <i class="bi bi-bell"></i>
               <span class="notification-badge">5</span>
             </button>
           </div>
@@ -114,22 +114,22 @@
             <div class="user-dropdown">
               <button class="user-btn" @click="toggleUserMenu">
                 <div class="user-avatar-small">
-                  <i class="ph-user-circle"></i>
+                  <i class="bi bi-person-circle"></i>
                 </div>
                 <span class="user-name">Admin</span>
-                <i class="ph-caret-down"></i>
+                <i class="bi bi-caret-down"></i>
               </button>
               
               <div v-if="showUserMenu" class="user-dropdown-menu">
                 <a href="#" class="dropdown-item">
-                  <i class="ph-user me-2"></i>Thông tin cá nhân
+                  <i class="bi bi-person me-2"></i>Thông tin cá nhân
                 </a>
                 <a href="#" class="dropdown-item">
-                  <i class="ph-gear me-2"></i>Cài đặt
+                  <i class="bi bi-gear me-2"></i>Cài đặt
                 </a>
                 <hr class="dropdown-divider">
                 <a href="#" class="dropdown-item" @click="logout">
-                  <i class="ph-sign-out me-2"></i>Đăng xuất
+                  <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                 </a>
               </div>
             </div>
@@ -152,13 +152,13 @@
       <div class="notifications-header">
         <h6>Thông báo</h6>
         <button class="close-btn" @click="toggleNotifications">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </div>
       <div class="notifications-list">
         <div class="notification-item">
           <div class="notification-icon">
-            <i class="ph-shopping-cart text-primary"></i>
+            <i class="bi bi-cart3 text-primary"></i>
           </div>
           <div class="notification-content">
             <div class="notification-title">Đơn hàng mới</div>
@@ -168,7 +168,7 @@
         </div>
         <div class="notification-item">
           <div class="notification-icon">
-            <i class="ph-warning text-warning"></i>
+            <i class="bi bi-exclamation-triangle text-warning"></i>
           </div>
           <div class="notification-content">
             <div class="notification-title">Cảnh báo</div>

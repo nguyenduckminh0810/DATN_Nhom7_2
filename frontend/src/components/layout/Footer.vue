@@ -5,7 +5,7 @@
         <!-- Brand & Description -->
         <div class="col-lg-4 mb-4">
           <h5 class="fw-bold mb-3 gradient-text">
-            <i class="ph-storefront me-2"></i>AURO
+            <i class="bi bi-shop me-2"></i>AURO
           </h5>
           <p class="text-white-50">
             Thương hiệu thời trang nam cao cấp với thiết kế tinh tế và chất lượng vượt trội.
@@ -13,16 +13,16 @@
           </p>
           <div class="social-links">
             <a href="#" title="Facebook">
-              <i class="ph-facebook-logo"></i>
+              <i class="bi bi-facebook"></i>
             </a>
             <a href="#" title="Instagram">
-              <i class="ph-instagram-logo"></i>
+              <i class="bi bi-instagram"></i>
             </a>
             <a href="#" title="Twitter">
-              <i class="ph-twitter-logo"></i>
+              <i class="bi bi-twitter"></i>
             </a>
             <a href="#" title="YouTube">
-              <i class="ph-youtube-logo"></i>
+              <i class="bi bi-youtube"></i>
             </a>
           </div>
         </div>
@@ -108,23 +108,23 @@
           <h6 class="fw-bold mb-3">Liên hệ</h6>
           <div class="contact-info">
             <p class="text-white-50 mb-2">
-              <i class="ph-map-pin me-2"></i>
+              <i class="bi bi-geo-alt me-2"></i>
               123 Đường ABC, Quận XYZ, TP.HCM
             </p>
             <p class="text-white-50 mb-2">
-              <i class="ph-phone me-2"></i>
+              <i class="bi bi-telephone me-2"></i>
               <a href="tel:02812345678" class="text-white-50 text-decoration-none">
                 (028) 1234 5678
               </a>
             </p>
             <p class="text-white-50 mb-2">
-              <i class="ph-envelope me-2"></i>
+              <i class="bi bi-envelope me-2"></i>
               <a href="mailto:info@auro.com" class="text-white-50 text-decoration-none">
                 info@auro.com
               </a>
             </p>
             <p class="text-white-50">
-              <i class="ph-clock me-2"></i>
+              <i class="bi bi-clock me-2"></i>
               T2-T6: 8:00-18:00<br>
               <span class="ms-4">T7-CN: 9:00-17:00</span>
             </p>

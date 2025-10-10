@@ -85,7 +85,7 @@
           @click="togglePassword"
           :aria-label="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
         >
-          <i :class="showPassword ? 'ph-eye-slash' : 'ph-eye'"></i>
+          <i :class="showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
         </button>
         <i v-else-if="icon" :class="icon"></i>
       </div>
@@ -103,7 +103,7 @@
         :key="index"
         class="error-message"
       >
-        <i class="ph-warning-circle"></i>
+        <i class="bi bi-exclamation-triangle-fill"></i>
         {{ error }}
       </div>
     </div>

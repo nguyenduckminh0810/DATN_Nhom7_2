@@ -44,33 +44,33 @@
             <ul class="dropdown-menu modern-dropdown">
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-thun">
-                  <i class="ph-t-shirt me-2"></i>Áo thun
+                  <i class="bi bi-tshirt me-2"></i>Áo thun
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-so-mi">
-                  <i class="ph-shirt me-2"></i>Áo sơ mi
+                  <i class="bi bi-shop me-2"></i>Áo sơ mi
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-polo">
-                  <i class="ph-t-shirt me-2"></i>Áo polo
+                  <i class="bi bi-tshirt me-2"></i>Áo polo
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-khoac">
-                  <i class="ph-coat-hanger me-2"></i>Áo khoác
+                  <i class="bi bi-hanger me-2"></i>Áo khoác
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-len">
-                  <i class="ph-sweater me-2"></i>Áo len
+                  <i class="bi bi-tshirt me-2"></i>Áo len
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao">
-                  <i class="ph-grid-four me-2"></i>Tất cả áo
+                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả áo
                 </router-link>
               </li>
             </ul>
@@ -82,33 +82,33 @@
             <ul class="dropdown-menu modern-dropdown">
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-jean">
-                  <i class="ph-pants me-2"></i>Quần jean
+                  <i class="bi bi-shop me-2"></i>Quần jean
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-kaki">
-                  <i class="ph-pants me-2"></i>Quần kaki
+                  <i class="bi bi-shop me-2"></i>Quần kaki
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-short">
-                  <i class="ph-pants me-2"></i>Quần short
+                  <i class="bi bi-shop me-2"></i>Quần short
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-tay">
-                  <i class="ph-pants me-2"></i>Quần tây
+                  <i class="bi bi-shop me-2"></i>Quần tây
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-jogger">
-                  <i class="ph-pants me-2"></i>Quần jogger
+                  <i class="bi bi-shop me-2"></i>Quần jogger
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan">
-                  <i class="ph-grid-four me-2"></i>Tất cả quần
+                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả quần
                 </router-link>
               </li>
             </ul>
@@ -116,8 +116,8 @@
           <li class="nav-item">
             <router-link class="nav-link modern-nav-link sale-link" to="/category/sale">
               <div class="sale-container">
+                <span class="sale-text">SALE</span>
                 <span class="sale-percent">-50%</span>
-                <span class="nav-text sale-text">SALE</span>
               </div>
             </router-link>
           </li>
@@ -134,30 +134,20 @@
               v-model="searchQuery"
             >
             <button class="search-btn" @click="handleSearch">
-              <i class="ph-magnifying-glass"></i>
+              <i class="bi bi-search"></i>
             </button>
           </div>
         </div>
         
         <!-- Right Menu -->
-        <ul class="navbar-nav">
-          <!-- Wishlist -->
-          <li class="nav-item">
-            <router-link class="nav-link modern-nav-link position-relative" to="/wishlist">
-              <i class="ph-heart"></i>
-              <span v-if="productStore.wishlistCount > 0" class="badge modern-cart-badge">
-                {{ productStore.wishlistCount }}
-              </span>
-            </router-link>
-          </li>
-          
+        <ul class="navbar-nav">          
           <!-- Cart -->
           <li class="nav-item">
             <button 
               class="nav-link modern-nav-link position-relative cart-trigger"
               @click="toggleMiniCart"
             >
-              <i class="ph-shopping-cart"></i>
+              <i class="bi bi-cart3"></i>
               <span v-if="cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
@@ -167,31 +157,29 @@
           <!-- User Menu -->
           <li v-if="!isLoggedIn" class="nav-item">
             <button class="nav-link modern-nav-link login-btn" @click="openLoginPopup">
-              <i class="ph-user"></i>
-              <span class="d-none d-lg-inline ms-1">Đăng nhập</span>
+              <i class="bi bi-person"></i>
             </button>
           </li>
           
           <li v-else class="nav-item dropdown dropdown-hover">
             <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-              <i class="ph-user-circle"></i>
-              <span class="d-none d-lg-inline ms-1">{{ user?.name || 'Tài khoản' }}</span>
+              <i class="bi bi-person-circle"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end modern-dropdown">
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/profile">
-                  <i class="ph-user me-2"></i>Thông tin cá nhân
+                  <i class="bi bi-person me-2"></i>Thông tin cá nhân
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/orders">
-                  <i class="ph-shopping-bag me-2"></i>Đơn hàng của tôi
+                  <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <button class="dropdown-item modern-dropdown-item" @click="handleLogout">
-                  <i class="ph-sign-out me-2"></i>Đăng xuất
+                  <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                 </button>
               </li>
             </ul>
@@ -226,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
 import { useProductStore } from '../../stores/product'
@@ -308,6 +296,37 @@ const handleSearch = () => {
   }
 }
 
+// Scroll behavior for promo bar
+let lastScrollTop = 0
+let isPromoBarVisible = true
+
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const promoBar = document.querySelector('.top-bar')
+  const navbar = document.querySelector('.modern-navbar')
+  const mainContent = document.querySelector('.main-content')
+  
+  if (scrollTop > lastScrollTop && scrollTop > 100) {
+    // Scrolling down - hide promo bar
+    if (isPromoBarVisible) {
+      promoBar.style.transform = 'translateY(-100%)'
+      navbar.style.marginTop = '0px'
+      if (mainContent) mainContent.style.paddingTop = '55px' // Reduced padding when promo bar is hidden
+      isPromoBarVisible = false
+    }
+  } else {
+    // Scrolling up - show promo bar
+    if (!isPromoBarVisible) {
+      promoBar.style.transform = 'translateY(0)'
+      navbar.style.marginTop = '25px'
+      if (mainContent) mainContent.style.paddingTop = '80px' // Full padding when promo bar is visible
+      isPromoBarVisible = true
+    }
+  }
+  
+  lastScrollTop = scrollTop <= 0 ? 0 : scrollTop
+}
+
 // Check for register popup trigger on mount
 onMounted(() => {
   const showRegisterPopupFlag = localStorage.getItem('auro_show_register_popup')
@@ -318,6 +337,14 @@ onMounted(() => {
   
   // Initialize dropdown hover behavior
   initializeDropdownHover()
+  
+  // Add scroll listener
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 
 // Initialize dropdown hover behavior
@@ -340,19 +367,21 @@ const initializeDropdownHover = () => {
 .top-bar {
   background: var(--auro-primary);
   color: white;
-  padding: 0.5rem 0;
-  font-size: 0.875rem;
+  padding: 0.3rem 0;
+  font-size: 0.75rem;
   font-weight: 500;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1050;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
 }
 
 .top-bar-text {
   color: white;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -360,12 +389,13 @@ const initializeDropdownHover = () => {
 .modern-navbar {
   background: white !important;
   border-bottom: 1px solid var(--auro-border);
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  margin-top: 40px; /* Account for top bar */
+  margin-top: 25px; /* Account for top bar */
+  transition: margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-navbar:hover {
@@ -479,22 +509,33 @@ router-link:focus-visible {
 }
 
 .sale-container {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.sale-percent {
-  font-size: 0.75rem;
-  color: #dc3545;
-  font-weight: 700;
-  line-height: 1;
+  justify-content: center;
 }
 
 .sale-text {
+  font-size: 1.2rem;
+  font-weight: 900;
   color: #dc3545 !important;
-  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.sale-percent {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #dc3545;
+  line-height: 1;
+  background: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .modern-nav-link::before {
@@ -715,60 +756,215 @@ router-link:focus-visible {
   text-decoration: none;
 }
 
-/* Mobile responsive */
-@media (max-width: 991.98px) {
-  .search-container {
-    margin-left: 0;
-    margin-top: 1rem;
-    width: 100%;
-  }
-  
-  .search-input-group {
-    width: 100%;
-  }
-  
-  .brand-text {
-    font-size: 20px;
-  }
-  
-  .brand-subtitle {
-    font-size: 9px;
-  }
-  
-  .modern-navbar {
-    margin-top: 40px;
-  }
-  
-  /* Disable hover on mobile, use click instead */
-  .dropdown-hover:hover .dropdown-menu {
-    display: none;
-  }
-  
-  .dropdown-hover .dropdown-menu.show {
-    display: block;
-  }
+/* Desktop Enhanced Navbar */
+.modern-navbar {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-@media (max-width: 576px) {
-  .modern-navbar {
-    padding: 0.75rem 0;
-  }
-  
-  .brand-text {
-    font-size: 18px;
-    letter-spacing: 1px;
-  }
-  
-  .brand-icon {
-    font-size: 20px;
-  }
-  
-  .top-bar {
-    padding: 0.25rem 0;
-  }
-  
-  .top-bar-text {
-    font-size: 0.75rem;
-  }
+.brand-container {
+  transition: all 0.3s ease;
 }
+
+.brand-container:hover {
+  transform: scale(1.05);
+}
+
+.brand-text {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.modern-nav-link {
+  position: relative;
+  font-weight: 600;
+  color: #212529 !important;
+  padding: 0.875rem 1.75rem !important;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+.modern-nav-link::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateX(-50%);
+  border-radius: 2px;
+}
+
+.modern-nav-link:hover::before,
+.modern-nav-link.active::before {
+  width: 90%;
+}
+
+.modern-nav-link:hover {
+  color: #B8860B !important;
+  background: rgba(184, 134, 11, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.2);
+}
+
+.search-input-group {
+  width: 360px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #e9ecef;
+  border-radius: 30px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.search-input-group:hover {
+  border-color: #B8860B;
+  box-shadow: 0 4px 20px rgba(184, 134, 11, 0.15);
+  transform: translateY(-1px);
+}
+
+.search-input-group:focus-within {
+  border-color: #B8860B;
+  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.25);
+  transform: translateY(-1px);
+}
+
+.search-input {
+  background: transparent;
+  border: none;
+  padding: 14px 20px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #212529;
+}
+
+.search-input::placeholder {
+  color: #6c757d;
+  font-weight: 400;
+}
+
+.search-btn {
+  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  border: none;
+  padding: 14px 20px;
+  color: white;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.search-btn:hover {
+  background: linear-gradient(135deg, #DAA520 0%, #FFD700 100%);
+  transform: scale(1.05);
+}
+
+.modern-dropdown {
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  padding: 16px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  min-width: 220px;
+  backdrop-filter: blur(20px);
+}
+
+.modern-dropdown-item {
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin: 4px 0;
+  transition: all 0.3s ease;
+  color: #495057;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.modern-dropdown-item:hover {
+  background: linear-gradient(135deg, rgba(184, 134, 11, 0.1) 0%, rgba(218, 165, 32, 0.1) 100%);
+  color: #B8860B;
+  transform: translateX(6px);
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.2);
+}
+
+.modern-dropdown-item i {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  margin-right: 12px;
+  color: #6c757d;
+}
+
+.modern-dropdown-item:hover i {
+  color: #B8860B;
+}
+
+.modern-cart-badge {
+  background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+  color: white !important;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+  border: 2px solid white;
+}
+/* Cart icon */
+.cart-trigger i {
+  font-size: 1.4rem;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.cart-trigger:hover i {
+  font-size: 1.5rem !important;
+  color: #B8860B;
+  transform: scale(1.1);
+}
+
+/*Login icon */
+.login-btn i {
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover i {
+  font-size: 1.5rem !important;
+  color: #B8860B !important;
+  transform: scale(1.1);
+}
+
+.bi-person-circle {
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.modern-nav-link:hover .bi-person-circle {
+  font-size: 1.5rem !important;
+  color: #B8860B !important;
+  transform: scale(1.1);
+}
+
 </style>

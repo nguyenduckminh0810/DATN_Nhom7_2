@@ -34,7 +34,8 @@ export const useCartStore = defineStore('cart', () => {
       variantId: product.variantId || null,
       color: product.color || null,
       size: product.size || null,
-      quantity: parseInt(product.quantity) || parseInt(quantity) || 1
+      quantity: parseInt(product.quantity) || parseInt(quantity) || 1,
+      stock: parseInt(product.stock) || 1
     }
 
     // Create unique key for variant-based products
@@ -79,7 +80,15 @@ export const useCartStore = defineStore('cart', () => {
       if (quantity <= 0) {
         removeItem(itemKey)
       } else {
-        item.quantity = quantity
+        // Validate stock và quantity trước khi update
+        const maxStock = item.stock || 1
+        const safeQuantity = Math.max(1, Math.min(quantity, maxStock, 100)) // Giới hạn tối đa 100
+        
+        if (quantity !== safeQuantity) {
+          console.warn(`Quantity ${quantity} invalid, using safe quantity ${safeQuantity}`)
+        }
+        
+        item.quantity = safeQuantity
         saveToStorage()
       }
     }

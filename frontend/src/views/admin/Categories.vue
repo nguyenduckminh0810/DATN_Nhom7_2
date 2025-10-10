@@ -8,7 +8,7 @@
       </div>
       <div class="header-right">
         <button class="btn btn-auro-primary" @click="showAddModal = true">
-          <i class="ph-plus me-2"></i>Thêm danh mục
+          <i class="bi bi-plus me-2"></i>Thêm danh mục
         </button>
       </div>
     </div>
@@ -18,7 +18,7 @@
       <!-- Quick Search -->
       <div class="search-row">
         <div class="search-box">
-          <i class="ph-magnifying-glass search-icon"></i>
+          <i class="bi bi-search search-icon"></i>
           <input
             type="text"
             class="form-control search-input"
@@ -27,11 +27,11 @@
           />
         </div>
         <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
-          <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
-          <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
+          <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
+          <i :class="showAdvancedFilters ? 'bi bi-caret-up' : 'bi bi-caret-down'" class="ms-1"></i>
         </button>
         <button class="btn btn-outline-secondary" @click="clearFilters">
-          <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
+          <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
         </button>
       </div>
 
@@ -84,7 +84,7 @@
         <div class="col-md-3">
           <div class="stat-card total">
             <div class="stat-icon">
-              <i class="ph-folder"></i>
+              <i class="bi bi-folder"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ categoryStats.total }}</div>
@@ -95,7 +95,7 @@
         <div class="col-md-3">
           <div class="stat-card active">
             <div class="stat-icon">
-              <i class="ph-check-circle"></i>
+              <i class="bi bi-check-circle"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ categoryStats.active }}</div>
@@ -106,7 +106,7 @@
         <div class="col-md-3">
           <div class="stat-card products">
             <div class="stat-icon">
-              <i class="ph-package"></i>
+              <i class="bi bi-box"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ categoryStats.totalProducts }}</div>
@@ -117,7 +117,7 @@
         <div class="col-md-3">
           <div class="stat-card levels">
             <div class="stat-icon">
-              <i class="ph-tree"></i>
+              <i class="bi bi-tree"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ categoryStats.maxLevel }}</div>
@@ -134,13 +134,13 @@
         <h3>Cây danh mục</h3>
         <div class="tree-actions">
           <button class="btn btn-sm btn-outline-secondary" @click="expandAll">
-            <i class="ph-arrows-out me-1"></i>Mở rộng tất cả
+            <i class="bi bi-arrows-expand me-1"></i>Mở rộng tất cả
           </button>
           <button class="btn btn-sm btn-outline-secondary" @click="collapseAll">
-            <i class="ph-arrows-in me-1"></i>Thu gọn tất cả
+            <i class="bi bi-arrows-collapse me-1"></i>Thu gọn tất cả
           </button>
           <button class="btn btn-sm btn-outline-primary" @click="toggleDragMode">
-            <i :class="dragMode ? 'ph-hand-grabbing' : 'ph-hand'" class="me-1"></i>
+            <i :class="dragMode ? 'bi bi-hand-index' : 'bi bi-hand-index'" class="me-1"></i>
             {{ dragMode ? 'Tắt' : 'Bật' }} kéo thả
           </button>
         </div>
@@ -167,11 +167,11 @@
                 @click="toggleCategory(category)" 
                 v-if="category.children && category.children.length > 0"
               >
-                <i :class="category.expanded ? 'ph-caret-down' : 'ph-caret-right'"></i>
+                <i :class="category.expanded ? 'bi bi-caret-down' : 'bi bi-caret-right'"></i>
               </button>
               <div class="node-info">
                 <div class="node-icon">
-                  <i :class="category.icon || 'ph-folder'"></i>
+                  <i :class="category.icon || 'bi bi-folder'"></i>
                 </div>
                 <div class="node-details">
                   <div class="node-name">{{ category.name }}</div>
@@ -180,13 +180,13 @@
               </div>
               <div class="node-actions">
                 <button class="btn btn-sm btn-outline-primary" @click="editCategory(category)" title="Chỉnh sửa">
-                  <i class="ph-pencil"></i>
+                  <i class="bi bi-pencil"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-success" @click="addSubCategory(category)" title="Thêm danh mục con">
-                  <i class="ph-plus"></i>
+                  <i class="bi bi-plus"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-danger" @click="deleteCategory(category)" title="Xóa">
-                  <i class="ph-trash"></i>
+                  <i class="bi bi-trash"></i>
                 </button>
               </div>
             </div>
@@ -200,7 +200,7 @@
                 <div class="node-content">
                   <div class="node-info">
                     <div class="node-icon">
-                      <i :class="child.icon || 'ph-folder'"></i>
+                      <i :class="child.icon || 'bi bi-folder'"></i>
                     </div>
                     <div class="node-details">
                       <div class="node-name">{{ child.name }}</div>
@@ -209,10 +209,10 @@
                   </div>
                   <div class="node-actions">
                     <button class="btn btn-sm btn-outline-primary" @click="editCategory(child)" title="Chỉnh sửa">
-                      <i class="ph-pencil"></i>
+                      <i class="bi bi-pencil"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" @click="deleteCategory(child)" title="Xóa">
-                      <i class="ph-trash"></i>
+                      <i class="bi bi-trash"></i>
                     </button>
                   </div>
                 </div>
@@ -231,13 +231,13 @@
           <div class="bulk-actions" v-if="selectedCategories.length > 0">
             <span class="selected-count">{{ selectedCategories.length }} đã chọn</span>
             <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
-              <i class="ph-check me-1"></i>Kích hoạt
+              <i class="bi bi-check me-1"></i>Kích hoạt
             </button>
             <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
-              <i class="ph-x me-1"></i>Vô hiệu hóa
+              <i class="bi bi-x me-1"></i>Vô hiệu hóa
             </button>
             <button class="btn btn-sm btn-outline-danger" @click="bulkDelete">
-              <i class="ph-trash me-1"></i>Xóa
+              <i class="bi bi-trash me-1"></i>Xóa
             </button>
           </div>
           <div class="table-stats">
@@ -273,7 +273,7 @@
               <td>
                 <div class="category-info">
                   <div class="category-icon">
-                    <i :class="category.icon || 'ph-folder'"></i>
+                    <i :class="category.icon || 'bi bi-folder'"></i>
                   </div>
                   <div class="category-details">
                     <div class="category-name">{{ category.name }}</div>
@@ -305,13 +305,13 @@
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-sm btn-outline-primary" @click="editCategory(category)" title="Chỉnh sửa">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="addSubCategory(category)" title="Thêm danh mục con">
-                    <i class="ph-plus"></i>
+                    <i class="bi bi-plus"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="deleteCategory(category)" title="Xóa">
-                    <i class="ph-trash"></i>
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </td>
@@ -329,13 +329,13 @@
           <div class="bulk-actions" v-if="selectedCategories.length > 0">
             <span class="selected-count">{{ selectedCategories.length }} đã chọn</span>
             <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
-              <i class="ph-check me-1"></i>Kích hoạt
+              <i class="bi bi-check me-1"></i>Kích hoạt
             </button>
             <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
-              <i class="ph-x me-1"></i>Vô hiệu hóa
+              <i class="bi bi-x me-1"></i>Vô hiệu hóa
             </button>
             <button class="btn btn-sm btn-outline-danger" @click="bulkDelete">
-              <i class="ph-trash me-1"></i>Xóa
+              <i class="bi bi-trash me-1"></i>Xóa
             </button>
           </div>
         </div>
@@ -353,17 +353,17 @@
               </div>
               <div class="card-body">
                 <div class="category-icon">
-                  <i :class="category.icon || 'ph-folder'"></i>
+                  <i :class="category.icon || 'bi bi-folder'"></i>
                 </div>
                 <h6 class="category-title">{{ category.name }}</h6>
                 <p class="category-description">{{ category.description }}</p>
                 <div class="category-meta">
                   <div class="meta-item">
-                    <i class="ph-package"></i>
+                    <i class="bi bi-box"></i>
                     <span>{{ category.productCount }} sản phẩm</span>
                   </div>
                   <div class="meta-item">
-                    <i class="ph-tree"></i>
+                    <i class="bi bi-tree"></i>
                     <span>Cấp {{ category.level }}</span>
                   </div>
                 </div>
@@ -376,16 +376,16 @@
               <div class="card-footer">
                 <div class="category-actions">
                   <button class="btn btn-sm btn-outline-primary" @click="editCategory(category)">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="duplicateCategory(category)">
-                    <i class="ph-copy"></i>
+                    <i class="bi bi-copy"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-info" @click="viewCategoryProducts(category)">
-                    <i class="ph-eye"></i>
+                    <i class="bi bi-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="deleteCategory(category)">
-                    <i class="ph-trash"></i>
+                    <i class="bi bi-trash"></i>
                   </button>
                 </div>
               </div>
@@ -401,13 +401,13 @@
         <span class="selected-count">{{ selectedCategories.length }} danh mục đã chọn</span>
         <div class="bulk-buttons">
           <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
-            <i class="ph-check me-1"></i>Kích hoạt
+            <i class="bi bi-check me-1"></i>Kích hoạt
           </button>
           <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
-            <i class="ph-pause me-1"></i>Ngừng hoạt động
+            <i class="bi bi-pause me-1"></i>Ngừng hoạt động
           </button>
           <button class="btn btn-sm btn-outline-danger" @click="bulkDelete">
-            <i class="ph-trash me-1"></i>Xóa
+            <i class="bi bi-trash me-1"></i>Xóa
           </button>
         </div>
       </div>
@@ -419,7 +419,7 @@
         <div class="modal-header">
           <h5 class="modal-title">{{ editingCategory ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới' }}</h5>
           <button class="btn-close" @click="closeModal">
-            <i class="ph-x"></i>
+            <i class="bi bi-x"></i>
           </button>
         </div>
         <div class="modal-body">
@@ -432,12 +432,12 @@
               <div class="col-md-4">
                 <label class="form-label">Icon</label>
                 <select class="form-select" v-model="categoryForm.icon">
-                  <option value="ph-folder">Thư mục</option>
-                  <option value="ph-t-shirt">Áo</option>
-                  <option value="ph-bag">Quần</option>
-                  <option value="ph-watch">Đồng hồ</option>
-                  <option value="ph-sunglasses">Kính</option>
-                  <option value="ph-sneaker">Giày</option>
+                  <option value="bi bi-folder">Thư mục</option>
+                  <option value="bi bi-tshirt">Áo</option>
+                  <option value="bi bi-bag">Quần</option>
+                  <option value="bi bi-watch">Đồng hồ</option>
+                  <option value="bi bi-sunglasses">Kính</option>
+                  <option value="bi bi-shoe-prints">Giày</option>
                 </select>
               </div>
               <div class="col-md-6">
@@ -507,7 +507,7 @@ const categoryForm = ref({
   name: '',
   slug: '',
   description: '',
-  icon: 'ph-folder',
+  icon: 'bi bi-folder',
   parentId: '',
   order: 0,
   status: 'active'
@@ -520,7 +520,7 @@ const categories = ref([
     name: 'Áo',
     slug: 'ao',
     description: 'Các loại áo nam',
-    icon: 'ph-t-shirt',
+    icon: 'bi bi-tshirt',
     parentId: null,
     order: 1,
     status: 'active',
@@ -533,7 +533,7 @@ const categories = ref([
         name: 'Áo sơ mi',
         slug: 'ao-so-mi',
         description: 'Áo sơ mi nam',
-        icon: 'ph-t-shirt',
+        icon: 'bi bi-tshirt',
         parentId: 1,
         order: 1,
         status: 'active',
@@ -547,7 +547,7 @@ const categories = ref([
         name: 'Áo thun',
         slug: 'ao-thun',
         description: 'Áo thun nam',
-        icon: 'ph-t-shirt',
+        icon: 'bi bi-tshirt',
         parentId: 1,
         order: 2,
         status: 'active',
@@ -563,7 +563,7 @@ const categories = ref([
     name: 'Quần',
     slug: 'quan',
     description: 'Các loại quần nam',
-    icon: 'ph-bag',
+    icon: 'bi bi-bag',
     parentId: null,
     order: 2,
     status: 'active',
@@ -576,7 +576,7 @@ const categories = ref([
         name: 'Quần âu',
         slug: 'quan-au',
         description: 'Quần âu nam',
-        icon: 'ph-bag',
+        icon: 'bi bi-bag',
         parentId: 2,
         order: 1,
         status: 'active',
@@ -590,7 +590,7 @@ const categories = ref([
         name: 'Quần jean',
         slug: 'quan-jean',
         description: 'Quần jean nam',
-        icon: 'ph-bag',
+        icon: 'bi bi-bag',
         parentId: 2,
         order: 2,
         status: 'active',
@@ -606,7 +606,7 @@ const categories = ref([
     name: 'Phụ kiện',
     slug: 'phu-kien',
     description: 'Các phụ kiện nam',
-    icon: 'ph-watch',
+    icon: 'bi bi-watch',
     parentId: null,
     order: 3,
     status: 'active',
@@ -820,7 +820,7 @@ const addSubCategory = (parentCategory) => {
     name: 'Danh mục con mới',
     slug: 'sub-category-' + Date.now(),
     description: '',
-    icon: 'ph-folder',
+    icon: 'bi bi-folder',
     level: (parentCategory.level || 0) + 1,
     parentId: parentCategory.id,
     status: 'active',
@@ -878,7 +878,7 @@ const closeModal = () => {
     name: '',
     slug: '',
     description: '',
-    icon: 'ph-folder',
+    icon: 'bi bi-folder',
     parentId: '',
     order: 0,
     status: 'active'

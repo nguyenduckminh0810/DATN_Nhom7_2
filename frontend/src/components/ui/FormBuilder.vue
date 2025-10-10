@@ -189,13 +189,13 @@ const formClass = computed(() => [
 const statusIcon = computed(() => {
   switch (props.statusType) {
     case 'success':
-      return 'ph-check-circle'
+      return 'bi bi-check-circle'
     case 'warning':
-      return 'ph-warning-circle'
+      return 'bi bi-exclamation-triangle-fill'
     case 'error':
-      return 'ph-x-circle'
+      return 'bi bi-x-circle'
     default:
-      return 'ph-info'
+      return 'bi bi-info-circle'
   }
 })
 

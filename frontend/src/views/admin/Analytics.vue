@@ -9,14 +9,14 @@
       <div class="header-right">
         <div class="header-actions">
           <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
-            <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
-            <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
+            <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
+            <i :class="showAdvancedFilters ? 'bi bi-caret-up' : 'bi bi-caret-down'" class="ms-1"></i>
           </button>
           <button class="btn btn-outline-success" @click="exportReport">
-            <i class="ph-download me-1"></i>Xuất báo cáo
+            <i class="bi bi-download me-1"></i>Xuất báo cáo
           </button>
           <button class="btn btn-outline-secondary" @click="refreshData">
-            <i class="ph-arrow-clockwise me-1"></i>Làm mới
+            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
           </button>
         </div>
       </div>
@@ -61,7 +61,7 @@
         <div class="col-md-2">
           <label class="form-label">Thao tác</label>
           <button class="btn btn-primary w-100" @click="applyFilters">
-            <i class="ph-magnifying-glass me-1"></i>Áp dụng
+            <i class="bi bi-search me-1"></i>Áp dụng
           </button>
         </div>
       </div>
@@ -83,7 +83,7 @@
         </div>
         <div class="col-md-4">
           <div class="last-updated">
-            <i class="ph-clock me-1"></i>
+            <i class="bi bi-clock me-1"></i>
             Cập nhật lần cuối: {{ lastUpdated }}
           </div>
         </div>
@@ -96,7 +96,7 @@
         <div class="col-md-3">
           <div class="metric-card revenue">
             <div class="metric-icon">
-              <i class="ph-currency-dollar"></i>
+              <i class="bi bi-currency-dollar"></i>
             </div>
             <div class="metric-content">
               <div class="metric-value">{{ formatCurrency(totalRevenue) }}</div>
@@ -115,7 +115,7 @@
         <div class="col-md-3">
           <div class="metric-card orders">
             <div class="metric-icon">
-              <i class="ph-shopping-bag"></i>
+              <i class="bi bi-bag"></i>
             </div>
             <div class="metric-content">
               <div class="metric-value">{{ totalOrders }}</div>
@@ -134,7 +134,7 @@
         <div class="col-md-3">
           <div class="metric-card customers">
             <div class="metric-icon">
-              <i class="ph-users"></i>
+              <i class="bi bi-people"></i>
             </div>
             <div class="metric-content">
               <div class="metric-value">{{ totalCustomers }}</div>
@@ -153,7 +153,7 @@
         <div class="col-md-3">
           <div class="metric-card products">
             <div class="metric-icon">
-              <i class="ph-package"></i>
+              <i class="bi bi-box"></i>
             </div>
             <div class="metric-content">
               <div class="metric-value">{{ totalProducts }}</div>
@@ -179,7 +179,7 @@
           <div class="insight-card">
             <div class="insight-header">
               <h6 class="insight-title">Hiệu suất kinh doanh</h6>
-              <i class="ph-chart-line insight-icon"></i>
+              <i class="bi bi-graph-up insight-icon"></i>
             </div>
             <div class="insight-content">
               <div class="insight-item">
@@ -201,7 +201,7 @@
           <div class="insight-card">
             <div class="insight-header">
               <h6 class="insight-title">Xu hướng khách hàng</h6>
-              <i class="ph-users-three insight-icon"></i>
+              <i class="bi bi-people-three insight-icon"></i>
             </div>
             <div class="insight-content">
               <div class="insight-item">
@@ -223,7 +223,7 @@
           <div class="insight-card">
             <div class="insight-header">
               <h6 class="insight-title">Hiệu quả sản phẩm</h6>
-              <i class="ph-package insight-icon"></i>
+              <i class="bi bi-box insight-icon"></i>
             </div>
             <div class="insight-content">
               <div class="insight-item">
@@ -255,7 +255,7 @@
                 <h5 class="chart-title">Doanh thu & Hiệu suất</h5>
                 <div class="chart-metrics">
                   <span class="metric-badge">
-                    <i class="ph-trend-up"></i>
+                    <i class="bi bi-graph-up"></i>
                     +{{ revenueGrowth }}% tăng trưởng
                   </span>
                 </div>
@@ -274,11 +274,11 @@
                 </div>
                 <div class="chart-actions">
                   <button class="btn btn-sm btn-outline-primary" @click="toggleChartType">
-                    <i :class="chartType === 'line' ? 'ph-chart-line' : 'ph-chart-bar'"></i>
+                    <i :class="chartType === 'line' ? 'bi bi-graph-up' : 'bi bi-bar-chart'"></i>
                     {{ chartType === 'line' ? 'Cột' : 'Đường' }}
                   </button>
                   <button class="btn btn-sm btn-outline-secondary" @click="exportChart">
-                    <i class="ph-download"></i>
+                    <i class="bi bi-download"></i>
                   </button>
                 </div>
               </div>
@@ -294,7 +294,7 @@
                 <div class="insight-item">
                   <span class="insight-label">Xu hướng:</span>
                   <span :class="['insight-value', getTrendAnalysis().direction]">
-                    <i :class="getTrendAnalysis().direction === 'positive' ? 'ph-trend-up' : 'ph-trend-down'"></i>
+                    <i :class="getTrendAnalysis().direction === 'positive' ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
                     {{ getTrendAnalysis().percentage }}% ({{ getTrendAnalysis().strength }})
                   </span>
                 </div>
@@ -313,7 +313,7 @@
                 <div class="insight-item">
                   <span class="insight-label">Tăng trưởng:</span>
                   <span :class="['insight-value', getPerformanceInsights().growthRate >= 0 ? 'positive' : 'negative']">
-                    <i :class="getPerformanceInsights().growthRate >= 0 ? 'ph-trend-up' : 'ph-trend-down'"></i>
+                    <i :class="getPerformanceInsights().growthRate >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
                     {{ getPerformanceInsights().growthRate >= 0 ? '+' : '' }}{{ getPerformanceInsights().growthRate }}%
                   </span>
                 </div>
@@ -333,7 +333,7 @@
               <div class="metric-header">
                 <h6 class="metric-title">Hôm nay</h6>
                 <span class="live-indicator">
-                  <i class="ph-pulse"></i>
+                  <i class="bi bi-heart-pulse"></i>
                   LIVE
                 </span>
               </div>
@@ -482,10 +482,10 @@
               <h5 class="report-title">Báo cáo chi tiết</h5>
               <div class="report-actions">
                 <button class="btn btn-outline-primary btn-sm" @click="generateDetailedReport">
-                  <i class="ph-file-text me-1"></i>Tạo báo cáo
+                  <i class="bi bi-file-text me-1"></i>Tạo báo cáo
                 </button>
                 <button class="btn btn-outline-success btn-sm" @click="exportReport('detailed')">
-                  <i class="ph-download me-1"></i>Xuất báo cáo
+                  <i class="bi bi-download me-1"></i>Xuất báo cáo
                 </button>
               </div>
             </div>
@@ -526,7 +526,7 @@
                     <div class="metric-label">Tỷ lệ chuyển đổi</div>
                     <div class="metric-value">{{ conversionRate }}%</div>
                     <div class="metric-change positive">
-                      <i class="ph-trend-up"></i>
+                      <i class="bi bi-graph-up"></i>
                       +0.8% so với kỳ trước
                     </div>
                   </div>
@@ -538,7 +538,7 @@
                 <div class="insights-grid">
                   <div class="insight-card-small">
                     <div class="insight-icon positive">
-                      <i class="ph-trend-up"></i>
+                      <i class="bi bi-graph-up"></i>
                     </div>
                     <div class="insight-content">
                       <div class="insight-title">Xu hướng tích cực</div>
@@ -549,7 +549,7 @@
                   </div>
                   <div class="insight-card-small">
                     <div class="insight-icon warning">
-                      <i class="ph-warning"></i>
+                      <i class="bi bi-exclamation-triangle"></i>
                     </div>
                     <div class="insight-content">
                       <div class="insight-title">Biến động cao</div>
@@ -560,7 +560,7 @@
                   </div>
                   <div class="insight-card-small">
                     <div class="insight-icon info">
-                      <i class="ph-lightbulb"></i>
+                      <i class="bi bi-lightbulb"></i>
                     </div>
                     <div class="insight-content">
                       <div class="insight-title">Cơ hội tăng trưởng</div>
@@ -571,7 +571,7 @@
                   </div>
                   <div class="insight-card-small">
                     <div class="insight-icon success">
-                      <i class="ph-check-circle"></i>
+                      <i class="bi bi-check-circle"></i>
                     </div>
                     <div class="insight-content">
                       <div class="insight-title">Hiệu suất tốt</div>
@@ -597,7 +597,7 @@
             <div class="report-header">
               <h5 class="report-title">Báo cáo bán hàng</h5>
               <button class="btn btn-sm btn-outline-primary" @click="exportReport('sales')">
-                <i class="ph-download me-1"></i>Xuất báo cáo
+                <i class="bi bi-download me-1"></i>Xuất báo cáo
               </button>
             </div>
             <div class="report-content">
@@ -646,7 +646,7 @@
             <div class="report-header">
               <h5 class="report-title">Báo cáo khách hàng</h5>
               <button class="btn btn-sm btn-outline-primary" @click="exportReport('customers')">
-                <i class="ph-download me-1"></i>Xuất báo cáo
+                <i class="bi bi-download me-1"></i>Xuất báo cáo
               </button>
             </div>
             <div class="report-content">
@@ -699,42 +699,42 @@
             <div class="col-md-4">
               <div class="export-option">
                 <div class="export-icon">
-                  <i class="ph-file-csv"></i>
+                  <i class="bi bi-file-csv"></i>
                 </div>
                 <div class="export-info">
                   <h6>Báo cáo CSV</h6>
                   <p>Dữ liệu thô để phân tích</p>
                 </div>
                 <button class="btn btn-outline-primary btn-sm" @click="exportData('csv')">
-                  <i class="ph-download me-1"></i>Tải xuống
+                  <i class="bi bi-download me-1"></i>Tải xuống
                 </button>
               </div>
             </div>
             <div class="col-md-4">
               <div class="export-option">
                 <div class="export-icon">
-                  <i class="ph-file-pdf"></i>
+                  <i class="bi bi-file-pdf"></i>
                 </div>
                 <div class="export-info">
                   <h6>Báo cáo PDF</h6>
                   <p>Báo cáo định dạng đẹp</p>
                 </div>
                 <button class="btn btn-outline-primary btn-sm" @click="exportData('pdf')">
-                  <i class="ph-download me-1"></i>Tải xuống
+                  <i class="bi bi-download me-1"></i>Tải xuống
                 </button>
               </div>
             </div>
             <div class="col-md-4">
               <div class="export-option">
                 <div class="export-icon">
-                  <i class="ph-file-excel"></i>
+                  <i class="bi bi-file-excel"></i>
                 </div>
                 <div class="export-info">
                   <h6>Báo cáo Excel</h6>
                   <p>Bảng tính với biểu đồ</p>
                 </div>
                 <button class="btn btn-outline-primary btn-sm" @click="exportData('excel')">
-                  <i class="ph-download me-1"></i>Tải xuống
+                  <i class="bi bi-download me-1"></i>Tải xuống
                 </button>
               </div>
             </div>
@@ -765,10 +765,10 @@ const orderDistributionType = ref('status')
 const customerAnalyticsType = ref('segments')
 
 const chartMetrics = [
-  { label: 'Doanh thu', value: 'revenue', icon: 'ph-currency-dollar' },
-  { label: 'Đơn hàng', value: 'orders', icon: 'ph-shopping-bag' },
-  { label: 'Khách hàng', value: 'customers', icon: 'ph-users' },
-  { label: 'Lợi nhuận', value: 'profit', icon: 'ph-chart-line-up' }
+  { label: 'Doanh thu', value: 'revenue', icon: 'bi bi-currency-dollar' },
+  { label: 'Đơn hàng', value: 'orders', icon: 'bi bi-bag' },
+  { label: 'Khách hàng', value: 'customers', icon: 'bi bi-people' },
+  { label: 'Lợi nhuận', value: 'profit', icon: 'bi bi-graph-up-up' }
 ]
 
 const chartPeriods = [
@@ -847,25 +847,25 @@ const customerSatisfaction = ref(92.3)
 const revenueChange = computed(() => ({
   value: 12.5,
   type: 'positive',
-  icon: 'ph-trend-up'
+  icon: 'bi bi-graph-up'
 }))
 
 const ordersChange = computed(() => ({
   value: 8.3,
   type: 'positive',
-  icon: 'ph-trend-up'
+  icon: 'bi bi-graph-up'
 }))
 
 const customersChange = computed(() => ({
   value: 15.2,
   type: 'positive',
-  icon: 'ph-trend-up'
+  icon: 'bi bi-graph-up'
 }))
 
 const productsChange = computed(() => ({
   value: 6.7,
   type: 'positive',
-  icon: 'ph-trend-up'
+  icon: 'bi bi-graph-up'
 }))
 
 // Additional computed properties
@@ -877,7 +877,7 @@ const inventoryTurnover = computed(() => 85)
 
 // Chart insights
 const trendDirection = computed(() => 'positive')
-const trendIcon = computed(() => 'ph-trend-up')
+const trendIcon = computed(() => 'bi bi-graph-up')
 const trendText = computed(() => 'Tăng trưởng ổn định')
 const peakValue = computed(() => 8500000)
 const volatility = computed(() => 12.8)

@@ -6,7 +6,7 @@
           <span class="score">{{ product.rating || 4.5 }}</span>
           <div class="stars">
             <i v-for="star in 5" :key="star" 
-               :class="star <= (product.rating || 4.5) ? 'ph-star-fill' : 'ph-star'"
+               :class="star <= (product.rating || 4.5) ? 'bi bi-star-fill' : 'bi bi-star'"
                class="star-icon"></i>
           </div>
           <span class="review-count">Dựa trên {{ product.reviewCount || 0 }} đánh giá</span>
@@ -53,7 +53,7 @@
 
     <div class="reviews-list">
       <div v-if="filteredReviews.length === 0" class="no-reviews">
-        <i class="ph-chat-circle"></i>
+        <i class="bi bi-chat-dots"></i>
         <h4>Chưa có đánh giá nào</h4>
         <p>Hãy là người đầu tiên đánh giá sản phẩm này!</p>
       </div>
@@ -73,7 +73,7 @@
                 <h5 class="reviewer-name">{{ review.name }}</h5>
                 <div class="review-rating">
                   <i v-for="star in 5" :key="star" 
-                     :class="star <= review.rating ? 'ph-star-fill' : 'ph-star'"
+                     :class="star <= review.rating ? 'bi bi-star-fill' : 'bi bi-star'"
                      class="star-icon"></i>
                 </div>
               </div>
@@ -97,11 +97,11 @@
             
             <div class="review-actions">
               <button class="action-btn helpful" @click="toggleHelpful(review.id)">
-                <i class="ph-thumbs-up"></i>
+                <i class="bi bi-hand-thumbs-up"></i>
                 Hữu ích ({{ review.helpfulCount || 0 }})
               </button>
               <button class="action-btn reply" @click="toggleReply(review.id)">
-                <i class="ph-chat-circle"></i>
+                <i class="bi bi-chat-dots"></i>
                 Trả lời
               </button>
             </div>
@@ -126,7 +126,7 @@
     <div v-if="showWriteReview" class="modal-overlay" @click="closeWriteReview">
       <div class="modal-content" @click.stop>
         <button class="modal-close" @click="closeWriteReview">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
         <h3>Viết đánh giá</h3>
         <form @submit.prevent="submitReview">
@@ -141,7 +141,7 @@
                 :class="{ active: star <= newReview.rating }"
                 @click="newReview.rating = star"
               >
-                <i class="ph-star-fill"></i>
+                <i class="bi bi-star-fill"></i>
               </button>
             </div>
           </div>
@@ -176,7 +176,7 @@
     <div v-if="showImageModal" class="image-modal-overlay" @click="closeImageModal">
       <div class="image-modal-content" @click.stop>
         <button class="image-modal-close" @click="closeImageModal">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
         <img :src="selectedImage" alt="Review image" />
       </div>

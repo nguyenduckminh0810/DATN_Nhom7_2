@@ -3,10 +3,6 @@ import { useCartStore } from '../stores/cart'
 import { useRouter } from 'vue-router'
 import authUtils from '../utils/auth'
 
-/**
- * Composable for cart operations
- * Provides cart state, methods, and business logic
- */
 export function useCart() {
   const cartStore = useCartStore()
   const router = useRouter()
@@ -27,11 +23,46 @@ export function useCart() {
   }
 
   const updateQuantity = (itemKey, quantity) => {
-    cartStore.updateQuantity(itemKey, quantity)
+    const numQuantity = parseInt(quantity) || 0
+
+    const item = cartStore.items.find(item => item.itemKey === itemKey)
+    
+    if (!item) {
+      console.error('Item not found:', itemKey)
+      return false
+    }
+    
+    if (numQuantity <= 0) {
+      if (window.$toast) {
+        window.$toast.error('Số lượng phải lớn hơn 0')
+      }
+      return false
+    }
+    
+    // Validate stock - nếu không có stock data thì set default là 1
+    const maxStock = item.stock || 1
+    if (numQuantity > maxStock) {
+      if (window.$toast) {
+        window.$toast.error(`Chỉ còn ${maxStock} sản phẩm trong kho`)
+      }
+      return false
+    }
+    
+    cartStore.updateQuantity(itemKey, numQuantity)
+    return true
   }
 
   const clearCart = () => {
     cartStore.clearCart()
+  }
+
+  const formatPrice = (price) => {
+    const numPrice = parseFloat(price) || 0
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0
+    }).format(numPrice)
   }
 
   // Business logic methods
@@ -60,6 +91,7 @@ export function useCart() {
       price: product.price,
       image: product.image,
       quantity: finalQuantity,
+      stock: product.stock || 1,
       ...variantData
     }
 
@@ -94,7 +126,7 @@ export function useCart() {
       return
     }
 
-    router.push('/checkout')
+    router.push('/cart')
   }
 
   const proceedToCart = () => {
@@ -235,6 +267,8 @@ export function useCart() {
     addToCartWithValidation,
     proceedToCheckout,
     proceedToCart,
+
+    formatPrice,
 
     // Voucher operations
     canApplyVoucher,

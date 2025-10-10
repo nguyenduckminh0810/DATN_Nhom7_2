@@ -12,7 +12,7 @@
           <div class="search-input-container w-100">
             <div class="input-group">
               <span class="input-group-text bg-transparent border-0">
-                <i class="ph-magnifying-glass text-muted"></i>
+                <i class="bi bi-search text-muted"></i>
               </span>
               <input 
                 type="text" 
@@ -30,7 +30,7 @@
                 @click="performSearch"
                 :disabled="!searchQuery.trim()"
               >
-                <i class="ph-magnifying-glass"></i>
+                <i class="bi bi-search"></i>
               </button>
             </div>
           </div>
@@ -41,7 +41,7 @@
           <div v-if="!searchQuery.trim() && suggestions.length > 0" class="suggestions-section">
             <div class="px-4 py-3 border-bottom">
               <h6 class="mb-3 text-muted">
-                <i class="ph-lightbulb me-2"></i>Tìm kiếm phổ biến
+                <i class="bi bi-lightbulb me-2"></i>Tìm kiếm phổ biến
               </h6>
               <div class="suggestion-tags">
                 <span 
@@ -61,13 +61,13 @@
             <div class="px-4 py-3 border-bottom">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h6 class="mb-0 text-muted">
-                  <i class="ph-clock me-2"></i>Lịch sử tìm kiếm
+                  <i class="bi bi-clock me-2"></i>Lịch sử tìm kiếm
                 </h6>
                 <button 
                   class="btn btn-sm btn-outline-secondary"
                   @click="clearSearchHistory"
                 >
-                  <i class="ph-trash"></i>
+                  <i class="bi bi-trash"></i>
                 </button>
               </div>
               <div class="history-items">
@@ -77,7 +77,7 @@
                   class="history-item"
                   @click="selectSuggestion(item)"
                 >
-                  <i class="ph-clock text-muted me-2"></i>
+                  <i class="bi bi-clock text-muted me-2"></i>
                   {{ item }}
                 </div>
               </div>
@@ -126,7 +126,7 @@
             </div>
 
             <div v-else class="no-results text-center py-5">
-              <i class="ph-magnifying-glass text-muted" style="font-size: 3rem;"></i>
+              <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
               <h6 class="mt-3 text-muted">Không tìm thấy sản phẩm</h6>
               <p class="text-muted">Thử tìm kiếm với từ khóa khác</p>
             </div>

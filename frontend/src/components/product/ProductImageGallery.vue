@@ -19,13 +19,13 @@
         <!-- Video Play Button Overlay -->
         <div v-if="hasVideo" class="video-overlay">
           <button class="video-play-btn" @click="playVideo">
-            <i class="ph-play-circle-fill"></i>
+            <i class="bi bi-play-circle-fill"></i>
           </button>
         </div>
         
         <!-- Zoom Indicator -->
         <div class="zoom-indicator">
-          <i class="ph-magnifying-glass-plus"></i>
+          <i class="bi bi-search"></i>
           <span>Click để phóng to</span>
         </div>
       </div>
@@ -54,7 +54,7 @@
         
         <!-- Video Thumbnail Indicator -->
         <div v-if="index === 0 && hasVideo" class="video-indicator">
-          <i class="ph-play"></i>
+          <i class="bi bi-play"></i>
         </div>
       </div>
     </div>
@@ -63,7 +63,7 @@
     <div v-if="showLightbox" class="lightbox-overlay" @click="closeLightbox">
       <div class="lightbox-content" @click.stop>
         <button class="lightbox-close" @click="closeLightbox">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
         <LazyImage
           :src="selectedImage"
