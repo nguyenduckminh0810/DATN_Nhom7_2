@@ -44,33 +44,33 @@
             <ul class="dropdown-menu modern-dropdown">
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-thun">
-                  <i class="ph-t-shirt me-2"></i>Áo thun
+                  <i class="bi bi-tshirt me-2"></i>Áo thun
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-so-mi">
-                  <i class="ph-shirt me-2"></i>Áo sơ mi
+                  <i class="bi bi-shop me-2"></i>Áo sơ mi
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-polo">
-                  <i class="ph-t-shirt me-2"></i>Áo polo
+                  <i class="bi bi-tshirt me-2"></i>Áo polo
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-khoac">
-                  <i class="ph-coat-hanger me-2"></i>Áo khoác
+                  <i class="bi bi-hanger me-2"></i>Áo khoác
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-len">
-                  <i class="ph-sweater me-2"></i>Áo len
+                  <i class="bi bi-tshirt me-2"></i>Áo len
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/ao">
-                  <i class="ph-grid-four me-2"></i>Tất cả áo
+                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả áo
                 </router-link>
               </li>
             </ul>
@@ -82,33 +82,33 @@
             <ul class="dropdown-menu modern-dropdown">
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-jean">
-                  <i class="ph-pants me-2"></i>Quần jean
+                  <i class="bi bi-shop me-2"></i>Quần jean
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-kaki">
-                  <i class="ph-pants me-2"></i>Quần kaki
+                  <i class="bi bi-shop me-2"></i>Quần kaki
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-short">
-                  <i class="ph-pants me-2"></i>Quần short
+                  <i class="bi bi-shop me-2"></i>Quần short
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-tay">
-                  <i class="ph-pants me-2"></i>Quần tây
+                  <i class="bi bi-shop me-2"></i>Quần tây
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-jogger">
-                  <i class="ph-pants me-2"></i>Quần jogger
+                  <i class="bi bi-shop me-2"></i>Quần jogger
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/category/quan">
-                  <i class="ph-grid-four me-2"></i>Tất cả quần
+                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả quần
                 </router-link>
               </li>
             </ul>
@@ -134,7 +134,7 @@
               v-model="searchQuery"
             >
             <button class="search-btn" @click="handleSearch">
-              <i class="ph-magnifying-glass"></i>
+              <i class="bi bi-search"></i>
             </button>
           </div>
         </div>
@@ -147,7 +147,7 @@
               class="nav-link modern-nav-link position-relative cart-trigger"
               @click="toggleMiniCart"
             >
-              <i class="ph-shopping-cart"></i>
+              <i class="bi bi-cart3"></i>
               <span v-if="cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
@@ -157,29 +157,29 @@
           <!-- User Menu -->
           <li v-if="!isLoggedIn" class="nav-item">
             <button class="nav-link modern-nav-link login-btn" @click="openLoginPopup">
-              <i class="ph-user"></i>
+              <i class="bi bi-person"></i>
             </button>
           </li>
           
           <li v-else class="nav-item dropdown dropdown-hover">
             <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-              <i class="ph-user-circle"></i>
+              <i class="bi bi-person-circle"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end modern-dropdown">
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/profile">
-                  <i class="ph-user me-2"></i>Thông tin cá nhân
+                  <i class="bi bi-person me-2"></i>Thông tin cá nhân
                 </router-link>
               </li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/orders">
-                  <i class="ph-shopping-bag me-2"></i>Đơn hàng của tôi
+                  <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
                 </router-link>
               </li>
               <li><hr class="dropdown-divider"></li>
               <li>
                 <button class="dropdown-item modern-dropdown-item" @click="handleLogout">
-                  <i class="ph-sign-out me-2"></i>Đăng xuất
+                  <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                 </button>
               </li>
             </ul>
@@ -954,14 +954,14 @@ router-link:focus-visible {
   transform: scale(1.1);
 }
 
-.ph-user-circle {
+.bi-person-circle {
   font-size: 1.4rem !important;
   font-weight: 900 !important;
   color: #212529 !important;
   transition: all 0.3s ease;
 }
 
-.modern-nav-link:hover .ph-user-circle {
+.modern-nav-link:hover .bi-person-circle {
   font-size: 1.5rem !important;
   color: #B8860B !important;
   transform: scale(1.1);

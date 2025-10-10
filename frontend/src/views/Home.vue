@@ -54,13 +54,13 @@
                   <div class="hero-promo" v-if="slide.promo" style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
                     <span class="promo-text" style="color: white; flex: 1;">{{ slide.promo }}</span>
                     <div class="promo-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                      <i class="ph-plus-circle" style="color: #cd7f32; font-size: 1.5rem;"></i>
+                      <i class="bi bi-plus-circle" style="color: #cd7f32; font-size: 1.5rem;"></i>
                       <img :src="slide.promoImage" :alt="slide.promoItem" class="promo-image" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
                     </div>
                   </div>
                   <router-link :to="slide.ctaLink" class="btn-hero-cta" style="background: #cd7f32; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
                     {{ slide.ctaText }}
-                    <i class="ph-arrow-right" style="font-size: 1.25rem;"></i>
+                    <i class="bi bi-arrow-right" style="font-size: 1.25rem;"></i>
                   </router-link>
                 </div>
                 <div class="hero-image" style="flex: 1; text-align: center;">
@@ -73,10 +73,10 @@
         </div>
 
         <button class="carousel-control-prev" type="button" @click="previousSlide" style="position: absolute; left: 2rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s ease;">
-          <i class="ph-caret-left" style="font-size: 1.5rem;"></i>
+          <i class="bi bi-caret-left" style="font-size: 1.5rem;"></i>
         </button>
         <button class="carousel-control-next" type="button" @click="nextSlide" style="position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s ease;">
-          <i class="ph-caret-right" style="font-size: 1.5rem;"></i>
+          <i class="bi bi-caret-right" style="font-size: 1.5rem;"></i>
         </button>
       </div>
     </section>
@@ -170,7 +170,7 @@
   <!-- Error state -->
   <div v-else-if="featuredError" class="col-12 text-center py-5">
     <div class="alert alert-danger d-inline-block">
-      <i class="ph-warning-circle me-2"></i>
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
       {{ featuredError }}
     </div>
   </div>

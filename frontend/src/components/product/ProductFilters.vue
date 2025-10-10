@@ -4,14 +4,14 @@
     <div class="filter-header mb-4">
       <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0">
-          <i class="ph-funnel me-2"></i>Bộ lọc
+          <i class="bi bi-funnel me-2"></i>Bộ lọc
         </h5>
         <button 
           v-if="hasActiveFilters" 
           class="btn btn-sm btn-outline-secondary"
           @click="clearAllFilters"
         >
-          <i class="ph-x me-1"></i>Xóa tất cả
+          <i class="bi bi-x me-1"></i>Xóa tất cả
         </button>
       </div>
       <div v-if="activeFiltersCount > 0" class="mt-2">
@@ -24,60 +24,30 @@
     <!-- Price Filter -->
     <div class="filter-section mb-4">
       <h6 class="filter-title">
-        <i class="ph-currency-circle-dollar me-2"></i>Khoảng giá
+        <i class="bi bi-currency-dollar me-2"></i>Khoảng giá
       </h6>
       
-      <!-- Price Range Slider -->
-      <div class="price-range-container">
-        <div class="price-inputs d-flex gap-2 mb-3">
-          <input 
-            type="number" 
-            class="form-control form-control-sm" 
-            placeholder="Từ"
-            :value="priceRange.min"
-            @input="updateMinPrice"
-          >
-          <span class="align-self-center">-</span>
-          <input 
-            type="number" 
-            class="form-control form-control-sm" 
-            placeholder="Đến"
-            :value="priceRange.max"
-            @input="updateMaxPrice"
-          >
-        </div>
-        
-        <!-- Range Slider -->
-        <div class="range-slider-container">
-          <input 
-            type="range" 
-            class="form-range price-slider" 
-            min="0" 
-            max="5000000" 
-            step="100000"
-            :value="priceRange.min"
-            @input="updateMinPriceFromSlider"
-          >
-          <input 
-            type="range" 
-            class="form-range price-slider" 
-            min="0" 
-            max="5000000" 
-            step="100000"
-            :value="priceRange.max"
-            @input="updateMaxPriceFromSlider"
-          >
-        </div>
-        
-        <div class="price-display mt-2">
-          <small class="text-muted">
-            {{ formatPrice(priceRange.min) }} - {{ formatPrice(priceRange.max) }}
-          </small>
-        </div>
+      <!-- Price Inputs -->
+      <div class="price-inputs d-flex gap-2 mb-3">
+        <input 
+          type="number" 
+          class="form-control form-control-sm" 
+          placeholder="Từ"
+          :value="priceRange.min"
+          @input="updateMinPrice"
+        >
+        <span class="align-self-center">-</span>
+        <input 
+          type="number" 
+          class="form-control form-control-sm" 
+          placeholder="Đến"
+          :value="priceRange.max"
+          @input="updateMaxPrice"
+        >
       </div>
 
       <!-- Quick Price Ranges -->
-      <div class="quick-price-ranges mt-3">
+      <div class="quick-price-ranges">
         <div class="d-flex flex-wrap gap-2">
           <button 
             v-for="range in priceRanges" 
@@ -95,13 +65,13 @@
     <!-- Size Filter -->
     <div class="filter-section mb-4">
       <h6 class="filter-title">
-        <i class="ph-ruler me-2"></i>Kích thước
+        <i class="bi bi-rulers me-2"></i>Kích thước
         <button 
           v-if="activeFilters.sizes.length > 0" 
           class="btn btn-sm btn-link p-0 ms-2"
           @click="clearFilter('sizes')"
         >
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </h6>
       <div class="size-grid">
@@ -120,13 +90,13 @@
     <!-- Color Filter -->
     <div class="filter-section mb-4">
       <h6 class="filter-title">
-        <i class="ph-palette me-2"></i>Màu sắc
+        <i class="bi bi-palette me-2"></i>Màu sắc
         <button 
           v-if="activeFilters.colors.length > 0" 
           class="btn btn-sm btn-link p-0 ms-2"
           @click="clearFilter('colors')"
         >
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </h6>
       <div class="color-grid">
@@ -139,38 +109,43 @@
           :title="color.name"
           @click="toggleColor(color.value)"
         >
-          <span class="visually-hidden">{{ color.name }}</span>
+          <span 
+            class="color-name" 
+            :style="{ color: getTextColor(color.hex) }"
+          >
+            {{ color.name }}
+          </span>
         </button>
       </div>
     </div>
 
-    <!-- Brand Filter -->
+    <!-- Material Filter -->
     <div class="filter-section mb-4">
       <h6 class="filter-title">
-        <i class="ph-trademark me-2"></i>Thương hiệu
+        <i class="bi bi-grid-3x3-gap me-2"></i>Chất liệu
         <button 
-          v-if="activeFilters.brands.length > 0" 
+          v-if="activeFilters.materials.length > 0" 
           class="btn btn-sm btn-link p-0 ms-2"
-          @click="clearFilter('brands')"
+          @click="clearFilter('materials')"
         >
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </h6>
-      <div class="brand-list">
+      <div class="material-list">
         <div 
-          v-for="brand in availableBrands" 
-          :key="brand"
+          v-for="material in availableMaterials" 
+          :key="material"
           class="form-check"
         >
           <input 
             class="form-check-input" 
             type="checkbox" 
-            :id="`brand-${brand}`"
-            :checked="activeFilters.brands.includes(brand)"
-            @change="toggleBrand(brand)"
+            :id="`material-${material}`"
+            :checked="activeFilters.materials.includes(material)"
+            @change="toggleMaterial(material)"
           >
-          <label class="form-check-label" :for="`brand-${brand}`">
-            {{ brand }}
+          <label class="form-check-label" :for="`material-${material}`">
+            {{ material }}
           </label>
         </div>
       </div>
@@ -179,13 +154,13 @@
     <!-- Availability Filter -->
     <div class="filter-section mb-4">
       <h6 class="filter-title">
-        <i class="ph-package me-2"></i>Tình trạng
+        <i class="bi bi-box me-2"></i>Tình trạng
         <button 
           v-if="activeFilters.availability !== 'all'" 
           class="btn btn-sm btn-link p-0 ms-2"
           @click="clearFilter('availability')"
         >
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </h6>
       <div class="availability-list">
@@ -231,7 +206,7 @@
     <!-- Sort Options -->
     <div class="filter-section">
       <h6 class="filter-title">
-        <i class="ph-sort-ascending me-2"></i>Sắp xếp
+        <i class="bi bi-sort-alpha-down me-2"></i>Sắp xếp
       </h6>
       <select class="form-select form-select-sm" v-model="activeFilters.sortBy">
         <option value="relevance">Độ liên quan</option>
@@ -262,7 +237,7 @@ const hasActiveFilters = computed(() => searchStore.hasActiveFilters)
 const activeFiltersCount = computed(() => searchStore.activeFiltersCount)
 const availableSizes = computed(() => searchStore.availableSizes)
 const availableColors = computed(() => searchStore.availableColors)
-const availableBrands = computed(() => searchStore.availableBrands)
+const availableMaterials = computed(() => searchStore.availableMaterials)
 const priceRanges = computed(() => searchStore.priceRanges)
 
 // Methods
@@ -286,17 +261,6 @@ const updateMaxPrice = (event) => {
   searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
 }
 
-const updateMinPriceFromSlider = (event) => {
-  const value = parseInt(event.target.value)
-  priceRange.value.min = Math.min(value, priceRange.value.max - 100000)
-  searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
-}
-
-const updateMaxPriceFromSlider = (event) => {
-  const value = parseInt(event.target.value)
-  priceRange.value.max = Math.max(value, priceRange.value.min + 100000)
-  searchStore.setPriceRange(priceRange.value.min, priceRange.value.max)
-}
 
 const isPriceRangeActive = (range) => {
   return priceRange.value.min === range.min && priceRange.value.max === range.max
@@ -315,8 +279,8 @@ const toggleColor = (color) => {
   searchStore.toggleColor(color)
 }
 
-const toggleBrand = (brand) => {
-  searchStore.toggleBrand(brand)
+const toggleMaterial = (material) => {
+  searchStore.toggleMaterial(material)
 }
 
 const clearFilter = (filterType) => {
@@ -326,6 +290,23 @@ const clearFilter = (filterType) => {
 const clearAllFilters = () => {
   searchStore.clearAllFilters()
   priceRange.value = { min: 0, max: 5000000 }
+}
+
+// Function to determine text color based on background brightness
+const getTextColor = (hexColor) => {
+  // Remove # if present
+  const hex = hexColor.replace('#', '')
+  
+  // Convert to RGB
+  const r = parseInt(hex.substr(0, 2), 16)
+  const g = parseInt(hex.substr(2, 2), 16)
+  const b = parseInt(hex.substr(4, 2), 16)
+  
+  // Calculate brightness using luminance formula
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000
+  
+  // Return dark text for light backgrounds, white text for dark backgrounds
+  return brightness > 128 ? '#333' : 'white'
 }
 
 // Watch for filter changes
@@ -368,35 +349,8 @@ watch(() => activeFilters.value.priceRange, (newRange) => {
 }
 
 /* Price Range */
-.price-range-container {
+.price-inputs {
   margin-bottom: 16px;
-}
-
-.range-slider-container {
-  position: relative;
-  height: 20px;
-}
-
-.price-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: transparent;
-  pointer-events: none;
-}
-
-.price-slider::-webkit-slider-thumb {
-  pointer-events: all;
-  background: var(--auro-accent);
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.price-slider::-moz-range-thumb {
-  background: var(--auro-accent);
-  border: 2px solid white;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .quick-range-btn {
@@ -443,21 +397,24 @@ watch(() => activeFilters.value.priceRange, (newRange) => {
 /* Color Grid */
 .color-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 8px;
 }
 
 .color-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
+  height: 40px;
+  border-radius: 8px;
   border: 2px solid transparent;
   position: relative;
   transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
 }
 
 .color-btn:hover {
-  transform: scale(1.1);
+  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -469,30 +426,37 @@ watch(() => activeFilters.value.priceRange, (newRange) => {
 .color-btn.active::after {
   content: '✓';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 4px;
+  right: 4px;
   color: white;
   font-weight: bold;
+  font-size: 12px;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Brand List */
-.brand-list .form-check {
+.color-name {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-align: center;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Material List */
+.material-list .form-check {
   padding: 8px 0;
 }
 
-.brand-list .form-check-input {
+.material-list .form-check-input {
   border-radius: 4px;
   border-color: #dee2e6;
 }
 
-.brand-list .form-check-input:checked {
+.material-list .form-check-input:checked {
   background-color: var(--auro-accent);
   border-color: var(--auro-accent);
 }
 
-.brand-list .form-check-label {
+.material-list .form-check-label {
   font-size: 0.9rem;
   color: #495057;
   cursor: pointer;
@@ -541,7 +505,8 @@ watch(() => activeFilters.value.priceRange, (newRange) => {
   }
   
   .color-grid {
-    grid-template-columns: repeat(8, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
+

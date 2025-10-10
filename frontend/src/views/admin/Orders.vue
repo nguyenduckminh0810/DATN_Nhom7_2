@@ -25,7 +25,7 @@
       <!-- Quick Search -->
       <div class="search-row">
         <div class="search-box">
-          <i class="ph-magnifying-glass search-icon"></i>
+          <i class="bi bi-search search-icon"></i>
           <input
             type="text"
             class="form-control search-input"
@@ -34,11 +34,11 @@
           />
         </div>
         <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
-          <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
-          <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
+          <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
+          <i :class="showAdvancedFilters ? 'bi bi-caret-up' : 'bi bi-caret-down'" class="ms-1"></i>
         </button>
         <button class="btn btn-outline-secondary" @click="clearFilters">
-          <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
+          <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
         </button>
       </div>
 
@@ -106,7 +106,7 @@
         <div class="col-md-3">
           <div class="stat-card pending">
             <div class="stat-icon">
-              <i class="ph-clock"></i>
+              <i class="bi bi-clock"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ orderStats.pending }}</div>
@@ -117,7 +117,7 @@
         <div class="col-md-3">
           <div class="stat-card processing">
             <div class="stat-icon">
-              <i class="ph-gear"></i>
+              <i class="bi bi-gear"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ orderStats.processing }}</div>
@@ -128,7 +128,7 @@
         <div class="col-md-3">
           <div class="stat-card shipped">
             <div class="stat-icon">
-              <i class="ph-truck"></i>
+              <i class="bi bi-truck"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ orderStats.shipped }}</div>
@@ -139,7 +139,7 @@
         <div class="col-md-3">
           <div class="stat-card delivered">
             <div class="stat-icon">
-              <i class="ph-check-circle"></i>
+              <i class="bi bi-check-circle"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ orderStats.delivered }}</div>
@@ -161,14 +161,14 @@
             @click="viewMode = 'table'"
             title="Dạng bảng"
           >
-            <i class="ph-table"></i>
+            <i class="bi bi-table"></i>
           </button>
           <button 
             :class="['view-btn', { active: viewMode === 'kanban' }]"
             @click="viewMode = 'kanban'"
             title="Kanban Board"
           >
-            <i class="ph-columns"></i>
+            <i class="bi bi-columns"></i>
           </button>
         </div>
         <div class="table-stats">
@@ -279,7 +279,7 @@
                     {{ getStatusText(order.status) }}
                   </span>
                   <div v-if="order.estimatedDelivery" class="delivery-info">
-                    <i class="ph-calendar"></i>
+                    <i class="bi bi-calendar"></i>
                     {{ formatDate(order.estimatedDelivery) }}
                   </div>
                 </div>
@@ -301,7 +301,7 @@
               <td>
                 <div class="action-buttons">
                   <button class="btn btn-sm btn-outline-primary" @click="viewOrder(order)" title="Xem chi tiết">
-                    <i class="ph-eye"></i>
+                    <i class="bi bi-eye"></i>
                   </button>
                   <button 
                     v-if="order.status === 'pending'"
@@ -309,7 +309,7 @@
                     @click="updateOrderStatus(order, 'processing')"
                     title="Xử lý đơn hàng"
                   >
-                    <i class="ph-play"></i>
+                    <i class="bi bi-play"></i>
                   </button>
                   <button 
                     v-if="order.status === 'processing'"
@@ -317,7 +317,7 @@
                     @click="updateOrderStatus(order, 'shipped')"
                     title="Giao hàng"
                   >
-                    <i class="ph-truck"></i>
+                    <i class="bi bi-truck"></i>
                   </button>
                   <button 
                     v-if="order.status === 'shipped'"
@@ -325,7 +325,7 @@
                     @click="updateOrderStatus(order, 'delivered')"
                     title="Hoàn thành"
                   >
-                    <i class="ph-check"></i>
+                    <i class="bi bi-check"></i>
                   </button>
                   <button 
                     v-if="['pending', 'processing'].includes(order.status)"
@@ -333,10 +333,10 @@
                     @click="updateOrderStatus(order, 'cancelled')"
                     title="Hủy đơn hàng"
                   >
-                    <i class="ph-x"></i>
+                    <i class="bi bi-x"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-secondary" @click="printOrder(order)" title="In đơn hàng">
-                    <i class="ph-printer"></i>
+                    <i class="bi bi-printer"></i>
                   </button>
                 </div>
               </td>
@@ -391,14 +391,14 @@
                   <div class="order-date">{{ formatDate(order.createdAt) }}</div>
                   <div class="card-actions">
                     <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrder(order)">
-                      <i class="ph-eye"></i>
+                      <i class="bi bi-eye"></i>
                     </button>
                     <button 
                       v-if="canUpdateStatus(order.status)"
                       class="btn btn-sm btn-outline-success" 
                       @click.stop="showStatusModal(order)"
                     >
-                      <i class="ph-arrow-right"></i>
+                      <i class="bi bi-arrow-right"></i>
                     </button>
                   </div>
                 </div>
@@ -442,16 +442,16 @@
         <span class="selected-count">{{ selectedOrders.length }} đơn hàng đã chọn</span>
         <div class="bulk-buttons">
           <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('processing')">
-            <i class="ph-check me-1"></i>Xử lý
+            <i class="bi bi-check me-1"></i>Xử lý
           </button>
           <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus('shipped')">
-            <i class="ph-truck me-1"></i>Giao hàng
+            <i class="bi bi-truck me-1"></i>Giao hàng
           </button>
           <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('delivered')">
-            <i class="ph-check-circle me-1"></i>Hoàn thành
+            <i class="bi bi-check-circle me-1"></i>Hoàn thành
           </button>
           <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('cancelled')">
-            <i class="ph-x me-1"></i>Hủy
+            <i class="bi bi-x me-1"></i>Hủy
           </button>
         </div>
       </div>
@@ -463,7 +463,7 @@
         <div class="modal-header">
           <h5 class="modal-title">Chi tiết đơn hàng #{{ selectedOrder?.orderNumber }}</h5>
           <button class="btn-close" @click="closeOrderModal">
-            <i class="ph-x"></i>
+            <i class="bi bi-x"></i>
           </button>
         </div>
         <div class="modal-body" v-if="selectedOrder">
@@ -594,7 +594,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeOrderModal">Đóng</button>
           <button type="button" class="btn btn-primary" @click="printOrder(selectedOrder)">
-            <i class="ph-printer me-1"></i>In đơn hàng
+            <i class="bi bi-printer me-1"></i>In đơn hàng
           </button>
         </div>
       </div>
@@ -934,8 +934,8 @@ const sortTable = (field) => {
 }
 
 const getSortIcon = (field) => {
-  if (tableSort.value.field !== field) return 'ph-caret-up-down'
-  return tableSort.value.direction === 'asc' ? 'ph-caret-up' : 'ph-caret-down'
+  if (tableSort.value.field !== field) return 'bi bi-caret-up-down'
+  return tableSort.value.direction === 'asc' ? 'bi bi-caret-up' : 'bi bi-caret-down'
 }
 
 const getOrdersByStatus = (status) => {

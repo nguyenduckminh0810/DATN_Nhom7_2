@@ -4,11 +4,11 @@
       <!-- Header -->
       <div class="mini-cart-header">
         <h4 class="mini-cart-title">
-          <i class="ph-shopping-cart me-2"></i>
+          <i class="bi bi-cart3 me-2"></i>
           Giỏ hàng ({{ cartStore.itemCount }})
         </h4>
         <button class="close-btn" @click="closeMiniCart" aria-label="Đóng">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </div>
 
@@ -16,7 +16,7 @@
       <div class="mini-cart-body">
         <div v-if="cartStore.isEmpty" class="empty-cart">
           <div class="empty-cart-icon">
-            <i class="ph-shopping-cart-simple"></i>
+            <i class="bi bi-cart-x"></i>
           </div>
           <p class="empty-cart-text">Giỏ hàng trống</p>
           <p class="empty-cart-subtext">Hãy thêm sản phẩm vào giỏ để tiếp tục mua sắm</p>
@@ -60,14 +60,14 @@
                     @click="updateItemQuantity(item.itemKey, item.quantity - 1)"
                     :disabled="item.quantity <= 1"
                   >
-                    <i class="ph-minus"></i>
+                    <i class="bi bi-dash"></i>
                   </button>
                   <span class="qty-display">{{ item.quantity }}</span>
                   <button 
                     class="qty-btn plus"
                     @click="updateItemQuantity(item.itemKey, item.quantity + 1)"
                   >
-                    <i class="ph-plus"></i>
+                    <i class="bi bi-plus"></i>
                   </button>
                 </div>
               </div>
@@ -79,7 +79,7 @@
               @click="removeItem(item.itemKey)"
               aria-label="Xóa sản phẩm"
             >
-              <i class="ph-trash"></i>
+              <i class="bi bi-trash"></i>
             </button>
           </div>
         </div>
@@ -100,15 +100,15 @@
 
         <!-- Action Buttons -->
         <div class="cart-actions">
+          <button 
+            class="btn btn-outline-danger btn-clear-all"
+            @click="clearAllItems"
+            v-if="items.length > 0"
+          >
+            <i class="bi bi-trash me-1"></i>Xóa tất cả
+          </button>
           <router-link 
             to="/cart" 
-            class="btn btn-outline-primary btn-view-cart"
-            @click="closeMiniCart"
-          >
-            Xem giỏ hàng
-          </router-link>
-          <router-link 
-            to="/checkout" 
             class="btn btn-primary btn-checkout"
             @click="closeMiniCart"
           >
@@ -121,6 +121,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useCartStore } from '../../stores/cart'
 
 const props = defineProps({
@@ -133,6 +134,9 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const cartStore = useCartStore()
+
+// Computed
+const items = computed(() => cartStore.items)
 
 // Methods
 
@@ -162,6 +166,15 @@ const removeItem = (itemKey) => {
 
 const closeMiniCart = () => {
   emit('close')
+}
+
+const clearAllItems = () => {
+  if (confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) {
+    cartStore.clearCart()
+    if (window.$toast) {
+      window.$toast.success('Đã xóa tất cả sản phẩm khỏi giỏ hàng')
+    }
+  }
 }
 </script>
 
@@ -436,7 +449,6 @@ const closeMiniCart = () => {
 
 .cart-actions {
   display: flex;
-  flex-direction: column;
   gap: 0.75rem;
 }
 
@@ -468,6 +480,25 @@ const closeMiniCart = () => {
 
 .btn-primary:hover {
   background: #0056b3;
+}
+
+.btn-outline-danger {
+  background: transparent;
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.btn-outline-danger:hover {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-clear-all {
+  flex: 1;
+}
+
+.btn-checkout {
+  flex: 2;
 }
 
 /* Animations */

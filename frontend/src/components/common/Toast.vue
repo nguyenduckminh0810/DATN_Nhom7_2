@@ -10,7 +10,7 @@
           <div class="toast-text">{{ message }}</div>
         </div>
         <button v-if="closable" class="toast-close" @click="close">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
       </div>
       <div v-if="progress" class="toast-progress">
@@ -60,10 +60,10 @@ let timeoutId = null
 
 const iconClass = computed(() => {
   const icons = {
-    success: 'ph-check-circle',
-    error: 'ph-x-circle',
-    warning: 'ph-warning-circle',
-    info: 'ph-info'
+    success: 'bi bi-check-circle',
+    error: 'bi bi-x-circle',
+    warning: 'bi bi-exclamation-triangle-fill',
+    info: 'bi bi-info-circle'
   }
   return icons[props.type] || icons.info
 })

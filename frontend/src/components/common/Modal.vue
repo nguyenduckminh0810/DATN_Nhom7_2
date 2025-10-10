@@ -27,7 +27,7 @@
               @click="handleClose"
               aria-label="Đóng"
             >
-              <i class="ph-x"></i>
+              <i class="bi bi-x"></i>
             </button>
 
             <!-- Header -->

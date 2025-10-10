@@ -126,7 +126,7 @@ export function useCart() {
       return
     }
 
-    router.push('/checkout')
+    router.push('/cart')
   }
 
   const proceedToCart = () => {

@@ -73,12 +73,12 @@
           <!-- Error State -->
           <div v-else-if="error" class="col-12">
             <div class="alert alert-danger text-center">
-              <i class="ph-warning-circle me-2"></i>{{ error }}
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
               <button 
                 @click="route.params.slug ? fetchProductsByCategory(route.params.slug) : fetchAllProducts()" 
                 class="btn btn-sm btn-outline-danger ms-3"
               >
-                <i class="ph-arrow-clockwise me-1"></i>Thử lại
+                <i class="bi bi-arrow-clockwise me-1"></i>Thử lại
               </button>
             </div>
           </div>
@@ -106,7 +106,7 @@
           <div v-else class="text-center py-5">
             <div class="empty-state">
               <div class="empty-state-icon">
-                <i class="ph-magnifying-glass-x"></i>
+                <i class="bi bi-search"></i>
               </div>
               <h3 class="empty-state-title">Không tìm thấy sản phẩm</h3>
               <p class="empty-state-description">
@@ -115,10 +115,10 @@
               </p>
               <div class="empty-state-actions">
                 <button @click="clearFilters" class="btn btn-primary btn-lg">
-                  <i class="ph-funnel-simple me-2"></i>Xóa bộ lọc
+                  <i class="bi bi-funnel me-2"></i>Xóa bộ lọc
                 </button>
                 <router-link to="/" class="btn btn-outline-secondary btn-lg ms-3">
-                  <i class="ph-house me-2"></i>Về trang chủ
+                  <i class="bi bi-house me-2"></i>Về trang chủ
                 </router-link>
               </div>
             </div>

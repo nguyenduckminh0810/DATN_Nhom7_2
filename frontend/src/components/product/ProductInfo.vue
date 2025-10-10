@@ -6,13 +6,13 @@
       <div class="product-rating">
         <div class="stars">
           <i v-for="star in 5" :key="star" 
-             :class="star <= averageRating ? 'ph-star-fill' : 'ph-star'"
+             :class="star <= averageRating ? 'bi bi-star-fill' : 'bi bi-star'"
              class="star-icon"></i>
         </div>
         <span class="rating-text">({{ reviewCount }})</span>
       </div>
       <button class="share-btn" @click="shareProduct">
-        <i class="ph-share-network"></i>
+        <i class="bi bi-share"></i>
         Chia sẻ
       </button>
     </div>
@@ -31,15 +31,15 @@
     <!-- Trust Badges -->
     <div class="trust-badges">
       <div class="trust-item">
-        <i class="ph-truck"></i>
+        <i class="bi bi-truck"></i>
         <span>Miễn phí vận chuyển</span>
       </div>
       <div class="trust-item">
-        <i class="ph-arrow-clockwise"></i>
+        <i class="bi bi-arrow-clockwise"></i>
         <span>60 ngày đổi trả</span>
       </div>
       <div class="trust-item">
-        <i class="ph-headset"></i>
+        <i class="bi bi-headset"></i>
         <span>Hỗ trợ 24/7</span>
       </div>
     </div>
@@ -66,7 +66,7 @@
       <h4 class="section-title">
         Kích thước:
         <button class="size-guide-btn" @click="openSizeGuide">
-          <i class="ph-ruler"></i>
+          <i class="bi bi-rulers"></i>
           Hướng dẫn chọn size
         </button>
       </h4>
@@ -93,7 +93,7 @@
         <label class="quantity-label">Số lượng:</label>
         <div class="quantity-controls">
           <button class="quantity-btn" @click="decreaseQuantity" :disabled="quantity <= 1">
-            <i class="ph-minus"></i>
+            <i class="bi bi-dash"></i>
           </button>
           <input 
             v-model="quantity" 
@@ -103,7 +103,7 @@
             class="quantity-input"
           />
           <button class="quantity-btn" @click="increaseQuantity" :disabled="quantity >= maxStock">
-            <i class="ph-plus"></i>
+            <i class="bi bi-plus"></i>
           </button>
         </div>
       </div>
@@ -114,7 +114,7 @@
           @click="addToCart"
           :disabled="!selectedSize || !selectedColor"
         >
-          <i class="ph-shopping-cart"></i>
+          <i class="bi bi-cart3"></i>
           Thêm vào giỏ
         </button>
         <button class="buy-now-btn" @click="buyNow">
@@ -126,15 +126,15 @@
     <!-- Product Features -->
     <div class="product-features">
       <div class="feature-item">
-        <i class="ph-check-circle"></i>
+        <i class="bi bi-check-circle"></i>
         <span>Chất liệu cao cấp</span>
       </div>
       <div class="feature-item">
-        <i class="ph-check-circle"></i>
+        <i class="bi bi-check-circle"></i>
         <span>Thiết kế hiện đại</span>
       </div>
       <div class="feature-item">
-        <i class="ph-check-circle"></i>
+        <i class="bi bi-check-circle"></i>
         <span>Bền đẹp lâu dài</span>
       </div>
     </div>
@@ -143,7 +143,7 @@
     <div v-if="showSizeGuide" class="size-guide-modal" @click="closeSizeGuide">
       <div class="size-guide-content" @click.stop>
         <button class="modal-close" @click="closeSizeGuide">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
         <h3>Hướng dẫn chọn size</h3>
         <div class="size-chart">

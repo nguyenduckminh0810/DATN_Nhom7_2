@@ -11,13 +11,26 @@
       <!-- Voucher Cards -->
       <div class="section-body">
         <div class="voucher-cards-container">
+          <!-- Scroll Controls - Đặt bên ngoài để không che khuất nội dung -->
+          <div class="voucher-scroll-controls">
+            <button class="scroll-btn scroll-left" @click="scrollVouchers('left')">
+              <i class="bi bi-chevron-left"></i>
+            </button>
+            <button class="scroll-btn scroll-right" @click="scrollVouchers('right')">
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
+
           <div class="voucher-cards-wrapper">
             <div class="voucher-cards-scroll" ref="voucherScroll">
-              <div v-for="voucher in availableVouchers" 
+              <div v-for="voucher in sortedVouchers" 
                    :key="voucher.id" 
                    class="voucher-card"
-                   :class="{ selected: selectedVoucher?.id === voucher.id }"
-                   @click="selectVoucher(voucher)">
+                   :class="{ 
+                     selected: selectedVoucher?.id === voucher.id,
+                     disabled: !isVoucherEligible(voucher)
+                   }"
+                   @click="handleVoucherClick(voucher)">
                 <div class="voucher-perforated-edge"></div>
                 <div class="voucher-content">
                   <div class="voucher-header">
@@ -48,16 +61,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Scroll Controls -->
-          <div class="voucher-scroll-controls">
-            <button class="scroll-btn scroll-left" @click="scrollVouchers('left')">
-              <i class="bi bi-chevron-left"></i>
-            </button>
-            <button class="scroll-btn scroll-right" @click="scrollVouchers('right')">
-              <i class="bi bi-chevron-right"></i>
-            </button>
-          </div>
         </div>
 
         <!-- Manual Voucher Input -->
@@ -87,13 +90,37 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useVoucher } from '@/stores/voucher'
+import { useCart } from '@/composables/useCart'
+
+const { selectedVoucher, selectedVoucherId, manualVoucherCode, voucherMessage, selectVoucher, clearVoucherSelection, applyVoucher } = useVoucher()
+const { items, formatPrice } = useCart()
 
 const voucherScroll = ref(null)
-const selectedVoucherId = ref(null)
-const selectedVoucher = ref(null)
-const manualVoucherCode = ref('')
-const voucherMessage = ref(null)
+
+// Tính subtotal để kiểm tra điều kiện voucher
+const subtotal = computed(() => {
+  return items.value
+    .filter(item => item.selected !== false)
+    .reduce((total, item) => total + (item.price * item.quantity), 0)
+})
+
+// Sắp xếp vouchers: eligible trước, disabled sau
+const sortedVouchers = computed(() => {
+  return [...availableVouchers.value].sort((a, b) => {
+    const aEligible = isVoucherEligible(a)
+    const bEligible = isVoucherEligible(b)
+    
+    // Nếu cả hai cùng eligible hoặc cùng disabled, sắp xếp theo id
+    if (aEligible === bEligible) {
+      return a.id - b.id
+    }
+    
+    // Eligible trước disabled
+    return aEligible ? -1 : 1
+  })
+})
 
 const availableVouchers = ref([
   {
@@ -138,29 +165,23 @@ const availableVouchers = ref([
   }
 ])
 
-const selectVoucher = (voucher) => {
-  selectedVoucher.value = voucher
-  selectedVoucherId.value = voucher.id
-  manualVoucherCode.value = voucher.code
-  
-  voucherMessage.value = {
-    type: 'success',
-    text: `Đã chọn voucher ${voucher.code}`
-  }
+
+// Kiểm tra voucher có đủ điều kiện không
+const isVoucherEligible = (voucher) => {
+  return subtotal.value >= voucher.minOrder
 }
 
-const applyVoucher = () => {
-  if (manualVoucherCode.value.trim()) {
-    voucherMessage.value = {
-      type: 'success',
-      text: `Đã áp dụng mã ${manualVoucherCode.value}`
-    }
-  } else {
+// Function để handle click voucher với kiểm tra điều kiện
+const handleVoucherClick = (voucher) => {
+  if (!isVoucherEligible(voucher)) {
     voucherMessage.value = {
       type: 'error',
-      text: 'Vui lòng nhập mã giảm giá'
+      text: `Voucher ${voucher.code} yêu cầu đơn hàng tối thiểu ${formatPrice(voucher.minOrder)}`
     }
+    return
   }
+  
+  selectVoucher(voucher)
 }
 
 const scrollVouchers = (direction) => {
@@ -181,6 +202,33 @@ const scrollVouchers = (direction) => {
 <style scoped>
 .voucher-section {
   margin-bottom: 2rem;
+}
+
+/* Reset conflicting styles */
+.voucher-section * {
+  box-sizing: border-box;
+}
+
+.voucher-section input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* Force border visibility for voucher inputs */
+.voucher-section input[type="text"] {
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+.voucher-section input[type="text"]:focus {
+  border-color: #B8860B !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+  outline: none !important;
+}
+
+.voucher-section input[type="text"]:hover {
+  border-color: #B8860B !important;
 }
 
 .section-card {
@@ -221,7 +269,7 @@ const scrollVouchers = (direction) => {
   display: flex;
   gap: 1rem;
   overflow-x: auto;
-  padding: 0.5rem 0;
+  padding: 0.5rem 2.5rem;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -251,6 +299,47 @@ const scrollVouchers = (direction) => {
 .voucher-card.selected {
   border-color: #B8860B;
   background: linear-gradient(135deg, rgba(184, 134, 11, 0.1) 0%, rgba(218, 165, 32, 0.1) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(184, 134, 11, 0.2);
+}
+
+.voucher-card.selected .voucher-code {
+  color: #B8860B;
+  font-weight: 800;
+}
+
+.voucher-card.selected .voucher-description {
+  color: #B8860B;
+  font-weight: 600;
+}
+
+.voucher-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(50%);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.voucher-card.disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.voucher-card.disabled .voucher-content {
+  pointer-events: none;
+}
+
+.voucher-card.disabled::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  z-index: 1;
 }
 
 .voucher-perforated-edge {
@@ -363,27 +452,42 @@ const scrollVouchers = (direction) => {
   display: flex;
   justify-content: space-between;
   pointer-events: none;
-  padding: 0 1rem;
+  padding: 0 0.5rem;
+  z-index: 10;
 }
 
 .scroll-btn {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border: 1px solid #dee2e6;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   pointer-events: auto;
   transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
 }
 
 .scroll-btn:hover {
   background: white;
   border-color: #B8860B;
   color: #B8860B;
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.2);
+}
+
+/* Responsive: Ẩn scroll buttons trên mobile */
+@media (max-width: 768px) {
+  .voucher-scroll-controls {
+    display: none;
+  }
+  
+  .voucher-cards-scroll {
+    padding: 0.5rem 1rem;
+  }
 }
 
 .voucher-input-section .input-group {
@@ -392,15 +496,21 @@ const scrollVouchers = (direction) => {
 }
 
 .modern-voucher-input {
-  border: 2px solid #e9ecef;
-  border-right: none;
+  border: 2px solid #e9ecef !important;
+  border-right: none !important;
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
+  background-color: white !important;
 }
 
 .modern-voucher-input:focus {
-  border-color: #B8860B;
-  box-shadow: none;
+  border-color: #B8860B !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+  outline: none !important;
+}
+
+.modern-voucher-input:hover {
+  border-color: #B8860B !important;
 }
 
 .voucher-apply-btn {
@@ -435,5 +545,11 @@ const scrollVouchers = (direction) => {
   background: rgba(220, 53, 69, 0.1);
   color: #dc3545;
   border: 1px solid rgba(220, 53, 69, 0.2);
+}
+
+.voucher-message.info {
+  background: rgba(13, 202, 240, 0.1);
+  color: #0dcaf0;
+  border: 1px solid rgba(13, 202, 240, 0.2);
 }
 </style>

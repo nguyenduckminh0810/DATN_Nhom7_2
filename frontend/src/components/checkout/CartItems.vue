@@ -49,13 +49,17 @@
         <div v-else>
           <div v-for="item in items" :key="item.itemKey" class="cart-item">
             <div class="row align-items-center p-3">
-              <!-- Checkbox -->
+              <!-- Checkbox - Always visible -->
               <div class="col-1">
                 <div class="form-check">
-                  <input class="form-check-input" 
+                  <input class="form-check-input cart-checkbox" 
                          type="checkbox" 
                          v-model="item.selected"
-                         :id="'item-' + item.id">
+                         :id="'item-' + item.id"
+                         style="display: block !important; visibility: visible !important; opacity: 1 !important;">
+                  <label class="form-check-label" :for="'item-' + item.id">
+                    <!-- Empty label for spacing -->
+                  </label>
                 </div>
               </div>
 
@@ -81,27 +85,49 @@
                     <div class="dropdown me-2">
                       <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                               type="button" 
-                              data-bs-toggle="dropdown">
-                        {{ item.color }}
+                              @click="toggleDropdown"
+                              :class="{ 'text-muted': !item.color }">
+                        <span v-if="item.color" class="d-flex align-items-center">
+                          <span class="color-swatch me-2" :style="{ backgroundColor: getColorValue(item.color) }"></span>
+                          {{ item.color }}
+                        </span>
+                        <span v-else>Chọn màu</span>
                       </button>
                       <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">Đen</a></li>
-                        <li><a class="dropdown-item" href="#">Trắng</a></li>
-                        <li><a class="dropdown-item" href="#">Xám</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Đen')">
+                          <span class="color-swatch me-2" style="background-color: #000000"></span>Đen
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Trắng')">
+                          <span class="color-swatch me-2" style="background-color: #ffffff; border: 1px solid #ccc"></span>Trắng
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Xám')">
+                          <span class="color-swatch me-2" style="background-color: #808080"></span>Xám
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Đỏ')">
+                          <span class="color-swatch me-2" style="background-color: #ff0000"></span>Đỏ
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Xanh')">
+                          <span class="color-swatch me-2" style="background-color: #007bff"></span>Xanh
+                        </a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Vàng')">
+                          <span class="color-swatch me-2" style="background-color: #ffc107"></span>Vàng
+                        </a></li>
                       </ul>
                     </div>
                     
                     <div class="dropdown">
                       <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                               type="button" 
-                              data-bs-toggle="dropdown">
-                        {{ item.size }}
+                              @click="toggleDropdown"
+                              :class="{ 'text-muted': !item.size }">
+                        {{ item.size || 'Chọn size' }}
                       </button>
                       <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#">S</a></li>
-                        <li><a class="dropdown-item" href="#">M</a></li>
-                        <li><a class="dropdown-item" href="#">L</a></li>
-                        <li><a class="dropdown-item" href="#">XL</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'S')">S</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'M')">M</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'L')">L</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'XL')">XL</a></li>
+                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'XXL')">XXL</a></li>
                       </ul>
                     </div>
                   </div>
@@ -117,23 +143,20 @@
               <!-- Quantity -->
               <div class="col-2">
                 <div class="quantity-controls">
-                  <div class="input-group input-group-sm">
-                    <button class="btn btn-outline-secondary" 
-                            type="button"
-                            @click="decreaseQuantity(item.itemKey)">
-                      <i class="bi bi-dash"></i>
-                    </button>
-                    <input type="number" 
-                           class="form-control text-center" 
-                           v-model.number="item.quantity"
-                           min="1"
-                           @change="updateQuantity(item.itemKey, item.quantity)">
-                    <button class="btn btn-outline-secondary" 
-                            type="button"
-                            @click="increaseQuantity(item.itemKey)">
-                      <i class="bi bi-plus"></i>
-                    </button>
-                  </div>
+                  <button 
+                    class="qty-btn minus"
+                    @click="decreaseQuantity(item.itemKey)"
+                    :disabled="item.quantity <= 1"
+                  >
+                    <i class="bi bi-dash"></i>
+                  </button>
+                  <span class="qty-display">{{ item.quantity }}</span>
+                  <button 
+                    class="qty-btn plus"
+                    @click="increaseQuantity(item.itemKey)"
+                  >
+                    <i class="bi bi-plus"></i>
+                  </button>
                 </div>
               </div>
 
@@ -146,6 +169,11 @@
                   <div v-if="item.originalPrice && item.originalPrice > item.price" 
                        class="original-price text-muted small">
                     {{ formatPrice(item.originalPrice * item.quantity) }}
+                  </div>
+                  <!-- Demo: Hiển thị giá gốc cho demo (có thể xóa sau) -->
+                  <div v-if="!item.originalPrice || item.originalPrice <= item.price" 
+                       class="original-price text-muted small">
+                    {{ formatPrice((item.price * 1.3) * item.quantity) }}
                   </div>
                 </div>
               </div>
@@ -170,6 +198,13 @@ import { useCart } from '@/composables/useCart'
 
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
 
+// Ensure all items have selected property
+items.value.forEach(item => {
+  if (item.selected === undefined) {
+    item.selected = false
+  }
+})
+
 const increaseQuantity = (itemKey) => {
   const item = items.value.find(item => item.itemKey === itemKey)
   if (item) {
@@ -193,6 +228,35 @@ const clearAllItems = () => {
   }
 }
 
+const updateVariant = (itemKey, type, value) => {
+  const item = items.value.find(item => item.itemKey === itemKey)
+  if (item) {
+    if (type === 'color') {
+      item.color = value
+    } else if (type === 'size') {
+      item.size = value
+    }
+    
+    if (window.$toast) {
+      window.$toast.success(`Đã chọn ${type === 'color' ? 'màu' : 'size'} ${value}`)
+    }
+  }
+}
+
+const getColorValue = (colorName) => {
+  const colorMap = {
+    'Đen': '#000000',
+    'Trắng': '#ffffff',
+    'Xám': '#808080',
+    'Đỏ': '#ff0000',
+    'Xanh': '#007bff',
+    'Vàng': '#ffc107'
+  }
+  return colorMap[colorName] || colorName
+}
+
+
+
 // Logic cho checkbox "Chọn tất cả"
 const allItemsSelected = computed(() => {
   if (!items.value || items.value.length === 0) return false
@@ -212,6 +276,52 @@ const toggleSelectAll = () => {
     window.$toast.success(message)
   }
 }
+
+// Handle dropdown toggle manually
+const toggleDropdown = (event) => {
+  event.preventDefault()
+  const dropdown = event.target.closest('.dropdown')
+  const isOpen = dropdown.classList.contains('show')
+  
+  // Close all other dropdowns
+  document.querySelectorAll('.dropdown.show').forEach(d => {
+    if (d !== dropdown) {
+      d.classList.remove('show')
+    }
+  })
+  
+  // Toggle current dropdown
+  if (isOpen) {
+    dropdown.classList.remove('show')
+  } else {
+    dropdown.classList.add('show')
+    
+    // Check if dropdown should open upward (for last items)
+    const dropdownMenu = dropdown.querySelector('.dropdown-menu')
+    const rect = dropdownMenu.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    
+    // If dropdown would go below viewport, open upward
+    if (rect.bottom > viewportHeight - 50) {
+      dropdownMenu.style.top = 'auto'
+      dropdownMenu.style.bottom = '100%'
+      dropdownMenu.style.transform = 'translateY(-0.5rem)'
+    } else {
+      dropdownMenu.style.top = '100%'
+      dropdownMenu.style.bottom = 'auto'
+      dropdownMenu.style.transform = 'none'
+    }
+  }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (event) => {
+  if (!event.target.closest('.dropdown')) {
+    document.querySelectorAll('.dropdown.show').forEach(dropdown => {
+      dropdown.classList.remove('show')
+    })
+  }
+})
 </script>
 
 <style scoped>
@@ -223,7 +333,7 @@ const toggleSelectAll = () => {
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .section-header {
@@ -233,6 +343,7 @@ const toggleSelectAll = () => {
   border: none;
   position: relative;
   overflow: hidden;
+  border-radius: 16px 16px 0 0 !important;
 }
 
 .section-header::before {
@@ -244,6 +355,12 @@ const toggleSelectAll = () => {
   bottom: 0;
   background: linear-gradient(45deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
   pointer-events: none;
+}
+
+.section-body {
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
 }
 
 .section-header h5 {
@@ -317,10 +434,44 @@ const toggleSelectAll = () => {
 
 .cart-item {
   border-bottom: 1px solid #f0f0f0;
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
 }
 
 .cart-item:last-child {
   border-bottom: none;
+  overflow: visible !important;
+  margin-bottom: 2rem !important;
+}
+
+/* Checkbox styling - Always visible */
+.cart-checkbox {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 20px !important;
+  height: 20px !important;
+  border: 2px solid #6c757d !important;
+  border-radius: 4px !important;
+  background-color: white !important;
+  cursor: pointer !important;
+}
+
+.cart-checkbox:checked {
+  background-color: #28a745 !important;
+  border-color: #28a745 !important;
+}
+
+.cart-checkbox:focus {
+  box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25) !important;
+}
+
+.form-check {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 20px !important;
 }
 
 .cart-product-image img {
@@ -342,8 +493,185 @@ const toggleSelectAll = () => {
   border-radius: 4px;
 }
 
+.variant-controls {
+  overflow: visible !important;
+  position: relative;
+}
+
 .variant-controls .dropdown {
   display: inline-block;
+  position: relative;
+  overflow: visible !important;
+}
+
+.variant-controls .dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 99999 !important;
+  min-width: 160px;
+  padding: 0.5rem 0;
+  margin: 0.125rem 0 0;
+  background-color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
+  max-height: 300px;
+  overflow-y: auto;
+  overflow-x: visible !important;
+}
+
+.variant-controls .dropdown.show .dropdown-menu {
+  display: block;
+}
+
+.variant-controls .dropdown-toggle::after {
+  display: inline-block;
+  margin-left: 0.255em;
+  vertical-align: 0.255em;
+  content: "";
+  border-top: 0.3em solid;
+  border-right: 0.3em solid transparent;
+  border-bottom: 0;
+  border-left: 0.3em solid transparent;
+}
+
+.variant-controls .dropdown .btn {
+  min-width: 100px;
+  text-align: left;
+  position: relative;
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+  transition: all 0.2s ease;
+}
+
+.variant-controls .dropdown .btn:hover {
+  border-color: #B8860B !important;
+  background-color: white !important;
+}
+
+.variant-controls .dropdown .btn:focus {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+  outline: none !important;
+}
+
+.variant-controls .dropdown .btn:active {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+}
+
+.variant-controls .dropdown.show .btn {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+}
+
+.variant-controls .dropdown .btn.text-muted {
+  color: #6c757d !important;
+  font-style: italic;
+  border: 2px solid #e9ecef !important;
+}
+
+/* Force border visibility for all button states */
+.variant-controls .dropdown .btn:not(:focus):not(:hover):not(.show) {
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+/* Override any conflicting styles */
+.variant-controls .dropdown .btn,
+.variant-controls .dropdown .btn:focus,
+.variant-controls .dropdown .btn:hover,
+.variant-controls .dropdown .btn:active,
+.variant-controls .dropdown .btn:visited {
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+  outline: none !important;
+}
+
+.variant-controls .dropdown .btn:focus,
+.variant-controls .dropdown .btn:hover,
+.variant-controls .dropdown .btn:active,
+.variant-controls .dropdown.show .btn {
+  border-color: #B8860B !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+}
+
+.variant-controls .dropdown .btn::after {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Color swatch styling */
+.color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  display: inline-block;
+  border: 1px solid #ddd;
+  flex-shrink: 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.dropdown-item:hover .color-swatch {
+  transform: scale(1.1);
+  transition: transform 0.2s ease;
+}
+
+/* Support for dropdown opening upward */
+.variant-controls .dropdown-menu.dropdown-upward {
+  top: auto !important;
+  bottom: 100% !important;
+  transform: translateY(-0.5rem) !important;
+}
+
+/* Reset Bootstrap button styles that might interfere */
+.variant-controls .btn-outline-secondary {
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+  color: #495057 !important;
+}
+
+.variant-controls .btn-outline-secondary:hover {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  color: #495057 !important;
+}
+
+.variant-controls .btn-outline-secondary:focus {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  color: #495057 !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+}
+
+.variant-controls .btn-outline-secondary:active {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  color: #495057 !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+}
+
+.variant-controls .btn-outline-secondary:not(:disabled):not(.disabled):active {
+  border-color: #B8860B !important;
+  background-color: white !important;
+  color: #495057 !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
 }
 
 .delete-btn {
@@ -356,22 +684,82 @@ const toggleSelectAll = () => {
   text-decoration: underline;
 }
 
-.quantity-controls .input-group {
-  width: 100px;
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.25rem;
+  width: fit-content;
 }
 
-.quantity-controls .form-control {
-  border-left: none;
-  border-right: none;
+.qty-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.qty-btn:hover:not(:disabled) {
+  background: #e9ecef;
+  color: #212529;
+}
+
+.qty-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qty-display {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
 }
 
 .current-price {
   color: #333;
   font-size: 0.95rem;
+  line-height: 1.2;
 }
 
 .original-price {
-  text-decoration: line-through;
+  text-decoration: line-through !important;
+  color: #999 !important;
+  font-size: 0.85rem !important;
+  line-height: 1.2;
+  margin-top: 2px;
+  display: block;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+/* Price container styling */
+.cart-price {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.cart-price .current-price {
+  color: #e74c3c !important;
+  font-weight: 700 !important;
+}
+
+.cart-price .original-price {
+  color: #95a5a6 !important;
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
 }
 
 .continue-btn {
@@ -463,5 +851,11 @@ const toggleSelectAll = () => {
     flex: 0 0 auto;
     max-width: none;
   }
+  
+  .quantity-controls {
+    justify-content: center;
+    margin: 0 auto;
+  }
+  
 }
 </style>

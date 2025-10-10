@@ -29,7 +29,7 @@
       <!-- Quick Search -->
       <div class="search-row">
         <div class="search-box">
-          <i class="ph-magnifying-glass search-icon"></i>
+          <i class="bi bi-search search-icon"></i>
           <input
             type="text"
             class="form-control search-input"
@@ -38,11 +38,11 @@
           />
         </div>
         <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
-          <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
-          <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
+          <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
+          <i :class="showAdvancedFilters ? 'bi bi-caret-up' : 'bi bi-caret-down'" class="ms-1"></i>
         </button>
         <button class="btn btn-outline-secondary" @click="clearFilters">
-          <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
+          <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
         </button>
       </div>
 
@@ -114,7 +114,7 @@
         <div class="col-md-3">
           <div class="stat-card total">
             <div class="stat-icon">
-              <i class="ph-users"></i>
+              <i class="bi bi-people"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ userStats.total }}</div>
@@ -125,7 +125,7 @@
         <div class="col-md-3">
           <div class="stat-card active">
             <div class="stat-icon">
-              <i class="ph-check-circle"></i>
+              <i class="bi bi-check-circle"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ userStats.active }}</div>
@@ -136,7 +136,7 @@
         <div class="col-md-3">
           <div class="stat-card customers">
             <div class="stat-icon">
-              <i class="ph-shopping-cart"></i>
+              <i class="bi bi-cart3"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ userStats.customers }}</div>
@@ -147,7 +147,7 @@
         <div class="col-md-3">
           <div class="stat-card staff">
             <div class="stat-icon">
-              <i class="ph-user-gear"></i>
+              <i class="bi bi-person-gear"></i>
             </div>
             <div class="stat-content">
               <div class="stat-value">{{ userStats.staff }}</div>
@@ -163,7 +163,7 @@
       <div class="row g-3">
         <div class="col-md-3">
           <div class="search-box">
-            <i class="ph-magnifying-glass search-icon"></i>
+            <i class="bi bi-search search-icon"></i>
             <input
               type="text"
               class="form-control search-input"
@@ -202,7 +202,7 @@
         </div>
         <div class="col-md-1">
           <button class="btn btn-outline-secondary w-100" @click="clearFilters">
-            <i class="ph-arrow-clockwise"></i>
+            <i class="bi bi-arrow-clockwise"></i>
           </button>
         </div>
       </div>
@@ -220,23 +220,23 @@
                   <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
                 </th>
                 <th @click="sortUsers('name')" class="sortable">
-                  Người dùng <i class="ph-arrows-vertical ms-1"></i>
+                  Người dùng <i class="bi bi-arrows-vertical ms-1"></i>
                 </th>
                 <th>Liên hệ</th>
                 <th @click="sortUsers('role')" class="sortable">
-                  Vai trò <i class="ph-arrows-vertical ms-1"></i>
+                  Vai trò <i class="bi bi-arrows-vertical ms-1"></i>
                 </th>
                 <th @click="sortUsers('orderCount')" class="sortable">
-                  Đơn hàng <i class="ph-arrows-vertical ms-1"></i>
+                  Đơn hàng <i class="bi bi-arrows-vertical ms-1"></i>
                 </th>
                 <th @click="sortUsers('totalSpent')" class="sortable">
-                  Tổng chi tiêu <i class="ph-arrows-vertical ms-1"></i>
+                  Tổng chi tiêu <i class="bi bi-arrows-vertical ms-1"></i>
                 </th>
                 <th @click="sortUsers('status')" class="sortable">
-                  Trạng thái <i class="ph-arrows-vertical ms-1"></i>
+                  Trạng thái <i class="bi bi-arrows-vertical ms-1"></i>
                 </th>
                 <th @click="sortUsers('createdAt')" class="sortable">
-                  Ngày tham gia <i class="ph-arrows-vertical ms-1"></i>
+                  Ngày tham gia <i class="bi bi-arrows-vertical ms-1"></i>
                 </th>
                 <th>Thao tác</th>
               </tr>
@@ -296,16 +296,16 @@
                 <td>
                   <div class="action-buttons">
                     <button class="btn btn-sm btn-outline-primary" @click="viewUser(user)" title="Xem chi tiết">
-                      <i class="ph-eye"></i>
+                      <i class="bi bi-eye"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-success" @click="editUser(user)" title="Chỉnh sửa">
-                      <i class="ph-pencil"></i>
+                      <i class="bi bi-pencil"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-warning" @click="resetPassword(user)" title="Đặt lại mật khẩu">
-                      <i class="ph-key"></i>
+                      <i class="bi bi-key"></i>
                     </button>
                     <button class="btn btn-sm btn-outline-danger" @click="toggleUserStatus(user)" title="Thay đổi trạng thái">
-                      <i :class="user.status === 'active' ? 'ph-pause' : 'ph-play'"></i>
+                      <i :class="user.status === 'active' ? 'bi bi-pause' : 'bi bi-play'"></i>
                     </button>
                   </div>
                 </td>
@@ -336,19 +336,19 @@
               <div class="card-body">
                 <div class="user-details-grid">
                   <div class="detail-item">
-                    <i class="ph-envelope"></i>
+                    <i class="bi bi-envelope"></i>
                     <span>{{ user.email }}</span>
                   </div>
                   <div class="detail-item">
-                    <i class="ph-phone"></i>
+                    <i class="bi bi-telephone"></i>
                     <span>{{ user.phone || 'Chưa cập nhật' }}</span>
                   </div>
                   <div class="detail-item">
-                    <i class="ph-shopping-cart"></i>
+                    <i class="bi bi-cart3"></i>
                     <span>{{ user.orderCount }} đơn hàng</span>
                   </div>
                   <div class="detail-item">
-                    <i class="ph-currency-circle-dollar"></i>
+                    <i class="bi bi-currency-dollar"></i>
                     <span>{{ formatCurrency(user.totalSpent) }}</span>
                   </div>
                 </div>
@@ -366,16 +366,16 @@
               <div class="card-footer">
                 <div class="action-buttons-grid">
                   <button class="btn btn-sm btn-outline-primary" @click="viewUser(user)" title="Xem chi tiết">
-                    <i class="ph-eye"></i>
+                    <i class="bi bi-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="editUser(user)" title="Chỉnh sửa">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning" @click="resetPassword(user)" title="Đặt lại mật khẩu">
-                    <i class="ph-key"></i>
+                    <i class="bi bi-key"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="toggleUserStatus(user)" title="Thay đổi trạng thái">
-                    <i :class="user.status === 'active' ? 'ph-pause' : 'ph-play'"></i>
+                    <i :class="user.status === 'active' ? 'bi bi-pause' : 'bi bi-play'"></i>
                   </button>
                 </div>
               </div>
@@ -409,7 +409,7 @@
                 <div class="user-metrics">
                   <div class="metric-item">
                     <div class="metric-icon">
-                      <i class="ph-shopping-cart"></i>
+                      <i class="bi bi-cart3"></i>
                     </div>
                     <div class="metric-content">
                       <div class="metric-value">{{ user.orderCount }}</div>
@@ -418,7 +418,7 @@
                   </div>
                   <div class="metric-item">
                     <div class="metric-icon">
-                      <i class="ph-currency-circle-dollar"></i>
+                      <i class="bi bi-currency-dollar"></i>
                     </div>
                     <div class="metric-content">
                       <div class="metric-value">{{ formatCurrency(user.totalSpent) }}</div>
@@ -428,11 +428,11 @@
                 </div>
                 <div class="user-contact-info">
                   <div class="contact-item">
-                    <i class="ph-phone"></i>
+                    <i class="bi bi-telephone"></i>
                     <span>{{ user.phone || 'Chưa cập nhật' }}</span>
                   </div>
                   <div class="contact-item">
-                    <i class="ph-calendar"></i>
+                    <i class="bi bi-calendar"></i>
                     <span>Tham gia: {{ formatDate(user.createdAt) }}</span>
                   </div>
                 </div>
@@ -440,16 +440,16 @@
               <div class="card-footer">
                 <div class="action-buttons-card">
                   <button class="btn btn-sm btn-outline-primary" @click="viewUser(user)" title="Xem chi tiết">
-                    <i class="ph-eye"></i>
+                    <i class="bi bi-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="editUser(user)" title="Chỉnh sửa">
-                    <i class="ph-pencil"></i>
+                    <i class="bi bi-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning" @click="resetPassword(user)" title="Đặt lại mật khẩu">
-                    <i class="ph-key"></i>
+                    <i class="bi bi-key"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="toggleUserStatus(user)" title="Thay đổi trạng thái">
-                    <i :class="user.status === 'active' ? 'ph-pause' : 'ph-play'"></i>
+                    <i :class="user.status === 'active' ? 'bi bi-pause' : 'bi bi-play'"></i>
                   </button>
                 </div>
               </div>
@@ -492,16 +492,16 @@
         <span class="selected-count">{{ selectedUsers.length }} người dùng đã chọn</span>
         <div class="bulk-buttons">
           <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
-            <i class="ph-check me-1"></i>Kích hoạt
+            <i class="bi bi-check me-1"></i>Kích hoạt
           </button>
           <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
-            <i class="ph-pause me-1"></i>Ngừng hoạt động
+            <i class="bi bi-pause me-1"></i>Ngừng hoạt động
           </button>
           <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('banned')">
-            <i class="ph-ban me-1"></i>Cấm
+            <i class="bi bi-ban me-1"></i>Cấm
           </button>
           <button class="btn btn-sm btn-outline-info" @click="bulkExport">
-            <i class="ph-download me-1"></i>Xuất dữ liệu
+            <i class="bi bi-download me-1"></i>Xuất dữ liệu
           </button>
         </div>
       </div>
@@ -513,7 +513,7 @@
         <div class="modal-header">
           <h5 class="modal-title">Chi tiết người dùng: {{ selectedUser?.name }}</h5>
           <button class="btn-close" @click="closeUserModal">
-            <i class="ph-x"></i>
+            <i class="bi bi-x"></i>
           </button>
         </div>
         <div class="modal-body" v-if="selectedUser">
@@ -637,7 +637,7 @@
                         </table>
                       </div>
                       <div v-else class="empty-state">
-                        <i class="ph-shopping-bag display-4 text-muted"></i>
+                        <i class="bi bi-bag display-4 text-muted"></i>
                         <p class="text-muted">Chưa có đơn hàng nào</p>
                       </div>
                     </div>
@@ -658,7 +658,7 @@
                         </div>
                       </div>
                       <div v-else class="empty-state">
-                        <i class="ph-clock display-4 text-muted"></i>
+                        <i class="bi bi-clock display-4 text-muted"></i>
                         <p class="text-muted">Chưa có hoạt động nào</p>
                       </div>
                     </div>
@@ -671,10 +671,10 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeUserModal">Đóng</button>
           <button type="button" class="btn btn-warning" @click="resetPassword(selectedUser)">
-            <i class="ph-key me-1"></i>Đặt lại mật khẩu
+            <i class="bi bi-key me-1"></i>Đặt lại mật khẩu
           </button>
           <button type="button" class="btn btn-primary" @click="editUser(selectedUser)">
-            <i class="ph-pencil me-1"></i>Chỉnh sửa
+            <i class="bi bi-pencil me-1"></i>Chỉnh sửa
           </button>
         </div>
       </div>
@@ -706,10 +706,10 @@ const sortDirection = ref('desc')
 
 // User types for filtering
 const userTypes = ref([
-  { value: 'vip', label: 'VIP', icon: 'ph-crown' },
-  { value: 'new', label: 'Mới', icon: 'ph-star' },
-  { value: 'inactive', label: 'Không hoạt động', icon: 'ph-clock' },
-  { value: 'high-value', label: 'Chi tiêu cao', icon: 'ph-currency-circle-dollar' }
+  { value: 'vip', label: 'VIP', icon: 'bi bi-crown' },
+  { value: 'new', label: 'Mới', icon: 'bi bi-star' },
+  { value: 'inactive', label: 'Không hoạt động', icon: 'bi bi-clock' },
+  { value: 'high-value', label: 'Chi tiêu cao', icon: 'bi bi-currency-dollar' }
 ])
 
 // Mock data
@@ -981,12 +981,12 @@ const getStatusClass = (status) => {
 
 const getActivityIcon = (type) => {
   const icons = {
-    'login': 'ph-sign-in',
-    'order': 'ph-shopping-bag',
-    'profile': 'ph-user',
-    'password': 'ph-key'
+    'login': 'bi bi-box-arrow-in-right',
+    'order': 'bi bi-bag',
+    'profile': 'bi bi-person',
+    'password': 'bi bi-key'
   }
-  return icons[type] || 'ph-circle'
+  return icons[type] || 'bi bi-circle'
 }
 
 const clearFilters = () => {

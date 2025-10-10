@@ -3,15 +3,15 @@
     <div class="container">
       <div class="usp-content">
         <div class="usp-item">
-          <i class="ph ph-truck"></i>
+          <i class="ph bi bi-truck"></i>
           <span>Freeship từ 499k</span>
         </div>
         <div class="usp-item">
-          <i class="ph ph-arrow-clockwise"></i>
+          <i class="ph bi bi-arrow-clockwise"></i>
           <span>Đổi trả 7 ngày</span>
         </div>
         <div class="usp-item">
-          <i class="ph ph-credit-card"></i>
+          <i class="bi bi-credit-card"></i>
           <span>Thanh toán COD</span>
         </div>
       </div>

@@ -3,14 +3,14 @@
     <!-- Shipping Options -->
     <div class="shipping-options">
       <h3 class="section-title">
-        <i class="ph-truck"></i>
+        <i class="bi bi-truck"></i>
         Tùy chọn giao hàng
       </h3>
       
       <div class="shipping-grid">
         <div class="shipping-option">
           <div class="shipping-icon">
-            <i class="ph-truck"></i>
+            <i class="bi bi-truck"></i>
           </div>
           <div class="shipping-info">
             <h4>Giao hàng tiêu chuẩn</h4>
@@ -25,7 +25,7 @@
         
         <div class="shipping-option">
           <div class="shipping-icon">
-            <i class="ph-lightning"></i>
+            <i class="bi bi-lightning"></i>
           </div>
           <div class="shipping-info">
             <h4>Giao hàng nhanh</h4>
@@ -39,7 +39,7 @@
         
         <div class="shipping-option">
           <div class="shipping-icon">
-            <i class="ph-clock"></i>
+            <i class="bi bi-clock"></i>
           </div>
           <div class="shipping-info">
             <h4>Giao hàng theo giờ</h4>
@@ -56,14 +56,14 @@
     <!-- Shipping Policy -->
     <div class="shipping-policy">
       <h3 class="section-title">
-        <i class="ph-shield-check"></i>
+        <i class="bi bi-shield-check"></i>
         Chính sách giao hàng
       </h3>
       
       <div class="policy-grid">
         <div class="policy-item">
           <div class="policy-icon">
-            <i class="ph-map-pin"></i>
+            <i class="bi bi-geo-alt"></i>
           </div>
           <div class="policy-content">
             <h4>Phạm vi giao hàng</h4>
@@ -78,7 +78,7 @@
         
         <div class="policy-item">
           <div class="policy-icon">
-            <i class="ph-clock-counter"></i>
+            <i class="bi bi-clock-counter"></i>
           </div>
           <div class="policy-content">
             <h4>Thời gian giao hàng</h4>
@@ -93,7 +93,7 @@
         
         <div class="policy-item">
           <div class="policy-icon">
-            <i class="ph-phone"></i>
+            <i class="bi bi-telephone"></i>
           </div>
           <div class="policy-content">
             <h4>Theo dõi đơn hàng</h4>
@@ -111,14 +111,14 @@
     <!-- Return Policy -->
     <div class="return-policy">
       <h3 class="section-title">
-        <i class="ph-arrow-clockwise"></i>
+        <i class="bi bi-arrow-clockwise"></i>
         Chính sách đổi trả
       </h3>
       
       <div class="return-content">
         <div class="return-highlight">
           <div class="highlight-icon">
-            <i class="ph-gift"></i>
+            <i class="bi bi-gift"></i>
           </div>
           <div class="highlight-text">
             <h4>60 ngày đổi trả miễn phí</h4>
@@ -130,15 +130,15 @@
           <h4>Điều kiện đổi trả:</h4>
           <div class="conditions-grid">
             <div class="condition-item">
-              <i class="ph-check-circle"></i>
+              <i class="bi bi-check-circle"></i>
               <span>Sản phẩm còn nguyên tag, chưa qua sử dụng</span>
             </div>
             <div class="condition-item">
-              <i class="ph-check-circle"></i>
+              <i class="bi bi-check-circle"></i>
               <span>Giữ nguyên bao bì và hóa đơn mua hàng</span>
             </div>
             <div class="condition-item">
-              <i class="ph-check-circle"></i>
+              <i class="bi bi-check-circle"></i>
               <span>Không có dấu hiệu hư hỏng do sử dụng</span>
             </div>
           </div>
@@ -183,14 +183,14 @@
     <!-- Contact Support -->
     <div class="contact-support">
       <h3 class="section-title">
-        <i class="ph-headset"></i>
+        <i class="bi bi-headset"></i>
         Hỗ trợ khách hàng
       </h3>
       
       <div class="support-grid">
         <div class="support-item">
           <div class="support-icon">
-            <i class="ph-phone"></i>
+            <i class="bi bi-telephone"></i>
           </div>
           <div class="support-info">
             <h4>Hotline</h4>
@@ -201,7 +201,7 @@
         
         <div class="support-item">
           <div class="support-icon">
-            <i class="ph-chat-circle"></i>
+            <i class="bi bi-chat-dots"></i>
           </div>
           <div class="support-info">
             <h4>Chat trực tuyến</h4>
@@ -212,7 +212,7 @@
         
         <div class="support-item">
           <div class="support-icon">
-            <i class="ph-envelope"></i>
+            <i class="bi bi-envelope"></i>
           </div>
           <div class="support-info">
             <h4>Email</h4>

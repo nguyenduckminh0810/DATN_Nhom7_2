@@ -34,11 +34,11 @@
       <div class="row">
         <div class="col-12">
           <div class="error-container">
-            <i class="ph-warning-circle text-danger"></i>
+            <i class="bi bi-exclamation-triangle-fill text-danger"></i>
             <h4 class="mt-3 mb-3">Không tìm thấy sản phẩm</h4>
             <p class="text-muted mb-4">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
             <router-link to="/category" class="btn btn-primary">
-              <i class="ph-arrow-left me-2"></i>Quay lại danh sách
+              <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
             </router-link>
           </div>
         </div>
@@ -109,7 +109,7 @@
       <div class="related-products-section">
         <div class="section-header">
           <h3 class="section-title">
-            <i class="ph-heart"></i>
+            <i class="bi bi-heart"></i>
             Sản phẩm liên quan
           </h3>
         </div>
@@ -163,7 +163,7 @@
     <div v-if="showVideoModal" class="video-modal-overlay" @click="closeVideoModal">
       <div class="video-modal-content" @click.stop>
         <button class="video-modal-close" @click="closeVideoModal">
-          <i class="ph-x"></i>
+          <i class="bi bi-x"></i>
         </button>
         <video v-if="currentVideoUrl" controls autoplay>
           <source :src="currentVideoUrl" type="video/mp4">
@@ -204,9 +204,9 @@ const currentVideoUrl = ref('')
 
 // Tabs configuration
 const tabs = [
-  { id: 'description', name: 'Mô tả sản phẩm', icon: 'ph-info' },
-  { id: 'reviews', name: 'Đánh giá', icon: 'ph-star' },
-  { id: 'shipping', name: 'Giao hàng', icon: 'ph-truck' }
+  { id: 'description', name: 'Mô tả sản phẩm', icon: 'bi bi-info-circle' },
+  { id: 'reviews', name: 'Đánh giá', icon: 'bi bi-star' },
+  { id: 'shipping', name: 'Giao hàng', icon: 'bi bi-truck' }
 ]
 
 // Computed properties
@@ -270,17 +270,17 @@ const loadMockData = async (productId) => {
       {
         title: 'Chất liệu cao cấp',
         description: 'Cotton 100% mềm mại, thoáng khí, không gây kích ứng da',
-        icon: 'ph-leaf'
+        icon: 'bi bi-tree'
       },
       {
         title: 'Thiết kế hiện đại',
         description: 'Kiểu dáng trẻ trung, phù hợp với nhiều phong cách thời trang',
-        icon: 'ph-palette'
+        icon: 'bi bi-palette'
       },
       {
         title: 'Bền đẹp lâu dài',
         description: 'Công nghệ giặt tẩy tiên tiến, giữ màu sắc và form dáng bền lâu',
-        icon: 'ph-shield-check'
+        icon: 'bi bi-shield-check'
       }
     ]
   }

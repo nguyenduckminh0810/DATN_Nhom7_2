@@ -35,11 +35,11 @@ onMounted(() => {
 // Helper function to get toast icon
 const getToastIcon = (type) => {
   const icons = {
-    success: 'ph-check-circle text-success',
-    error: 'ph-x-circle text-danger',
-    warning: 'ph-warning-circle text-warning',
-    info: 'ph-info text-info',
-    loading: 'ph-spinner text-primary'
+    success: 'bi bi-check-circle text-success',
+    error: 'bi bi-x-circle text-danger',
+    warning: 'bi bi-exclamation-triangle-fill text-warning',
+    info: 'bi bi-info-circle text-info',
+    loading: 'bi bi-arrow-clockwise text-primary'
   }
   return icons[type] || icons.info
 }

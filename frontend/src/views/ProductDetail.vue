@@ -32,11 +32,11 @@
       <div v-else-if="!product" class="row">
         <div class="col-12">
           <div class="text-center py-5">
-            <i class="ph-warning text-danger" style="font-size: 4rem;"></i>
+            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
             <h4 class="mt-3 mb-3">Không tìm thấy sản phẩm</h4>
             <p class="text-muted mb-4">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
             <router-link to="/category" class="btn btn-auro-primary">
-              <i class="ph-arrow-left me-2"></i>Quay lại danh sách
+              <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
             </router-link>
           </div>
         </div>
@@ -68,11 +68,11 @@
             <!-- Product Rating -->
             <div class="product-rating mb-3">
               <div class="stars">
-                <i class="ph-star-fill text-warning"></i>
-                <i class="ph-star-fill text-warning"></i>
-                <i class="ph-star-fill text-warning"></i>
-                <i class="ph-star-fill text-warning"></i>
-                <i class="ph-star text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star-fill text-warning"></i>
+                <i class="bi bi-star text-warning"></i>
               </div>
               <span class="rating-text ms-2">4.5 (128 đánh giá)</span>
             </div>
@@ -145,7 +145,7 @@
                     :disabled="!isColorAvailable(color)"
                     @click="selectColor(color)"
                   >
-                    <i v-if="selectedColor === color" class="ph-check" 
+                    <i v-if="selectedColor === color" class="bi bi-check" 
                        :style="{ color: color === '#ffffff' ? '#000' : '#fff' }"></i>
                   </button>
                 </div>
@@ -157,7 +157,7 @@
               <h6 class="mb-2">Số lượng</h6>
               <div class="quantity-controls">
                 <button class="btn btn-outline-secondary" @click="decreaseQuantity" :disabled="quantity <= 1">
-                  <i class="ph-minus"></i>
+                  <i class="bi bi-dash"></i>
                 </button>
                 <input
                   type="number"
@@ -169,7 +169,7 @@
                   placeholder="1"
                 />
                 <button class="btn btn-outline-secondary" @click="increaseQuantity" :disabled="quantity >= currentVariantStock">
-                  <i class="ph-plus"></i>
+                  <i class="bi bi-plus"></i>
                 </button>
               </div>
               <small class="text-muted" v-if="selectedColor && selectedSize">
@@ -177,14 +177,14 @@
                   Còn {{ currentVariantStock }} sản phẩm ({{ getColorName(selectedColor) }} - {{ selectedSize }})
                 </span>
                 <span v-else class="text-danger">
-                  <i class="ph-warning me-1"></i>Hết hàng
+                  <i class="bi bi-exclamation-triangle me-1"></i>Hết hàng
                 </span>
               </small>
               <small class="text-muted" v-else-if="totalStock > 0">
                 Tổng còn {{ totalStock }} sản phẩm (chọn màu và size để xem chi tiết)
               </small>
               <small class="text-danger" v-else>
-                <i class="ph-warning me-1"></i>Sản phẩm tạm hết hàng
+                <i class="bi bi-exclamation-triangle me-1"></i>Sản phẩm tạm hết hàng
               </small>
             </div>
 
@@ -197,7 +197,7 @@
                   :disabled="!canAddToCart"
                   :class="{ 'btn-disabled': !canAddToCart }"
                 >
-                  <i class="ph-shopping-cart me-2"></i>
+                  <i class="bi bi-cart3 me-2"></i>
                   <span v-if="!selectedColor && !selectedSize">Chọn màu và size</span>
                   <span v-else-if="!selectedColor">Chọn màu sắc</span>
                   <span v-else-if="!selectedSize">Chọn kích thước</span>
@@ -210,15 +210,15 @@
             <!-- Product Features -->
             <div class="product-features">
               <div class="feature-item">
-                <i class="ph-truck text-primary me-2"></i>
+                <i class="bi bi-truck text-primary me-2"></i>
                 <span>Miễn phí vận chuyển cho đơn hàng từ 500.000đ</span>
               </div>
               <div class="feature-item">
-                <i class="ph-arrow-clockwise text-success me-2"></i>
+                <i class="bi bi-arrow-clockwise text-success me-2"></i>
                 <span>Đổi trả trong 30 ngày</span>
               </div>
               <div class="feature-item">
-                <i class="ph-shield-check text-info me-2"></i>
+                <i class="bi bi-shield-check text-info me-2"></i>
                 <span>Bảo hành chính hãng</span>
               </div>
             </div>
@@ -315,11 +315,11 @@
                           <div class="average-rating">
                             <span class="rating-number">4.5</span>
                             <div class="stars">
-                              <i class="ph-star-fill text-warning"></i>
-                              <i class="ph-star-fill text-warning"></i>
-                              <i class="ph-star-fill text-warning"></i>
-                              <i class="ph-star-fill text-warning"></i>
-                              <i class="ph-star text-warning"></i>
+                              <i class="bi bi-star-fill text-warning"></i>
+                              <i class="bi bi-star-fill text-warning"></i>
+                              <i class="bi bi-star-fill text-warning"></i>
+                              <i class="bi bi-star-fill text-warning"></i>
+                              <i class="bi bi-star text-warning"></i>
                             </div>
                             <p class="text-muted">Dựa trên 128 đánh giá</p>
                           </div>
@@ -372,11 +372,11 @@
                         <div class="reviewer-info">
                           <strong>Nguyễn Văn A</strong>
                           <div class="stars">
-                            <i class="ph-star-fill text-warning"></i>
-                            <i class="ph-star-fill text-warning"></i>
-                            <i class="ph-star-fill text-warning"></i>
-                            <i class="ph-star-fill text-warning"></i>
-                            <i class="ph-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <i class="bi bi-star-fill text-warning"></i>
                           </div>
                         </div>
                         <small class="text-muted">2 ngày trước</small>
@@ -396,7 +396,7 @@
         <div class="col-12">
           <div class="related-products-section">
             <h4 class="section-title mb-4">
-              <i class="ph-heart me-2"></i>
+              <i class="bi bi-heart me-2"></i>
               Sản phẩm liên quan
             </h4>
             <div class="row g-4">
@@ -420,7 +420,7 @@
                     </div>
                     <div class="product-overlay">
                       <button class="btn btn-primary btn-sm" @click="addToCart(relatedProduct)">
-                        <i class="ph-shopping-cart me-1"></i>Thêm vào giỏ
+                        <i class="bi bi-cart3 me-1"></i>Thêm vào giỏ
                       </button>
                     </div>
                   </div>
@@ -441,7 +441,7 @@
                         :to="`/product/${relatedProduct.id}`" 
                         class="btn btn-primary btn-sm w-100 card-action-btn"
                       >
-                        <i class="ph-eye me-1"></i>
+                        <i class="bi bi-eye me-1"></i>
                         Xem chi tiết
                       </router-link>
                     </div>

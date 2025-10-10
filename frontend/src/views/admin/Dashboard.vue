@@ -7,7 +7,7 @@
           <div class="overview-card revenue">
             <div class="card-header">
               <div class="card-icon">
-                <i class="ph ph-currency-dollar"></i>
+                <i class="ph bi bi-currency-dollar"></i>
         </div>
               <div class="card-info">
                 <h3>Doanh thu hôm nay</h3>
@@ -17,7 +17,7 @@
             <div class="card-content">
               <div class="main-value">15,420,000₫</div>
               <div class="trend positive">
-                <i class="ph ph-trend-up"></i>
+                <i class="bi bi-graph-up"></i>
                 <span>+12.5%</span>
         </div>
       </div>
@@ -26,7 +26,7 @@
           <div class="overview-card orders">
             <div class="card-header">
               <div class="card-icon">
-                <i class="ph ph-shopping-cart"></i>
+                <i class="ph bi bi-cart3"></i>
           </div>
               <div class="card-info">
                 <h3>Đơn hàng mới</h3>
@@ -36,7 +36,7 @@
             <div class="card-content">
               <div class="main-value">89</div>
               <div class="trend positive">
-                <i class="ph ph-trend-up"></i>
+                <i class="bi bi-graph-up"></i>
                 <span>+8.3%</span>
       </div>
             </div>
@@ -45,7 +45,7 @@
           <div class="overview-card customers">
             <div class="card-header">
               <div class="card-icon">
-                <i class="ph ph-users"></i>
+                <i class="ph bi bi-people"></i>
               </div>
               <div class="card-info">
                 <h3>Khách hàng mới</h3>
@@ -55,7 +55,7 @@
             <div class="card-content">
               <div class="main-value">23</div>
               <div class="trend positive">
-                <i class="ph ph-trend-up"></i>
+                <i class="bi bi-graph-up"></i>
                 <span>+15.2%</span>
         </div>
       </div>
@@ -64,7 +64,7 @@
           <div class="overview-card inventory">
             <div class="card-header">
               <div class="card-icon">
-                <i class="ph ph-package"></i>
+                <i class="ph bi bi-box"></i>
         </div>
               <div class="card-info">
                 <h3>Sản phẩm sắp hết</h3>
@@ -74,7 +74,7 @@
             <div class="card-content">
               <div class="main-value">12</div>
               <div class="trend warning">
-                <i class="ph ph-warning"></i>
+                <i class="ph bi bi-exclamation-triangle"></i>
                 <span>Cần nhập</span>
       </div>
         </div>
@@ -88,19 +88,19 @@
           <h3>Thao tác nhanh</h3>
           <div class="action-buttons">
             <button class="action-btn">
-              <i class="ph ph-plus-circle"></i>
+              <i class="ph bi bi-plus-circle"></i>
               <span>Thêm sản phẩm</span>
             </button>
             <button class="action-btn">
-              <i class="ph ph-shopping-cart"></i>
+              <i class="ph bi bi-cart3"></i>
               <span>Xem đơn hàng</span>
             </button>
             <button class="action-btn">
-              <i class="ph ph-users"></i>
+              <i class="ph bi bi-people"></i>
               <span>Quản lý khách hàng</span>
             </button>
             <button class="action-btn">
-              <i class="ph ph-chart-bar"></i>
+              <i class="ph bi bi-bar-chart"></i>
               <span>Báo cáo doanh thu</span>
             </button>
           </div>
@@ -111,7 +111,7 @@
           <div class="alert-list">
             <div class="alert-item urgent">
               <div class="alert-icon">
-                <i class="ph ph-warning"></i>
+                <i class="ph bi bi-exclamation-triangle"></i>
           </div>
               <div class="alert-content">
                 <div class="alert-title">5 đơn hàng chờ xác nhận</div>
@@ -121,7 +121,7 @@
       </div>
             <div class="alert-item warning">
               <div class="alert-icon">
-                <i class="ph ph-package"></i>
+                <i class="ph bi bi-box"></i>
     </div>
               <div class="alert-content">
                 <div class="alert-title">12 sản phẩm sắp hết hàng</div>
@@ -131,7 +131,7 @@
             </div>
             <div class="alert-item info">
               <div class="alert-icon">
-                <i class="ph ph-clock"></i>
+                <i class="ph bi bi-clock"></i>
               </div>
               <div class="alert-content">
                 <div class="alert-title">8 đơn hàng cần giao</div>
@@ -189,7 +189,7 @@
                   </select>
                 </div>
                 <button class="chart-action-btn" @click="exportChartData">
-                  <i class="ph ph-download"></i>
+                  <i class="ph bi bi-download"></i>
                   <span>Xuất dữ liệu</span>
                 </button>
           </div>
@@ -205,7 +205,7 @@
             <div class="chart-insights">
               <div class="insight-item">
                 <div class="insight-icon revenue">
-                  <i class="ph ph-trend-up"></i>
+                  <i class="bi bi-graph-up"></i>
       </div>
                 <div class="insight-content">
                   <div class="insight-title">Tăng trưởng doanh thu</div>
@@ -215,7 +215,7 @@
         </div>
               <div class="insight-item">
                 <div class="insight-icon orders">
-                  <i class="ph ph-shopping-cart"></i>
+                  <i class="ph bi bi-cart3"></i>
                 </div>
                 <div class="insight-content">
                   <div class="insight-title">Đơn hàng trung bình</div>
@@ -225,7 +225,7 @@
               </div>
               <div class="insight-item">
                 <div class="insight-icon profit">
-                  <i class="ph ph-chart-line-up"></i>
+                  <i class="bi bi-graph-up"></i>
                 </div>
                 <div class="insight-content">
                   <div class="insight-title">Tỷ lệ lợi nhuận</div>
@@ -263,7 +263,7 @@
           <div class="order-status-cards">
             <div class="status-card pending">
               <div class="status-icon">
-                <i class="ph ph-clock"></i>
+                <i class="ph bi bi-clock"></i>
         </div>
               <div class="status-info">
                 <div class="status-count">23</div>
@@ -272,7 +272,7 @@
             </div>
             <div class="status-card processing">
               <div class="status-icon">
-                <i class="ph ph-gear"></i>
+                <i class="ph bi bi-gear"></i>
               </div>
               <div class="status-info">
                 <div class="status-count">15</div>
@@ -281,7 +281,7 @@
             </div>
             <div class="status-card shipping">
               <div class="status-icon">
-                <i class="ph ph-truck"></i>
+                <i class="ph bi bi-truck"></i>
               </div>
               <div class="status-info">
                 <div class="status-count">8</div>
@@ -290,7 +290,7 @@
             </div>
             <div class="status-card completed">
               <div class="status-icon">
-                <i class="ph ph-check-circle"></i>
+                <i class="ph bi bi-check-circle"></i>
               </div>
               <div class="status-info">
                 <div class="status-count">156</div>
@@ -331,7 +331,7 @@
             <div class="stats-grid">
               <div class="stat-item">
                 <div class="stat-icon">
-                  <i class="ph ph-users"></i>
+                  <i class="ph bi bi-people"></i>
               </div>
                 <div class="stat-content">
                   <div class="stat-value">2,456</div>
@@ -340,7 +340,7 @@
               </div>
               <div class="stat-item">
                 <div class="stat-icon">
-                  <i class="ph ph-user-plus"></i>
+                  <i class="ph bi bi-person-plus"></i>
             </div>
                 <div class="stat-content">
                   <div class="stat-value">89</div>
@@ -349,7 +349,7 @@
         </div>
               <div class="stat-item">
                 <div class="stat-icon">
-                  <i class="ph ph-repeat"></i>
+                  <i class="ph bi bi-arrow-repeat"></i>
       </div>
                 <div class="stat-content">
                   <div class="stat-value">65%</div>
@@ -358,7 +358,7 @@
           </div>
               <div class="stat-item">
                 <div class="stat-icon">
-                  <i class="ph ph-star"></i>
+                  <i class="ph bi bi-star"></i>
         </div>
                 <div class="stat-content">
                   <div class="stat-value">4.8</div>
@@ -481,7 +481,7 @@ const categoryPerformance = ref([
     revenue: '25.4M₫',
     change: '+12.5%',
     trend: 'positive',
-    trendIcon: 'ph ph-trend-up'
+    trendIcon: 'bi bi-graph-up'
   },
   {
     id: 2,
@@ -490,7 +490,7 @@ const categoryPerformance = ref([
     revenue: '18.9M₫',
     change: '+8.3%',
     trend: 'positive',
-    trendIcon: 'ph ph-trend-up'
+    trendIcon: 'bi bi-graph-up'
   },
   {
     id: 3,
@@ -499,7 +499,7 @@ const categoryPerformance = ref([
     revenue: '22.1M₫',
     change: '+15.2%',
     trend: 'positive',
-    trendIcon: 'ph ph-trend-up'
+    trendIcon: 'bi bi-graph-up'
   },
   {
     id: 4,
@@ -508,7 +508,7 @@ const categoryPerformance = ref([
     revenue: '28.7M₫',
     change: '-3.1%',
     trend: 'negative',
-    trendIcon: 'ph ph-trend-down'
+    trendIcon: 'bi bi-graph-down'
   }
 ])
 

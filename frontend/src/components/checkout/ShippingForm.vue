@@ -10,23 +10,13 @@
 
       <!-- Form Body -->
       <div class="section-body">
-        <!-- Title & Full Name -->
+        <!-- Full Name -->
         <div class="form-group">
           <label class="form-label">Họ tên</label>
-          <div class="form-row">
-            <div class="form-col-title">
-              <select class="form-select" v-model="shippingInfo.title">
-                <option value="anh">Anh</option>
-                <option value="chi">Chị</option>
-              </select>
-            </div>
-            <div class="form-col-name">
-              <input type="text" 
-                     class="form-control" 
-                     v-model="shippingInfo.fullName"
-                     placeholder="Nhập họ tên của bạn">
-            </div>
-          </div>
+          <input type="text" 
+                 class="form-control" 
+                 v-model="shippingInfo.fullName"
+                 placeholder="Nhập họ tên của bạn">
         </div>
 
         <!-- Email -->
@@ -73,6 +63,15 @@
                 <option value="dong-da">Đống Đa</option>
               </select>
             </div>
+            <div class="form-col-ward">
+              <select class="form-select" v-model="shippingInfo.ward">
+                <option value="">Chọn xã/phường</option>
+                <option value="phuong-1">Phường 1</option>
+                <option value="phuong-2">Phường 2</option>
+                <option value="phuong-3">Phường 3</option>
+                <option value="phuong-4">Phường 4</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -94,13 +93,13 @@
 import { ref } from 'vue'
 
 const shippingInfo = ref({
-  title: 'anh',
   fullName: '',
   email: '',
   phone: '',
   address: '',
   province: '',
   district: '',
+  ward: '',
   notes: ''
 })
 </script>
@@ -108,6 +107,19 @@ const shippingInfo = ref({
 <style scoped>
 .shipping-form-section {
   margin-bottom: 2rem;
+}
+
+/* Reset any conflicting styles */
+.shipping-form-section * {
+  box-sizing: border-box;
+}
+
+.shipping-form-section input,
+.shipping-form-section select,
+.shipping-form-section textarea {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 
 .section-card {
@@ -150,18 +162,51 @@ const shippingInfo = ref({
 .form-control,
 .form-select {
   width: 100%;
-  border: 2px solid #e9ecef;
+  border: 2px solid #e9ecef !important;
   border-radius: 8px;
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
   transition: all 0.2s ease;
+  background-color: white;
 }
 
 .form-control:focus,
 .form-select:focus {
-  border-color: #B8860B;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
-  outline: none;
+  border-color: #B8860B !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+  outline: none !important;
+}
+
+.form-control:hover,
+.form-select:hover {
+  border-color: #B8860B !important;
+}
+
+/* Ensure all form controls have visible borders */
+.form-control:not(:focus):not(:hover),
+.form-select:not(:focus):not(:hover) {
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+/* Force border visibility for all states */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+textarea,
+select {
+  border: 2px solid #e9ecef !important;
+  background-color: white !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #B8860B !important;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+  outline: none !important;
 }
 
 .form-row {
@@ -169,20 +214,19 @@ const shippingInfo = ref({
   gap: 0.75rem;
 }
 
-.form-col-title {
-  flex: 0 0 80px;
-}
-
-.form-col-name {
-  flex: 1;
-}
-
 .form-col-province {
   flex: 1;
+  min-width: 0;
 }
 
 .form-col-district {
   flex: 1;
+  min-width: 0;
+}
+
+.form-col-ward {
+  flex: 1;
+  min-width: 0;
 }
 
 .checkbox-group {
@@ -206,15 +250,28 @@ const shippingInfo = ref({
     gap: 0.5rem;
   }
   
-  .form-col-title,
   .form-col-province,
-  .form-col-district {
+  .form-col-district,
+  .form-col-ward {
     flex: 1;
+    min-width: auto;
   }
   
   .checkbox-group {
     flex-direction: column;
     gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    gap: 0.5rem;
+  }
+  
+  .form-col-province,
+  .form-col-district,
+  .form-col-ward {
+    min-width: 0;
   }
 }
 </style>

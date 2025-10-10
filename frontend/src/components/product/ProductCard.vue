@@ -76,7 +76,7 @@
           class="btn-detail"
           @click="navigateToDetail"
         >
-          <i class="ph-eye me-1"></i>
+          <i class="bi bi-eye me-1"></i>
           Xem chi tiết
         </button>
         <button 
@@ -84,7 +84,7 @@
           @click="handleAddToCart"
           :disabled="!hasVariants && !isInStock"
         >
-          <i class="ph-shopping-cart me-1"></i>
+          <i class="bi bi-cart3 me-1"></i>
           {{ addToCartText }}
         </button>
       </div>

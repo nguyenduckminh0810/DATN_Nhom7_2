@@ -90,7 +90,7 @@ const props = defineProps({
   },
   emptyIcon: {
     type: String,
-    default: 'ph-folder-open'
+    default: 'bi bi-folder-open'
   },
   
   // Key generation

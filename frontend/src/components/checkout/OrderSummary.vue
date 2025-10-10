@@ -32,9 +32,17 @@
             <span class="summary-value">{{ formatPrice(shippingFee) }}</span>
           </div>
           
-          <div v-if="discountAmount > 0" class="summary-item discount-item">
-            <span class="summary-label">Giảm giá:</span>
-            <span class="summary-value">-{{ formatPrice(discountAmount) }}</span>
+          <div class="summary-item voucher-item">
+            <span class="summary-label">
+              <i class="bi bi-ticket-perforated me-1"></i>
+              <span v-if="selectedVoucher">Voucher {{ selectedVoucher.code }}:</span>
+              <span v-else-if="manualVoucherCode">Voucher {{ manualVoucherCode }}:</span>
+              <span v-else>Voucher giảm giá:</span>
+            </span>
+            <span class="summary-value" :class="{ 'no-discount': discountAmount === 0 }">
+              <span v-if="discountAmount > 0">-{{ formatPrice(discountAmount) }}</span>
+              <span v-else>Chưa chọn</span>
+            </span>
           </div>
           
           <div class="summary-divider"></div>
@@ -78,8 +86,10 @@
 <script setup>
 import { computed } from 'vue'
 import { useCart } from '@/composables/useCart'
+import { useVoucher } from '@/stores/voucher'
 
 const { items, formatPrice } = useCart()
+const { selectedVoucher, manualVoucherCode } = useVoucher()
 
 // Tính toán dựa trên real cart data
 const totalItemsCount = computed(() => {
@@ -100,8 +110,30 @@ const shippingFee = computed(() => {
   return subtotal.value >= 500000 ? 0 : 30000
 })
 
+// Tính toán giảm giá dựa trên voucher
 const discountAmount = computed(() => {
-  // TODO: Kết nối với voucher system
+  if (!selectedVoucher.value && !manualVoucherCode.value) return 0
+  
+  // Nếu có voucher được chọn từ list
+  if (selectedVoucher.value) {
+    const { type, value, minOrder } = selectedVoucher.value
+    
+    // Kiểm tra điều kiện đơn hàng tối thiểu
+    if (subtotal.value < minOrder) return 0
+    
+    if (type === 'percentage') {
+      return Math.floor(subtotal.value * value / 100)
+    } else if (type === 'fixed') {
+      return Math.min(value, subtotal.value) // Không giảm quá giá trị đơn hàng
+    }
+  }
+  
+  // Nếu có voucher manual (giả sử là fixed amount)
+  if (manualVoucherCode.value && manualVoucherCode.value.trim()) {
+    // Demo: Giảm 50k cho voucher manual
+    return Math.min(50000, subtotal.value)
+  }
+  
   return 0
 })
 
@@ -214,6 +246,26 @@ const finalTotal = computed(() => {
 
 .discount-item .summary-value {
   color: #28a745;
+}
+
+.voucher-item .summary-value {
+  color: #28a745;
+  font-weight: 700;
+}
+
+.voucher-item .summary-label {
+  color: #B8860B;
+  font-weight: 600;
+}
+
+.voucher-item .summary-label i {
+  color: #B8860B;
+}
+
+.voucher-item .summary-value.no-discount {
+  color: #999 !important;
+  font-weight: 400 !important;
+  font-style: italic;
 }
 
 .summary-divider {

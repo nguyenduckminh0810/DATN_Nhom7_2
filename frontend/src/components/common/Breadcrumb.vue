@@ -14,7 +14,7 @@
           <i v-if="item.icon" :class="item.icon" class="breadcrumb-icon"></i>
           {{ item.text }}
         </span>
-        <i v-if="index < items.length - 1" class="ph-caret-right breadcrumb-separator"></i>
+        <i v-if="index < items.length - 1" class="bi bi-caret-right breadcrumb-separator"></i>
       </li>
     </ol>
   </nav>

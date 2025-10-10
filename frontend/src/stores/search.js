@@ -14,7 +14,7 @@ export const useSearchStore = defineStore('search', () => {
     priceRange: { min: 0, max: 5000000 },
     sizes: [],
     colors: [],
-    brands: [],
+    materials: [],
     categories: [],
     sortBy: 'relevance',
     availability: 'all' // all, inStock, outOfStock
@@ -41,12 +41,16 @@ export const useSearchStore = defineStore('search', () => {
     { name: 'Kem', value: 'cream', hex: '#FFFDD0' }
   ])
 
-  const availableBrands = ref([
-    'AURO Premium',
-    'AURO Classic',
-    'AURO Sport',
-    'AURO Formal',
-    'AURO Casual'
+  const availableMaterials = ref([
+    'Cotton',
+    'Polyester',
+    'Denim',
+    'Linen',
+    'Wool',
+    'Silk',
+    'Leather',
+    'Synthetic',
+    'Blend'
   ])
 
   const priceRanges = ref([
@@ -161,7 +165,7 @@ export const useSearchStore = defineStore('search', () => {
     return (
       activeFilters.value.sizes.length > 0 ||
       activeFilters.value.colors.length > 0 ||
-      activeFilters.value.brands.length > 0 ||
+      activeFilters.value.materials.length > 0 ||
       activeFilters.value.categories.length > 0 ||
       activeFilters.value.priceRange.min > 0 ||
       activeFilters.value.priceRange.max < 5000000 ||
@@ -173,7 +177,7 @@ export const useSearchStore = defineStore('search', () => {
     let count = 0
     if (activeFilters.value.sizes.length > 0) count++
     if (activeFilters.value.colors.length > 0) count++
-    if (activeFilters.value.brands.length > 0) count++
+    if (activeFilters.value.materials.length > 0) count++
     if (activeFilters.value.categories.length > 0) count++
     if (activeFilters.value.priceRange.min > 0 || activeFilters.value.priceRange.max < 5000000) count++
     if (activeFilters.value.availability !== 'all') count++
@@ -309,12 +313,12 @@ export const useSearchStore = defineStore('search', () => {
     updateFilterStatus()
   }
 
-  const toggleBrand = (brand) => {
-    const index = activeFilters.value.brands.indexOf(brand)
+  const toggleMaterial = (material) => {
+    const index = activeFilters.value.materials.indexOf(material)
     if (index > -1) {
-      activeFilters.value.brands.splice(index, 1)
+      activeFilters.value.materials.splice(index, 1)
     } else {
-      activeFilters.value.brands.push(brand)
+      activeFilters.value.materials.push(material)
     }
     updateFilterStatus()
   }
@@ -347,7 +351,7 @@ export const useSearchStore = defineStore('search', () => {
       priceRange: { min: 0, max: 5000000 },
       sizes: [],
       colors: [],
-      brands: [],
+      materials: [],
       categories: [],
       sortBy: 'relevance',
       availability: 'all'
@@ -366,8 +370,8 @@ export const useSearchStore = defineStore('search', () => {
       case 'colors':
         activeFilters.value.colors = []
         break
-      case 'brands':
-        activeFilters.value.brands = []
+      case 'materials':
+        activeFilters.value.materials = []
         break
       case 'categories':
         activeFilters.value.categories = []
@@ -410,12 +414,13 @@ export const useSearchStore = defineStore('search', () => {
         if (!hasMatchingColor) return false
       }
 
-      // Brand filter
-      if (activeFilters.value.brands.length > 0) {
-        const productBrand = product.brand || 'AURO Premium'
-        if (!activeFilters.value.brands.includes(productBrand)) {
-          return false
-        }
+      // Material filter
+      if (activeFilters.value.materials.length > 0) {
+        const productMaterials = product.materials || ['Cotton']
+        const hasMatchingMaterial = activeFilters.value.materials.some(material => 
+          productMaterials.includes(material)
+        )
+        if (!hasMatchingMaterial) return false
       }
 
       // Category filter
@@ -491,6 +496,27 @@ export const useSearchStore = defineStore('search', () => {
   // Initialize
   loadSearchHistory()
   loadFilters()
+  
+  // Clear old filter data if needed (for migration)
+  const clearOldFilterData = () => {
+    const saved = localStorage.getItem('auro_active_filters')
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (parsed.brands && !parsed.materials) {
+          // Old structure detected, clear it
+          localStorage.removeItem('auro_active_filters')
+          console.log('Cleared old filter data')
+        }
+      } catch (error) {
+        // Invalid data, clear it
+        localStorage.removeItem('auro_active_filters')
+        console.log('Cleared invalid filter data')
+      }
+    }
+  }
+  
+  clearOldFilterData()
 
   return {
     // Search State
@@ -506,7 +532,7 @@ export const useSearchStore = defineStore('search', () => {
     isFilterActive,
     availableSizes,
     availableColors,
-    availableBrands,
+    availableMaterials,
     priceRanges,
 
     // Search Getters
@@ -530,7 +556,7 @@ export const useSearchStore = defineStore('search', () => {
     setPriceRange,
     toggleSize,
     toggleColor,
-    toggleBrand,
+    toggleMaterial,
     toggleCategory,
     setSortBy,
     setAvailability,

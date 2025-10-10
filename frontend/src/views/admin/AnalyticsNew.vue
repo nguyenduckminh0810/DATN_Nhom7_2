@@ -23,13 +23,13 @@
               </select>
             </div>
             <button class="btn btn-outline-primary btn-sm" @click="toggleAdvancedFilters">
-              <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
+              <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
             </button>
             <button class="btn btn-outline-success btn-sm" @click="exportReport">
-              <i class="ph-download me-1"></i>Xuất báo cáo
+              <i class="bi bi-download me-1"></i>Xuất báo cáo
             </button>
             <button class="btn btn-primary btn-sm" @click="refreshData">
-              <i class="ph-arrow-clockwise me-1"></i>Làm mới
+              <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
             </button>
           </div>
         </div>
@@ -38,14 +38,14 @@
       <!-- Real-time Status -->
       <div class="realtime-status">
         <div class="status-indicator" :class="{ active: isRealtimeActive }">
-          <i class="ph-circle-fill"></i>
+          <i class="bi bi-circle-fill"></i>
           <span>{{ isRealtimeActive ? 'Đang cập nhật thời gian thực' : 'Cập nhật thủ công' }}</span>
         </div>
         <div class="last-updated">
           Cập nhật lần cuối: {{ formatTime(lastUpdated) }}
         </div>
         <button class="btn btn-sm btn-outline-secondary" @click="toggleRealtime">
-          <i :class="isRealtimeActive ? 'ph-pause' : 'ph-play'"></i>
+          <i :class="isRealtimeActive ? 'bi bi-pause' : 'bi bi-play'"></i>
           {{ isRealtimeActive ? 'Tạm dừng' : 'Bật thời gian thực' }}
         </button>
       </div>
@@ -132,7 +132,7 @@
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card revenue">
             <div class="kpi-icon">
-              <i class="ph-currency-dollar"></i>
+              <i class="bi bi-currency-dollar"></i>
             </div>
             <div class="kpi-content">
               <div class="kpi-value">{{ formatCurrency(totalRevenue) }}</div>
@@ -143,7 +143,7 @@
               </div>
             </div>
             <div class="kpi-trend">
-              <i class="ph-trend-up"></i>
+              <i class="bi bi-graph-up"></i>
             </div>
           </div>
         </div>
@@ -151,7 +151,7 @@
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card orders">
             <div class="kpi-icon">
-              <i class="ph-shopping-bag"></i>
+              <i class="bi bi-bag"></i>
             </div>
             <div class="kpi-content">
               <div class="kpi-value">{{ totalOrders.toLocaleString('vi-VN') }}</div>
@@ -162,7 +162,7 @@
               </div>
             </div>
             <div class="kpi-trend">
-              <i class="ph-trend-up"></i>
+              <i class="bi bi-graph-up"></i>
             </div>
           </div>
         </div>
@@ -170,7 +170,7 @@
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card customers">
             <div class="kpi-icon">
-              <i class="ph-users"></i>
+              <i class="bi bi-people"></i>
             </div>
             <div class="kpi-content">
               <div class="kpi-value">{{ totalCustomers.toLocaleString('vi-VN') }}</div>
@@ -181,7 +181,7 @@
               </div>
             </div>
             <div class="kpi-trend">
-              <i class="ph-trend-up"></i>
+              <i class="bi bi-graph-up"></i>
             </div>
           </div>
         </div>
@@ -189,7 +189,7 @@
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card products">
             <div class="kpi-icon">
-              <i class="ph-package"></i>
+              <i class="bi bi-box"></i>
             </div>
             <div class="kpi-content">
               <div class="kpi-value">{{ totalProducts.toLocaleString('vi-VN') }}</div>
@@ -200,7 +200,7 @@
               </div>
             </div>
             <div class="kpi-trend">
-              <i class="ph-trend-up"></i>
+              <i class="bi bi-graph-up"></i>
             </div>
           </div>
         </div>
@@ -214,7 +214,7 @@
           <div class="insight-card">
             <div class="insight-header">
               <h6>Hiệu suất kinh doanh</h6>
-              <i class="ph-chart-line"></i>
+              <i class="bi bi-graph-up"></i>
             </div>
             <div class="insight-content">
               <div class="insight-item">
@@ -237,7 +237,7 @@
           <div class="insight-card">
             <div class="insight-header">
               <h6>Xu hướng khách hàng</h6>
-              <i class="ph-users-three"></i>
+              <i class="bi bi-people-three"></i>
             </div>
             <div class="insight-content">
               <div class="insight-item">
@@ -260,7 +260,7 @@
           <div class="insight-card">
             <div class="insight-header">
               <h6>Hiệu quả sản phẩm</h6>
-              <i class="ph-package"></i>
+              <i class="bi bi-box"></i>
             </div>
             <div class="insight-content">
               <div class="insight-item">
@@ -291,7 +291,7 @@
               <div class="chart-title-section">
                 <h5 class="chart-title">Doanh thu & Hiệu suất</h5>
                 <div class="growth-badge">
-                  <i class="ph-trend-up"></i>
+                  <i class="bi bi-graph-up"></i>
                   +{{ growthRate }}% tăng trưởng
                 </div>
               </div>
@@ -309,11 +309,11 @@
                 </div>
                 <div class="chart-actions">
                   <button class="btn btn-outline-secondary btn-sm" @click="toggleChartType">
-                    <i :class="chartType === 'line' ? 'ph-bar-chart' : 'ph-line-chart'"></i>
+                    <i :class="chartType === 'line' ? 'bi bi-bar-chart' : 'bi bi-graph-up'"></i>
                     {{ chartType === 'line' ? 'Cột' : 'Đường' }}
                   </button>
                   <button class="btn btn-outline-primary btn-sm" @click="exportChart">
-                    <i class="ph-download"></i>
+                    <i class="bi bi-download"></i>
                   </button>
                 </div>
               </div>
@@ -357,7 +357,7 @@
               <div class="metric-header">
                 <span class="metric-label">Hôm nay</span>
                 <div class="live-indicator">
-                  <i class="ph-circle-fill"></i>
+                  <i class="bi bi-circle-fill"></i>
                   <span>LIVE</span>
                 </div>
               </div>
@@ -596,37 +596,37 @@ const topProducts = ref([
 // Computed properties
 const revenueChange = computed(() => ({
   type: 'positive',
-  icon: 'ph-trend-up',
+  icon: 'bi bi-graph-up',
   value: '+12.5'
 }))
 
 const ordersChange = computed(() => ({
   type: 'positive', 
-  icon: 'ph-trend-up',
+  icon: 'bi bi-graph-up',
   value: '+8.3'
 }))
 
 const customersChange = computed(() => ({
   type: 'positive',
-  icon: 'ph-trend-up', 
+  icon: 'bi bi-graph-up', 
   value: '+15.2'
 }))
 
 const productsChange = computed(() => ({
   type: 'positive',
-  icon: 'ph-trend-up',
+  icon: 'bi bi-graph-up',
   value: '+6.7'
 }))
 
 const metrics = computed(() => [
-  { value: 'revenue', label: 'Doanh thu', icon: 'ph-currency-dollar' },
-  { value: 'orders', label: 'Đơn hàng', icon: 'ph-shopping-bag' },
-  { value: 'customers', label: 'Khách hàng', icon: 'ph-users' },
-  { value: 'profit', label: 'Lợi nhuận', icon: 'ph-chart-line' }
+  { value: 'revenue', label: 'Doanh thu', icon: 'bi bi-currency-dollar' },
+  { value: 'orders', label: 'Đơn hàng', icon: 'bi bi-bag' },
+  { value: 'customers', label: 'Khách hàng', icon: 'bi bi-people' },
+  { value: 'profit', label: 'Lợi nhuận', icon: 'bi bi-graph-up' }
 ])
 
 const trendDirection = computed(() => 'positive')
-const trendIcon = computed(() => 'ph-trend-up')
+const trendIcon = computed(() => 'bi bi-graph-up')
 const trendText = computed(() => 'Tăng trưởng ổn định')
 const peakValue = computed(() => 5200000)
 const volatility = computed(() => 12.8)

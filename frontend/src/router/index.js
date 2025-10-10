@@ -5,7 +5,6 @@ const Home = () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
 const Category = () => import(/* webpackChunkName: "category" */ '../views/Category.vue')
 const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/ProductDetailNew.vue')
 const Cart = () => import(/* webpackChunkName: "cart" */ '../views/Cart.vue')
-const Checkout = () => import(/* webpackChunkName: "checkout" */ '../views/Checkout.vue')
 const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
 const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
@@ -45,12 +44,6 @@ const router = createRouter({
       name: 'cart',
       component: Cart,
       meta: { title: 'Giỏ hàng - AURO' }
-    },
-    {
-      path: '/checkout',
-      name: 'checkout',
-      component: Checkout,
-      meta: { title: 'Thanh toán - AURO' }
     },
     {
       path: '/login',
