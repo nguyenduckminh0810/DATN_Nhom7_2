@@ -27,9 +27,6 @@ export const useProductStore = defineStore('product', () => {
     totalPages: 0
   })
 
-  // Wishlist State
-  const wishlistItems = ref([])
-
   // Product Getters
   const hasProducts = computed(() => products.value.length > 0)
   const hasFeaturedProducts = computed(() => featuredProducts.value.length > 0)
@@ -37,11 +34,6 @@ export const useProductStore = defineStore('product', () => {
   const productCount = computed(() => products.value.length)
   const featuredCount = computed(() => featuredProducts.value.length)
   const categoryCount = computed(() => categories.value.length)
-
-  // Wishlist Getters
-  const wishlistCount = computed(() => wishlistItems.value.length)
-  const isWishlistEmpty = computed(() => wishlistItems.value.length === 0)
-  const wishlistItemIds = computed(() => wishlistItems.value.map(item => item.id))
 
   // Actions
   const setLoading = (loading) => {
@@ -367,102 +359,6 @@ export const useProductStore = defineStore('product', () => {
     productReviews.value = []
   }
 
-  // Wishlist Actions
-  const addToWishlist = (product) => {
-    // Check if item already exists
-    const existingItem = wishlistItems.value.find(item => item.id === product.id)
-    
-    if (!existingItem) {
-      wishlistItems.value.push({
-        ...product,
-        addedAt: new Date().toISOString()
-      })
-      saveWishlistToStorage()
-      return true // Successfully added
-    }
-    
-    return false // Already exists
-  }
-
-  const removeFromWishlist = (productId) => {
-    const index = wishlistItems.value.findIndex(item => item.id === productId)
-    
-    if (index > -1) {
-      wishlistItems.value.splice(index, 1)
-      saveWishlistToStorage()
-      return true // Successfully removed
-    }
-    
-    return false // Item not found
-  }
-
-  const toggleWishlist = (product) => {
-    const existingItem = wishlistItems.value.find(item => item.id === product.id)
-    
-    if (existingItem) {
-      return removeFromWishlist(product.id)
-    } else {
-      return addToWishlist(product)
-    }
-  }
-
-  const isInWishlist = (productId) => {
-    return wishlistItems.value.some(item => item.id === productId)
-  }
-
-  const clearWishlist = () => {
-    wishlistItems.value = []
-    saveWishlistToStorage()
-  }
-
-  const moveWishlistToCart = (productId) => {
-    const item = wishlistItems.value.find(item => item.id === productId)
-    
-    if (item) {
-      // Import cart store dynamically to avoid circular dependency
-      import('./cart.js').then(({ useCartStore }) => {
-        const cartStore = useCartStore()
-        cartStore.addItem(item)
-        removeFromWishlist(productId)
-      })
-    }
-  }
-
-  const moveAllWishlistToCart = () => {
-    // Import cart store dynamically to avoid circular dependency
-    import('./cart.js').then(({ useCartStore }) => {
-      const cartStore = useCartStore()
-      
-      // Add all items to cart
-      wishlistItems.value.forEach(item => {
-        cartStore.addItem(item)
-      })
-      
-      // Clear wishlist
-      clearWishlist()
-    })
-  }
-
-  // Wishlist Storage methods
-  const saveWishlistToStorage = () => {
-    localStorage.setItem('auro_wishlist', JSON.stringify(wishlistItems.value))
-  }
-
-  const loadWishlistFromStorage = () => {
-    const saved = localStorage.getItem('auro_wishlist')
-    if (saved) {
-      try {
-        wishlistItems.value = JSON.parse(saved)
-      } catch (error) {
-        console.error('Error loading wishlist from storage:', error)
-        wishlistItems.value = []
-      }
-    }
-  }
-
-  // Initialize wishlist from localStorage when store is created
-  loadWishlistFromStorage()
-
   // Clear all data
   const clearAll = () => {
     products.value = []
@@ -480,8 +376,6 @@ export const useProductStore = defineStore('product', () => {
     clearError()
   }
 
-  // Initialize
-  loadWishlistFromStorage()
 
   return {
     // Product State
@@ -495,8 +389,6 @@ export const useProductStore = defineStore('product', () => {
     error,
     pagination,
 
-    // Wishlist State
-    wishlistItems,
 
     // Product Getters
     hasProducts,
@@ -505,11 +397,6 @@ export const useProductStore = defineStore('product', () => {
     productCount,
     featuredCount,
     categoryCount,
-
-    // Wishlist Getters
-    wishlistCount,
-    isWishlistEmpty,
-    wishlistItemIds,
 
     // Product Actions
     fetchProducts,
@@ -529,15 +416,5 @@ export const useProductStore = defineStore('product', () => {
     clearAll,
     clearError,
 
-    // Wishlist Actions
-    addToWishlist,
-    removeFromWishlist,
-    toggleWishlist,
-    isInWishlist,
-    clearWishlist,
-    moveWishlistToCart,
-    moveAllWishlistToCart,
-    saveWishlistToStorage,
-    loadWishlistFromStorage
   }
 })

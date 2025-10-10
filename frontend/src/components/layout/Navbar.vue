@@ -116,8 +116,8 @@
           <li class="nav-item">
             <router-link class="nav-link modern-nav-link sale-link" to="/category/sale">
               <div class="sale-container">
+                <span class="sale-text">SALE</span>
                 <span class="sale-percent">-50%</span>
-                <span class="nav-text sale-text">SALE</span>
               </div>
             </router-link>
           </li>
@@ -140,17 +140,7 @@
         </div>
         
         <!-- Right Menu -->
-        <ul class="navbar-nav">
-          <!-- Wishlist -->
-          <li class="nav-item">
-            <router-link class="nav-link modern-nav-link position-relative" to="/wishlist">
-              <i class="ph-heart"></i>
-              <span v-if="productStore.wishlistCount > 0" class="badge modern-cart-badge">
-                {{ productStore.wishlistCount }}
-              </span>
-            </router-link>
-          </li>
-          
+        <ul class="navbar-nav">          
           <!-- Cart -->
           <li class="nav-item">
             <button 
@@ -168,14 +158,12 @@
           <li v-if="!isLoggedIn" class="nav-item">
             <button class="nav-link modern-nav-link login-btn" @click="openLoginPopup">
               <i class="ph-user"></i>
-              <span class="d-none d-lg-inline ms-1">Đăng nhập</span>
             </button>
           </li>
           
           <li v-else class="nav-item dropdown dropdown-hover">
             <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
               <i class="ph-user-circle"></i>
-              <span class="d-none d-lg-inline ms-1">{{ user?.name || 'Tài khoản' }}</span>
             </a>
             <ul class="dropdown-menu dropdown-menu-end modern-dropdown">
               <li>
@@ -226,7 +214,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
 import { useProductStore } from '../../stores/product'
@@ -308,6 +296,37 @@ const handleSearch = () => {
   }
 }
 
+// Scroll behavior for promo bar
+let lastScrollTop = 0
+let isPromoBarVisible = true
+
+const handleScroll = () => {
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+  const promoBar = document.querySelector('.top-bar')
+  const navbar = document.querySelector('.modern-navbar')
+  const mainContent = document.querySelector('.main-content')
+  
+  if (scrollTop > lastScrollTop && scrollTop > 100) {
+    // Scrolling down - hide promo bar
+    if (isPromoBarVisible) {
+      promoBar.style.transform = 'translateY(-100%)'
+      navbar.style.marginTop = '0px'
+      if (mainContent) mainContent.style.paddingTop = '55px' // Reduced padding when promo bar is hidden
+      isPromoBarVisible = false
+    }
+  } else {
+    // Scrolling up - show promo bar
+    if (!isPromoBarVisible) {
+      promoBar.style.transform = 'translateY(0)'
+      navbar.style.marginTop = '25px'
+      if (mainContent) mainContent.style.paddingTop = '80px' // Full padding when promo bar is visible
+      isPromoBarVisible = true
+    }
+  }
+  
+  lastScrollTop = scrollTop <= 0 ? 0 : scrollTop
+}
+
 // Check for register popup trigger on mount
 onMounted(() => {
   const showRegisterPopupFlag = localStorage.getItem('auro_show_register_popup')
@@ -318,6 +337,14 @@ onMounted(() => {
   
   // Initialize dropdown hover behavior
   initializeDropdownHover()
+  
+  // Add scroll listener
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 
 // Initialize dropdown hover behavior
@@ -340,19 +367,21 @@ const initializeDropdownHover = () => {
 .top-bar {
   background: var(--auro-primary);
   color: white;
-  padding: 0.5rem 0;
-  font-size: 0.875rem;
+  padding: 0.3rem 0;
+  font-size: 0.75rem;
   font-weight: 500;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1050;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
 }
 
 .top-bar-text {
   color: white;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -360,12 +389,13 @@ const initializeDropdownHover = () => {
 .modern-navbar {
   background: white !important;
   border-bottom: 1px solid var(--auro-border);
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   transition: all 0.3s ease;
   text-transform: uppercase;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  margin-top: 40px; /* Account for top bar */
+  margin-top: 25px; /* Account for top bar */
+  transition: margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .modern-navbar:hover {
@@ -479,22 +509,33 @@ router-link:focus-visible {
 }
 
 .sale-container {
+  position: relative;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
-}
-
-.sale-percent {
-  font-size: 0.75rem;
-  color: #dc3545;
-  font-weight: 700;
-  line-height: 1;
+  justify-content: center;
 }
 
 .sale-text {
+  font-size: 1.2rem;
+  font-weight: 900;
   color: #dc3545 !important;
-  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.sale-percent {
+  position: absolute;
+  top: -8px;
+  right: -12px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #dc3545;
+  line-height: 1;
+  background: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .modern-nav-link::before {
@@ -885,4 +926,45 @@ router-link:focus-visible {
   box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
   border: 2px solid white;
 }
+/* Cart icon */
+.cart-trigger i {
+  font-size: 1.4rem;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.cart-trigger:hover i {
+  font-size: 1.5rem !important;
+  color: #B8860B;
+  transform: scale(1.1);
+}
+
+/*Login icon */
+.login-btn i {
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover i {
+  font-size: 1.5rem !important;
+  color: #B8860B !important;
+  transform: scale(1.1);
+}
+
+.ph-user-circle {
+  font-size: 1.4rem !important;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.modern-nav-link:hover .ph-user-circle {
+  font-size: 1.5rem !important;
+  color: #B8860B !important;
+  transform: scale(1.1);
+}
+
 </style>

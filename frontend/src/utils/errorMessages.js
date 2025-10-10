@@ -85,10 +85,6 @@ export const SUCCESS_MESSAGES = {
   ORDER_UPDATED: 'Cập nhật đơn hàng thành công!',
   ORDER_CANCELLED: 'Hủy đơn hàng thành công!',
   
-  WISHLIST_ADDED: 'Đã thêm vào danh sách yêu thích!',
-  WISHLIST_REMOVED: 'Đã xóa khỏi danh sách yêu thích!',
-  WISHLIST_CLEARED: 'Đã xóa tất cả sản phẩm khỏi danh sách yêu thích!',
-  
   REVIEW_ADDED: 'Đánh giá thành công!',
   REVIEW_UPDATED: 'Cập nhật đánh giá thành công!',
   REVIEW_DELETED: 'Xóa đánh giá thành công!',

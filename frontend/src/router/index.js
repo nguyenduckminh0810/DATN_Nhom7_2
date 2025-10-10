@@ -9,7 +9,6 @@ const Checkout = () => import(/* webpackChunkName: "checkout" */ '../views/Check
 const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
 const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
-const Wishlist = () => import(/* webpackChunkName: "wishlist" */ '../views/Wishlist.vue')
 const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
 
 // Admin routes - lazy loaded separately with admin chunk
@@ -82,12 +81,6 @@ const router = createRouter({
       name: 'search',
       component: SearchResults,
       meta: { title: 'Tìm kiếm - AURO' }
-    },
-    {
-      path: '/wishlist',
-      name: 'wishlist',
-      component: Wishlist,
-      meta: { title: 'Danh sách yêu thích - AURO' }
     },
     {
       path: '/admin',

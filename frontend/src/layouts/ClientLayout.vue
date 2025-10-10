@@ -32,6 +32,8 @@ import Footer from '../components/layout/Footer.vue'
 
 .main-content {
   flex: 1;
+  padding-top: 80px; /* Account for fixed navbar height */
+  transition: padding-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Page transition animations */

@@ -204,12 +204,6 @@
                   <span v-else-if="currentVariantStock <= 0">Hết hàng</span>
                   <span v-else>Thêm vào giỏ hàng</span>
                 </button>
-                <WishlistButton
-                  :product="product"
-                  variant="button"
-                  size="lg"
-                  :show-text="true"
-                />
               </div>
             </div>
 
@@ -424,9 +418,6 @@
                     <div class="position-absolute top-0 end-0 m-2">
                       <span class="badge discount-badge">-{{ relatedProduct.discount }}%</span>
                     </div>
-                    <div class="position-absolute top-0 start-0 m-2">
-                      <WishlistButton :product="relatedProduct" variant="icon" size="sm" />
-                    </div>
                     <div class="product-overlay">
                       <button class="btn btn-primary btn-sm" @click="addToCart(relatedProduct)">
                         <i class="ph-shopping-cart me-1"></i>Thêm vào giỏ
@@ -472,7 +463,6 @@ import { useCartStore } from '../stores/cart'
 import { useProductStore } from '../stores/product'
 import ImageGallery from '../components/common/ImageGallery.vue'
 import LazyImage from '../components/common/LazyImage.vue'
-import WishlistButton from '../components/product/WishlistButton.vue'
 import { 
   getColorName, 
   getColorHex,

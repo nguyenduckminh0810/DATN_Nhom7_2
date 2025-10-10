@@ -6,7 +6,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "tai_khoan")
+@Table(name = "tai_khoan", uniqueConstraints = {
+    @UniqueConstraint(columnNames = "email"),
+    @UniqueConstraint(columnNames = "so_dien_thoai")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

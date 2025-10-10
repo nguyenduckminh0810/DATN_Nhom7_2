@@ -31,11 +31,6 @@
           class="product-image-hover"
           @click="navigateToDetail"
         />
-        <!-- Wishlist Button -->
-        <button class="wishlist-button" @click="toggleWishlist" :class="{ active: isInWishlist }">
-          <i class="ph-heart-fill" v-if="isInWishlist"></i>
-          <i class="ph-heart" v-else></i>
-        </button>
         
         <div v-if="discount" class="discount-badge">
           -{{ discount }}%
@@ -214,10 +209,6 @@ const addToCartText = computed(() => {
   return 'Thêm vào giỏ'
 })
 
-// Wishlist computed
-const isInWishlist = computed(() => {
-  return productStore.isInWishlist(props.id)
-})
 
 // Methods
 const formatPrice = (price) => {
@@ -235,7 +226,12 @@ const getColorName = (color) => {
     '#8b4513': 'Nâu',
     '#000080': 'Xanh navy',
     '#dc143c': 'Đỏ đậm',
-    '#228b22': 'Xanh rừng'
+    '#228b22': 'Xanh rừng',
+    '#ff69b4': 'Hồng',  
+    '#ffc107': 'Vàng',  
+    '#fd7e14': 'Cam',   
+    '#6f42c1': 'Tím',   
+    '#f5f5dc': 'Be'     
   }
   return colorNames[color] || color
 }
@@ -327,30 +323,6 @@ const handleGlobalMouseLeave = (event) => {
   }
 }
 
-// Wishlist methods
-const toggleWishlist = (event) => {
-  // Prevent event bubbling
-  event.preventDefault()
-  event.stopPropagation()
-  
-  const product = {
-    id: props.id,
-    name: props.name,
-    image: props.img,
-    price: props.priceNow,
-    originalPrice: props.priceOld,
-    discount: props.discount
-  }
-  
-  console.log('🎯 Toggle wishlist for product:', product.id, product.name)
-  console.log('🎯 Current wishlist items:', productStore.wishlistItems.map(item => item.id))
-  
-  const success = productStore.toggleWishlist(product)
-  
-  console.log('🎯 Toggle result:', success)
-  console.log('🎯 Wishlist after toggle:', productStore.wishlistItems.map(item => item.id))
-  console.log('🎯 Is in wishlist:', productStore.isInWishlist(props.id))
-}
 </script>
 
 <style scoped>
@@ -474,60 +446,6 @@ const toggleWishlist = (event) => {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(184, 134, 11, 0.4);
   background: linear-gradient(135deg, #DAA520 0%, #FFD700 100%);
-}
-
-/* Wishlist Button */
-.wishlist-button {
-  position: absolute;
-  top: 0.75rem;
-  left: 0.75rem;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid white;
-  background: rgba(255, 255, 255, 0.9);
-  color: #6c757d;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-}
-
-.wishlist-button:hover {
-  background: rgba(255, 255, 255, 1);
-  color: #dc3545;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-}
-
-.wishlist-button.active {
-  background: #dc3545;
-  color: white;
-  border-color: #dc3545;
-}
-
-.wishlist-button.active:hover {
-  background: #c82333;
-  border-color: #c82333;
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-}
-
-.wishlist-button i {
-  font-size: 18px;
-  transition: all 0.3s ease;
-}
-
-.wishlist-button:hover i {
-  transform: scale(1.1);
-}
-
-.wishlist-button.active i {
-  animation: heartBeat 0.6s ease-in-out;
 }
 
 @keyframes heartBeat {
@@ -689,22 +607,31 @@ const toggleWishlist = (event) => {
   position: relative;
 }
 
-.color-swatch::after {
-  content: attr(title);
+
+.color-swatch:hover .color-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+
+.color-tooltip {
   position: absolute;
-  bottom: -20px;
+  bottom: -40px;
   left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.8);
+  transform: translateX(-50%) translateY(-5px);
+  background: rgba(0, 0, 0, 0.9);
   color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   font-size: 0.75rem;
+  font-weight: 500;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
-  z-index: 10;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .color-swatch:hover::after {
