@@ -45,8 +45,8 @@ public class SecurityConfig {
                         // .requestMatchers("/api/auth/**").permitAll()
 
                         .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/san-pham/**").permitAll()
+                        .requestMatchers("/api/categories/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
 
                         // Guest endpoints - khách vãng lai
