@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 // Lazy load views for better performance with code splitting
 const Home = () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
 const Category = () => import(/* webpackChunkName: "category" */ '../views/Category.vue')
-const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/ProductDetailNew.vue')
+const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/ProductDetail.vue')
 const Cart = () => import(/* webpackChunkName: "cart" */ '../views/Cart.vue')
 const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')

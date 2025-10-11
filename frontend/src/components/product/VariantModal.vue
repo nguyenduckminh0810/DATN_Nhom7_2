@@ -157,6 +157,11 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'add-to-cart'])
 
+// Watch isOpen prop for debugging (can be removed in production)
+watch(() => props.isOpen, (newValue, oldValue) => {
+  // Modal state changed
+}, { immediate: true })
+
 const { addToCartWithValidation, trackAddToCart } = useCart()
 
 // Local state
@@ -350,19 +355,20 @@ watch(quantity, (newQty) => {
 
 <style scoped>
 .variant-modal-overlay {
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
-  z-index: 1050;
-  display: flex;
+  z-index: 9999999 !important;
+  display: flex !important;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   animation: fadeIn 0.3s ease;
+  pointer-events: auto !important;
 }
 
 .variant-modal-container {
@@ -375,6 +381,24 @@ watch(quantity, (newQty) => {
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease;
+  z-index: 9999999 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure modal is visible and on top */
+.variant-modal-overlay {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+  z-index: 9999999 !important;
+  pointer-events: auto !important;
+}
+
+.variant-modal-container {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
+  pointer-events: auto !important;
 }
 
 .close-btn {

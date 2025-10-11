@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useCart } from '@/composables/useCart'
 
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
@@ -281,46 +281,138 @@ const toggleSelectAll = () => {
 const toggleDropdown = (event) => {
   event.preventDefault()
   const dropdown = event.target.closest('.dropdown')
+  const cartItem = dropdown.closest('.cart-item')
   const isOpen = dropdown.classList.contains('show')
   
   // Close all other dropdowns
   document.querySelectorAll('.dropdown.show').forEach(d => {
     if (d !== dropdown) {
       d.classList.remove('show')
+      const menu = d.querySelector('.dropdown-menu')
+      const item = d.closest('.cart-item')
+      if (menu) {
+        menu.style.top = 'auto'
+        menu.style.left = 'auto'
+        menu.style.bottom = 'auto'
+        menu.style.transform = 'none'
+      }
+      if (item) {
+        item.classList.remove('show-dropdown')
+      }
     }
   })
   
   // Toggle current dropdown
   if (isOpen) {
     dropdown.classList.remove('show')
-  } else {
-    dropdown.classList.add('show')
-    
-    // Check if dropdown should open upward (for last items)
+    cartItem.classList.remove('show-dropdown')
     const dropdownMenu = dropdown.querySelector('.dropdown-menu')
-    const rect = dropdownMenu.getBoundingClientRect()
-    const viewportHeight = window.innerHeight
-    
-    // If dropdown would go below viewport, open upward
-    if (rect.bottom > viewportHeight - 50) {
+    if (dropdownMenu) {
       dropdownMenu.style.top = 'auto'
-      dropdownMenu.style.bottom = '100%'
-      dropdownMenu.style.transform = 'translateY(-0.5rem)'
-    } else {
-      dropdownMenu.style.top = '100%'
+      dropdownMenu.style.left = 'auto'
       dropdownMenu.style.bottom = 'auto'
       dropdownMenu.style.transform = 'none'
     }
+  } else {
+    dropdown.classList.add('show')
+    cartItem.classList.add('show-dropdown')
+    
+    // Calculate position for fixed dropdown
+    const dropdownMenu = dropdown.querySelector('.dropdown-menu')
+    const button = dropdown.querySelector('.dropdown-toggle')
+    const buttonRect = button.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const viewportWidth = window.innerWidth
+    
+    // Calculate position
+    let top = buttonRect.bottom + window.scrollY + 4
+    let left = buttonRect.left + window.scrollX
+    
+    // Check if dropdown should open upward (for last items)
+    const dropdownHeight = 200 // Estimated height
+    if (top + dropdownHeight > viewportHeight + window.scrollY - 50) {
+      top = buttonRect.top + window.scrollY - dropdownHeight - 4
+    }
+    
+    // Check if dropdown goes beyond right edge
+    const dropdownWidth = 160 // min-width
+    if (left + dropdownWidth > viewportWidth - 10) {
+      left = viewportWidth - dropdownWidth - 10
+    }
+    
+    // Set position
+    dropdownMenu.style.top = top + 'px'
+    dropdownMenu.style.left = left + 'px'
   }
 }
 
 // Close dropdown when clicking outside
-document.addEventListener('click', (event) => {
+const handleOutsideClick = (event) => {
   if (!event.target.closest('.dropdown')) {
     document.querySelectorAll('.dropdown.show').forEach(dropdown => {
       dropdown.classList.remove('show')
+      const menu = dropdown.querySelector('.dropdown-menu')
+      const item = dropdown.closest('.cart-item')
+      if (menu) {
+        menu.style.top = 'auto'
+        menu.style.left = 'auto'
+        menu.style.bottom = 'auto'
+        menu.style.transform = 'none'
+      }
+      if (item) {
+        item.classList.remove('show-dropdown')
+      }
     })
   }
+}
+
+// Close dropdown when scrolling
+const handleScroll = () => {
+  document.querySelectorAll('.dropdown.show').forEach(dropdown => {
+    dropdown.classList.remove('show')
+    const menu = dropdown.querySelector('.dropdown-menu')
+    const item = dropdown.closest('.cart-item')
+    if (menu) {
+      menu.style.top = 'auto'
+      menu.style.left = 'auto'
+      menu.style.bottom = 'auto'
+      menu.style.transform = 'none'
+    }
+    if (item) {
+      item.classList.remove('show-dropdown')
+    }
+  })
+}
+
+// Close dropdown when window resizes
+const handleResize = () => {
+  document.querySelectorAll('.dropdown.show').forEach(dropdown => {
+    dropdown.classList.remove('show')
+    const menu = dropdown.querySelector('.dropdown-menu')
+    const item = dropdown.closest('.cart-item')
+    if (menu) {
+      menu.style.top = 'auto'
+      menu.style.left = 'auto'
+      menu.style.bottom = 'auto'
+      menu.style.transform = 'none'
+    }
+    if (item) {
+      item.classList.remove('show-dropdown')
+    }
+  })
+}
+
+// Add event listeners with proper cleanup
+onMounted(() => {
+  document.addEventListener('click', handleOutsideClick)
+  document.addEventListener('scroll', handleScroll, true)
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleOutsideClick)
+  document.removeEventListener('scroll', handleScroll, true)
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -360,7 +452,7 @@ document.addEventListener('click', (event) => {
 .section-body {
   overflow: visible !important;
   position: relative;
-  z-index: 1;
+  z-index: 5;
 }
 
 .section-header h5 {
@@ -436,7 +528,7 @@ document.addEventListener('click', (event) => {
   border-bottom: 1px solid #f0f0f0;
   overflow: visible !important;
   position: relative;
-  z-index: 1;
+  z-index: 10;
 }
 
 .cart-item:last-child {
@@ -506,10 +598,10 @@ document.addEventListener('click', (event) => {
 
 .variant-controls .dropdown-menu {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 99999 !important;
+  position: fixed !important;
+  top: auto !important;
+  left: auto !important;
+  z-index: 9999999 !important;
   min-width: 160px;
   padding: 0.5rem 0;
   margin: 0.125rem 0 0;
@@ -523,7 +615,9 @@ document.addEventListener('click', (event) => {
 }
 
 .variant-controls .dropdown.show .dropdown-menu {
-  display: block;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .variant-controls .dropdown-toggle::after {
@@ -856,6 +950,108 @@ document.addEventListener('click', (event) => {
     justify-content: center;
     margin: 0 auto;
   }
-  
+}
+
+/* Fix dropdown z-index issues - Override Bootstrap CSS */
+.variant-controls .dropdown-menu {
+  pointer-events: auto !important;
+  isolation: isolate !important;
+  contain: layout style !important;
+  z-index: 9999999 !important;
+  position: fixed !important;
+}
+
+/* Override Bootstrap dropdown z-index completely */
+.dropdown-menu {
+  z-index: 9999999 !important;
+}
+
+.variant-controls .dropdown.show .dropdown-menu {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Prevent any stacking context issues */
+.cart-item {
+  isolation: isolate !important;
+  position: relative;
+  z-index: 1;
+}
+
+.variant-controls {
+  isolation: isolate !important;
+  position: relative;
+  z-index: 10;
+}
+
+.variant-controls .dropdown {
+  isolation: isolate !important;
+  position: relative;
+  z-index: 1000;
+}
+
+.variant-controls .dropdown.show {
+  z-index: 1001;
+}
+
+/* Nuclear option - Override ALL possible z-index conflicts */
+.cart-items-section * {
+  position: relative;
+}
+
+.cart-items-section .variant-controls .dropdown-menu {
+  position: fixed !important;
+  z-index: 9999999 !important;
+  transform: translateZ(0) !important;
+  will-change: transform !important;
+}
+
+/* Force all cart items to lower z-index */
+.cart-item:not(.show-dropdown) {
+  z-index: 1 !important;
+}
+
+.cart-item.show-dropdown {
+  z-index: 9999998 !important;
+}
+
+/* Ensure no element can interfere */
+.cart-items-section .row,
+.cart-items-section .col-1,
+.cart-items-section .col-2,
+.cart-items-section .col-5 {
+  z-index: 1 !important;
+  position: relative !important;
+}
+
+.cart-items-section .variant-controls {
+  z-index: 9999998 !important;
+  position: relative !important;
+}
+
+/* Final nuclear option - Override Bootstrap completely */
+.cart-items-section .dropdown-menu {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  display: none;
+}
+
+.cart-items-section .dropdown.show .dropdown-menu {
+  z-index: 9999999 !important;
+  position: fixed !important;
+  display: block !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Force hardware acceleration */
+.cart-items-section .dropdown-menu {
+  transform: translateZ(0) !important;
+  will-change: transform, top, left !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
 }
 </style>

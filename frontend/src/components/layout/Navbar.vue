@@ -374,7 +374,7 @@ const initializeDropdownHover = () => {
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1050;
+  z-index: 1000;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateY(0);
 }
@@ -396,6 +396,7 @@ const initializeDropdownHover = () => {
   font-weight: 500;
   margin-top: 25px; /* Account for top bar */
   transition: margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
 }
 
 .modern-navbar:hover {
