@@ -75,7 +75,7 @@
           <form @submit.prevent="handleLogin">
             <div class="form-group">
               <input
-                v-model="form.login"
+                v-model="values.login"
                 type="text"
                 class="form-input"
                 placeholder="Email/SĐT của bạn"
@@ -86,13 +86,11 @@
             <div class="form-group">
               <input
                 :type="showPassword ? 'text' : 'password'"
-                v-model="form.password"
+                  v-model="values.matKhau"
                 class="form-input"
                 placeholder="Mật khẩu"
                 required
               />
-              /* Add font-family to the container or body if needed */ .login-popup-container {
-              font-family: var(--auro-body-font);
               <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                 <span class="toggle-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
               </button>
@@ -179,10 +177,13 @@ const handleSocialLogin = (provider) => {
 const handleLogin = async () => {
   const result = await handleSubmit(async (formData) => {
     try {
-      const response = await userStore.login({
-        email: formData.email,
-        password: formData.password,
-      })
+      // Backend expects 'login' and 'matKhau'
+      const payload = {
+        login: formData.login,
+        matKhau: formData.matKhau,
+      }
+
+      const response = await userStore.login(payload)
 
       if (response.success) {
         success('Đăng nhập thành công!')
