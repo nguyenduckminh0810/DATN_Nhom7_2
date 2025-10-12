@@ -8,6 +8,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -22,16 +24,18 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeRoles() {
-        // Chỉ init nếu table vai_tro đang rỗng
+        // Only seed when table is empty to avoid duplicates
         if (vaiTroRepository.count() == 0) {
-            log.info("=== Initializing default roles ===");
-            
-            vaiTroRepository.save(new VaiTro(null, "CUSTOMER", "Khách hàng"));
-            vaiTroRepository.save(new VaiTro(null, "GUEST", "Khách vãng lai"));
-            vaiTroRepository.save(new VaiTro(null, "STAFF", "Nhân viên"));
-            vaiTroRepository.save(new VaiTro(null, "ADMIN", "Quản trị viên"));
-            
-            log.info("=== ✅ 4 roles created successfully! ===");
+            log.info("=== Initializing default roles (via JPA) ===");
+
+            VaiTro customer = new VaiTro(null, "CUSTOMER", "Khách hàng");
+            VaiTro guest = new VaiTro(null, "GUEST", "Khách vãng lai");
+            VaiTro staff = new VaiTro(null, "STAFF", "Nhân viên");
+            VaiTro admin = new VaiTro(null, "ADMIN", "Quản trị viên");
+
+            vaiTroRepository.saveAll(Arrays.asList(customer, guest, staff, admin));
+
+            log.info("=== ✅ 4 roles created successfully ===");
         } else {
             log.info("=== Roles already exist, skipping initialization ===");
         }

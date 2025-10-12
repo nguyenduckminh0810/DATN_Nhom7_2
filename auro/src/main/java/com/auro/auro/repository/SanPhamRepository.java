@@ -4,40 +4,16 @@ import com.auro.auro.model.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-
-import java.util.List;
-import java.util.Optional;
 
 public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
-    Page<SanPham> findByDanhMuc_Id(Long idDanhMuc, Pageable pageable);
+    Page<SanPham> findByTenContainingIgnoreCaseOrMoTaContainingIgnoreCase(String ten, String moTa, Pageable pageable);
 
-    Page<SanPham> findByTenContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<SanPham> findByDanhMuc_Id(Long danhMucId, Pageable pageable);
 
-    Page<SanPham> findByTrangThaiTrue(Pageable pageable);
+    boolean existsBySlug(String slug);
 
-    long countByDanhMuc_Id(Long idDanhMuc);
-    
-    // Tìm theo slug
-    Optional<SanPham> findBySlug(String slug);
-    
-    // Methods cho Service
-    Page<SanPham> findByTenContainingIgnoreCaseAndDanhMucId(String keyword, Long danhMucId, Pageable pageable);
-    Page<SanPham> findByDanhMucId(Long danhMucId, Pageable pageable);
-    List<SanPham> findTop8ByTrangThaiOrderByTaoLucDesc(Boolean trangThai);
-    List<SanPham> findByDanhMucIdAndTrangThai(Long danhMucId, Boolean trangThai);
-    
-    // Tìm kiếm nâng cao
-    @Query("""
-            SELECT s FROM SanPham s 
-            WHERE s.trangThai = true 
-            AND (:keyword IS NULL OR LOWER(s.ten) LIKE LOWER(CONCAT('%', :keyword, '%')))
-            AND (:thuongHieu IS NULL OR LOWER(s.thuongHieu) LIKE LOWER(CONCAT('%', :thuongHieu, '%')))
-            AND (:idDanhMuc IS NULL OR s.danhMuc.id = :idDanhMuc)
-            """)
-    Page<SanPham> findAdvanced(@Param("keyword") String keyword, 
-                               @Param("thuongHieu") String thuongHieu, 
-                               @Param("idDanhMuc") Long idDanhMuc, 
-                               Pageable pageable);
+    boolean existsBySlugAndIdNot(String slug, Long id);
+
+    Page<SanPham> findByDanhMuc_IdAndTenContainingIgnoreCaseOrDanhMuc_IdAndMoTaContainingIgnoreCase(
+            Long danhMucId1, String ten, Long danhMucId2, String moTa, Pageable pageable);
 }
