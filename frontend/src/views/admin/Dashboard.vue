@@ -147,53 +147,121 @@
       <section class="analytics-section">
         <div class="analytics-grid">
           <div class="chart-card main-chart">
-        <div class="chart-header">
+            <div class="chart-header">
               <div class="chart-title-section">
-                <h3>Phân tích doanh thu & đơn hàng</h3>
-                <div class="chart-metrics-toggle">
-                  <label class="metric-toggle">
-                    <input type="checkbox" v-model="showRevenue" @change="updateChartData">
-                    <span>Doanh thu</span>
-            </label>
-                  <label class="metric-toggle">
-                    <input type="checkbox" v-model="showOrders" @change="updateChartData">
-                    <span>Số đơn hàng</span>
-                  </label>
-                  <label class="metric-toggle">
-                    <input type="checkbox" v-model="showProfit" @change="updateChartData">
-                    <span>Lợi nhuận</span>
-                  </label>
-                  <label class="metric-toggle">
-                    <input type="checkbox" v-model="showComparison" @change="updateChartData">
-                    <span>So sánh kỳ trước</span>
-            </label>
+                <div class="chart-title-row">
+                  <h3 class="chart-title">Phân tích doanh thu & đơn hàng</h3>
+                  <div class="growth-badge">
+                    <i class="bi bi-graph-up"></i>
+                    +{{ growthRate }}% tăng trưởng
+                  </div>
                 </div>
               </div>
               <div class="chart-controls">
-                <div class="control-group">
-                  <label class="control-label">Khoảng thời gian:</label>
-                  <select class="time-selector" v-model="chartTimeRange" @change="updateChartData">
-                    <option value="7days">7 ngày qua</option>
-                    <option value="30days">30 ngày qua</option>
-                    <option value="3months">3 tháng qua</option>
-                    <option value="year">Năm nay</option>
-                    <option value="custom">Tùy chỉnh</option>
-                  </select>
+                <div class="metric-toggles">
+                  <button 
+                    :class="['metric-toggle', { active: selectedMetric === 'revenue' }]"
+                    @click="selectedMetric = 'revenue'"
+                  >
+                    <i class="bi bi-currency-dollar"></i>
+                    Doanh thu
+                  </button>
+                  <button 
+                    :class="['metric-toggle', { active: selectedMetric === 'orders' }]"
+                    @click="selectedMetric = 'orders'"
+                  >
+                    <i class="bi bi-cart3"></i>
+                    Đơn hàng
+                  </button>
+                  <button 
+                    :class="['metric-toggle', { active: selectedMetric === 'customers' }]"
+                    @click="selectedMetric = 'customers'"
+                  >
+                    <i class="bi bi-people"></i>
+                    Khách hàng
+                  </button>
                 </div>
-                <div class="control-group">
-                  <label class="control-label">Độ phân giải:</label>
-                  <select class="granularity-selector" v-model="chartGranularity" @change="updateChartData">
-                    <option value="daily">Theo ngày</option>
-                    <option value="weekly">Theo tuần</option>
-                    <option value="monthly">Theo tháng</option>
-                  </select>
+                
+                <!-- Beautiful Date Picker for Comparison -->
+                <div class="date-picker-container">
+                  <button 
+                    type="button" 
+                    class="date-picker-btn"
+                    @click="showComparisonDatePicker = !showComparisonDatePicker"
+                  >
+                    <div class="date-picker-icon">
+                      <i class="bi bi-calendar3"></i>
+                    </div>
+                    <div class="date-picker-content">
+                      <div class="date-picker-label">So sánh với</div>
+                      <div class="date-picker-value">{{ formatDate(comparisonDate) }}</div>
+                    </div>
+                    <div class="date-picker-arrow">
+                      <i class="bi bi-chevron-down" :class="{ 'rotated': showComparisonDatePicker }"></i>
+                    </div>
+                  </button>
+                  
+                  <div v-if="showComparisonDatePicker" class="date-picker-dropdown" @click.stop>
+                    <div class="date-picker-header">
+                      <h6>Chọn ngày so sánh</h6>
+                      <button type="button" class="close-btn" @click="showComparisonDatePicker = false">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </div>
+                    
+                    <div class="date-picker-body">
+                      <div class="quick-options">
+                        <button 
+                          type="button" 
+                          class="quick-option"
+                          @click="selectQuickDate('yesterday')"
+                        >
+                          <i class="bi bi-calendar-check"></i>
+                          Hôm qua
+                        </button>
+                        <button 
+                          type="button" 
+                          class="quick-option"
+                          @click="selectQuickDate('2days')"
+                        >
+                          <i class="bi bi-calendar2"></i>
+                          2 ngày trước
+                        </button>
+                        <button 
+                          type="button" 
+                          class="quick-option"
+                          @click="selectQuickDate('week')"
+                        >
+                          <i class="bi bi-calendar-week"></i>
+                          1 tuần trước
+                        </button>
+                      </div>
+                      
+                      <div class="date-separator">
+                        <span>Hoặc chọn ngày cụ thể</span>
+                      </div>
+                      
+                      <div class="custom-date">
+                        <input 
+                          type="date" 
+                          v-model="comparisonDate" 
+                          class="date-input"
+                          :max="new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]"
+                          @change="showComparisonDatePicker = false"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <button class="chart-action-btn" @click="exportChartData">
-                  <i class="ph bi bi-download"></i>
-                  <span>Xuất dữ liệu</span>
-                </button>
-          </div>
-        </div>
+                
+                <div class="chart-actions">
+                  <button class="btn btn-outline-primary btn-sm" @click="exportChartData">
+                    <i class="bi bi-download"></i>
+                    Xuất biểu đồ
+                  </button>
+                </div>
+              </div>
+            </div>
         <div class="chart-content">
           <Chart
             type="line"
@@ -399,12 +467,17 @@ import Chart from '@/components/admin/Chart.vue'
 const showQuickAdd = ref(false)
 
 // Chart enhancement state
+const selectedMetric = ref('revenue')
+const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000))
+const showComparisonDatePicker = ref(false)
+const chartTimeRange = ref('30days')
+const chartGranularity = ref('daily')
+
+// Chart display toggles
 const showRevenue = ref(true)
 const showOrders = ref(true)
 const showProfit = ref(false)
 const showComparison = ref(false)
-const chartTimeRange = ref('30days')
-const chartGranularity = ref('daily')
 
 // Ecommerce Data
 const topProducts = ref([
@@ -513,68 +586,98 @@ const categoryPerformance = ref([
 ])
 
 
-// Enhanced chart data
+// Enhanced chart data - Analytics style
 const enhancedChartData = computed(() => {
   const labels = generateLabels()
   const datasets = []
   
-  if (showRevenue.value) {
+  // Main dataset based on selected metric
+  if (selectedMetric.value === 'revenue') {
     datasets.push({
       label: 'Doanh thu (triệu VNĐ)',
       data: getRevenueData(),
-      borderColor: '#3b82f6',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-      borderWidth: 3,
-      fill: showRevenue.value && !showOrders.value,
-      tension: 0.4,
-      pointRadius: 4,
-      pointBackgroundColor: '#3b82f6',
-      yAxisID: 'y'
-    })
-  }
-  
-  if (showOrders.value) {
-    datasets.push({
-      label: 'Số đơn hàng',
-      data: getOrdersData(),
-      borderColor: '#10b981',
-      backgroundColor: 'rgba(16, 185, 129, 0.1)',
-      borderWidth: 3,
-      fill: showOrders.value && !showRevenue.value,
-      tension: 0.4,
-      pointRadius: 4,
-      pointBackgroundColor: '#10b981',
-      yAxisID: 'y1'
-    })
-  }
-  
-  if (showProfit.value) {
-    datasets.push({
-      label: 'Lợi nhuận (triệu VNĐ)',
-      data: getProfitData(),
-      borderColor: '#f59e0b',
-      backgroundColor: 'rgba(245, 158, 11, 0.1)',
-      borderWidth: 3,
+      borderColor: '#ef4444', // Red like Analytics
+      backgroundColor: 'transparent',
+      borderWidth: 2,
       fill: false,
-      tension: 0.4,
-      pointRadius: 4,
-      pointBackgroundColor: '#f59e0b',
+      tension: 0.3,
+      pointRadius: 0, // Hidden points like Analytics
+      pointStyle: 'circle',
       yAxisID: 'y'
     })
-  }
-  
-  if (showComparison.value) {
+    
+    // Comparison line
     datasets.push({
       label: 'Doanh thu kỳ trước (triệu VNĐ)',
       data: getComparisonData(),
-      borderColor: '#6b7280',
-      backgroundColor: 'rgba(107, 114, 128, 0.1)',
+      borderColor: '#0ea5e9', // Blue like Analytics
+      backgroundColor: 'transparent',
       borderWidth: 2,
       fill: false,
-      tension: 0.4,
-      pointRadius: 3,
-      pointBackgroundColor: '#6b7280',
-      borderDash: [5, 5],
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0], // Solid line
+      yAxisID: 'y'
+    })
+  } else if (selectedMetric.value === 'orders') {
+    datasets.push({
+      label: 'Số đơn hàng',
+      data: getOrdersData(),
+      borderColor: '#ef4444', // Red like Analytics
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      yAxisID: 'y'
+    })
+    
+    // Comparison line
+    const comparisonOrders = getOrdersData().map(val => Math.floor(val * 0.85))
+    datasets.push({
+      label: 'Số đơn hàng kỳ trước',
+      data: comparisonOrders,
+      borderColor: '#0ea5e9', // Blue like Analytics
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0],
+      yAxisID: 'y'
+    })
+  } else if (selectedMetric.value === 'customers') {
+    // Mock customer data
+    const customerData = [120, 135, 110, 145, 130, 160, 175, 155, 140, 165, 180, 170, 185, 195, 190, 205, 210, 200, 185, 175, 165, 180, 190, 200]
+    const comparisonCustomers = customerData.map(val => Math.floor(val * 0.85))
+    
+    datasets.push({
+      label: 'Khách hàng mới',
+      data: customerData,
+      borderColor: '#ef4444', // Red like Analytics
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      yAxisID: 'y'
+    })
+    
+    datasets.push({
+      label: 'Khách hàng kỳ trước',
+      data: comparisonCustomers,
+      borderColor: '#0ea5e9', // Blue like Analytics
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0],
       yAxisID: 'y'
     })
   }
@@ -587,9 +690,21 @@ const enhancedChartData = computed(() => {
 
 // Computed insights
 const growthRate = computed(() => {
-  const current = getCurrentPeriodRevenue()
-  const previous = getPreviousPeriodRevenue()
-  return ((current - previous) / previous * 100).toFixed(1)
+  if (selectedMetric.value === 'revenue') {
+    const current = getCurrentPeriodRevenue()
+    const previous = getPreviousPeriodRevenue()
+    return ((current - previous) / previous * 100).toFixed(1)
+  } else if (selectedMetric.value === 'orders') {
+    const current = getCurrentPeriodOrders()
+    const previous = getOrdersData().map(val => Math.floor(val * 0.85)).reduce((sum, val) => sum + val, 0)
+    return ((current - previous) / previous * 100).toFixed(1)
+  } else if (selectedMetric.value === 'customers') {
+    // Mock customer growth calculation
+    const current = 200
+    const previous = 170
+    return ((current - previous) / previous * 100).toFixed(1)
+  }
+  return '12.5'
 })
 
 const averageOrderValue = computed(() => {
@@ -614,90 +729,114 @@ const enhancedChartOptions = computed(() => ({
   plugins: {
     legend: {
       display: true,
-      position: 'bottom',
+      position: 'top',
+      align: 'end',
       labels: {
         usePointStyle: true,
-        padding: 20,
+        pointStyle: 'circle',
+        padding: 15,
         font: {
-          size: 12
-        }
+          size: 10,
+          family: "'Inter', sans-serif",
+          weight: '400'
+        },
+        color: '#6b7280',
+        boxWidth: 6,
+        boxHeight: 6
       }
     },
     tooltip: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      titleColor: '#fff',
-      bodyColor: '#fff',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      titleColor: '#374151',
+      bodyColor: '#6b7280',
       borderColor: '#e5e7eb',
       borderWidth: 1,
       cornerRadius: 8,
-      displayColors: true,
+      padding: 12,
+      boxWidth: 8,
+      boxHeight: 8,
+      boxPadding: 4,
+      titleFont: {
+        size: 12,
+        weight: '600',
+        family: "'Inter', sans-serif"
+      },
+      bodyFont: {
+        size: 11,
+        weight: '500',
+        family: "'Inter', sans-serif"
+      },
+      bodySpacing: 4,
+      titleMarginBottom: 8,
       callbacks: {
+        title: function(context) {
+          return `${context[0].label}`
+        },
         label: function(context) {
-          let label = context.dataset.label || ''
-          if (label) {
-            label += ': '
-          }
-          if (context.dataset.label?.includes('Doanh thu') || context.dataset.label?.includes('Lợi nhuận')) {
-            label += context.parsed.y + ' triệu VNĐ'
-          } else if (context.dataset.label?.includes('đơn hàng')) {
-            label += context.parsed.y + ' đơn'
-          } else {
-            label += context.parsed.y
-          }
-          return label
+          return `${context.dataset.label}: ${context.parsed.y.toLocaleString('vi-VN')}`
         }
       }
     }
   },
   scales: {
-    y: {
-      type: 'linear',
-      display: true,
-      position: 'left',
-      beginAtZero: true,
-      grid: {
-        color: 'rgba(148, 163, 184, 0.1)',
-        drawBorder: false
-      },
-      ticks: {
-        color: '#64748b',
-        font: {
-          size: 11
-        },
-        callback: function(value) {
-          return value + 'M₫'
-        }
-      }
-    },
-    y1: {
-      type: 'linear',
-      display: showOrders.value,
-      position: 'right',
-      beginAtZero: true,
-      grid: {
-        drawOnChartArea: false,
-      },
-      ticks: {
-        color: '#64748b',
-        font: {
-          size: 11
-        },
-        callback: function(value) {
-          return value + ' đơn'
-        }
-      }
-    },
     x: {
       grid: {
-        color: 'rgba(148, 163, 184, 0.1)',
-        drawBorder: false
+        display: true,
+        color: 'rgba(156, 163, 175, 0.15)',
+        drawBorder: false,
+        lineWidth: 1
       },
       ticks: {
-        color: '#64748b',
         font: {
-          size: 11
-        }
+          size: 11,
+          family: "'Inter', sans-serif",
+          weight: '400'
+        },
+        color: '#9ca3af',
+        padding: 6,
+        autoSkip: false,
+        maxTicksLimit: 24,
+        stepSize: 1
       }
+    },
+    y: {
+      grid: {
+        display: true,
+        color: 'rgba(156, 163, 175, 0.15)',
+        drawBorder: false,
+        lineWidth: 1
+      },
+      ticks: {
+        font: {
+          size: 10,
+          family: "'Inter', sans-serif",
+          weight: '400'
+        },
+        color: '#9ca3af',
+        padding: 6,
+        maxTicksLimit: 8,
+        count: 8
+      }
+    }
+  },
+  animation: {
+    duration: 300,
+    easing: 'easeInOut'
+  },
+  elements: {
+    point: {
+      radius: 0,
+      hitRadius: 30,
+      hoverRadius: 6,
+      hoverBorderWidth: 2
+    }
+  },
+  layout: {
+    padding: {
+      top: 10,
+      right: 10,
+      bottom: 10,
+      left: 10
     }
   }
 }))
@@ -722,6 +861,41 @@ const miniChartOptions = computed(() => ({
 }))
 
 // Methods
+const formatDate = (date) => {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const targetDate = new Date(date)
+  
+  if (targetDate.toDateString() === yesterday.toDateString()) {
+    return 'Hôm qua'
+  }
+  
+  return targetDate.toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const selectQuickDate = (option) => {
+  const today = new Date()
+  let targetDate = new Date()
+  
+  switch (option) {
+    case 'yesterday':
+      targetDate = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+      break
+    case '2days':
+      targetDate = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
+      break
+    case 'week':
+      targetDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+      break
+  }
+  
+  comparisonDate.value = targetDate
+  showComparisonDatePicker.value = false
+}
+
 const updateChartData = () => {
   // Force chart re-render when data changes
 }
@@ -1004,7 +1178,7 @@ onMounted(() => {
 
 .action-btn i {
   font-size: 1.5rem;
-  color: #3b82f6;
+  color: #6366f1;
 }
 
 .action-btn span {
@@ -1088,7 +1262,7 @@ onMounted(() => {
 }
 
 .alert-action {
-  background: #3b82f6;
+  background: #6366f1;
   color: #ffffff;
   border: none;
   padding: 0.5rem 1rem;
@@ -1100,7 +1274,7 @@ onMounted(() => {
 }
 
 .alert-action:hover {
-  background: #2563eb;
+  background: #4f46e5;
 }
 
 /* Analytics Section */
@@ -1130,17 +1304,43 @@ onMounted(() => {
   margin-bottom: 1rem;
 }
 
-.chart-title-section h3 {
+.chart-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.chart-title {
   font-size: 1.25rem;
   font-weight: 600;
   color: #1f2937;
-  margin: 0 0 1rem 0;
+  margin: 0;
 }
 
-.chart-metrics-toggle {
+.growth-badge {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.growth-badge i {
+  font-size: 0.75rem;
+}
+
+.metric-toggles {
+  display: flex;
+  gap: 0.5rem;
+  background: #f8fafc;
+  padding: 0.25rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
   margin-bottom: 1rem;
 }
 
@@ -1148,21 +1348,30 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  cursor: pointer;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #374151;
-  transition: color 0.2s;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .metric-toggle:hover {
-  color: #1f2937;
+  background: #e2e8f0;
+  color: #475569;
 }
 
-.metric-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #3b82f6;
+.metric-toggle.active {
+  background: white;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metric-toggle i {
+  font-size: 0.75rem;
 }
 
 .chart-controls {
@@ -1198,8 +1407,8 @@ onMounted(() => {
 
 .time-selector:focus, .granularity-selector:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .chart-action-btn {
@@ -1321,7 +1530,7 @@ onMounted(() => {
 .view-all-btn {
   background: none;
   border: none;
-  color: #3b82f6;
+  color: #6366f1;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -1329,7 +1538,7 @@ onMounted(() => {
 }
 
 .view-all-btn:hover {
-  color: #2563eb;
+  color: #4f46e5;
 }
 
 .products-list {
@@ -1701,13 +1910,13 @@ onMounted(() => {
 }
 
 .time-filter:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: #6366f1;
+  color: #6366f1;
 }
 
 .time-filter.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #6366f1;
+  border-color: #6366f1;
   color: #ffffff;
   }
   
@@ -1884,5 +2093,223 @@ onMounted(() => {
   .chart-card, .top-products-card {
     padding: 1rem;
   }
+}
+
+/* Beautiful Date Picker Styles */
+.date-picker-container {
+  position: relative;
+  display: inline-block;
+}
+
+.date-picker-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.date-picker-btn:hover {
+  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.date-picker-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.date-picker-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.date-picker-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.date-picker-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.date-picker-arrow {
+  display: flex;
+  align-items: center;
+  color: #64748b;
+  transition: transform 0.3s ease;
+}
+
+.date-picker-arrow .rotated {
+  transform: rotate(180deg);
+}
+
+.date-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1000;
+  min-width: 280px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.date-picker-header h6 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 6px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.date-picker-body {
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.quick-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.quick-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.quick-option:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateX(2px);
+}
+
+.quick-option i {
+  color: #3b82f6;
+  font-size: 0.875rem;
+}
+
+.date-separator {
+  position: relative;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.date-separator::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e2e8f0;
+}
+
+.date-separator span {
+  background: white;
+  padding: 0 1rem;
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.custom-date {
+  margin-top: 0.5rem;
+}
+
+.date-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: #1e293b;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.chart-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>

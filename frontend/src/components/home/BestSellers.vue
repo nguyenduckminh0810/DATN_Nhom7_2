@@ -289,6 +289,15 @@ watch(products, () => {
 
 <style scoped>
 /* BestSellers specific styles - only content styling */
+
+/* Ensure ProductCard buttons are clickable */
+.best-sellers-section {
+  pointer-events: auto;
+}
+
+.best-sellers-section * {
+  pointer-events: auto;
+}
 .section-header {
   position: relative;
   display: flex;
@@ -340,6 +349,31 @@ watch(products, () => {
   justify-content: space-between;
   align-items: center;
   min-height: 500px;
+  /* Ensure ProductCard buttons are clickable */
+  pointer-events: auto;
+}
+
+.section-list * {
+  pointer-events: auto;
+}
+
+/* Ensure ProductCard buttons are specifically clickable */
+.section-list .product-card .btn-add-to-cart,
+.section-list .product-card .btn-detail {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* ProductCard button styling */
+.section-list .product-card .btn-add-to-cart {
+  background: #007bff !important;
+  color: white !important;
+}
+
+.section-list .product-card .btn-add-to-cart:hover {
+  background: #0056b3 !important;
 }
 
 .section-list::-webkit-scrollbar {

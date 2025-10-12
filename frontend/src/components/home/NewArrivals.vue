@@ -296,6 +296,12 @@ watch(products, () => {
   width: 100vw;
   margin-left: calc(-50vw + 50%);
   position: relative;
+  /* Ensure ProductCard buttons are clickable */
+  pointer-events: auto;
+}
+
+.new-arrivals-section * {
+  pointer-events: auto;
 }
 
 .section-header {
@@ -357,6 +363,31 @@ watch(products, () => {
   /* Hide scrollbar */
   scrollbar-width: none;
   -ms-overflow-style: none;
+  /* Ensure ProductCard buttons are clickable */
+  pointer-events: auto;
+}
+
+.products-grid * {
+  pointer-events: auto;
+}
+
+/* Ensure ProductCard buttons are specifically clickable */
+.products-grid .product-card .btn-add-to-cart,
+.products-grid .product-card .btn-detail {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  position: relative !important;
+}
+
+/* ProductCard button styling */
+.products-grid .product-card .btn-add-to-cart {
+  background: #007bff !important;
+  color: white !important;
+}
+
+.products-grid .product-card .btn-add-to-cart:hover {
+  background: #0056b3 !important;
 }
 
 .products-grid::-webkit-scrollbar {

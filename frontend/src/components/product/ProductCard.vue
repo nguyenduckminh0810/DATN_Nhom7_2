@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import useCart from '../../composables/useCart'
 import { useProductStore } from '../../stores/product'
@@ -250,7 +250,7 @@ const closeVariantModal = () => {
 }
 
 // Add to cart method
-const handleAddToCart = () => {
+const handleAddToCart = async (event) => {
   if (!isInStock.value) return
   
   if (hasVariants.value) {
@@ -311,6 +311,18 @@ onUnmounted(() => {
 const handleGlobalClick = (event) => {
   // Close modal if clicking outside the card
   const card = document.querySelector(`[data-product-id="${props.id}"]`)
+  
+  // Don't close modal if clicking on the modal itself
+  const modal = document.querySelector('.variant-modal-overlay')
+  if (modal && modal.contains(event.target)) {
+    return
+  }
+  
+  // Don't close modal if clicking on buttons inside the card
+  if (event.target.closest('.btn-add-to-cart') || event.target.closest('.btn-detail')) {
+    return
+  }
+  
   if (card && !card.contains(event.target)) {
     showVariantModal.value = false
   }

@@ -2,6 +2,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&display=swap');
 
+/* Force Lightbox to be on top of everything */
+.lightbox-overlay {
+  z-index: 999999999 !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Force navbar below lightbox */
+.modern-navbar,
+.top-bar {
+  z-index: 1000 !important;
+}
+
 /* AURO Premium Color System - Golden Bronze */
 :root {
   /* Primary Colors - Golden Bronze */

@@ -42,7 +42,24 @@
             <label class="form-label">Danh mục</label>
             <select class="form-select" v-model.number="selectedCategory">
               <option value="">Tất cả danh mục</option>
+
+              <optgroup label="Áo nam">
+                <option value="ao">Áo (Tất cả)</option>
+                <option value="ao-so-mi">Áo sơ mi</option>
+                <option value="ao-thun">Áo thun</option>
+                <option value="ao-khoac">Áo khoác</option>
+                <option value="ao-len">Áo len/Hoodie</option>
+              </optgroup>
+              <optgroup label="Quần nam">
+                <option value="quan">Quần (Tất cả)</option>
+                <option value="quan-au">Quần âu</option>
+                <option value="quan-jean">Quần jean</option>
+                <option value="quan-kaki">Quần kaki</option>
+                <option value="quan-short">Quần short</option>
+              </optgroup>
+
               <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.ten }}</option>
+
             </select>
           </div>
           <div class="col-md-3">
@@ -456,9 +473,9 @@
       </div>
     </div>
 
-    <!-- Add/Edit Product Modal -->
+    <!-- Add/Edit Product Modal with TABS -->
     <div v-if="showAddModal" class="modal-overlay" @click="closeModal">
-      <div class="modal-content" @click.stop>
+      <div class="modal-content modal-large" @click.stop>
         <div class="modal-header">
           <h5 class="modal-title">
             {{ editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới' }}
@@ -467,76 +484,212 @@
             <i class="ph-x"></i>
           </button>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="saveProduct">
-            <div class="row g-3">
-              <div class="col-md-8">
-                <label class="form-label">Tên sản phẩm *</label>
-                <input type="text" class="form-control" v-model="productForm.name" required />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">SKU *</label>
-                <input type="text" class="form-control" v-model="productForm.sku" required />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Danh mục *</label>
-                <select class="form-select" v-model.number="productForm.categoryId" required>
-                  <option value="">Chọn danh mục</option>
-                  <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.ten }}</option>
-                </select>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Trạng thái</label>
-                <select class="form-select" v-model="productForm.status">
-                  <option value="active">Đang bán</option>
-                  <option value="inactive">Ngừng bán</option>
-                  <option value="out-of-stock">Hết hàng</option>
-                </select>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Giá bán *</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="productForm.price"
-                  required
-                />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Giá gốc</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="productForm.originalPrice"
-                />
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Số lượng tồn kho</label>
-                <input type="number" class="form-control" v-model.number="productForm.stock" />
-              </div>
-              <div class="col-12">
-                <label class="form-label">Mô tả</label>
-                <textarea
-                  class="form-control"
-                  rows="3"
-                  v-model="productForm.description"
-                ></textarea>
-              </div>
-              <div class="col-12">
-                <label class="form-label">Hình ảnh</label>
-                <input
-                  type="url"
-                  class="form-control"
-                  v-model="productForm.image"
-                  placeholder="URL hình ảnh"
-                />
-              </div>
-            </div>
-          </form>
+
+        <!-- Tabs Navigation -->
+        <div class="modal-tabs">
+          <button
+            :class="['tab-btn', { active: activeTab === 'basic' }]"
+            @click="activeTab = 'basic'"
+          >
+            <i class="bi bi-info-circle me-1"></i>
+            Thông tin cơ bản
+          </button>
+          <button
+            :class="['tab-btn', { active: activeTab === 'images' }]"
+            @click="activeTab = 'images'"
+          >
+            <i class="bi bi-images me-1"></i>
+            Hình ảnh
+            <span v-if="productForm.images && productForm.images.length > 0" class="tab-badge">
+              {{ productForm.images.length }}
+            </span>
+          </button>
+          <button
+            :class="['tab-btn', { active: activeTab === 'variants' }]"
+            @click="activeTab = 'variants'"
+          >
+            <i class="bi bi-grid-3x3 me-1"></i>
+            Biến thể & Tồn kho
+            <span v-if="productForm.variants && productForm.variants.length > 0" class="tab-badge">
+              {{ productForm.variants.length }}
+            </span>
+          </button>
+          <button
+            :class="['tab-btn', { active: activeTab === 'seo' }]"
+            @click="activeTab = 'seo'"
+          >
+            <i class="bi bi-search me-1"></i>
+            SEO & Marketing
+          </button>
         </div>
+
+        <div class="modal-body">
+          <!-- Tab 1: Basic Info -->
+          <div v-show="activeTab === 'basic'" class="tab-content">
+            <form @submit.prevent="saveProduct">
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <label class="form-label">Tên sản phẩm *</label>
+                  <input type="text" class="form-control" v-model="productForm.name" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">SKU *</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" v-model="productForm.sku" required>
+                    <button type="button" class="btn btn-outline-secondary" @click="generateSKU" title="Tạo SKU tự động">
+                      <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Danh mục * (CHỈ QUẦN ÁO NAM)</label>
+                  <select class="form-select" v-model="productForm.category" required>
+                    <option value="">Chọn danh mục</option>
+                    <optgroup label="ÁO NAM">
+                      <option value="ao">Áo (Tất cả)</option>
+                      <option value="ao-so-mi">Áo sơ mi</option>
+                      <option value="ao-thun">Áo thun</option>
+                      <option value="ao-khoac">Áo khoác</option>
+                      <option value="ao-len">Áo len/Hoodie</option>
+                      <option value="ao-vest">Áo vest</option>
+                    </optgroup>
+                    <optgroup label="QUẦN NAM">
+                      <option value="quan">Quần (Tất cả)</option>
+                      <option value="quan-au">Quần âu</option>
+                      <option value="quan-jean">Quần jean</option>
+                      <option value="quan-kaki">Quần kaki</option>
+                      <option value="quan-short">Quần short</option>
+                      <option value="quan-jogger">Quần jogger</option>
+                    </optgroup>
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Trạng thái</label>
+                  <select class="form-select" v-model="productForm.status">
+                    <option value="active">Đang bán</option>
+                    <option value="inactive">Ngừng bán</option>
+                    <option value="out-of-stock">Hết hàng</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giá bán *</label>
+                  <input type="number" class="form-control" v-model.number="productForm.price" required min="0">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giá gốc</label>
+                  <input type="number" class="form-control" v-model.number="productForm.originalPrice" min="0">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Giảm giá (%)</label>
+                  <input type="number" class="form-control" :value="discountPercent" readonly disabled>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Mô tả sản phẩm</label>
+                  <textarea class="form-control" rows="4" v-model="productForm.description" placeholder="Nhập mô tả chi tiết về sản phẩm..."></textarea>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tab 2: Images -->
+          <div v-show="activeTab === 'images'" class="tab-content">
+            <ImageUploaderAdmin
+              :initial-images="productForm.images || []"
+              :max-images="10"
+              :max-file-size="2"
+              :enable-color-association="true"
+              :colors="productForm.variantColors || []"
+              @update="handleImagesUpdate"
+            />
+          </div>
+
+          <!-- Tab 3: Variants -->
+          <div v-show="activeTab === 'variants'" class="tab-content">
+            <VariantManagerAdmin
+              :product-id="productForm.id"
+              :product-name="productForm.name"
+              :product-sku="productForm.sku"
+              :category="getCategoryType(productForm.category)"
+              :initial-variants="productForm.variants || []"
+              :initial-colors="productForm.variantColors || []"
+              :initial-material="productForm.material || ''"
+              @update="handleVariantsUpdate"
+            />
+          </div>
+
+          <!-- Tab 4: SEO & Marketing -->
+          <div v-show="activeTab === 'seo'" class="tab-content">
+            <form>
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label">URL Slug</label>
+                  <div class="input-group">
+                    <span class="input-group-text">/product/</span>
+                    <input type="text" class="form-control" v-model="productForm.slug" placeholder="ao-so-mi-nam-cao-cap">
+                    <button type="button" class="btn btn-outline-secondary" @click="generateSlug" title="Tạo slug từ tên">
+                      <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Meta Title (SEO)</label>
+                  <input type="text" class="form-control" v-model="productForm.metaTitle" placeholder="Áo sơ mi nam cao cấp | AURO" maxlength="60">
+                  <small class="text-muted">{{ (productForm.metaTitle || '').length }}/60 ký tự</small>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Meta Description (SEO)</label>
+                  <textarea class="form-control" rows="3" v-model="productForm.metaDescription" placeholder="Mô tả ngắn gọn cho Google..." maxlength="160"></textarea>
+                  <small class="text-muted">{{ (productForm.metaDescription || '').length }}/160 ký tự</small>
+                </div>
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" v-model="productForm.isFeatured" id="featuredCheck">
+                    <label class="form-check-label" for="featuredCheck">
+                      <i class="bi bi-star me-1"></i>
+                      Sản phẩm nổi bật (hiển thị trên trang chủ)
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" v-model="productForm.isNew" id="newCheck">
+                    <label class="form-check-label" for="newCheck">
+                      <i class="bi bi-badge-wc me-1"></i>
+                      Sản phẩm mới (badge "NEW")
+                    </label>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Tags (để tìm kiếm dễ hơn)</label>
+                  <div class="tags-input">
+                    <span v-for="(tag, index) in (productForm.tags || [])" :key="index" class="tag-item">
+                      {{ tag }}
+                      <button type="button" @click="removeTag(index)" class="tag-remove">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    </span>
+                    <input
+                      type="text"
+                      class="tag-input"
+                      placeholder="VD: Bestseller, Sale, Premium..."
+                      @keydown.enter.prevent="addTag"
+                      v-model="newTag"
+                    />
+                  </div>
+                  <small class="text-muted">Gợi ý: Bestseller, Sale, Premium, Limited, Summer, Formal, Casual</small>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">Hủy</button>
+          <button type="button" class="btn btn-secondary" @click="closeModal">
+            <i class="bi bi-x me-2"></i>
+            Hủy
+          </button>
           <button type="button" class="btn btn-auro-primary" @click="saveProduct">
+            <i class="bi bi-check me-2"></i>
             {{ editingProduct ? 'Cập nhật' : 'Thêm sản phẩm' }}
           </button>
         </div>
@@ -547,6 +700,8 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import VariantManagerAdmin from '@/components/admin/VariantManagerAdmin.vue'
+import ImageUploaderAdmin from '@/components/admin/ImageUploaderAdmin.vue'
 import sanPhamService from '../../services/sanPhamService'
 
 // Reactive data
@@ -560,6 +715,10 @@ const itemsPerPage = 10
 const showAddModal = ref(false)
 const editingProduct = ref(null)
 const isLoading = ref(false)
+
+// NEW: Tab management
+const activeTab = ref('basic')
+const newTag = ref('')
 
 // Advanced filters
 const showAdvancedFilters = ref(false)
@@ -588,6 +747,15 @@ const productForm = ref({
   stock: 0,
   description: '',
   image: '',
+  // NEW: Advanced fields
+  images: [],
+  variants: [],
+  variantColors: [],
+  material: '',
+  slug: '',
+  metaTitle: '',
+  metaDescription: '',
+  tags: []
 })
 
 // Products loaded from backend
@@ -833,7 +1001,77 @@ function getSortIcon(field) {
   return tableSort.value.direction === 'asc' ? 'ph-caret-up' : 'ph-caret-down'
 }
 
-function sortTable(field) {
+const formatDate = (date) => {
+  return new Intl.DateTimeFormat('vi-VN').format(date)
+}
+
+const getCategoryName = (category) => {
+  const categories = {
+    'ao': 'Áo',
+    'ao-so-mi': 'Áo sơ mi',
+    'ao-thun': 'Áo thun',
+    'ao-khoac': 'Áo khoác',
+    'ao-len': 'Áo len/Hoodie',
+    'ao-vest': 'Áo vest',
+    'quan': 'Quần',
+    'quan-au': 'Quần âu',
+    'quan-jean': 'Quần jean',
+    'quan-kaki': 'Quần kaki',
+    'quan-short': 'Quần short',
+    'quan-jogger': 'Quần jogger'
+  }
+  return categories[category] || category
+}
+
+const getStatusText = (status) => {
+  const statuses = {
+    'active': 'Đang bán',
+    'inactive': 'Ngừng bán',
+    'out-of-stock': 'Hết hàng'
+  }
+  return statuses[status] || status
+}
+
+const getStatusClass = (status) => {
+  const classes = {
+    'active': 'bg-success',
+    'inactive': 'bg-warning',
+    'out-of-stock': 'bg-danger'
+  }
+  return classes[status] || 'bg-secondary'
+}
+
+const getStockClass = (stock) => {
+  if (stock === 0) return 'text-danger'
+  if (stock < 10) return 'text-warning'
+  return 'text-success'
+}
+
+const clearFilters = () => {
+  searchQuery.value = ''
+  selectedCategory.value = ''
+  selectedStatus.value = ''
+  priceRange.value = { min: null, max: null }
+  stockFilter.value = ''
+  createdDate.value = ''
+  selectedTags.value = []
+  sortBy.value = 'newest'
+}
+
+const toggleAdvancedFilters = () => {
+  showAdvancedFilters.value = !showAdvancedFilters.value
+}
+
+const toggleTag = (tag) => {
+  const index = selectedTags.value.indexOf(tag)
+  if (index > -1) {
+    selectedTags.value.splice(index, 1)
+  } else {
+    selectedTags.value.push(tag)
+  }
+}
+
+const sortTable = (field) => {
   if (tableSort.value.field === field) {
     tableSort.value.direction = tableSort.value.direction === 'asc' ? 'desc' : 'asc'
   } else {
@@ -893,6 +1131,65 @@ function getStatusClass(status) {
   }
 }
 
+const editProduct = (product) => {
+  editingProduct.value = product
+  productForm.value = { ...product }
+  showAddModal.value = true
+}
+
+const viewProduct = (product) => {
+  // Navigate to product detail
+}
+
+const deleteProduct = (product) => {
+  if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`)) {
+    const index = products.value.findIndex(p => p.id === product.id)
+    if (index > -1) {
+      products.value.splice(index, 1)
+    }
+  }
+}
+
+const closeModal = () => {
+  showAddModal.value = false
+  editingProduct.value = null
+  activeTab.value = 'basic'
+  productForm.value = {
+    name: '',
+    sku: '',
+    category: '',
+    status: 'active',
+    price: 0,
+    originalPrice: 0,
+    stock: 0,
+    description: '',
+    image: '',
+    images: [],
+    variants: [],
+    variantColors: [],
+    material: '',
+    slug: '',
+    metaTitle: '',
+    metaDescription: '',
+    tags: []
+  }
+}
+
+const saveProduct = () => {
+  if (editingProduct.value) {
+    // Update existing product
+    const index = products.value.findIndex(p => p.id === editingProduct.value.id)
+    if (index > -1) {
+      products.value[index] = { ...productForm.value, id: editingProduct.value.id }
+    }
+  } else {
+    // Add new product
+    const newProduct = {
+      ...productForm.value,
+      id: Date.now(),
+      createdAt: new Date()
+    }
+    products.value.unshift(newProduct)
 function getStatusText(status) {
   switch (status) {
     case 'active':
@@ -924,9 +1221,82 @@ async function loadCategories() {
   }
 }
 
-onMounted(async () => {
+// NEW: Computed for discount
+const discountPercent = computed(() => {
+  if (productForm.value.originalPrice && productForm.value.price) {
+    return Math.round((1 - productForm.value.price / productForm.value.originalPrice) * 100)
+  }
+  return 0
+})
+
+// NEW: Helper methods
+const getCategoryType = (category) => {
+  // Convert category to 'ao' or 'quan' for VariantManager
+  if (!category) return 'ao'
+  if (category.startsWith('ao')) return 'ao'
+  if (category.startsWith('quan')) return 'quan'
+  return 'ao'
+}
+
+const generateSKU = () => {
+  const prefix = getCategoryType(productForm.value.category).toUpperCase()
+  const timestamp = Date.now().toString().slice(-6)
+  productForm.value.sku = `${prefix}-${timestamp}`
+}
+
+const generateSlug = () => {
+  if (!productForm.value.name) return
+  productForm.value.slug = productForm.value.name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+}
+
+const addTag = () => {
+  if (newTag.value.trim()) {
+    if (!productForm.value.tags) {
+      productForm.value.tags = []
+    }
+    if (!productForm.value.tags.includes(newTag.value.trim())) {
+      productForm.value.tags.push(newTag.value.trim())
+    }
+    newTag.value = ''
+  }
+}
+
+const removeTag = (index) => {
+  productForm.value.tags.splice(index, 1)
+}
+
+const handleImagesUpdate = (images) => {
+  productForm.value.images = images
+  // Set primary image as main product image
+  const primary = images.find(img => img.isPrimary)
+  if (primary) {
+    productForm.value.image = primary.url
+  }
+}
+
+const handleVariantsUpdate = (variantsData) => {
+  productForm.value.variants = variantsData.variants
+  productForm.value.variantColors = variantsData.colors
+  productForm.value.material = variantsData.material
+  // Update total stock
+  productForm.value.stock = variantsData.totalStock
+}
+
+// Lifecycle
+onMounted(() => {
+  // Initialize products page
+
   await loadCategories()
   await loadProducts(0)
+
 })
 
 // initial load handled in combined onMounted above
@@ -934,8 +1304,7 @@ onMounted(async () => {
 
 <style scoped>
 .admin-products {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .page-header {
@@ -1014,9 +1383,9 @@ onMounted(async () => {
 }
 
 .tag-filter.active {
-  background: #3498db;
+  background: #6366f1;
   color: white;
-  border-color: #3498db;
+  border-color: #6366f1;
 }
 
 .search-box {
@@ -1079,9 +1448,9 @@ onMounted(async () => {
 }
 
 .view-btn.active {
-  background: #3498db;
+  background: #6366f1;
   color: white;
-  border-color: #3498db;
+  border-color: #6366f1;
 }
 
 .table-stats {
@@ -1102,7 +1471,7 @@ onMounted(async () => {
 }
 
 .sort-btn:hover {
-  color: #3498db;
+  color: #6366f1;
 }
 
 .table {
@@ -1495,6 +1864,11 @@ onMounted(async () => {
   overflow-y: auto;
 }
 
+.modal-content.modal-large {
+  max-width: 900px;
+  max-height: 95vh;
+}
+
 .modal-header {
   padding: 1.5rem;
   border-bottom: 1px solid #e9ecef;
@@ -1535,6 +1909,117 @@ onMounted(async () => {
   display: flex;
   gap: 0.75rem;
   justify-content: flex-end;
+}
+
+/* Modal Tabs */
+.modal-tabs {
+  display: flex;
+  border-bottom: 2px solid #e2e8f0;
+  background: #f8fafb;
+  padding: 0 1.5rem;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  position: relative;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tab-btn:hover {
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.tab-btn.active {
+  color: #6366f1;
+  font-weight: 600;
+  border-bottom: 3px solid #6366f1;
+  margin-bottom: -2px;
+}
+
+.tab-badge {
+  background: #6366f1;
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tags Input */
+.tags-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  min-height: 48px;
+  background: white;
+}
+
+.tag-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 6px;
+  color: #4338ca;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+.tag-remove:hover {
+  color: #ef4444;
+}
+
+.tag-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  min-width: 150px;
+  font-size: 0.9rem;
 }
 
 /* Responsive */
@@ -1579,6 +2064,20 @@ onMounted(async () => {
   .bulk-buttons {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .modal-tabs {
+    padding: 0 0.5rem;
+  }
+
+  .tab-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .modal-content.modal-large {
+    width: 95%;
+    max-width: none;
   }
 }
 </style>
