@@ -228,6 +228,13 @@ class ApiService {
     getById: (id) => this.get(`/categories/${id}`),
     getProducts: (id, params = {}) =>
       this.get(`/categories/${id}/products`, { params })
+    ,
+    create: (data) => this.post('/categories/create', data)
+  }
+
+  // add delete
+  categoriesDelete = {
+    delete: (id, force = false) => this.delete(`/categories/${id}`, { params: { force } })
   }
 
   // Cart endpoints

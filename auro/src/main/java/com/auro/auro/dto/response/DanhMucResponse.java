@@ -11,4 +11,9 @@ public class DanhMucResponse {
     private Long id;
     private String ten;
     private String slug;
+    private String moTa;
+    private String icon;
+    private Long idCha;
+    private Integer thuTu;
+    private Boolean hoatDong;
 }

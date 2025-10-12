@@ -11,6 +11,8 @@ public interface DanhMucRepository extends JpaRepository<DanhMuc, Long> {
 
     boolean existsBySlug(String slug);
 
+    boolean existsBySlugAndIdNot(String slug, Long id);
+
     List<DanhMuc> findAllByHoatDongTrueOrderByThuTuAsc();
 
     List<DanhMuc> findByDanhMucCha_Id(Long idCha);

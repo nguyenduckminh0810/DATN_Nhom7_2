@@ -1131,77 +1131,8 @@ function getStatusClass(status) {
   }
 }
 
-const editProduct = (product) => {
-  editingProduct.value = product
-  productForm.value = { ...product }
-  showAddModal.value = true
-}
-
-const viewProduct = (product) => {
-  // Navigate to product detail
-}
-
-const deleteProduct = (product) => {
-  if (confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`)) {
-    const index = products.value.findIndex(p => p.id === product.id)
-    if (index > -1) {
-      products.value.splice(index, 1)
-    }
-  }
-}
-
-const closeModal = () => {
-  showAddModal.value = false
-  editingProduct.value = null
-  activeTab.value = 'basic'
-  productForm.value = {
-    name: '',
-    sku: '',
-    category: '',
-    status: 'active',
-    price: 0,
-    originalPrice: 0,
-    stock: 0,
-    description: '',
-    image: '',
-    images: [],
-    variants: [],
-    variantColors: [],
-    material: '',
-    slug: '',
-    metaTitle: '',
-    metaDescription: '',
-    tags: []
-  }
-}
-
-const saveProduct = () => {
-  if (editingProduct.value) {
-    // Update existing product
-    const index = products.value.findIndex(p => p.id === editingProduct.value.id)
-    if (index > -1) {
-      products.value[index] = { ...productForm.value, id: editingProduct.value.id }
-    }
-  } else {
-    // Add new product
-    const newProduct = {
-      ...productForm.value,
-      id: Date.now(),
-      createdAt: new Date()
-    }
-    products.value.unshift(newProduct)
-function getStatusText(status) {
-  switch (status) {
-    case 'active':
-      return 'Đang bán'
-    case 'inactive':
-      return 'Ngừng bán'
-    case 'out-of-stock':
-      return 'Hết hàng'
-    default:
-      return status
-  }
-}
+/* Duplicate block removed: editProduct, viewProduct, deleteProduct, closeModal, saveProduct, and getStatusText.
+   The correct implementations are already present above in the script. */
 
 function toggleTag(tag) {
   const idx = selectedTags.value.indexOf(tag)
@@ -1291,7 +1222,7 @@ const handleVariantsUpdate = (variantsData) => {
 }
 
 // Lifecycle
-onMounted(() => {
+onMounted(async () => {
   // Initialize products page
 
   await loadCategories()
