@@ -10,7 +10,6 @@ class ApiService {
         'Content-Type': 'application/json'
       }
     })
-    
     this.setupInterceptors()
   }
 
@@ -24,19 +23,14 @@ class ApiService {
         }
         return config
       },
-      (error) => {
-        return Promise.reject(error)
-      }
+      (error) => Promise.reject(error)
     )
 
     // Response interceptor
     this.client.interceptors.response.use(
-      (response) => {
-        return response
-      },
+      (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          // Token expired or invalid
           localStorage.removeItem('auro_token')
           localStorage.removeItem('auro_user')
           window.location.href = '/'
@@ -98,16 +92,12 @@ class ApiService {
     formData.append('file', file)
 
     const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+      headers: { 'Content-Type': 'multipart/form-data' }
     }
 
     if (onProgress) {
-      config.onUploadProgress = (progressEvent) => {
-        const percentCompleted = Math.round(
-          (progressEvent.loaded * 100) / progressEvent.total
-        )
+      config.onUploadProgress = (e) => {
+        const percentCompleted = Math.round((e.loaded * 100) / e.total)
         onProgress(percentCompleted)
       }
     }
@@ -123,7 +113,6 @@ class ApiService {
   // Error handling
   handleError(error) {
     if (error.response) {
-      // Server responded with error status
       const { status, data } = error.response
       return {
         message: data.message || 'Có lỗi xảy ra từ server',
@@ -132,14 +121,12 @@ class ApiService {
         type: 'server_error'
       }
     } else if (error.request) {
-      // Request was made but no response received
       return {
         message: 'Không thể kết nối đến server',
         status: 0,
         type: 'network_error'
       }
     } else {
-      // Something else happened
       return {
         message: error.message || 'Có lỗi không xác định',
         status: 0,
@@ -148,14 +135,63 @@ class ApiService {
     }
   }
 
+  // Chuẩn hoá phản hồi đăng nhập để FE hiểu đúng
+  normalizeAuthResponse(be) {
+    const accessToken =
+      be?.accessToken ||
+      be?.token ||
+      be?.jwt ||
+      be?.data?.accessToken ||
+      be?.data?.token ||
+      be?.data?.jwt
+
+    const user =
+      be?.user ||
+      be?.data?.user || {
+        id: be?.data?.id ?? be?.id ?? null,
+        name: be?.data?.name ?? be?.name ?? be?.username ?? null,
+        email: be?.data?.email ?? be?.email ?? null,
+        role: be?.data?.role ?? be?.role ?? 'user'
+      }
+
+    const success =
+      be?.success ??
+      be?.ok ??
+      (typeof be?.status === 'string'
+        ? be.status.toUpperCase() === 'OK'
+        : undefined) ??
+      Boolean(accessToken)
+
+    return {
+      success: Boolean(success),
+      data: {
+        accessToken: accessToken || null,
+        user: user || null
+      },
+      message: be?.message || 'OK'
+    }
+  }
+
   // Auth endpoints
   auth = {
-    login: (credentials) => this.post('/auth/login', credentials),
+    login: async (credentials) => {
+      const be = await this.post('/auth/login', credentials)
+      const mapped = this.normalizeAuthResponse(be)
+      if (!mapped.data.accessToken) {
+        return {
+          success: false,
+          data: { accessToken: null, user: null },
+          message: mapped.message || 'Đăng nhập thất bại: thiếu accessToken'
+        }
+      }
+      return mapped
+    },
     register: (userData) => this.post('/auth/register', userData),
     logout: () => this.post('/auth/logout'),
     refresh: () => this.post('/auth/refresh'),
     forgotPassword: (email) => this.post('/auth/forgot-password', { email }),
-    resetPassword: (token, password) => this.post('/auth/reset-password', { token, password }),
+    resetPassword: (token, password) =>
+      this.post('/auth/reset-password', { token, password }),
     verifyEmail: (token) => this.post('/auth/verify-email', { token })
   }
 
@@ -164,7 +200,8 @@ class ApiService {
     getProfile: () => this.get('/user/profile'),
     updateProfile: (data) => this.put('/user/profile', data),
     changePassword: (data) => this.post('/user/change-password', data),
-    uploadAvatar: (file, onProgress) => this.upload('/user/avatar', file, onProgress),
+    uploadAvatar: (file, onProgress) =>
+      this.upload('/user/avatar', file, onProgress),
     getAddresses: () => this.get('/user/addresses'),
     addAddress: (data) => this.post('/user/addresses', data),
     updateAddress: (id, data) => this.put(`/user/addresses/${id}`, data),
@@ -175,8 +212,10 @@ class ApiService {
   products = {
     getAll: (params = {}) => this.get('/products', { params }),
     getById: (id) => this.get(`/products/${id}`),
-    getByCategory: (categoryId, params = {}) => this.get(`/products/category/${categoryId}`, { params }),
-    search: (query, params = {}) => this.get('/products/search', { params: { q: query, ...params } }),
+    getByCategory: (categoryId, params = {}) =>
+      this.get(`/products/category/${categoryId}`, { params }),
+    search: (query, params = {}) =>
+      this.get('/products/search', { params: { q: query, ...params } }),
     getFeatured: () => this.get('/products/featured'),
     getRelated: (id) => this.get(`/products/${id}/related`),
     getReviews: (id) => this.get(`/products/${id}/reviews`),
@@ -187,7 +226,8 @@ class ApiService {
   categories = {
     getAll: () => this.get('/categories'),
     getById: (id) => this.get(`/categories/${id}`),
-    getProducts: (id, params = {}) => this.get(`/categories/${id}/products`, { params })
+    getProducts: (id, params = {}) =>
+      this.get(`/categories/${id}/products`, { params })
   }
 
   // Cart endpoints
@@ -211,10 +251,10 @@ class ApiService {
     getStatus: (id) => this.get(`/orders/${id}/status`)
   }
 
-
   // Payment endpoints
   payment = {
-    createPayment: (orderId, method) => this.post('/payment/create', { orderId, method }),
+    createPayment: (orderId, method) =>
+      this.post('/payment/create', { orderId, method }),
     verifyPayment: (paymentId) => this.post('/payment/verify', { paymentId }),
     getMethods: () => this.get('/payment/methods')
   }
@@ -232,7 +272,5 @@ class ApiService {
   }
 }
 
-// Create singleton instance
 const apiService = new ApiService()
-
 export default apiService
