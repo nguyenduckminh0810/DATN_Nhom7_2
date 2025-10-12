@@ -67,10 +67,16 @@ public class AuthService {
         //Tìm vai trò
         String maVaiTro = request.getLoaiTaiKhoan() != null ? 
                           request.getLoaiTaiKhoan().toUpperCase() : "CUSTOMER";
-        
-                          VaiTro vaiTro = vaiTroRepository.findByMa(maVaiTro)
+        String role = switch (maVaiTro) {
+    case "CUSTOMER", "CUS", "KH" -> "CUS";
+    case "GUEST", "GST"          -> "GST";
+    case "STAFF", "NV", "EMP"    -> "STF";
+    case "ADMIN", "ADM"          -> "ADM";
+    default -> throw new BadRequestException("Loại tài khoản không hợp lệ: " + maVaiTro);
+};
+                          VaiTro vaiTro = vaiTroRepository.findByMa(role)
                           .orElseThrow(() -> new ResourceNotFoundException(
-                              "Không tìm thấy vai trò: " + maVaiTro
+                              "Không tìm thấy vai trò: " + role
                           ));
 
 
@@ -209,7 +215,7 @@ public class AuthService {
         // Tìm thông tin từ KhachHang hoặc NhanVien
         String maVaiTro = taiKhoan.getVaiTro().getMa();
         
-        if ("CUSTOMER".equals(maVaiTro) || "GUEST".equals(maVaiTro)) {
+        if ("CUS".equals(maVaiTro) || "GST".equals(maVaiTro)) {
             // Tìm KhachHang
             KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
             if (khachHang != null) {
@@ -217,12 +223,12 @@ public class AuthService {
                 kieu = khachHang.getKieu();
             }
             
-        } else if ("STAFF".equals(maVaiTro) || "ADMIN".equals(maVaiTro)) {
+        } else if ("STF".equals(maVaiTro) || "ADM".equals(maVaiTro)) {
             // Tìm NhanVien
             NhanVien nhanVien = nhanVienRepository.findByTaiKhoan(taiKhoan).orElse(null);
             if (nhanVien != null) {
                 hoTen = nhanVien.getHoTen();
-                kieu = "STAFF"; 
+                kieu = "STF"; 
             }
         }
         

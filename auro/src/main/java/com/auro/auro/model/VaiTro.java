@@ -21,9 +21,9 @@ public class VaiTro {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ma_vai_tro", nullable = false, unique = true)
+    @Column(name = "ma", nullable = false, unique = true)
     private String ma; // CUS, GST, STF, ADM
 
-    @Column(name = "ten_vai_tro", nullable = false)
+    @Column(name = "ten", nullable = false)
     private String ten; // Khách hàng, Khách vãng lai, Nhân viên, Quản trị viên
 }

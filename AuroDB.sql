@@ -35,7 +35,7 @@ CREATE TABLE dbo.san_pham (
 );
 
 -- ===========================================
--- 4. B?ng MÀU S?C
+-- 4. B?ng Mï¿½U S?C
 -- ===========================================
 CREATE TABLE dbo.mau_sac (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -44,7 +44,7 @@ CREATE TABLE dbo.mau_sac (
 );
 
 -- ===========================================
--- 5. B?ng KÍCH C?
+-- 5. B?ng Kï¿½CH C?
 -- ===========================================
 CREATE TABLE dbo.kich_co (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -62,7 +62,7 @@ CREATE TABLE dbo.chat_lieu (
 
 -- ===========================================
 -- 7. B?ng BI?N TH? S?N PH?M
--- (qu?n lý màu/size/ch?t li?u + t?n kho)
+-- (qu?n lï¿½ mï¿½u/size/ch?t li?u + t?n kho)
 -- ===========================================
 CREATE TABLE dbo.bien_the_san_pham (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -79,7 +79,7 @@ CREATE TABLE dbo.bien_the_san_pham (
 );
 
 -- ===========================================
--- 8. B?ng HÌNH ?NH S?N PH?M
+-- 8. B?ng Hï¿½NH ?NH S?N PH?M
 -- ===========================================
 CREATE TABLE dbo.hinh_anh (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -108,7 +108,7 @@ CREATE TABLE dbo.voucher (
 );
 
 -- ===========================================
--- 10. B?ng TÀI KHO?N + VAI TRÒ
+-- 10. B?ng Tï¿½I KHO?N + VAI TRï¿½
 -- ===========================================
 CREATE TABLE dbo.vai_tro (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -127,7 +127,7 @@ CREATE TABLE dbo.tai_khoan (
 );
 
 -- ===========================================
--- 11. B?ng KHÁCH HÀNG & NHÂN VIÊN
+-- 11. B?ng KHï¿½CH Hï¿½NG & NHï¿½N VIï¿½N
 -- ===========================================
 CREATE TABLE dbo.khach_hang (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -163,7 +163,7 @@ CREATE TABLE dbo.dia_chi (
 );
 
 -- ===========================================
--- 13. B?ng GI? HÀNG & CHI TI?T
+-- 13. B?ng GI? Hï¿½NG & CHI TI?T
 -- ===========================================
 CREATE TABLE dbo.gio_hang (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -184,7 +184,7 @@ CREATE TABLE dbo.gio_hang_chi_tiet (
 );
 
 -- ===========================================
--- 14. B?ng ??N HÀNG & CHI TI?T
+-- 14. B?ng ??N Hï¿½NG & CHI TI?T
 -- ===========================================
 CREATE TABLE dbo.don_hang (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
@@ -216,7 +216,7 @@ CREATE TABLE dbo.don_hang_chi_tiet (
 );
 -- ===========================================
 -- B?ng VOUCHER_KHACH
--- (voucher g?n cho t?ng khách hàng)
+-- (voucher g?n cho t?ng khï¿½ch hï¿½ng)
 -- ===========================================
 CREATE TABLE dbo.voucher_khach (
     id_voucher BIGINT NOT NULL,
@@ -228,3 +228,8 @@ CREATE TABLE dbo.voucher_khach (
     FOREIGN KEY (id_voucher) REFERENCES dbo.voucher(id),
     FOREIGN KEY (id_khach_hang) REFERENCES dbo.khach_hang(id)
 );
+    INSERT INTO dbo.vai_tro(ma, ten)
+    VALUES (N'CUS', N'KhÃ¡ch hÃ ng'),
+           (N'GST', N'KhÃ¡ch vÃ£ng lai'),
+           (N'STF', N'NhÃ¢n viÃªn'),
+           (N'ADM', N'Quáº£n trá»‹ viÃªn');
