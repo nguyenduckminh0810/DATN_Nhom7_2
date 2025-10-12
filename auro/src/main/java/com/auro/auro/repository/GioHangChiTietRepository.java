@@ -12,4 +12,10 @@ public interface GioHangChiTietRepository extends JpaRepository<GioHangChiTiet, 
     Optional<GioHangChiTiet> findFirstByGioHang_IdAndBienThe_Id(Long idGioHang, Long idBienThe);
 
     void deleteByGioHang_Id(Long idGioHang);
+
+    // Find cart items by variant id
+    java.util.List<GioHangChiTiet> findByBienThe_Id(Long idBienThe);
+
+    // Delete cart items by variant id
+    void deleteByBienThe_Id(Long idBienThe);
 }
