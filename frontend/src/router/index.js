@@ -16,7 +16,10 @@ const AdminProducts = () => import(/* webpackChunkName: "admin" */ '../views/adm
 const AdminCategories = () => import(/* webpackChunkName: "admin" */ '../views/admin/Categories.vue')
 const AdminOrders = () => import(/* webpackChunkName: "admin" */ '../views/admin/Orders.vue')
 const AdminUsers = () => import(/* webpackChunkName: "admin" */ '../views/admin/Users.vue')
-const AdminAnalytics = () => import(/* webpackChunkName: "admin" */ '../views/admin/AnalyticsNew.vue')
+const AdminAnalytics = () => import(/* webpackChunkName: "admin" */ '../views/admin/Analytics.vue')
+const AdminSettings = () => import(/* webpackChunkName: "admin" */ '../views/admin/Settings.vue')
+const AdminInventory = () => import(/* webpackChunkName: "admin" */ '../views/admin/Inventory.vue')
+const AdminPromotions = () => import(/* webpackChunkName: "admin" */ '../views/admin/Promotions.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -115,6 +118,24 @@ const router = createRouter({
           name: 'admin-analytics',
           component: AdminAnalytics,
           meta: { title: 'Thống kê & Báo cáo - AURO' }
+        },
+        {
+          path: 'settings',
+          name: 'admin-settings',
+          component: AdminSettings,
+          meta: { title: 'Cài đặt - AURO' }
+        },
+        {
+          path: 'inventory',
+          name: 'admin-inventory',
+          component: AdminInventory,
+          meta: { title: 'Quản lý tồn kho - AURO' }
+        },
+        {
+          path: 'promotions',
+          name: 'admin-promotions',
+          component: AdminPromotions,
+          meta: { title: 'Khuyến mãi & Voucher - AURO' }
         }
       ]
     },

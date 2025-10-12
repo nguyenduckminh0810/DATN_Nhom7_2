@@ -951,8 +951,7 @@ onMounted(() => {
 
 <style scoped>
 .admin-categories {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 /* Filters Section */
@@ -1002,11 +1001,11 @@ onMounted(() => {
 }
 
 .stat-card.total {
-  border-left: 4px solid #3498db;
+  border-left: 4px solid #6366f1;
 }
 
 .stat-card.active {
-  border-left: 4px solid #28a745;
+  border-left: 4px solid #10b981;
 }
 
 .stat-card.products {
@@ -1029,11 +1028,11 @@ onMounted(() => {
 }
 
 .stat-card.total .stat-icon {
-  background: #3498db;
+  background: #6366f1;
 }
 
 .stat-card.active .stat-icon {
-  background: #28a745;
+  background: #10b981;
 }
 
 .stat-card.products .stat-icon {
@@ -1128,8 +1127,8 @@ onMounted(() => {
 }
 
 .tree-node:hover {
-  border-color: #3498db;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
 .node-content {
@@ -1151,7 +1150,7 @@ onMounted(() => {
 
 .expand-btn:hover {
   background-color: #f8f9fa;
-  color: #3498db;
+  color: #6366f1;
 }
 
 .node-info {
@@ -1170,7 +1169,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  color: #3498db;
+  color: #6366f1;
 }
 
 .node-details {
@@ -1280,7 +1279,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  color: #3498db;
+  color: #6366f1;
 }
 
 .category-name {

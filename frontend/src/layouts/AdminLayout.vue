@@ -58,6 +58,21 @@
           </li>
           
           <li class="nav-item">
+            <router-link to="/admin/inventory" class="nav-link" :class="{ active: $route.path.startsWith('/admin/inventory') }">
+              <i class="bi bi-archive"></i>
+              <span v-if="!sidebarCollapsed">Tồn kho</span>
+              <span v-if="!sidebarCollapsed && lowStockCount > 0" class="badge bg-warning">{{ lowStockCount }}</span>
+            </router-link>
+          </li>
+          
+          <li class="nav-item">
+            <router-link to="/admin/promotions" class="nav-link" :class="{ active: $route.path.startsWith('/admin/promotions') }">
+              <i class="bi bi-tag"></i>
+              <span v-if="!sidebarCollapsed">Khuyến mãi</span>
+            </router-link>
+          </li>
+          
+          <li class="nav-item">
             <router-link to="/admin/settings" class="nav-link" :class="{ active: $route.path.startsWith('/admin/settings') }">
               <i class="bi bi-gear"></i>
               <span v-if="!sidebarCollapsed">Cài đặt</span>
@@ -201,6 +216,9 @@ const showUserMenu = ref(false)
 const showNotifications = ref(false)
 const showMobileOverlay = ref(false)
 
+// Mock low stock count (sẽ fetch từ API sau)
+const lowStockCount = ref(12)
+
 // Computed
 const currentPageTitle = computed(() => {
   const titles = {
@@ -210,6 +228,8 @@ const currentPageTitle = computed(() => {
     '/admin/orders': 'Quản lý đơn hàng',
     '/admin/users': 'Quản lý người dùng',
     '/admin/analytics': 'Thống kê',
+    '/admin/inventory': 'Quản lý tồn kho',
+    '/admin/promotions': 'Khuyến mãi & Voucher',
     '/admin/settings': 'Cài đặt'
   }
   
@@ -296,15 +316,16 @@ onUnmounted(() => {
 /* Sidebar */
 .admin-sidebar {
   width: 280px;
-  background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
-  color: white;
+  background: linear-gradient(180deg, #f8fafb 0%, #ffffff 100%);
+  color: #475569;
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
   position: fixed;
   height: 100vh;
   z-index: 1000;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 15px rgba(0, 0, 0, 0.05);
+  border-right: 1px solid #e2e8f0;
 }
 
 .admin-sidebar.collapsed {
@@ -313,7 +334,7 @@ onUnmounted(() => {
 
 .sidebar-header {
   padding: 1.5rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -325,11 +346,12 @@ onUnmounted(() => {
   gap: 0.75rem;
   font-size: 1.25rem;
   font-weight: 700;
+  color: #1e293b;
 }
 
 .brand i {
   font-size: 1.5rem;
-  color: #3498db;
+  color: #6366f1;
 }
 
 .brand-text {
@@ -343,16 +365,17 @@ onUnmounted(() => {
 .sidebar-toggle {
   background: none;
   border: none;
-  color: white;
+  color: #64748b;
   font-size: 1.25rem;
   cursor: pointer;
   padding: 0.5rem;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 .sidebar-toggle:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: #f1f5f9;
+  color: #475569;
 }
 
 .sidebar-nav {
@@ -375,21 +398,23 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #64748b;
   text-decoration: none;
   transition: all 0.3s ease;
   position: relative;
+  border-radius: 8px;
+  margin: 0 0.5rem;
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  background-color: #f1f5f9;
+  color: #475569;
 }
 
 .nav-link.active {
-  background-color: rgba(52, 152, 219, 0.2);
-  color: #3498db;
-  border-right: 3px solid #3498db;
+  background-color: #eef2ff;
+  color: #6366f1;
+  font-weight: 500;
 }
 
 .nav-link i {
@@ -412,7 +437,7 @@ onUnmounted(() => {
 
 .sidebar-footer {
   padding: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #e2e8f0;
 }
 
 .user-info {
@@ -424,12 +449,13 @@ onUnmounted(() => {
 .user-avatar {
   width: 40px;
   height: 40px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
+  color: white;
 }
 
 .user-details {
@@ -443,11 +469,12 @@ onUnmounted(() => {
 .user-name {
   font-weight: 600;
   font-size: 0.9rem;
+  color: #334155;
 }
 
 .user-role {
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #94a3b8;
 }
 
 /* Main Content */
@@ -538,8 +565,8 @@ onUnmounted(() => {
 
 .search-input:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .header-notifications {
@@ -560,7 +587,7 @@ onUnmounted(() => {
 
 .notification-btn:hover {
   background-color: #f8f9fa;
-  color: #3498db;
+  color: #6366f1;
 }
 
 .notification-badge {
@@ -603,7 +630,7 @@ onUnmounted(() => {
 .user-avatar-small {
   width: 32px;
   height: 32px;
-  background-color: #3498db;
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -648,7 +675,7 @@ onUnmounted(() => {
 /* Content */
 .admin-content {
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem;
   overflow-y: auto;
 }
 

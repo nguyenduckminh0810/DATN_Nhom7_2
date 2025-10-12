@@ -1022,8 +1022,7 @@ onMounted(() => {
 
 <style scoped>
 .admin-orders {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .page-header {
@@ -1243,9 +1242,9 @@ onMounted(() => {
 }
 
 .view-btn.active {
-  background: #3498db;
+  background: #6366f1;
   color: white;
-  border-color: #3498db;
+  border-color: #6366f1;
 }
 
 .table-stats {
@@ -1266,7 +1265,7 @@ onMounted(() => {
 }
 
 .sort-btn:hover {
-  color: #3498db;
+  color: #6366f1;
 }
 
 .table {
@@ -1425,7 +1424,7 @@ onMounted(() => {
 }
 
 .column-count {
-  background: #3498db;
+  background: #6366f1;
   color: white;
   padding: 0.25rem 0.5rem;
   border-radius: 12px;

@@ -1108,8 +1108,7 @@ onMounted(() => {
 
 <style scoped>
 .admin-users {
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .page-header {
@@ -1515,8 +1514,8 @@ onMounted(() => {
 }
 
 .nav-tabs .nav-link.active {
-  color: #3498db;
-  border-bottom: 2px solid #3498db;
+  color: #6366f1;
+  border-bottom: 2px solid #6366f1;
   background: none;
 }
 
@@ -1565,7 +1564,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #3498db;
+  color: #6366f1;
   font-size: 1.2rem;
 }
 
