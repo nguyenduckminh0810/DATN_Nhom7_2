@@ -8,7 +8,7 @@
       </div>
       <div class="header-right">
         <button class="btn btn-auro-primary" @click="showAddModal = true">
-          <i class="bi bi-plus me-2"></i>Thêm sản phẩm
+          <i class="ph-plus me-2"></i>Thêm sản phẩm
         </button>
       </div>
     </div>
@@ -18,7 +18,7 @@
       <!-- Quick Search -->
       <div class="search-row">
         <div class="search-box">
-          <i class="bi bi-search search-icon"></i>
+          <i class="ph-magnifying-glass search-icon"></i>
           <input
             type="text"
             class="form-control search-input"
@@ -27,11 +27,11 @@
           />
         </div>
         <button class="btn btn-outline-primary" @click="toggleAdvancedFilters">
-          <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
-          <i :class="showAdvancedFilters ? 'bi bi-caret-up' : 'bi bi-caret-down'" class="ms-1"></i>
+          <i class="ph-funnel me-1"></i>Bộ lọc nâng cao
+          <i :class="showAdvancedFilters ? 'ph-caret-up' : 'ph-caret-down'" class="ms-1"></i>
         </button>
         <button class="btn btn-outline-secondary" @click="clearFilters">
-          <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
+          <i class="ph-arrow-clockwise me-1"></i>Xóa bộ lọc
         </button>
       </div>
 
@@ -40,8 +40,9 @@
         <div class="row g-3">
           <div class="col-md-3">
             <label class="form-label">Danh mục</label>
-            <select class="form-select" v-model="selectedCategory">
+            <select class="form-select" v-model.number="selectedCategory">
               <option value="">Tất cả danh mục</option>
+
               <optgroup label="Áo nam">
                 <option value="ao">Áo (Tất cả)</option>
                 <option value="ao-so-mi">Áo sơ mi</option>
@@ -56,6 +57,9 @@
                 <option value="quan-kaki">Quần kaki</option>
                 <option value="quan-short">Quần short</option>
               </optgroup>
+
+              <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.ten }}</option>
+
             </select>
           </div>
           <div class="col-md-3">
@@ -70,9 +74,19 @@
           <div class="col-md-3">
             <label class="form-label">Khoảng giá</label>
             <div class="price-range">
-              <input type="number" class="form-control" placeholder="Từ" v-model.number="priceRange.min">
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Từ"
+                v-model.number="priceRange.min"
+              />
               <span class="range-separator">-</span>
-              <input type="number" class="form-control" placeholder="Đến" v-model.number="priceRange.max">
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Đến"
+                v-model.number="priceRange.max"
+              />
             </div>
           </div>
           <div class="col-md-3">
@@ -80,13 +94,13 @@
             <select class="form-select" v-model="stockFilter">
               <option value="">Tất cả</option>
               <option value="in-stock">Còn hàng</option>
-              <option value="low-stock">Sắp hết hàng (< 10)</option>
+              <option value="low-stock">Sắp hết hàng (&lt; 10)</option>
               <option value="out-of-stock">Hết hàng</option>
             </select>
           </div>
           <div class="col-md-3">
             <label class="form-label">Ngày tạo</label>
-            <input type="date" class="form-control" v-model="createdDate">
+            <input type="date" class="form-control" v-model="createdDate" />
           </div>
           <div class="col-md-3">
             <label class="form-label">Sắp xếp</label>
@@ -104,8 +118,8 @@
           <div class="col-md-6">
             <label class="form-label">Thẻ</label>
             <div class="tag-filters">
-              <span 
-                v-for="tag in availableTags" 
+              <span
+                v-for="tag in availableTags"
                 :key="tag"
                 :class="['tag-filter', { active: selectedTags.includes(tag) }]"
                 @click="toggleTag(tag)"
@@ -124,19 +138,19 @@
       <div class="table-actions">
         <div class="view-options">
           <span class="view-label">Hiển thị:</span>
-          <button 
+          <button
             :class="['view-btn', { active: viewMode === 'table' }]"
             @click="viewMode = 'table'"
             title="Dạng bảng"
           >
-            <i class="bi bi-table"></i>
+            <i class="ph-table"></i>
           </button>
-          <button 
+          <button
             :class="['view-btn', { active: viewMode === 'grid' }]"
             @click="viewMode = 'grid'"
             title="Dạng lưới"
           >
-            <i class="bi bi-grid-3x3-gap"></i>
+            <i class="ph-grid-four"></i>
           </button>
         </div>
         <div class="table-stats">
@@ -152,7 +166,12 @@
           <thead>
             <tr>
               <th>
-                <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  v-model="selectAll"
+                  @change="toggleSelectAll"
+                />
               </th>
               <th>
                 <button class="sort-btn" @click="sortTable('name')">
@@ -187,12 +206,17 @@
           <tbody>
             <tr v-for="product in filteredProducts" :key="product.id">
               <td>
-                <input type="checkbox" class="form-check-input" v-model="selectedProducts" :value="product.id">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  v-model="selectedProducts"
+                  :value="product.id"
+                />
               </td>
               <td>
                 <div class="product-info">
                   <div class="product-image">
-                    <img :src="product.image" :alt="product.name" class="img-fluid">
+                    <img :src="product.image" :alt="product.name" class="img-fluid" />
                     <div v-if="product.isNew" class="new-badge">Mới</div>
                     <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
                   </div>
@@ -200,19 +224,27 @@
                     <div class="product-name">{{ product.name }}</div>
                     <div class="product-sku">SKU: {{ product.sku }}</div>
                     <div v-if="product.tags && product.tags.length" class="product-tags">
-                      <span v-for="tag in product.tags.slice(0, 2)" :key="tag" class="tag">{{ tag }}</span>
-                      <span v-if="product.tags.length > 2" class="tag-more">+{{ product.tags.length - 2 }}</span>
+                      <span v-for="tag in product.tags.slice(0, 2)" :key="tag" class="tag">{{
+                        tag
+                      }}</span>
+                      <span v-if="product.tags.length > 2" class="tag-more"
+                        >+{{ product.tags.length - 2 }}</span
+                      >
                     </div>
                   </div>
                 </div>
               </td>
               <td>
-                <span class="badge bg-light text-dark">{{ getCategoryName(product.category) }}</span>
+                <span class="badge bg-light text-dark">{{
+                  getCategoryName(product.category)
+                }}</span>
               </td>
               <td>
                 <div class="price-info">
                   <div class="current-price">{{ formatCurrency(product.price) }}</div>
-                  <div v-if="product.originalPrice" class="original-price">{{ formatCurrency(product.originalPrice) }}</div>
+                  <div v-if="product.originalPrice" class="original-price">
+                    {{ formatCurrency(product.originalPrice) }}
+                  </div>
                   <div v-if="product.originalPrice" class="discount-percent">
                     -{{ Math.round((1 - product.price / product.originalPrice) * 100) }}%
                   </div>
@@ -224,17 +256,22 @@
                     {{ product.stock }}
                   </span>
                   <div v-if="product.stock < 10 && product.stock > 0" class="low-stock-warning">
-                    <i class="bi bi-exclamation-triangle"></i> Sắp hết
+                    <i class="ph-warning"></i> Sắp hết
                   </div>
                 </div>
               </td>
               <td>
                 <div class="rating-info">
                   <div class="rating-stars">
-                    <i v-for="i in 5" :key="i" 
-                       :class="['star', { filled: i <= product.rating }]"></i>
+                    <i
+                      v-for="i in 5"
+                      :key="i"
+                      :class="['star', { filled: i <= product.rating }]"
+                    ></i>
                   </div>
-                  <div class="rating-text">{{ product.rating }}/5 ({{ product.reviewCount }} đánh giá)</div>
+                  <div class="rating-text">
+                    {{ product.rating }}/5 ({{ product.reviewCount }} đánh giá)
+                  </div>
                 </div>
               </td>
               <td>
@@ -250,20 +287,40 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)" title="Chỉnh sửa">
-                    <i class="bi bi-pencil"></i>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    @click="editProduct(product)"
+                    title="Chỉnh sửa"
+                  >
+                    <i class="ph-pencil"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-info" @click="viewProduct(product)" title="Xem chi tiết">
-                    <i class="bi bi-eye"></i>
+                  <button
+                    class="btn btn-sm btn-outline-info"
+                    @click="viewProduct(product)"
+                    title="Xem chi tiết"
+                  >
+                    <i class="ph-eye"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)" title="Nhân bản">
-                    <i class="bi bi-copy"></i>
+                  <button
+                    class="btn btn-sm btn-outline-success"
+                    @click="duplicateProduct(product)"
+                    title="Nhân bản"
+                  >
+                    <i class="ph-copy"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)" title="Đánh dấu nổi bật">
-                    <i :class="product.isFeatured ? 'bi bi-star-fill' : 'bi bi-star'"></i>
+                  <button
+                    class="btn btn-sm btn-outline-warning"
+                    @click="toggleFeatured(product)"
+                    title="Đánh dấu nổi bật"
+                  >
+                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)" title="Xóa">
-                    <i class="bi bi-trash"></i>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    @click="deleteProduct(product)"
+                    title="Xóa"
+                  >
+                    <i class="ph-trash"></i>
                   </button>
                 </div>
               </td>
@@ -275,23 +332,40 @@
       <!-- Grid View -->
       <div v-if="viewMode === 'grid'" class="products-grid">
         <div class="row g-4">
-          <div v-for="product in filteredProducts" :key="product.id" class="col-lg-3 col-md-4 col-sm-6">
+          <div
+            v-for="product in filteredProducts"
+            :key="product.id"
+            class="col-lg-3 col-md-4 col-sm-6"
+          >
             <div class="product-card">
               <div class="product-card-header">
-                <input type="checkbox" class="form-check-input" v-model="selectedProducts" :value="product.id">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  v-model="selectedProducts"
+                  :value="product.id"
+                />
                 <div class="product-badges">
                   <span v-if="product.isNew" class="badge bg-success">Mới</span>
                   <span v-if="product.isFeatured" class="badge bg-warning">Nổi bật</span>
                 </div>
               </div>
               <div class="product-image-container">
-                <img :src="product.image" :alt="product.name" class="product-image">
+                <img :src="product.image" :alt="product.name" class="product-image" />
                 <div class="product-overlay">
-                  <button class="btn btn-sm btn-light" @click="viewProduct(product)" title="Xem chi tiết">
-                    <i class="bi bi-eye"></i>
+                  <button
+                    class="btn btn-sm btn-light"
+                    @click="viewProduct(product)"
+                    title="Xem chi tiết"
+                  >
+                    <i class="ph-eye"></i>
                   </button>
-                  <button class="btn btn-sm btn-primary" @click="editProduct(product)" title="Chỉnh sửa">
-                    <i class="bi bi-pencil"></i>
+                  <button
+                    class="btn btn-sm btn-primary"
+                    @click="editProduct(product)"
+                    title="Chỉnh sửa"
+                  >
+                    <i class="ph-pencil"></i>
                   </button>
                 </div>
               </div>
@@ -303,14 +377,19 @@
                 </div>
                 <div class="product-rating">
                   <div class="rating-stars">
-                    <i v-for="i in 5" :key="i" 
-                       :class="['star', { filled: i <= product.rating }]"></i>
+                    <i
+                      v-for="i in 5"
+                      :key="i"
+                      :class="['star', { filled: i <= product.rating }]"
+                    ></i>
                   </div>
                   <span class="rating-count">({{ product.reviewCount }})</span>
                 </div>
                 <div class="product-price">
                   <span class="current-price">{{ formatCurrency(product.price) }}</span>
-                  <span v-if="product.originalPrice" class="original-price">{{ formatCurrency(product.originalPrice) }}</span>
+                  <span v-if="product.originalPrice" class="original-price">{{
+                    formatCurrency(product.originalPrice)
+                  }}</span>
                 </div>
                 <div class="product-stock">
                   <span :class="['stock-badge', getStockClass(product.stock)]">
@@ -324,16 +403,16 @@
               <div class="product-card-footer">
                 <div class="product-actions">
                   <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)">
-                    <i class="bi bi-pencil"></i>
+                    <i class="ph-pencil"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)">
-                    <i class="bi bi-copy"></i>
+                    <i class="ph-copy"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)">
-                    <i :class="product.isFeatured ? 'bi bi-star-fill' : 'bi bi-star'"></i>
+                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)">
-                    <i class="bi bi-trash"></i>
+                    <i class="ph-trash"></i>
                   </button>
                 </div>
               </div>
@@ -348,8 +427,9 @@
       <div class="row align-items-center">
         <div class="col-md-6">
           <div class="pagination-info">
-            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, totalItems) }} 
-            trong tổng số {{ totalItems }} sản phẩm
+            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} -
+            {{ Math.min(currentPage * itemsPerPage, totalItems) }} trong tổng số
+            {{ totalItems }} sản phẩm
           </div>
         </div>
         <div class="col-md-6">
@@ -358,7 +438,12 @@
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
                 <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">Trước</a>
               </li>
-              <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: currentPage === page }">
+              <li
+                class="page-item"
+                v-for="page in visiblePages"
+                :key="page"
+                :class="{ active: currentPage === page }"
+              >
                 <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
               </li>
               <li class="page-item" :class="{ disabled: currentPage === totalPages }">
@@ -376,13 +461,13 @@
         <span class="selected-count">{{ selectedProducts.length }} sản phẩm đã chọn</span>
         <div class="bulk-buttons">
           <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('active')">
-            <i class="bi bi-check me-1"></i>Kích hoạt
+            <i class="ph-check me-1"></i>Kích hoạt
           </button>
           <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('inactive')">
-            <i class="bi bi-pause me-1"></i>Ngừng bán
+            <i class="ph-pause me-1"></i>Ngừng bán
           </button>
           <button class="btn btn-sm btn-outline-danger" @click="bulkDelete">
-            <i class="bi bi-trash me-1"></i>Xóa
+            <i class="ph-trash me-1"></i>Xóa
           </button>
         </div>
       </div>
@@ -392,9 +477,11 @@
     <div v-if="showAddModal" class="modal-overlay" @click="closeModal">
       <div class="modal-content modal-large" @click.stop>
         <div class="modal-header">
-          <h5 class="modal-title">{{ editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới' }}</h5>
+          <h5 class="modal-title">
+            {{ editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới' }}
+          </h5>
           <button class="btn-close" @click="closeModal">
-            <i class="bi bi-x"></i>
+            <i class="ph-x"></i>
           </button>
         </div>
 
@@ -615,6 +702,7 @@
 import { ref, computed, onMounted } from 'vue'
 import VariantManagerAdmin from '@/components/admin/VariantManagerAdmin.vue'
 import ImageUploaderAdmin from '@/components/admin/ImageUploaderAdmin.vue'
+import sanPhamService from '../../services/sanPhamService'
 
 // Reactive data
 const searchQuery = ref('')
@@ -622,10 +710,11 @@ const selectedCategory = ref('')
 const selectedStatus = ref('')
 const selectedProducts = ref([])
 const selectAll = ref(false)
-const currentPage = ref(1)
+const currentPage = ref(0) // backend uses 0-based pages
 const itemsPerPage = 10
 const showAddModal = ref(false)
 const editingProduct = ref(null)
+const isLoading = ref(false)
 
 // NEW: Tab management
 const activeTab = ref('basic')
@@ -644,10 +733,14 @@ const tableSort = ref({ field: '', direction: 'asc' })
 // Available tags
 const availableTags = ref(['Bestseller', 'Sale', 'New', 'Premium', 'Limited'])
 
+// Categories fetched from backend
+const categories = ref([])
+
+// Product form (keeps existing UI field names)
 const productForm = ref({
   name: '',
   sku: '',
-  category: '',
+  categoryId: '',
   status: 'active',
   price: 0,
   originalPrice: 0,
@@ -665,182 +758,204 @@ const productForm = ref({
   tags: []
 })
 
-// Mock data
-const products = ref([
-  {
-    id: 1,
-    name: 'Áo sơ mi nam cao cấp',
-    sku: 'ASM001',
-    category: 'ao',
-    price: 450000,
-    originalPrice: 600000,
-    stock: 25,
-    status: 'active',
-    description: 'Áo sơ mi nam chất liệu cotton 100%',
-    image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-15'),
-    rating: 4.5,
-    reviewCount: 128,
-    tags: ['Premium', 'Bestseller'],
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: 2,
-    name: 'Quần âu nam',
-    sku: 'QAN002',
-    category: 'quan',
-    price: 650000,
-    originalPrice: 800000,
-    stock: 15,
-    status: 'active',
-    description: 'Quần âu nam thiết kế hiện đại',
-    image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-20'),
-    rating: 4.2,
-    reviewCount: 89,
-    tags: ['Sale', 'Premium'],
-    isNew: false,
-    isFeatured: false
-  },
-  {
-    id: 3,
-    name: 'Áo khoác nam',
-    sku: 'AKN003',
-    category: 'ao',
-    price: 850000,
-    originalPrice: 1200000,
-    stock: 0,
-    status: 'out-of-stock',
-    description: 'Áo khoác nam phong cách casual',
-    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-25'),
-    rating: 4.8,
-    reviewCount: 67,
-    tags: ['Limited', 'Premium'],
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: 4,
-    name: 'Áo thun nam',
-    sku: 'ATN004',
-    category: 'ao',
-    price: 250000,
-    originalPrice: 350000,
-    stock: 50,
-    status: 'active',
-    description: 'Áo thun nam chất liệu cotton mềm mại',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-02-01'),
-    rating: 4.0,
-    reviewCount: 203,
-    tags: ['Sale', 'New'],
-    isNew: true,
-    isFeatured: false
-  },
-  {
-    id: 5,
-    name: 'Vest nam công sở',
-    sku: 'VST005',
-    category: 'ao',
-    price: 1200000,
-    originalPrice: 1500000,
-    stock: 8,
-    status: 'active',
-    description: 'Vest nam cao cấp cho công sở',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-10'),
-    rating: 4.7,
-    reviewCount: 45,
-    tags: ['Premium', 'Limited'],
-    isNew: false,
-    isFeatured: true
-  },
-  {
-    id: 6,
-    name: 'Quần jean nam',
-    sku: 'QJN006',
-    category: 'quan',
-    price: 380000,
-    originalPrice: 500000,
-    stock: 32,
-    status: 'active',
-    description: 'Quần jean nam phong cách trẻ trung',
-    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
-    createdAt: new Date('2024-01-18'),
-    rating: 4.3,
-    reviewCount: 156,
-    tags: ['Bestseller', 'Sale'],
-    isNew: false,
-    isFeatured: false
-  }
-])
+// Products loaded from backend
+const products = ref([])
+const totalItems = ref(0)
+const totalPages = ref(1)
 
-// Computed
+function mapFromApi(sp) {
+  return {
+    id: sp.id,
+    name: sp.ten,
+    sku: sp.sku || '',
+    categoryId: sp.danhMucId || '',
+    price: Number(sp.gia) || 0,
+    originalPrice: null,
+    stock: 0,
+    status: sp.trangThai || 'active',
+    description: sp.moTa,
+    image: sp.hinhAnhUrl || '',
+    createdAt: sp.taoLuc ? new Date(sp.taoLuc) : new Date(),
+  }
+}
+
+function mapToApi(form) {
+  return {
+    ten: form.name,
+    moTa: form.description,
+    danhMucId: form.categoryId || null,
+    gia: form.price != null ? Number(form.price) : null,
+    trangThai: form.status,
+  }
+}
+
+const loadProducts = async (pageNumber = 0) => {
+  isLoading.value = true
+  try {
+    const params = {
+      page: pageNumber,
+      size: itemsPerPage,
+      search: searchQuery.value || undefined,
+      danhMucId: selectedCategory.value || undefined,
+    }
+    const res = await sanPhamService.page(params)
+    // res is expected to be a Page<SanPhamResponse>
+    products.value = (res.content || []).map(mapFromApi)
+    totalItems.value = res.totalElements || (res.content || []).length
+    totalPages.value = res.totalPages || 1
+    // controller returns 0-based page number; expose 1-based for UI
+    currentPage.value = typeof res.number === 'number' ? res.number + 1 : pageNumber + 1
+  } catch (e) {
+    console.error('Load products error', e)
+    alert('Lỗi khi tải sản phẩm: ' + (e?.message || JSON.stringify(e)))
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    loadProducts(page - 1)
+  }
+}
+
+const editProduct = (product) => {
+  editingProduct.value = product
+  productForm.value = { ...product }
+  showAddModal.value = true
+}
+
+const viewProduct = (product) => {
+  // simple detail view - open product page in new tab (if exists)
+  const slug = product.name ? product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : product.id
+  window.open(`/product/${slug}`, '_blank')
+}
+
+const closeModal = () => {
+  showAddModal.value = false
+  editingProduct.value = null
+  productForm.value = {
+    name: '',
+    sku: '',
+    categoryId: '',
+    status: 'active',
+    price: 0,
+    originalPrice: 0,
+    stock: 0,
+    description: '',
+    image: '',
+  }
+}
+
+const saveProduct = async () => {
+  const payload = mapToApi(productForm.value)
+  try {
+    if (editingProduct.value) {
+      await sanPhamService.update(editingProduct.value.id, payload)
+    } else {
+      await sanPhamService.create(payload)
+    }
+    await loadProducts(currentPage.value)
+    closeModal()
+  } catch (e) {
+    console.error('Save product error', e)
+    alert('Lưu sản phẩm lỗi: ' + (e?.message || JSON.stringify(e)))
+  }
+}
+
+const deleteProduct = async (product) => {
+  if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`)) return
+  try {
+    await sanPhamService.delete(product.id)
+    await loadProducts(currentPage.value)
+  } catch (e) {
+    console.error('Delete product error', e)
+    alert('Xóa sản phẩm lỗi: ' + (e?.message || JSON.stringify(e)))
+  }
+}
+
+const duplicateProduct = (product) => {
+  // For now duplicating locally; you may want to implement server-side clone
+  const duplicatedProduct = {
+    ...product,
+    id: Date.now(),
+    name: product.name + ' (Copy)',
+    sku: product.sku + '-COPY',
+    createdAt: new Date(),
+    isNew: true,
+    isFeatured: false,
+  }
+  products.value.unshift(duplicatedProduct)
+}
+
+const toggleFeatured = (product) => {
+  product.isFeatured = !product.isFeatured
+}
+
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedProducts.value = products.value.map((p) => p.id)
+  } else {
+    selectedProducts.value = []
+  }
+}
+
+const bulkUpdateStatus = (status) => {
+  if (
+    confirm(
+      `Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedProducts.value.length} sản phẩm?`,
+    )
+  ) {
+    // For simplicity update locally; implement batch API if desired
+    selectedProducts.value.forEach((productId) => {
+      const product = products.value.find((p) => p.id === productId)
+      if (product) product.status = status
+    })
+    selectedProducts.value = []
+    selectAll.value = false
+  }
+}
+
+const bulkDelete = () => {
+  if (confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.value.length} sản phẩm?`)) {
+    // For now delete locally; implement batch delete API if desired
+    selectedProducts.value.forEach((productId) => {
+      const idx = products.value.findIndex((p) => p.id === productId)
+      if (idx > -1) products.value.splice(idx, 1)
+    })
+    selectedProducts.value = []
+    selectAll.value = false
+  }
+}
+
+// Computed and helper functions reused from the original file
 const filteredProducts = computed(() => {
   let filtered = products.value
 
   // Search filter
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(product =>
-      product.name.toLowerCase().includes(query) ||
-      product.sku.toLowerCase().includes(query) ||
-      product.description.toLowerCase().includes(query)
+    filtered = filtered.filter(
+      (product) =>
+        (product.name || '').toLowerCase().includes(query) ||
+        (product.sku || '').toLowerCase().includes(query) ||
+        (product.description || '').toLowerCase().includes(query),
     )
   }
 
   // Category filter
   if (selectedCategory.value) {
-    filtered = filtered.filter(product => product.category === selectedCategory.value)
+    filtered = filtered.filter(
+      (product) => Number(product.categoryId) === Number(selectedCategory.value),
+    )
   }
 
   // Status filter
   if (selectedStatus.value) {
-    filtered = filtered.filter(product => product.status === selectedStatus.value)
+    filtered = filtered.filter((product) => product.status === selectedStatus.value)
   }
 
-  // Price range filter
-  if (priceRange.value.min !== null && priceRange.value.min !== '') {
-    filtered = filtered.filter(product => product.price >= priceRange.value.min)
-  }
-  if (priceRange.value.max !== null && priceRange.value.max !== '') {
-    filtered = filtered.filter(product => product.price <= priceRange.value.max)
-  }
-
-  // Stock filter
-  if (stockFilter.value) {
-    switch (stockFilter.value) {
-      case 'in-stock':
-        filtered = filtered.filter(product => product.stock > 10)
-        break
-      case 'low-stock':
-        filtered = filtered.filter(product => product.stock > 0 && product.stock <= 10)
-        break
-      case 'out-of-stock':
-        filtered = filtered.filter(product => product.stock === 0)
-        break
-    }
-  }
-
-  // Date filter
-  if (createdDate.value) {
-    const selectedDate = new Date(createdDate.value)
-    filtered = filtered.filter(product => {
-      const productDate = new Date(product.createdAt)
-      return productDate.toDateString() === selectedDate.toDateString()
-    })
-  }
-
-  // Tags filter
-  if (selectedTags.value.length > 0) {
-    filtered = filtered.filter(product =>
-      product.tags && product.tags.some(tag => selectedTags.value.includes(tag))
-    )
-  }
-
-  // Sorting
+  // Sorting (basic)
   filtered.sort((a, b) => {
     switch (sortBy.value) {
       case 'oldest':
@@ -866,27 +981,24 @@ const filteredProducts = computed(() => {
   return filtered
 })
 
-const totalItems = computed(() => filteredProducts.value.length)
-const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
+const totalItemsComputed = computed(() => filteredProducts.value.length)
+const totalPagesComputed = computed(() => Math.ceil(totalItemsComputed.value / itemsPerPage))
 
 const visiblePages = computed(() => {
+  const total = totalPages.value || totalPagesComputed.value || 1
+  const current = currentPage.value || 1
+  const delta = 2
   const pages = []
-  const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, start + 4)
-  
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  
+  const start = Math.max(1, current - delta)
+  const end = Math.min(total, current + delta)
+  for (let p = start; p <= end; p++) pages.push(p)
   return pages
 })
 
-// Methods
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(amount)
+// Helpers used in template
+function getSortIcon(field) {
+  if (tableSort.value.field !== field) return 'ph-caret-down'
+  return tableSort.value.direction === 'asc' ? 'ph-caret-up' : 'ph-caret-down'
 }
 
 const formatDate = (date) => {
@@ -966,48 +1078,56 @@ const sortTable = (field) => {
     tableSort.value.field = field
     tableSort.value.direction = 'asc'
   }
+  // client sort - rearrange products
+  products.value.sort((a, b) => {
+    const dir = tableSort.value.direction === 'asc' ? 1 : -1
+    if (field === 'price' || field === 'stock') return (a[field] - b[field]) * dir
+    if (field === 'name') return a.name.localeCompare(b.name) * dir
+    if (field === 'createdAt') return (new Date(a.createdAt) - new Date(b.createdAt)) * dir
+    return 0
+  })
 }
 
-const getSortIcon = (field) => {
-  if (tableSort.value.field !== field) return 'bi bi-caret-up-down'
-  return tableSort.value.direction === 'asc' ? 'bi bi-caret-up' : 'bi bi-caret-down'
+function getCategoryName(categoryId) {
+  if (!categoryId) return ''
+  const c = categories.value.find((x) => Number(x.id) === Number(categoryId))
+  return c ? c.ten : ''
 }
 
-const formatTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
+function formatCurrency(v) {
+  if (v == null) return ''
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v)
 }
 
-const duplicateProduct = (product) => {
-  const duplicatedProduct = {
-    ...product,
-    id: Date.now(),
-    name: product.name + ' (Copy)',
-    sku: product.sku + '-COPY',
-    createdAt: new Date(),
-    isNew: true,
-    isFeatured: false
-  }
-  products.value.unshift(duplicatedProduct)
+function formatDate(d) {
+  if (!d) return ''
+  const dt = new Date(d)
+  return dt.toLocaleDateString()
 }
 
-const toggleFeatured = (product) => {
-  product.isFeatured = !product.isFeatured
+function formatTime(d) {
+  if (!d) return ''
+  const dt = new Date(d)
+  return dt.toLocaleTimeString()
 }
 
-const toggleSelectAll = () => {
-  if (selectAll.value) {
-    selectedProducts.value = filteredProducts.value.map(p => p.id)
-  } else {
-    selectedProducts.value = []
-  }
+function getStockClass(stock) {
+  if (stock == null) return 'bg-light'
+  if (stock === 0) return 'bg-danger text-white'
+  if (stock < 10) return 'bg-warning text-dark'
+  return 'bg-success text-white'
 }
 
-const changePage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+function getStatusClass(status) {
+  switch (status) {
+    case 'active':
+      return 'bg-success'
+    case 'inactive':
+      return 'bg-secondary'
+    case 'out-of-stock':
+      return 'bg-danger'
+    default:
+      return 'bg-light text-dark'
   }
 }
 
@@ -1070,34 +1190,34 @@ const saveProduct = () => {
       createdAt: new Date()
     }
     products.value.unshift(newProduct)
-  }
-  
-  closeModal()
-}
-
-const bulkUpdateStatus = (status) => {
-  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedProducts.value.length} sản phẩm?`)) {
-    selectedProducts.value.forEach(productId => {
-      const product = products.value.find(p => p.id === productId)
-      if (product) {
-        product.status = status
-      }
-    })
-    selectedProducts.value = []
-    selectAll.value = false
+function getStatusText(status) {
+  switch (status) {
+    case 'active':
+      return 'Đang bán'
+    case 'inactive':
+      return 'Ngừng bán'
+    case 'out-of-stock':
+      return 'Hết hàng'
+    default:
+      return status
   }
 }
 
-const bulkDelete = () => {
-  if (confirm(`Bạn có chắc chắn muốn xóa ${selectedProducts.value.length} sản phẩm?`)) {
-    selectedProducts.value.forEach(productId => {
-      const index = products.value.findIndex(p => p.id === productId)
-      if (index > -1) {
-        products.value.splice(index, 1)
-      }
-    })
-    selectedProducts.value = []
-    selectAll.value = false
+function toggleTag(tag) {
+  const idx = selectedTags.value.indexOf(tag)
+  if (idx === -1) selectedTags.value.push(tag)
+  else selectedTags.value.splice(idx, 1)
+}
+
+// load categories for selects
+async function loadCategories() {
+  try {
+    const res = await (await import('../../services/api')).default.categories.getAll()
+    // If res is array of categories, map to simple structure
+    categories.value = Array.isArray(res) ? res : []
+  } catch (e) {
+    // keep fallback
+    console.warn('Could not load categories', e)
   }
 }
 
@@ -1173,7 +1293,13 @@ const handleVariantsUpdate = (variantsData) => {
 // Lifecycle
 onMounted(() => {
   // Initialize products page
+
+  await loadCategories()
+  await loadProducts(0)
+
 })
+
+// initial load handled in combined onMounted above
 </script>
 
 <style scoped>
@@ -1387,7 +1513,8 @@ onMounted(() => {
   object-fit: cover;
 }
 
-.new-badge, .featured-badge {
+.new-badge,
+.featured-badge {
   position: absolute;
   top: 0.25rem;
   right: 0.25rem;
@@ -1902,38 +2029,38 @@ onMounted(() => {
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .header-right {
     width: 100%;
   }
-  
+
   .header-right .btn {
     width: 100%;
   }
-  
+
   .products-table {
     padding: 1rem;
   }
-  
+
   .table-responsive {
     font-size: 0.9rem;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .bulk-actions {
     left: 1rem;
     right: 1rem;
     transform: none;
   }
-  
+
   .bulk-actions-content {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .bulk-buttons {
     width: 100%;
     justify-content: space-between;

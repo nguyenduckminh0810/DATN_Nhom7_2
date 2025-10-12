@@ -1,77 +1,52 @@
 package com.auro.auro.controller;
 
-import com.auro.auro.model.SanPham;
+import com.auro.auro.dto.request.SanPhamRequest;
+import com.auro.auro.dto.response.SanPhamResponse;
 import com.auro.auro.service.SanPhamService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Optional;
-
 @RestController
 @RequestMapping("/api/san-pham")
-@RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class SanPhamController {
 
-    private final SanPhamService sanPhamService;
+    @Autowired
+    private SanPhamService sanPhamService;
 
     @GetMapping
-    public ResponseEntity<Page<SanPham>> getAllSanPham(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search,
-            @RequestParam(required = false) Long danhMucId) {
-        
-        Page<SanPham> sanPhams = sanPhamService.getAllSanPham(page, size, search, danhMucId);
-        return ResponseEntity.ok(sanPhams);
+    public ResponseEntity<Page<SanPhamResponse>> page(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "danhMucId", required = false) Long danhMucId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Page<SanPhamResponse> p = sanPhamService.getPage(search, danhMucId, PageRequest.of(page, size));
+        return ResponseEntity.ok(p);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<SanPham> getSanPhamById(@PathVariable Long id) {
-        Optional<SanPham> sanPham = sanPhamService.getSanPhamById(id);
-        return sanPham.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/slug/{slug}")
-    public ResponseEntity<SanPham> getSanPhamBySlug(@PathVariable String slug) {
-        Optional<SanPham> sanPham = sanPhamService.getSanPhamBySlug(slug);
-        return sanPham.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/featured")
-    public ResponseEntity<List<SanPham>> getFeaturedSanPham() {
-        List<SanPham> featuredProducts = sanPhamService.getFeaturedSanPham();
-        return ResponseEntity.ok(featuredProducts);
-    }
-
-    @GetMapping("/category/{danhMucId}")
-    public ResponseEntity<List<SanPham>> getSanPhamByDanhMuc(@PathVariable Long danhMucId) {
-        List<SanPham> sanPhams = sanPhamService.getSanPhamByDanhMuc(danhMucId);
-        return ResponseEntity.ok(sanPhams);
+    public ResponseEntity<SanPhamResponse> get(@PathVariable Long id) {
+        return ResponseEntity.ok(sanPhamService.getById(id));
     }
 
     @PostMapping
-    public ResponseEntity<SanPham> createSanPham(@RequestBody SanPham sanPham) {
-        SanPham createdSanPham = sanPhamService.createSanPham(sanPham);
-        return ResponseEntity.ok(createdSanPham);
+    public ResponseEntity<SanPhamResponse> create(@Valid @RequestBody SanPhamRequest req) {
+        SanPhamResponse res = sanPhamService.create(req);
+        return ResponseEntity.status(201).body(res);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SanPham> updateSanPham(@PathVariable Long id, @RequestBody SanPham sanPham) {
-        Optional<SanPham> updatedSanPham = sanPhamService.updateSanPham(id, sanPham);
-        return updatedSanPham.map(ResponseEntity::ok)
-                            .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<SanPhamResponse> update(@PathVariable Long id, @Valid @RequestBody SanPhamRequest req) {
+        return ResponseEntity.ok(sanPhamService.update(id, req));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSanPham(@PathVariable Long id) {
-        boolean deleted = sanPhamService.deleteSanPham(id);
-        return deleted ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        sanPhamService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

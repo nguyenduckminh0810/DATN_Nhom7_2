@@ -3,6 +3,7 @@ package com.auro.auro.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -18,20 +19,12 @@ public class SanPham {
     @Column(name = "ten", nullable = false, length = 200)
     private String ten;
 
-    @Column(name = "slug", nullable = false, length = 200, unique = true)
+    // Some databases may require a non-null, unique slug for products
+    @Column(name = "slug", nullable = true, length = 200, unique = true)
     private String slug;
-
-    @Column(name = "thuong_hieu", length = 100)
-    private String thuongHieu;
 
     @Column(name = "mo_ta", columnDefinition = "NVARCHAR(MAX)")
     private String moTa;
-
-    @Column(name = "huong_dan_bao_quan", columnDefinition = "NVARCHAR(MAX)")
-    private String huongDanBaoQuan;
-
-    @Column(name = "bang_size_json", columnDefinition = "NVARCHAR(MAX)")
-    private String bangSizeJson;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_danh_muc", nullable = false)
@@ -39,8 +32,11 @@ public class SanPham {
     @EqualsAndHashCode.Exclude
     private DanhMuc danhMuc;
 
-    @Column(name = "trang_thai")
-    private Boolean trangThai = true;
+    @Column(name = "gia", nullable = false, precision = 12, scale = 2)
+    private BigDecimal gia;
+
+    @Column(name = "trang_thai", nullable = false, length = 50)
+    private String trangThai = "active"; // active/inactive/out-of-stock
 
     @Column(name = "tao_luc")
     private LocalDateTime taoLuc;
