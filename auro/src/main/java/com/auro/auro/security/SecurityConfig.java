@@ -3,6 +3,7 @@ package com.auro.auro.security;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -44,32 +45,57 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/logout").permitAll()
                         // .requestMatchers("/api/auth/**").permitAll()
 
-                        .requestMatchers("/api/products/**").permitAll()
-                        .requestMatchers("/api/san-pham/**").permitAll()
-                        .requestMatchers("/api/categories/**").permitAll()
-                        .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/san-pham/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/danh-muc/**").permitAll()
+
+                        // API TEST (DÙNG XONG NHỚ XÓA)
+                        .requestMatchers("/api/test/**").permitAll()
 
                         // Guest endpoints - khách vãng lai
-                        .requestMatchers("/api/guest/**").permitAll()
-                        .requestMatchers("/api/cart/**").permitAll()
-                        .requestMatchers("/api/checkout/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,"/api/don-hang/khach").permitAll()
+                        .requestMatchers(HttpMethod.GET,"/api/don-hang/theo-doi/**").permitAll()
 
                         // Customer endpoints - khách đã đăng ký
-                        .requestMatchers("/api/customer/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                        .requestMatchers("/api/voucher/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
-                        .requestMatchers("/api/orders/**").hasAnyRole("CUSTOMER", "STAFF", "ADMIN")
+                        .requestMatchers("/api/auth/me").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers(HttpMethod.POST,"/api/don-hang").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers(HttpMethod.GET, "/api/don-hang/cua-toi").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers("/api/gio-hang/**").hasAnyRole("CUS","STF","ADM")
 
-                        // Staff endpoints - nhân viên
-                        .requestMatchers("/api/staff/**").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers("/api/inventory/**").hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers("/api/orders/manage/**").hasAnyRole("STAFF", "ADMIN")
+                        // Voucher
+                        .requestMatchers(HttpMethod.GET, "/api/phieu-giam-gia/co-san").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/phieu-giam-gia/ap-dung").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers(HttpMethod.POST, "/api/phieu-giam-gia/kiem-tra").hasAnyRole("CUS","STF","ADM")
 
-                        // Admin endpoints - quản lý
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
-                        .requestMatchers("/api/reports/**").hasRole("ADMIN")
+                        // Thông tin hồ sơ địa chỉ
+                        .requestMatchers("/api/ho-so/**").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers("/api/dia-chi/**").hasAnyRole("CUS","STF","ADM")
 
-                        .requestMatchers("/api/test/**").permitAll()
+                        // Staff + admin endpoints
+                        //crud sản phẩm
+                        .requestMatchers(HttpMethod.POST, "/api/san-pham").hasAnyRole("STF","ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/san-pham/**").hasAnyRole("STF","ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/san-pham/**").hasAnyRole("STF","ADM")
+
+                        // crud danh mục
+                        .requestMatchers(HttpMethod.POST, "/api/danh-muc").hasAnyRole("STF","ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasAnyRole("STF","ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasAnyRole("STF","ADM")
+                        
+                        // quản lý đơn hàng
+                        .requestMatchers("/api/don-hang/quan-ly/**").hasAnyRole("STF","ADM")
+
+                        // quản lý voucher
+                        .requestMatchers("/api/phieu-giam-gia/quan-ly/**").hasAnyRole("STF","ADM")
+
+                        // quản lý tồn kho
+                        .requestMatchers("/api/ton-kho/**").hasAnyRole("STF","ADM")
+
+                        // ADMIN
+                        .requestMatchers("/api/admin/**").hasRole("ADM")
+                        .requestMatchers("/api/nguoi-dung/**").hasRole("ADM")
+                        .requestMatchers("/api/thong-ke/**").hasRole("ADM")
+                        .requestMatchers("/api/cai-dat/**").hasRole("ADM")
+                        .requestMatchers("/api/vai-tro/**").hasRole("ADM")
 
                         // All other requests need authentication (bao gồm /api/auth/me)
                         .anyRequest().authenticated())
