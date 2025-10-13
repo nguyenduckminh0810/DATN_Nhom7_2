@@ -63,21 +63,40 @@ public class AuthService {
                 throw new DuplicateResourceException("Số điện thoại này đã được đăng ký");
             }
         }
-
         //Tìm vai trò
-        String maVaiTro = request.getLoaiTaiKhoan() != null ? 
-                          request.getLoaiTaiKhoan().toUpperCase() : "CUSTOMER";
-        String role = switch (maVaiTro) {
-    case "CUSTOMER", "CUS", "KH" -> "CUS";
-    case "GUEST", "GST"          -> "GST";
-    case "STAFF", "NV", "EMP"    -> "STF";
-    case "ADMIN", "ADM"          -> "ADM";
-    default -> throw new BadRequestException("Loại tài khoản không hợp lệ: " + maVaiTro);
-};
-                          VaiTro vaiTro = vaiTroRepository.findByMa(role)
-                          .orElseThrow(() -> new ResourceNotFoundException(
-                              "Không tìm thấy vai trò: " + role
-                          ));
+//Tìm vai trò
+String maVaiTro = request.getLoaiTaiKhoan() != null ? 
+                  request.getLoaiTaiKhoan().toUpperCase() : "CUSTOMER";
+System.out.println("DEBUG - maVaiTro: " + maVaiTro);
+String role;
+switch (maVaiTro) {
+    case "CUSTOMER":
+    case "CUS":
+        role = "CUS";
+        break;
+    case "GUEST":
+    case "GST":
+        role = "GST";
+        break;
+    case "STAFF":
+    case "STF":
+        role = "STF";
+        break;
+    case "ADMIN":
+    case "ADM":
+        role = "ADM";
+        break;
+    default:
+        System.out.println("DEBUG - No case matched for: " + maVaiTro);
+        throw new BadRequestException("Loại tài khoản không hợp lệ: " + maVaiTro);
+}
+System.out.println("DEBUG - Final role: " + role);
+        
+        VaiTro vaiTro = vaiTroRepository.findByMa(role)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Không tìm thấy vai trò: " + role
+                ));
+
 
 
         String matKhauHash = passwordEncoder.encode(request.getMatKhau());
@@ -96,7 +115,7 @@ public class AuthService {
 
         TaiKhoan savedTaiKhoan = taiKhoanRepository.save(taiKhoan);
 
-        if ("CUSTOMER".equals(maVaiTro) || "GUEST".equals(maVaiTro)) {
+        if ("CUS".equals(maVaiTro) || "GST".equals(maVaiTro)) {
             // Tạo KhachHang
             KhachHang khachHang = new KhachHang();
             khachHang.setTaiKhoan(savedTaiKhoan);
@@ -106,7 +125,7 @@ public class AuthService {
             khachHang.setKieu(maVaiTro);
             khachHangRepository.save(khachHang);
             
-        } else if ("STAFF".equals(maVaiTro) || "ADMIN".equals(maVaiTro)) {
+        } else if ("STF".equals(maVaiTro) || "ADM".equals(maVaiTro)) {
             // Tạo NhanVien
             NhanVien nhanVien = new NhanVien();
             nhanVien.setTaiKhoan(savedTaiKhoan);
@@ -228,7 +247,7 @@ public class AuthService {
             NhanVien nhanVien = nhanVienRepository.findByTaiKhoan(taiKhoan).orElse(null);
             if (nhanVien != null) {
                 hoTen = nhanVien.getHoTen();
-                kieu = "STF"; 
+                kieu = maVaiTro; 
             }
         }
         

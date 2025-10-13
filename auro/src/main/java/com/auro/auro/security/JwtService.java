@@ -6,10 +6,15 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import java.util.stream.Collectors;
 
 import java.security.Key;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,7 +42,9 @@ public class JwtService {
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("authorities", userDetails.getAuthorities());
+        return generateToken(extraClaims, userDetails);
     }
 
     public String generateToken(
@@ -51,6 +58,31 @@ public class JwtService {
             UserDetails userDetails
     ) {
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
+    }
+
+    public Collection<? extends GrantedAuthority> extractAuthorities(String token) {
+        Claims claims = extractAllClaims(token);
+        Object authoritiesObj = claims.get("authorities");
+        
+        System.out.println("DEBUG - authoritiesObj: " + authoritiesObj);
+        System.out.println("DEBUG - authoritiesObj type: " + (authoritiesObj != null ? authoritiesObj.getClass() : "null"));
+        
+        if (authoritiesObj == null) {
+            return new ArrayList<>();
+        }
+        
+        // Thử parse theo format thực tế
+        try {
+            @SuppressWarnings("unchecked")
+            Collection<Map<String, String>> authorities = (Collection<Map<String, String>>) authoritiesObj;
+            
+            return authorities.stream()
+                    .map(auth -> new SimpleGrantedAuthority(auth.get("authority")))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.out.println("DEBUG - Error parsing authorities: " + e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     private String buildToken(
@@ -94,4 +126,5 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
 }
