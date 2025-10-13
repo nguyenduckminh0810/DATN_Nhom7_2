@@ -5,14 +5,15 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "don_hang")
-@Data 
-@NoArgsConstructor 
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class DonHang {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -21,7 +22,7 @@ public class DonHang {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_khach_hang", nullable = false)
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private KhachHang khachHang;
 
@@ -43,21 +44,21 @@ public class DonHang {
     @Column(name = "tong_thue", precision = 18, scale = 2)
     private BigDecimal tongThue;
 
-    @Column(name = "tong_thanh_toan", precision = 18, scale = 2)
+    @Column(name = "tong_thanh_toan", precision = 18, scale = 2, insertable = false, updatable = false)
     private BigDecimal tongThanhToan;
 
     @Column(name = "tien_te", length = 10)
     private String tienTe = "VND";
 
     @Column(name = "dat_luc")
-    private LocalDateTime datLuc;
+    private LocalDateTime datLuc = LocalDateTime.now();
 
     @Column(name = "kenh_ban", length = 50)
     private String kenhBan = "online";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_voucher", referencedColumnName = "ma")
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Voucher voucher;
 
@@ -72,4 +73,8 @@ public class DonHang {
 
     @Column(name = "cap_nhat_luc")
     private LocalDateTime capNhatLuc;
+
+    @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<DonHangChiTiet> chiTietList;
+
 }
