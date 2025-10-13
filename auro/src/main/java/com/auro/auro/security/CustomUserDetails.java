@@ -31,8 +31,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return tk.getSoDienThoai(); // Luôn trả về email cho Spring Security
-    }
+        return tk.getEmail() != null ? tk.getEmail() : tk.getSoDienThoai();    }
 
     @Override
     public boolean isAccountNonExpired() {

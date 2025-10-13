@@ -228,6 +228,26 @@ export const useUserStore = defineStore('user', () => {
       isLoading.value = false
     }
   }
+  const getCurrentUser = async () => {
+    try {
+      isLoading.value = true
+      error.value = null
+  
+      const response = await apiService.auth.me()
+      
+      if (response.success) {
+        setUser(response.data)
+        return { success: true, data: response.data }
+      } else {
+        error.value = response.message
+        return { success: false, message: response.message }
+      }
+    } catch (err) {
+      return handleError(err, 'Get Current User')
+    } finally {
+      isLoading.value = false
+    }
+  }
 
   const loadUserFromStorage = () => {
     try {
@@ -288,6 +308,7 @@ export const useUserStore = defineStore('user', () => {
     resetPassword,
     verifyEmail,
     loadUserFromStorage,
+    getCurrentUser,
     clearError
   }
 })
