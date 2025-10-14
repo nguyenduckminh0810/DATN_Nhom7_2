@@ -234,7 +234,7 @@ class ApiService {
 
   // add delete
   categoriesDelete = {
-    delete: (id, force = false) => this.delete(`/categories/${id}`, { params: { force } })
+    delete: (id, force = false) => this.delete(`/danh-muc/${id}`, { params: { force } })
   }
 
   // Cart endpoints

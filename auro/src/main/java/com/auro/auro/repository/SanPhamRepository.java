@@ -12,7 +12,14 @@ import java.util.List;
 public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
     Page<SanPham> findByTenContainingIgnoreCaseOrMoTaContainingIgnoreCase(String ten, String moTa, Pageable pageable);
 
+    @Query(value = "SELECT * FROM san_pham WHERE san_pham.slug LIKE CONCAT(:slug, '%')", nativeQuery = true)
+    Page<SanPham> findBySlugStartsWith(@Param("slug") String slug, Pageable pageable);
+
+    Page<SanPham> findByDanhMuc_Slug(String slug, Pageable pageable);
+
     Page<SanPham> findByDanhMuc_Id(Long danhMucId, Pageable pageable);
+
+    java.util.Optional<SanPham> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
 
@@ -23,10 +30,12 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
 
     // Check existence of products for a category or list of categories
     boolean existsByDanhMuc_Id(Long danhMucId);
+
     boolean existsByDanhMuc_IdIn(Iterable<Long> danhMucIds);
 
     // Count and find products by category ids
     long countByDanhMuc_IdIn(Iterable<Long> danhMucIds);
+
     java.util.List<com.auro.auro.model.SanPham> findByDanhMuc_IdIn(Iterable<Long> danhMucIds);
 
     // Return only product ids for given category ids to avoid selecting all columns
@@ -35,6 +44,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
 
     // Delete products by category ids
     void deleteByDanhMuc_Id(Long danhMucId);
+
     void deleteByDanhMuc_IdIn(Iterable<Long> danhMucIds);
 
     // Optionally: delete products by ids - JpaRepository#deleteAllById exists, but

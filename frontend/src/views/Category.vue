@@ -25,6 +25,7 @@
           </div>
         </div>
       </div>
+<p class="text-muted fs-5">{{ totalElements }} sản phẩm</p>
 
       <div class="row">
         <!-- Sidebar Filters -->
@@ -82,7 +83,7 @@
               </button>
             </div>
           </div>
-
+          
           <!-- Products -->
           <div v-else-if="filteredProducts.length > 0" :class="['row', viewMode === 'list' ? 'g-3' : 'g-4']">
             <div v-for="product in filteredProducts" :key="product.id" 
@@ -150,76 +151,66 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useCartStore } from '../stores/cart'
-import { useSearchStore } from '../stores/search'
-import { useProductStore } from '../stores/product'
+import { useRoute } from 'vue-router'
+import axios from 'axios'
+
 import ProductFilters from '../components/product/ProductFilters.vue'
 import ProductCard from '../components/product/ProductCard.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
-
+import { useSearchStore } from '../stores/search'
+import { useCartStore } from '../stores/cart'
+import sanPhamService from '@/services/sanPhamService'
 const route = useRoute()
-const router = useRouter()
-const cartStore = useCartStore()
 const searchStore = useSearchStore()
-const productStore = useProductStore()
+const cartStore = useCartStore()
 
-// Reactive data
-const products = ref([])
+// ======= STATE =======
+const products = ref([])                // data trang hiện tại
 const categoryName = ref('')
 const isLoading = ref(true)
 const error = ref(null)
 const viewMode = ref('grid')
-const currentPage = ref(1)
-const itemsPerPage = 12
 
-// Category slug to ID mapping (will be replaced with API call to get category by slug)
-const categorySlugMap = {
-  'ao-thun': { name: 'ÁO THUN', id: 'ao-thun' },
-  'ao-so-mi': { name: 'ÁO SƠ MI', id: 'ao-so-mi' },
-  'ao-khoac': { name: 'ÁO KHOÁC', id: 'ao-khoac' },
-  'ao-polo': { name: 'ÁO POLO', id: 'ao-polo' },
-  'quan-au': { name: 'QUẦN ÂU', id: 'quan-au' },
-  'quan-jean': { name: 'QUẦN JEAN', id: 'quan-jean' },
-  'quan-short': { name: 'QUẦN SHORT', id: 'quan-short' },
-  'quan-jogger': { name: 'QUẦN JOGGER', id: 'quan-jogger' }
+// server-side pagination
+const currentPage = ref(1)              // UI hiển thị 1-based
+const itemsPerPage = 12
+const totalPages = ref(0)
+const totalElements = ref(0)
+
+
+// ======= HELPERS =======
+const toTitle = (slug) =>
+  (slug || '').split('-').map(w => w.toUpperCase()).join(' ')
+
+const buildParams = () => {
+  const params = {
+    page: Math.max(currentPage.value - 1, 0),  // BE 0-based
+    size: itemsPerPage
+  }
+  // nếu bạn có ô search/filters riêng, có thể truyền thêm ở đây:
+  if (searchStore?.keyword && searchStore.keyword.trim()) {
+    params.search = searchStore.keyword.trim()
+  }
+  return params
 }
 
-// API Functions
-const fetchProductsByCategory = async (categorySlug) => {
+// ======= API CALLS =======
+const fetchProductsByCategory = async (slug) => {
+  isLoading.value = true; error.value = null
   try {
-    isLoading.value = true
-    error.value = null
-    
-    const categoryInfo = categorySlugMap[categorySlug]
-    
-    if (categoryInfo) {
-      categoryName.value = categoryInfo.name
-      
-      // Fetch products by category
-      const result = await productStore.fetchProductsByCategory(categoryInfo.id)
-      
-      if (result.success && result.data?.products) {
-        products.value = result.data.products
-        console.log('🎯 Category products loaded:', products.value.map(p => ({ id: p.id, name: p.name })))
-      } else {
-        error.value = result.message || 'Không thể tải danh sách sản phẩm'
-        products.value = []
-        if (window.$toast) {
-          window.$toast.error(error.value, 'Lỗi tải dữ liệu')
-        }
-      }
-    } else {
-      categoryName.value = 'Danh mục không tìm thấy'
-      products.value = []
-      error.value = 'Danh mục không tồn tại'
-    }
-  } catch (err) {
-    error.value = err.message || 'Có lỗi xảy ra khi tải sản phẩm'
-    products.value = []
-    if (window.$toast) {
-      window.$toast.error(error.value, 'Lỗi')
-    }
+    const data = await sanPhamService.getByProductSlug(slug, {
+      // page: currentPage.value - 1, // BE 0-based
+      // size: itemsPerPage,
+      // search: ... // nếu có
+    })
+    products.value = data.content ?? []
+    totalPages.value = data.totalPages ?? 0
+    totalElements.value = data.totalElements ?? products.value.length
+    currentPage.value = (data.number ?? 0) + 1
+    categoryName.value = slug.split('-').map(s => s.toUpperCase()).join(' ')
+  } catch (e) {
+    error.value = e.message || 'Không thể tải sản phẩm theo danh mục'
+    products.value = []; totalPages.value = 0; totalElements.value = 0
   } finally {
     isLoading.value = false
   }
@@ -229,105 +220,90 @@ const fetchAllProducts = async () => {
   try {
     isLoading.value = true
     error.value = null
-    categoryName.value = 'Tất cả sản phẩm'
-    
-    const result = await productStore.fetchProducts()
-    
-    if (result.success && result.data?.products) {
-      products.value = result.data.products
-      console.log('🎯 All products loaded:', products.value.map(p => ({ id: p.id, name: p.name })))
-    } else {
-      error.value = result.message || 'Không thể tải danh sách sản phẩm'
-      products.value = []
-      if (window.$toast) {
-        window.$toast.error(error.value, 'Lỗi tải dữ liệu')
-      }
-    }
-  } catch (err) {
-    error.value = err.message || 'Có lỗi xảy ra khi tải sản phẩm'
+    categoryName.value = 'TẤT CẢ SẢN PHẨM'
+
+    const { data } = await sanPhamService.get(
+      `/san-pham`,
+      { params: buildParams() }
+    )
+
+    products.value = data?.content ?? []
+    totalPages.value = data?.totalPages ?? 0
+    totalElements.value = data?.totalElements ?? products.value.length
+    currentPage.value = (data?.number ?? 0) + 1
+  } catch (e) {
+    error.value = e?.response?.data?.message || 'Có lỗi xảy ra từ server'
     products.value = []
-    if (window.$toast) {
-      window.$toast.error(error.value, 'Lỗi')
-    }
+    totalPages.value = 0
+    totalElements.value = 0
   } finally {
     isLoading.value = false
   }
 }
 
-// Computed properties
+// ======= COMPUTED =======
+// Nếu muốn áp bộ lọc FE trên trang hiện tại, giữ lại; nếu không thì return products.value
 const filteredProducts = computed(() => {
-  // Apply filters using filters store
-  const filtered = searchStore.applyFilters(products.value)
-  
-  // Apply pagination
-  const startIndex = (currentPage.value - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  return filtered.slice(startIndex, endIndex)
+  try {
+    // Áp bộ lọc trong trang hiện tại (nếu cần)
+    if (searchStore?.applyFilters) {
+      return searchStore.applyFilters(products.value)
+    }
+    return products.value
+  } catch {
+    return products.value
+  }
 })
 
-const totalPages = computed(() => {
-  const totalFiltered = searchStore.applyFilters(products.value).length
-  return Math.ceil(totalFiltered / itemsPerPage)
-})
-
+// Hiển thị số trang trong pagination
 const visiblePages = computed(() => {
   const pages = []
   const start = Math.max(1, currentPage.value - 2)
   const end = Math.min(totalPages.value, start + 4)
-  
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  
+  for (let i = start; i <= end; i++) pages.push(i)
   return pages
 })
 
-// Methods
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price)
+// ======= UI ACTIONS =======
+const clearFilters = () => {
+  searchStore.clearAllFilters?.()
+  // làm mới lại trang hiện tại sau khi clear filter
+  reload()
+}
+
+const changePage = (page) => {
+  if (page < 1 || page > totalPages.value) return
+  currentPage.value = page
+  reload()
+}
+
+const reload = () => {
+  const slug = route.params.slug
+  if (slug) {
+    fetchProductsByCategory(slug)
+  } else {
+    fetchAllProducts()
+  }
 }
 
 const addToCart = (product) => {
   cartStore.addItem(product)
 }
 
-const clearFilters = () => {
-  searchStore.clearAllFilters()
-}
-
-const changePage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-}
-
-// Watch for route changes
+// ======= WATCH & LIFECYCLE =======
 watch(() => route.params.slug, (newSlug) => {
-  // Reset to first page when category changes
   currentPage.value = 1
-  
-  if (newSlug) {
-    fetchProductsByCategory(newSlug)
-  } else {
-    fetchAllProducts()
-  }
-}, { immediate: false })
+  if (newSlug) fetchProductsByCategory(newSlug)
+  else fetchAllProducts()
+})
 
-// Lifecycle
 onMounted(() => {
   const slug = route.params.slug
-  
-  if (slug) {
-    fetchProductsByCategory(slug)
-  } else {
-    fetchAllProducts()
-  }
+  if (slug) fetchProductsByCategory(slug)
+  else fetchAllProducts()
 })
 </script>
+
 
 <style scoped>
 /* Breadcrumb */
