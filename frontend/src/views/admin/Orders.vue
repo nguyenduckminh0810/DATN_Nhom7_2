@@ -173,7 +173,7 @@
         </div>
         <div class="table-stats">
           <span class="stats-text">
-            Hiển thị {{ filteredOrders.length }} / {{ orders.length }} đơn hàng
+            Hiển thị {{ paginatedOrders.length }} / {{ filteredOrders.length }} đơn hàng
           </span>
         </div>
       </div>
@@ -217,7 +217,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in filteredOrders" :key="order.id">
+            <tr v-for="order in paginatedOrders" :key="order.id">
               <td>
                 <input type="checkbox" class="form-check-input" v-model="selectedOrders" :value="order.id">
               </td>
@@ -414,7 +414,7 @@
       <div class="row align-items-center">
         <div class="col-md-6">
           <div class="pagination-info">
-            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, totalItems) }} 
+            Hiển thị {{ displayStart }} - {{ displayEnd }} 
             trong tổng số {{ totalItems }} đơn hàng
           </div>
         </div>
@@ -590,6 +590,33 @@
               </table>
             </div>
           </div>
+
+          <!-- Order Timeline -->
+          <div class="mt-4" v-if="selectedOrder.timeline && selectedOrder.timeline.length">
+            <h6>Lịch sử cập nhật</h6>
+            <div class="table-responsive">
+              <table class="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="(entry, idx) in selectedOrder.timeline" :key="idx">
+                    <td>{{ formatDateTime(entry.timestamp) }}</td>
+                    <td>
+                      <span :class="['status-badge', getStatusClass(entry.status)]">
+                        {{ getStatusText(entry.status) }}
+                      </span>
+                    </td>
+                    <td>{{ entry.note }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeOrderModal">Đóng</button>
@@ -599,11 +626,51 @@
         </div>
       </div>
     </div>
+
+    <!-- Status Update Modal -->
+    <div v-if="showStatusUpdateModal" class="modal-overlay" @click="closeStatusModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">Cập nhật trạng thái đơn hàng #{{ selectedOrderForStatus?.orderNumber }}</h5>
+          <button class="btn-close" @click="closeStatusModal">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        <div class="modal-body" v-if="selectedOrderForStatus">
+          <div class="mb-3">
+            <label class="form-label">Trạng thái hiện tại</label>
+            <div>
+              <span :class="['status-badge', getStatusClass(selectedOrderForStatus.status)]">
+                {{ getStatusText(selectedOrderForStatus.status) }}
+              </span>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Chọn trạng thái mới</label>
+            <select class="form-select" v-model="nextStatus">
+              <option v-for="s in getNextStatuses(selectedOrderForStatus.status)" :key="s" :value="s">
+                {{ getStatusText(s) }}
+              </option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Ghi chú</label>
+            <textarea class="form-control" rows="3" v-model="statusNote" placeholder="Nhập ghi chú (tuỳ chọn)"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="closeStatusModal">Hủy</button>
+          <button type="button" class="btn btn-success" :disabled="!nextStatus" @click="confirmStatusUpdate">
+            <i class="bi bi-check2 me-1"></i>Xác nhận
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 // Reactive data
 const searchQuery = ref('')
@@ -633,6 +700,12 @@ const orderStatuses = ref([
 ])
 const showOrderModal = ref(false)
 const selectedOrder = ref(null)
+
+// Status update modal state
+const showStatusUpdateModal = ref(false)
+const selectedOrderForStatus = ref(null)
+const nextStatus = ref('')
+const statusNote = ref('')
 
 // Mock data
 const orders = ref([
@@ -746,6 +819,9 @@ const orders = ref([
 ])
 
 // Computed
+const totalOrders = computed(() => orders.value.length)
+const pendingOrders = computed(() => orders.value.filter(o => o.status === 'pending').length)
+
 const orderStats = computed(() => ({
   pending: orders.value.filter(order => order.status === 'pending').length,
   processing: orders.value.filter(order => order.status === 'processing').length,
@@ -755,7 +831,8 @@ const orderStats = computed(() => ({
 }))
 
 const filteredOrders = computed(() => {
-  let filtered = orders.value
+  // Work on a copy to avoid mutating the source array during sort
+  let filtered = [...orders.value]
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
@@ -806,28 +883,50 @@ const filteredOrders = computed(() => {
     }
   }
 
-  // Sorting
-  filtered.sort((a, b) => {
-    switch (sortBy.value) {
-      case 'oldest':
-        return new Date(a.createdAt) - new Date(b.createdAt)
-      case 'amount-high':
-        return b.total - a.total
-      case 'amount-low':
-        return a.total - b.total
-      case 'customer-name':
-        return a.customer.name.localeCompare(b.customer.name)
-      case 'newest':
-      default:
-        return new Date(b.createdAt) - new Date(a.createdAt)
-    }
-  })
+  // Sorting: table header sort takes precedence if set
+  if (tableSort.value.field) {
+    const dir = tableSort.value.direction === 'asc' ? 1 : -1
+    filtered.sort((a, b) => {
+      switch (tableSort.value.field) {
+        case 'orderNumber':
+          return a.orderNumber.localeCompare(b.orderNumber) * dir
+        case 'customer':
+          return a.customer.name.localeCompare(b.customer.name) * dir
+        case 'total':
+          return (a.total - b.total) * dir
+        case 'createdAt':
+          return (new Date(a.createdAt) - new Date(b.createdAt)) * dir
+        default:
+          return 0
+      }
+    })
+  } else {
+    // Fallback to advanced filter sort option
+    filtered.sort((a, b) => {
+      switch (sortBy.value) {
+        case 'oldest':
+          return new Date(a.createdAt) - new Date(b.createdAt)
+        case 'amount-high':
+          return b.total - a.total
+        case 'amount-low':
+          return a.total - b.total
+        case 'customer-name':
+          return a.customer.name.localeCompare(b.customer.name)
+        case 'newest':
+        default:
+          return new Date(b.createdAt) - new Date(a.createdAt)
+      }
+    })
+  }
 
   return filtered
 })
 
 const totalItems = computed(() => filteredOrders.value.length)
 const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
+
+const displayStart = computed(() => totalItems.value === 0 ? 0 : (currentPage.value - 1) * itemsPerPage + 1)
+const displayEnd = computed(() => Math.min(currentPage.value * itemsPerPage, totalItems.value))
 
 const visiblePages = computed(() => {
   const pages = []
@@ -839,6 +938,12 @@ const visiblePages = computed(() => {
   }
   
   return pages
+})
+
+// Pagination slice for table view
+const paginatedOrders = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage
+  return filteredOrders.value.slice(startIndex, startIndex + itemsPerPage)
 })
 
 // Methods
@@ -960,18 +1065,113 @@ const updateOrderStatus = (order, newStatus) => {
 }
 
 const showStatusModal = (order) => {
-  selectedOrder.value = order
-  // Show modal for status update
+  selectedOrderForStatus.value = order
+  const candidates = getNextStatuses(order.status)
+  nextStatus.value = candidates[0] || ''
+  statusNote.value = ''
+  showStatusUpdateModal.value = true
+}
+
+const closeStatusModal = () => {
+  showStatusUpdateModal.value = false
+  selectedOrderForStatus.value = null
+  nextStatus.value = ''
+  statusNote.value = ''
+}
+
+const getNextStatuses = (currentStatus) => {
+  const transitions = {
+    pending: ['processing', 'cancelled'],
+    processing: ['shipped', 'cancelled'],
+    shipped: ['delivered', 'cancelled'],
+    delivered: [],
+    cancelled: []
+  }
+  return transitions[currentStatus] || []
+}
+
+const confirmStatusUpdate = () => {
+  if (!selectedOrderForStatus.value || !nextStatus.value) return
+  const order = selectedOrderForStatus.value
+  order.status = nextStatus.value
+  if (!order.timeline) order.timeline = []
+  order.timeline.push({
+    status: nextStatus.value,
+    timestamp: new Date(),
+    note: statusNote.value || `Cập nhật trạng thái thành: ${getStatusText(nextStatus.value)}`
+  })
+  closeStatusModal()
 }
 
 const printOrder = (order) => {
-  // Print order functionality
-  window.print()
+  if (!order) return
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1024,height=768')
+  if (!printWindow) return
+  const styles = `
+    * { box-sizing: border-box; font-family: Arial, sans-serif; }
+    h1, h2, h3, h4, h5, h6 { margin: 0 0 8px; }
+    .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+    .section { margin-bottom:16px; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:left; }
+    th { background:#f5f5f5; }
+    .totals td { font-weight:600; }
+  `
+  const itemsRows = order.items.map(item => `
+      <tr>
+        <td>${item.name} <small>(${item.variant || ''})</small></td>
+        <td>${item.quantity}</td>
+        <td>${formatCurrency(item.price)}</td>
+        <td>${formatCurrency(item.price * item.quantity)}</td>
+      </tr>
+  `).join('')
+  const body = `
+    <div class="header">
+      <h2>Đơn hàng #${order.orderNumber}</h2>
+      <div>${new Intl.DateTimeFormat('vi-VN').format(order.createdAt)}</div>
+    </div>
+    <div class="section">
+      <h4>Khách hàng</h4>
+      <div><strong>${order.customer.name}</strong></div>
+      <div>${order.customer.email} - ${order.customer.phone}</div>
+      <div>${order.shippingAddress}</div>
+    </div>
+    <div class="section">
+      <h4>Sản phẩm</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Đơn giá</th>
+            <th>Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>${itemsRows}</tbody>
+      </table>
+    </div>
+    <div class="section">
+      <table>
+        <tbody>
+          <tr><td>Tạm tính</td><td>${formatCurrency(order.subtotal)}</td></tr>
+          ${order.discount > 0 ? `<tr><td>Giảm giá</td><td>-${formatCurrency(order.discount)}</td></tr>` : ''}
+          <tr><td>Phí vận chuyển</td><td>${formatCurrency(order.shippingFee)}</td></tr>
+          <tr><td>Thuế</td><td>${formatCurrency(order.tax)}</td></tr>
+          <tr class="totals"><td>Tổng cộng</td><td>${formatCurrency(order.total)}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `
+  printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>In đơn hàng #${order.orderNumber}</title><style>${styles}</style></head><body>${body}</body></html>`)
+  printWindow.document.close()
+  // Give the browser a moment to render before printing
+  printWindow.focus()
+  setTimeout(() => { printWindow.print(); printWindow.close(); }, 150)
 }
 
 const toggleSelectAll = () => {
   if (selectAll.value) {
-    selectedOrders.value = filteredOrders.value.map(o => o.id)
+    selectedOrders.value = paginatedOrders.value.map(o => o.id)
   } else {
     selectedOrders.value = []
   }
@@ -980,6 +1180,9 @@ const toggleSelectAll = () => {
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page
+    // Reset selections when page changes
+    selectAll.value = false
+    selectedOrders.value = []
   }
 }
 
@@ -1007,6 +1210,12 @@ const bulkUpdateStatus = (status) => {
       const order = orders.value.find(o => o.id === orderId)
       if (order) {
         order.status = status
+        if (!order.timeline) order.timeline = []
+        order.timeline.push({
+          status,
+          timestamp: new Date(),
+          note: `Cập nhật hàng loạt: ${getStatusText(status)}`
+        })
       }
     })
     selectedOrders.value = []
@@ -1017,6 +1226,31 @@ const bulkUpdateStatus = (status) => {
 // Lifecycle
 onMounted(() => {
   // Initialize orders page
+})
+
+// Watchers to keep pagination and selections consistent
+watch([
+  searchQuery,
+  selectedStatus,
+  selectedPayment,
+  selectedDate,
+  amountRange,
+  orderType
+], () => {
+  currentPage.value = 1
+  selectAll.value = false
+  selectedOrders.value = []
+})
+
+watch(amountRange, () => {
+  currentPage.value = 1
+  selectAll.value = false
+  selectedOrders.value = []
+}, { deep: true })
+
+watch(filteredOrders, () => {
+  const pages = Math.max(1, totalPages.value || 1)
+  if (currentPage.value > pages) currentPage.value = pages
 })
 </script>
 
