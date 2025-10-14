@@ -21,4 +21,5 @@ public class SanPhamResponse {
     private String trangThai;
     private LocalDateTime taoLuc;
     private LocalDateTime capNhatLuc;
+    private String anhDaiDien;
 }

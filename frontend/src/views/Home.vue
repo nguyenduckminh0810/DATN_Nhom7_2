@@ -2,9 +2,7 @@
   <div class="home">
     <!-- USP Bar -->
     <UspBar />
-    
-    
-   
+
     
     <!-- Hero Carousel Section -->
     <section class="hero-carousel-section">

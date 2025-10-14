@@ -11,10 +11,13 @@ import com.auro.auro.repository.SanPhamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -22,6 +25,24 @@ public class SanPhamService {
 
   private final SanPhamRepository sanPhamRepository;
   private final DanhMucRepository danhMucRepository;
+
+  // tìm theo slug
+  public Page<SanPhamResponse> getBySlug(String slug, Pageable pageable) {
+    Page<SanPhamResponse> page = sanPhamRepository.findBySlugStartsWith(slug, pageable);
+    return page;
+  }
+
+  public Page<SanPhamResponse> getPageByCategorySlug(String slug, String search, Pageable pageable) {
+    DanhMuc danhMuc = danhMucRepository.findBySlug(slug)
+        .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại: " + slug));
+    Long danhMucId = danhMuc.getId();
+    return getPage(search, danhMucId, pageable);
+  }
+
+  public ResponseEntity<Page<SanPhamResponse>> getByProductSlug(String slug, Pageable pageable) {
+    Page<SanPham> sp = sanPhamRepository.findByDanhMuc_Slug(slug, pageable);
+    return ResponseEntity.ok(sp.map(this::mapToResponse));
+  }
 
   public Page<SanPhamResponse> getPage(String search, Long danhMucId, Pageable pageable) {
     Page<SanPham> page;

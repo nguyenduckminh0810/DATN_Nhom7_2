@@ -12,7 +12,7 @@ const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFoun
 
 // Admin routes - lazy loaded separately with admin chunk
 const AdminDashboard = () => import(/* webpackChunkName: "admin" */ '../views/admin/Dashboard.vue')
-const AdminProducts = () => import(/* webpackChunkName: "admin" */ '../views/admin/Products.vue')
+const AdminProducts = () => import(/* webpackChunkName: "admin" */ '../views/admin/AdminProducts.vue')
 const AdminCategories = () => import(/* webpackChunkName: "admin" */ '../views/admin/Categories.vue')
 const AdminOrders = () => import(/* webpackChunkName: "admin" */ '../views/admin/Orders.vue')
 const AdminUsers = () => import(/* webpackChunkName: "admin" */ '../views/admin/Users.vue')
@@ -100,7 +100,7 @@ const router = createRouter({
         {
           path: 'products',
           name: 'admin-products',
-          component: AdminProducts,
+          component: () => import('@/views/admin/AdminProducts.vue'),
           meta: { title: 'Quản lý sản phẩm - AURO',
             requiresAuth: true,
             requiresAdmin: true

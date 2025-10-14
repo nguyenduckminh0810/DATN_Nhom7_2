@@ -1,5 +1,6 @@
 package com.auro.auro.repository;
 
+import com.auro.auro.dto.response.SanPhamResponse;
 import com.auro.auro.model.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +13,28 @@ import java.util.List;
 public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
     Page<SanPham> findByTenContainingIgnoreCaseOrMoTaContainingIgnoreCase(String ten, String moTa, Pageable pageable);
 
+    @Query(value = """
+              SELECT new com.auro.auro.dto.response.SanPhamResponse(
+                  sp.id, sp.ten, sp.slug, sp.moTa,
+                  dm.id, dm.ten, sp.gia, sp.trangThai, sp.taoLuc, sp.capNhatLuc,
+                  (SELECT ha.url FROM HinhAnh ha
+                   WHERE ha.sanPham.id = sp.id AND ha.laDaiDien = true)
+              )
+              FROM SanPham sp
+              LEFT JOIN sp.danhMuc dm
+              WHERE sp.slug LIKE CONCAT(:slug, '%')
+            """, countQuery = """
+              SELECT COUNT(sp.id)
+              FROM SanPham sp
+              WHERE sp.slug LIKE CONCAT(:slug, '%')
+            """)
+    Page<SanPhamResponse> findBySlugStartsWith(@Param("slug") String slug, Pageable pageable);
+
+    Page<SanPham> findByDanhMuc_Slug(String slug, Pageable pageable);
+
     Page<SanPham> findByDanhMuc_Id(Long danhMucId, Pageable pageable);
+
+    java.util.Optional<SanPham> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
 
@@ -23,10 +45,12 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
 
     // Check existence of products for a category or list of categories
     boolean existsByDanhMuc_Id(Long danhMucId);
+
     boolean existsByDanhMuc_IdIn(Iterable<Long> danhMucIds);
 
     // Count and find products by category ids
     long countByDanhMuc_IdIn(Iterable<Long> danhMucIds);
+
     java.util.List<com.auro.auro.model.SanPham> findByDanhMuc_IdIn(Iterable<Long> danhMucIds);
 
     // Return only product ids for given category ids to avoid selecting all columns
@@ -35,6 +59,7 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
 
     // Delete products by category ids
     void deleteByDanhMuc_Id(Long danhMucId);
+
     void deleteByDanhMuc_IdIn(Iterable<Long> danhMucIds);
 
     // Optionally: delete products by ids - JpaRepository#deleteAllById exists, but
