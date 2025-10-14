@@ -13,24 +13,16 @@
           class="product-image-container"
         >
         <!-- Clickable Image for Navigation -->
-        <LazyImage 
-          :src="img" 
-          :alt="name"
-          :aspect-ratio="1"
-          class="product-image section-item__image"
-          itemprop="image"
-          @click="navigateToDetail"
-          @load="handleImageLoad"
-        />
+<img :src="img" class="product-image section-item__image"/>
         <!-- Hover Image -->
-        <LazyImage 
+        <!-- <LazyImage 
           v-if="hoverImg"
-          :src="hoverImg" 
+          :src="img" 
           :alt="name"
           :aspect-ratio="1"
           class="product-image-hover"
           @click="navigateToDetail"
-        />
+        /> -->
         
         <div v-if="discount" class="discount-badge">
           -{{ discount }}%
@@ -389,7 +381,7 @@ const handleGlobalMouseLeave = (event) => {
   transition: opacity 0.3s ease;
 }
 
-.product-image-hover {
+/* .product-image-hover {
   position: absolute;
   top: 0;
   left: 0;
@@ -401,13 +393,14 @@ const handleGlobalMouseLeave = (event) => {
   z-index: 1;
 }
 
+
 .product-image-container:hover .product-image {
   opacity: 0;
 }
 
 .product-image-container:hover .product-image-hover {
   opacity: 1;
-}
+} */
 
 
 .discount-badge {

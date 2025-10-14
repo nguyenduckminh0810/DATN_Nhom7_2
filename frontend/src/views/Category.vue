@@ -91,7 +91,7 @@
               <ProductCard
                 :id="product.id"
                 :name="product.name || product.ten"
-                :img="product.image || product.hinhAnh || 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80'"
+                :img="product.anhDaiDien"
                 :priceNow="product.price || product.gia"
                 :priceOld="product.originalPrice || product.giaGoc"
                 :discount="product.discount || product.giamGia"
