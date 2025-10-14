@@ -43,7 +43,7 @@
             </a>
             <ul class="dropdown-menu modern-dropdown">
               <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-thun">
+                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-thun-basic">
                   <i class="bi bi-tshirt me-2"></i>Áo thun
                 </router-link>
               </li>

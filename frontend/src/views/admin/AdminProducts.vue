@@ -1005,23 +1005,23 @@ const formatDate = (date) => {
   return new Intl.DateTimeFormat('vi-VN').format(date)
 }
 
-const getCategoryName = (category) => {
-  const categories = {
-    'ao': 'Áo',
-    'ao-so-mi': 'Áo sơ mi',
-    'ao-thun': 'Áo thun',
-    'ao-khoac': 'Áo khoác',
-    'ao-len': 'Áo len/Hoodie',
-    'ao-vest': 'Áo vest',
-    'quan': 'Quần',
-    'quan-au': 'Quần âu',
-    'quan-jean': 'Quần jean',
-    'quan-kaki': 'Quần kaki',
-    'quan-short': 'Quần short',
-    'quan-jogger': 'Quần jogger'
-  }
-  return categories[category] || category
-}
+// const getCategoryName = (category) => {
+//   const categories = {
+//     'ao': 'Áo',
+//     'ao-so-mi': 'Áo sơ mi',
+//     'ao-thun': 'Áo thun',
+//     'ao-khoac': 'Áo khoác',
+//     'ao-len': 'Áo len/Hoodie',
+//     'ao-vest': 'Áo vest',
+//     'quan': 'Quần',
+//     'quan-au': 'Quần âu',
+//     'quan-jean': 'Quần jean',
+//     'quan-kaki': 'Quần kaki',
+//     'quan-short': 'Quần short',
+//     'quan-jogger': 'Quần jogger'
+//   }
+//   return categories[category] || category
+// }
 
 const getStatusText = (status) => {
   const statuses = {
@@ -1032,14 +1032,14 @@ const getStatusText = (status) => {
   return statuses[status] || status
 }
 
-const getStatusClass = (status) => {
-  const classes = {
-    'active': 'bg-success',
-    'inactive': 'bg-warning',
-    'out-of-stock': 'bg-danger'
-  }
-  return classes[status] || 'bg-secondary'
-}
+// const getStatusClass = (status) => {
+//   const classes = {
+//     'active': 'bg-success',
+//     'inactive': 'bg-warning',
+//     'out-of-stock': 'bg-danger'
+//   }
+//   return classes[status] || 'bg-secondary'
+// }
 
 const getStockClass = (stock) => {
   if (stock === 0) return 'text-danger'
@@ -1099,11 +1099,11 @@ function formatCurrency(v) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(v)
 }
 
-function formatDate(d) {
-  if (!d) return ''
-  const dt = new Date(d)
-  return dt.toLocaleDateString()
-}
+// function formatDate(d) {
+//   if (!d) return ''
+//   const dt = new Date(d)
+//   return dt.toLocaleDateString()
+// }
 
 function formatTime(d) {
   if (!d) return ''
@@ -1111,12 +1111,12 @@ function formatTime(d) {
   return dt.toLocaleTimeString()
 }
 
-function getStockClass(stock) {
-  if (stock == null) return 'bg-light'
-  if (stock === 0) return 'bg-danger text-white'
-  if (stock < 10) return 'bg-warning text-dark'
-  return 'bg-success text-white'
-}
+// function getStockClass(stock) {
+//   if (stock == null) return 'bg-light'
+//   if (stock === 0) return 'bg-danger text-white'
+//   if (stock < 10) return 'bg-warning text-dark'
+//   return 'bg-success text-white'
+// }
 
 function getStatusClass(status) {
   switch (status) {
@@ -1134,11 +1134,11 @@ function getStatusClass(status) {
 /* Duplicate block removed: editProduct, viewProduct, deleteProduct, closeModal, saveProduct, and getStatusText.
    The correct implementations are already present above in the script. */
 
-function toggleTag(tag) {
-  const idx = selectedTags.value.indexOf(tag)
-  if (idx === -1) selectedTags.value.push(tag)
-  else selectedTags.value.splice(idx, 1)
-}
+// function toggleTag(tag) {
+//   const idx = selectedTags.value.indexOf(tag)
+//   if (idx === -1) selectedTags.value.push(tag)
+//   else selectedTags.value.splice(idx, 1)
+// }
 
 // load categories for selects
 async function loadCategories() {
