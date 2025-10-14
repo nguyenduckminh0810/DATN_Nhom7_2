@@ -52,43 +52,44 @@ public class SecurityConfig {
                         .requestMatchers("/api/test/**").permitAll()
 
                         // Guest endpoints - khách vãng lai
-                        .requestMatchers(HttpMethod.POST,"/api/don-hang/khach").permitAll()
-                        .requestMatchers(HttpMethod.GET,"/api/don-hang/theo-doi/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/don-hang/khach").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/don-hang/theo-doi/**").permitAll()
 
                         // Customer endpoints - khách đã đăng ký
-                        .requestMatchers("/api/auth/me").hasAnyRole("CUS","STF","ADM")
-                        .requestMatchers(HttpMethod.POST,"/api/don-hang").hasAnyRole("CUS","STF","ADM")
-                        .requestMatchers(HttpMethod.GET, "/api/don-hang/cua-toi").hasAnyRole("CUS","STF","ADM")
-                        .requestMatchers("/api/gio-hang/**").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers("/api/auth/me").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers(HttpMethod.POST, "/api/don-hang").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers(HttpMethod.GET, "/api/don-hang/cua-toi").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers("/api/gio-hang/**").hasAnyRole("CUS", "STF", "ADM")
 
                         // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/phieu-giam-gia/co-san").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/phieu-giam-gia/ap-dung").hasAnyRole("CUS","STF","ADM")
-                        .requestMatchers(HttpMethod.POST, "/api/phieu-giam-gia/kiem-tra").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers(HttpMethod.POST, "/api/phieu-giam-gia/ap-dung").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers(HttpMethod.POST, "/api/phieu-giam-gia/kiem-tra")
+                        .hasAnyRole("CUS", "STF", "ADM")
 
                         // Thông tin hồ sơ địa chỉ
-                        .requestMatchers("/api/ho-so/**").hasAnyRole("CUS","STF","ADM")
-                        .requestMatchers("/api/dia-chi/**").hasAnyRole("CUS","STF","ADM")
+                        .requestMatchers("/api/ho-so/**").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers("/api/dia-chi/**").hasAnyRole("CUS", "STF", "ADM")
 
                         // Staff + admin endpoints
-                        //crud sản phẩm
-                        .requestMatchers(HttpMethod.POST, "/api/san-pham").hasAnyRole("STF","ADM")
-                        .requestMatchers(HttpMethod.PUT, "/api/san-pham/**").hasAnyRole("STF","ADM")
-                        .requestMatchers(HttpMethod.DELETE, "/api/san-pham/**").hasAnyRole("STF","ADM")
+                        // crud sản phẩm
+                        .requestMatchers(HttpMethod.POST, "/api/san-pham").hasAnyRole("STF", "ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/san-pham/**").hasAnyRole("STF", "ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/san-pham/**").hasAnyRole("STF", "ADM")
 
                         // crud danh mục
-                        .requestMatchers(HttpMethod.POST, "/api/danh-muc").hasAnyRole("STF","ADM")
-                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasAnyRole("STF","ADM")
-                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasAnyRole("STF","ADM")
-                        
+                        .requestMatchers(HttpMethod.POST, "/api/danh-muc").hasAnyRole("STF", "ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasAnyRole("STF", "ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasAnyRole("STF", "ADM")
+
                         // quản lý đơn hàng
-                        .requestMatchers("/api/don-hang/quan-ly/**").hasAnyRole("STF","ADM")
+                        .requestMatchers("/api/don-hang/quan-ly/**").hasAnyRole("STF", "ADM")
 
                         // quản lý voucher
-                        .requestMatchers("/api/phieu-giam-gia/quan-ly/**").hasAnyRole("STF","ADM")
+                        .requestMatchers("/api/phieu-giam-gia/quan-ly/**").hasAnyRole("STF", "ADM")
 
                         // quản lý tồn kho
-                        .requestMatchers("/api/ton-kho/**").hasAnyRole("STF","ADM")
+                        .requestMatchers("/api/ton-kho/**").hasAnyRole("STF", "ADM")
 
                         // ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADM")
@@ -96,6 +97,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/thong-ke/**").hasRole("ADM")
                         .requestMatchers("/api/cai-dat/**").hasRole("ADM")
                         .requestMatchers("/api/vai-tro/**").hasRole("ADM")
+
+                        .requestMatchers("/api/don-hang/**").permitAll()
 
                         // All other requests need authentication (bao gồm /api/auth/me)
                         .anyRequest().authenticated())

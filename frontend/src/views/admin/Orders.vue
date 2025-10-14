@@ -603,421 +603,225 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from "vue";
+import axios from "axios";
 
-// Reactive data
-const searchQuery = ref('')
-const selectedStatus = ref('')
-const selectedPayment = ref('')
-const selectedDate = ref('')
-const sortBy = ref('newest')
-const selectedOrders = ref([])
-const selectAll = ref(false)
-const currentPage = ref(1)
-const itemsPerPage = 10
+// ======= STATE =======
+const orders = ref([]);
+const loading = ref(false);
 
-// Advanced filters
-const showAdvancedFilters = ref(false)
-const amountRange = ref({ min: null, max: null })
-const orderType = ref('')
-const viewMode = ref('table') // 'table' or 'kanban'
-const tableSort = ref({ field: '', direction: 'asc' })
+const currentPage = ref(1);
+const pageSize = ref(10);
+const totalPages = ref(1);
+const totalItems = ref(0);
 
-// Order statuses for Kanban
+const searchQuery = ref("");
+const selectedStatus = ref("");
+const sortDir = ref("desc");
+const sortBy = ref("newest");
+
+// modal & selection
+const showOrderModal = ref(false);
+const selectedOrder = ref(null);
+const selectAll = ref(false);
+const selectedOrders = ref([]);
+
+// ======= CONSTANTS =======
 const orderStatuses = ref([
-  { value: 'pending', label: 'Chờ xử lý', color: '#ffc107' },
-  { value: 'processing', label: 'Đang xử lý', color: '#17a2b8' },
-  { value: 'shipped', label: 'Đã giao', color: '#6f42c1' },
-  { value: 'delivered', label: 'Hoàn thành', color: '#28a745' },
-  { value: 'cancelled', label: 'Đã hủy', color: '#dc3545' }
-])
-const showOrderModal = ref(false)
-const selectedOrder = ref(null)
+  { value: "pending", label: "Chờ xử lý", color: "#ffc107" },
+  { value: "processing", label: "Đang xử lý", color: "#17a2b8" },
+  { value: "shipped", label: "Đã giao", color: "#6f42c1" },
+  { value: "delivered", label: "Hoàn thành", color: "#28a745" },
+  { value: "cancelled", label: "Đã hủy", color: "#dc3545" },
+]);
 
-// Mock data
-const orders = ref([
-  {
-    id: 1,
-    orderNumber: 'ORD-001',
-    customer: {
-      name: 'Nguyễn Văn A',
-      email: 'nguyenvana@email.com',
-      phone: '0123456789',
-      totalOrders: 5
-    },
-    items: [
-      {
-        id: 1,
-        name: 'Áo sơ mi nam cao cấp',
-        variant: 'M - Trắng',
-        price: 450000,
-        quantity: 2,
-        image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'
-      },
-      {
-        id: 2,
-        name: 'Quần âu nam',
-        variant: 'L - Đen',
-        price: 650000,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'
-      }
-    ],
-    subtotal: 1550000,
-    discount: 200000,
-    shippingFee: 50000,
-    tax: 140000,
-    total: 1540000,
-    status: 'pending',
-    paymentStatus: 'pending',
-    paymentMethod: 'COD',
-    shippingAddress: '123 Đường ABC, Quận 1, TP.HCM',
-    createdAt: new Date('2024-01-15T10:30:00'),
-    estimatedDelivery: new Date('2024-01-20'),
-    isUrgent: false,
-    isVip: false
-  },
-  {
-    id: 2,
-    orderNumber: 'ORD-002',
-    customer: {
-      name: 'Trần Thị B',
-      email: 'tranthib@email.com',
-      phone: '0987654321',
-      totalOrders: 12
-    },
-    items: [
-      {
-        id: 3,
-        name: 'Áo khoác nam',
-        variant: 'XL - Xám',
-        price: 850000,
-        quantity: 1,
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'
-      }
-    ],
-    subtotal: 850000,
-    discount: 0,
-    shippingFee: 50000,
-    tax: 90000,
-    total: 990000,
-    status: 'processing',
-    paymentStatus: 'paid',
-    paymentMethod: 'Bank Transfer',
-    shippingAddress: '456 Đường XYZ, Quận 2, TP.HCM',
-    createdAt: new Date('2024-01-16T14:20:00'),
-    estimatedDelivery: new Date('2024-01-21'),
-    isUrgent: true,
-    isVip: false
-  },
-  {
-    id: 3,
-    orderNumber: 'ORD-003',
-    customer: {
-      name: 'Lê Văn C',
-      email: 'levanc@email.com',
-      phone: '0369852147',
-      totalOrders: 8
-    },
-    items: [
-      {
-        id: 4,
-        name: 'Áo thun nam',
-        variant: 'M - Xanh navy',
-        price: 250000,
-        quantity: 3,
-        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80'
-      }
-    ],
-    subtotal: 750000,
-    discount: 75000,
-    shippingFee: 30000,
-    tax: 70500,
-    total: 775500,
-    status: 'shipped',
-    paymentStatus: 'paid',
-    paymentMethod: 'Credit Card',
-    shippingAddress: '789 Đường DEF, Quận 3, TP.HCM',
-    createdAt: new Date('2024-01-17T09:15:00'),
-    estimatedDelivery: new Date('2024-01-22'),
-    isUrgent: false,
-    isVip: true
-  }
-])
+// ======= UTILS =======
+const toDate = (value) => (value ? new Date(value) : null);
 
-// Computed
-const orderStats = computed(() => ({
-  pending: orders.value.filter(order => order.status === 'pending').length,
-  processing: orders.value.filter(order => order.status === 'processing').length,
-  shipped: orders.value.filter(order => order.status === 'shipped').length,
-  delivered: orders.value.filter(order => order.status === 'delivered').length,
-  cancelled: orders.value.filter(order => order.status === 'cancelled').length
-}))
-
-const filteredOrders = computed(() => {
-  let filtered = orders.value
-
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(order =>
-      order.orderNumber.toLowerCase().includes(query) ||
-      order.customer.name.toLowerCase().includes(query) ||
-      order.customer.email.toLowerCase().includes(query) ||
-      order.customer.phone.includes(query)
-    )
-  }
-
-  if (selectedStatus.value) {
-    filtered = filtered.filter(order => order.status === selectedStatus.value)
-  }
-
-  if (selectedPayment.value) {
-    filtered = filtered.filter(order => order.paymentStatus === selectedPayment.value)
-  }
-
-  if (selectedDate.value) {
-    const selected = new Date(selectedDate.value)
-    filtered = filtered.filter(order => {
-      const orderDate = new Date(order.createdAt)
-      return orderDate.toDateString() === selected.toDateString()
-    })
-  }
-
-  // Amount range filter
-  if (amountRange.value.min !== null && amountRange.value.min !== '') {
-    filtered = filtered.filter(order => order.total >= amountRange.value.min)
-  }
-  if (amountRange.value.max !== null && amountRange.value.max !== '') {
-    filtered = filtered.filter(order => order.total <= amountRange.value.max)
-  }
-
-  // Order type filter
-  if (orderType.value) {
-    switch (orderType.value) {
-      case 'urgent':
-        filtered = filtered.filter(order => order.isUrgent)
-        break
-      case 'vip':
-        filtered = filtered.filter(order => order.isVip)
-        break
-      case 'bulk':
-        filtered = filtered.filter(order => order.items.length > 5)
-        break
-    }
-  }
-
-  // Sorting
-  filtered.sort((a, b) => {
-    switch (sortBy.value) {
-      case 'oldest':
-        return new Date(a.createdAt) - new Date(b.createdAt)
-      case 'amount-high':
-        return b.total - a.total
-      case 'amount-low':
-        return a.total - b.total
-      case 'customer-name':
-        return a.customer.name.localeCompare(b.customer.name)
-      case 'newest':
-      default:
-        return new Date(b.createdAt) - new Date(a.createdAt)
-    }
-  })
-
-  return filtered
-})
-
-const totalItems = computed(() => filteredOrders.value.length)
-const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage))
-
-const visiblePages = computed(() => {
-  const pages = []
-  const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, start + 4)
-  
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
-  }
-  
-  return pages
-})
-
-// Methods
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(amount)
-}
+const formatCurrency = (amount) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+  }).format(amount ?? 0);
 
 const formatDate = (date) => {
-  return new Intl.DateTimeFormat('vi-VN').format(date)
-}
-
-const formatTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
+  const d = toDate(date);
+  return d ? new Intl.DateTimeFormat("vi-VN").format(d) : "";
+};
 
 const formatDateTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(date)
-}
+  const d = toDate(date);
+  return d
+    ? new Intl.DateTimeFormat("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(d)
+    : "";
+};
 
-const getStatusText = (status) => {
-  const statuses = {
-    'pending': 'Chờ xử lý',
-    'processing': 'Đang xử lý',
-    'shipped': 'Đã giao',
-    'delivered': 'Hoàn thành',
-    'cancelled': 'Đã hủy'
+// ======= API CALL =======
+const fetchOrders = async () => {
+  loading.value = true;
+  try {
+    const pageToSend = Math.max(0, currentPage.value - 1);
+    const response = await axios.get("/api/don-hang/phan-trang", {
+      params: {
+        page: pageToSend,
+        size: pageSize.value,
+        sortBy: "id",
+        sortDir: sortDir.value,
+      },
+    });
+
+    const data = response.data;
+    orders.value = data.content || [];
+    totalPages.value = data.totalPages || 1;
+    totalItems.value = data.totalItems || orders.value.length;
+  } catch (err) {
+    console.error("Lỗi khi tải đơn hàng:", err);
+    if (err.response) console.error("Response:", err.response.data);
+  } finally {
+    loading.value = false;
   }
-  return statuses[status] || status
-}
+};
+
+// ======= COMPUTED =======
+
+// Thống kê trạng thái đơn hàng
+const orderStats = computed(() => ({
+  pending: orders.value.filter((o) => o.trangThai === "pending").length,
+  processing: orders.value.filter((o) => o.trangThai === "processing").length,
+  shipped: orders.value.filter((o) => o.trangThai === "shipped").length,
+  delivered: orders.value.filter((o) => o.trangThai === "delivered").length,
+  cancelled: orders.value.filter((o) => o.trangThai === "cancelled").length,
+}));
+
+// Lọc và sắp xếp
+const filteredOrders = computed(() => {
+  let filtered = orders.value.slice();
+
+  // Tìm kiếm theo số đơn hoặc địa chỉ
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter(
+      (o) =>
+        String(o.soDonHang || "").toLowerCase().includes(query) ||
+        String(o.diaChiGiaoSnapshot || "").toLowerCase().includes(query) ||
+        String(o.ghiChu || "").toLowerCase().includes(query)
+    );
+  }
+
+  // Lọc theo trạng thái
+  if (selectedStatus.value) {
+    filtered = filtered.filter(
+      (o) => o.trangThai === selectedStatus.value
+    );
+  }
+
+  // Sắp xếp
+  filtered.sort((a, b) => {
+    switch (sortBy.value) {
+      case "oldest":
+        return new Date(a.taoLuc) - new Date(b.taoLuc);
+      case "amount-high":
+        return (b.tongThanhToan ?? 0) - (a.tongThanhToan ?? 0);
+      case "amount-low":
+        return (a.tongThanhToan ?? 0) - (b.tongThanhToan ?? 0);
+      case "newest":
+      default:
+        return new Date(b.taoLuc) - new Date(a.taoLuc);
+    }
+  });
+
+  return filtered;
+});
+
+const visiblePages = computed(() => {
+  const pages = [];
+  const start = Math.max(1, currentPage.value - 2);
+  const end = Math.min(totalPages.value, start + 4);
+  for (let i = start; i <= end; i++) pages.push(i);
+  return pages;
+});
+
+// ======= METHODS =======
+const getStatusText = (status) => {
+  const map = {
+    pending: "Chờ xử lý",
+    processing: "Đang xử lý",
+    shipped: "Đã giao",
+    delivered: "Hoàn thành",
+    cancelled: "Đã hủy",
+  };
+  return map[status] || status;
+};
 
 const getStatusClass = (status) => {
-  const classes = {
-    'pending': 'bg-warning',
-    'processing': 'bg-info',
-    'shipped': 'bg-primary',
-    'delivered': 'bg-success',
-    'cancelled': 'bg-danger'
-  }
-  return classes[status] || 'bg-secondary'
-}
-
-const getPaymentText = (status) => {
-  const statuses = {
-    'pending': 'Chờ thanh toán',
-    'paid': 'Đã thanh toán',
-    'failed': 'Thanh toán thất bại'
-  }
-  return statuses[status] || status
-}
-
-const getPaymentClass = (status) => {
-  const classes = {
-    'pending': 'bg-warning',
-    'paid': 'bg-success',
-    'failed': 'bg-danger'
-  }
-  return classes[status] || 'bg-secondary'
-}
-
-const clearFilters = () => {
-  searchQuery.value = ''
-  selectedStatus.value = ''
-  selectedPayment.value = ''
-  selectedDate.value = ''
-  amountRange.value = { min: null, max: null }
-  orderType.value = ''
-  sortBy.value = 'newest'
-}
-
-const toggleAdvancedFilters = () => {
-  showAdvancedFilters.value = !showAdvancedFilters.value
-}
-
-const sortTable = (field) => {
-  if (tableSort.value.field === field) {
-    tableSort.value.direction = tableSort.value.direction === 'asc' ? 'desc' : 'asc'
-  } else {
-    tableSort.value.field = field
-    tableSort.value.direction = 'asc'
-  }
-}
-
-const getSortIcon = (field) => {
-  if (tableSort.value.field !== field) return 'bi bi-caret-up-down'
-  return tableSort.value.direction === 'asc' ? 'bi bi-caret-up' : 'bi bi-caret-down'
-}
-
-const getOrdersByStatus = (status) => {
-  return filteredOrders.value.filter(order => order.status === status)
-}
-
-const canUpdateStatus = (currentStatus) => {
-  return ['pending', 'processing', 'shipped'].includes(currentStatus)
-}
-
-const updateOrderStatus = (order, newStatus) => {
-  order.status = newStatus
-  // Add status update to timeline
-  if (!order.timeline) {
-    order.timeline = []
-  }
-  order.timeline.push({
-    status: newStatus,
-    timestamp: new Date(),
-    note: `Cập nhật trạng thái thành: ${getStatusText(newStatus)}`
-  })
-}
-
-const showStatusModal = (order) => {
-  selectedOrder.value = order
-  // Show modal for status update
-}
-
-const printOrder = (order) => {
-  // Print order functionality
-  window.print()
-}
-
-const toggleSelectAll = () => {
-  if (selectAll.value) {
-    selectedOrders.value = filteredOrders.value.map(o => o.id)
-  } else {
-    selectedOrders.value = []
-  }
-}
+  const map = {
+    pending: "bg-warning",
+    processing: "bg-info",
+    shipped: "bg-primary",
+    delivered: "bg-success",
+    cancelled: "bg-danger",
+  };
+  return map[status] || "bg-secondary";
+};
 
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+    currentPage.value = page;
+    fetchOrders();
   }
-}
+};
+
+const clearFilters = () => {
+  searchQuery.value = "";
+  selectedStatus.value = "";
+  sortBy.value = "newest";
+};
 
 const viewOrder = (order) => {
-  selectedOrder.value = order
-  showOrderModal.value = true
-}
+  selectedOrder.value = order;
+  showOrderModal.value = true;
+};
 
 const closeOrderModal = () => {
-  showOrderModal.value = false
-  selectedOrder.value = null
-}
+  showOrderModal.value = false;
+  selectedOrder.value = null;
+};
 
-const updateStatus = (order) => {
-  const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
-  const currentIndex = statuses.indexOf(order.status)
-  const nextIndex = (currentIndex + 1) % statuses.length
-  order.status = statuses[nextIndex]
-}
-
+const toggleSelectAll = () => {
+  if (selectAll.value) {
+    selectedOrders.value = filteredOrders.value.map((o) => o.id);
+  } else {
+    selectedOrders.value = [];
+  }
+};
 
 const bulkUpdateStatus = (status) => {
-  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`)) {
-    selectedOrders.value.forEach(orderId => {
-      const order = orders.value.find(o => o.id === orderId)
-      if (order) {
-        order.status = status
-      }
-    })
-    selectedOrders.value = []
-    selectAll.value = false
+  if (
+    confirm(
+      `Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`
+    )
+  ) {
+    selectedOrders.value.forEach((orderId) => {
+      const order = orders.value.find((o) => o.id === orderId);
+      if (order) order.trangThai = status;
+    });
+    selectedOrders.value = [];
+    selectAll.value = false;
   }
-}
+};
 
-// Lifecycle
+const printOrder = () => window.print();
+
+// ======= LIFECYCLE =======
 onMounted(() => {
-  // Initialize orders page
-})
+  fetchOrders();
+});
 </script>
 
 <style scoped>
