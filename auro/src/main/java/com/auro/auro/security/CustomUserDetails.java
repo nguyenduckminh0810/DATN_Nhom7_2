@@ -1,6 +1,8 @@
 package com.auro.auro.security;
 
 import com.auro.auro.model.TaiKhoan;
+
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,7 +20,8 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         String roleCode = tk.getVaiTro() != null ? tk.getVaiTro().getMa() : "GUEST";
-        return Set.of(new SimpleGrantedAuthority("ROLE_" + roleCode));
+        String authority = "ROLE_" + roleCode;
+        return Set.of(new SimpleGrantedAuthority(authority));
     }
 
     @Override
@@ -28,8 +31,7 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return tk.getEmail(); // Luôn trả về email cho Spring Security
-    }
+        return tk.getEmail() != null ? tk.getEmail() : tk.getSoDienThoai();    }
 
     @Override
     public boolean isAccountNonExpired() {

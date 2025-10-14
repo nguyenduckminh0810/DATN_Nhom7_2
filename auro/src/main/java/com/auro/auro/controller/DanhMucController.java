@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/categories")
+@RequestMapping("/api/danh-muc")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class DanhMucController {

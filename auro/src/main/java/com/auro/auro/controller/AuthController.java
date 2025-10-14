@@ -16,10 +16,13 @@ import com.auro.auro.security.JwtService;
 import com.auro.auro.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.HashMap;
 import java.util.Map;
 
+//import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -76,39 +79,21 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser(
-            @RequestHeader("Authorization") String authHeader) {
-        
+    public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
         try {
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                throw new UnauthorizedException("Token không hợp lệ");
+            // Lấy thông tin user từ SecurityContext (đã được JwtAuthenticationFilter xử lý)
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new UnauthorizedException("Chưa đăng nhập");
             }
             
-            String token = authHeader.substring(7);
-    
-           
-            String username = jwtService.extractUsername(token);
-            if (username == null) {
-                throw new UnauthorizedException("Token không hợp lệ");
-            }
-            
+            String username = authentication.getName();
             
             TaiKhoan taiKhoan = taiKhoanRepository
                     .findByEmailOrSoDienThoaiAndTrangThaiTrue(username)
-                    .orElseThrow(() -> new UnauthorizedException("Token không hợp lệ"));
+                    .orElseThrow(() -> new UnauthorizedException("Không tìm thấy tài khoản"));
             
-            // Validate token với user details
-            UserDetails userDetails = org.springframework.security.core.userdetails.User
-                    .withUsername(taiKhoan.getEmail() != null ? taiKhoan.getEmail() : taiKhoan.getSoDienThoai())
-                    .password(taiKhoan.getMatKhauHash())
-                    .authorities("ROLE_" + taiKhoan.getVaiTro().getMa())
-                    .build();
-            
-            if (!jwtService.isTokenValid(token, userDetails)) {
-                throw new UnauthorizedException("Token đã hết hạn hoặc không hợp lệ");
-            }
-            
-           
             UserInfoResponse userInfo = mapToUserInfoResponse(taiKhoan);
             
             ApiResponse<UserInfoResponse> response = ApiResponse.success(

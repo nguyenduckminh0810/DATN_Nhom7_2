@@ -82,60 +82,92 @@ const router = createRouter({
       path: '/admin',
       name: 'admin',
       component: () => import('../layouts/AdminLayout.vue'),
+      meta: {
+        title: 'Admin Dashboard - AURO',
+        requiresAuth: true,
+        requiresAdmin: true
+      },
       children: [
         {
           path: '',
           name: 'admin-dashboard',
           component: AdminDashboard,
-          meta: { title: 'Admin Dashboard - AURO' }
+          meta: { title: 'Admin Dashboard - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'products',
           name: 'admin-products',
           component: AdminProducts,
-          meta: { title: 'Quản lý sản phẩm - AURO' }
+          meta: { title: 'Quản lý sản phẩm - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'categories',
           name: 'admin-categories',
           component: AdminCategories,
-          meta: { title: 'Quản lý danh mục - AURO' }
+          meta: { title: 'Quản lý danh mục - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'orders',
           name: 'admin-orders',
           component: AdminOrders,
-          meta: { title: 'Quản lý đơn hàng - AURO' }
+          meta: { title: 'Quản lý đơn hàng - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'users',
           name: 'admin-users',
           component: AdminUsers,
-          meta: { title: 'Quản lý người dùng - AURO' }
+          meta: { title: 'Quản lý người dùng - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'analytics',
           name: 'admin-analytics',
           component: AdminAnalytics,
-          meta: { title: 'Thống kê & Báo cáo - AURO' }
+          meta: { title: 'Thống kê & Báo cáo - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'settings',
           name: 'admin-settings',
           component: AdminSettings,
-          meta: { title: 'Cài đặt - AURO' }
+          meta: { title: 'Cài đặt - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'inventory',
           name: 'admin-inventory',
           component: AdminInventory,
-          meta: { title: 'Quản lý tồn kho - AURO' }
+          meta: { title: 'Quản lý tồn kho - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         },
         {
           path: 'promotions',
           name: 'admin-promotions',
           component: AdminPromotions,
-          meta: { title: 'Khuyến mãi & Voucher - AURO' }
+          meta: { title: 'Khuyến mãi & Voucher - AURO',
+            requiresAuth: true,
+            requiresAdmin: true
+           }
         }
       ]
     },
@@ -169,6 +201,14 @@ router.beforeEach((to, from, next) => {
       // Store the intended route for redirect after login
       localStorage.setItem('auro_redirect', to.fullPath)
       // For now, just redirect to home - the popup will handle the login
+      next('/')
+      return
+    }
+  }
+  if (to.meta.requiresAdmin) {
+    const user = JSON.parse(localStorage.getItem('auro_user') || '{}')
+    if (!user.vaiTro || !['ADM', 'STF'].includes(user.vaiTro)) {
+      // Redirect to home if not admin/staff
       next('/')
       return
     }

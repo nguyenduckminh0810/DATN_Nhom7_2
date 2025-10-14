@@ -187,6 +187,7 @@ class ApiService {
       return mapped
     },
     register: (userData) => this.post('/auth/register', userData),
+    me: () => this.get('/auth/me'),
     logout: () => this.post('/auth/logout'),
     refresh: () => this.post('/auth/refresh'),
     forgotPassword: (email) => this.post('/auth/forgot-password', { email }),
@@ -197,7 +198,7 @@ class ApiService {
 
   // User endpoints
   user = {
-    getProfile: () => this.get('/user/profile'),
+    getProfile: () => this.get('/auth/me'),
     updateProfile: (data) => this.put('/user/profile', data),
     changePassword: (data) => this.post('/user/change-password', data),
     uploadAvatar: (file, onProgress) =>
@@ -210,26 +211,25 @@ class ApiService {
 
   // Product endpoints
   products = {
-    getAll: (params = {}) => this.get('/products', { params }),
-    getById: (id) => this.get(`/products/${id}`),
+    getAll: (params = {}) => this.get('/san-pham', { params }),
+    getById: (id) => this.get(`/san-pham/${id}`),
     getByCategory: (categoryId, params = {}) =>
-      this.get(`/products/category/${categoryId}`, { params }),
+      this.get(`/san-pham/danh-muc/${categoryId}`, { params }),
     search: (query, params = {}) =>
-      this.get('/products/search', { params: { q: query, ...params } }),
-    getFeatured: () => this.get('/products/featured'),
-    getRelated: (id) => this.get(`/products/${id}/related`),
-    getReviews: (id) => this.get(`/products/${id}/reviews`),
-    addReview: (id, data) => this.post(`/products/${id}/reviews`, data)
+      this.get('/san-pham/search', { params: { q: query, ...params } }),
+    getFeatured: () => this.get('/san-pham/featured'),
+    getRelated: (id) => this.get(`/san-pham/${id}/related`),
+    getReviews: (id) => this.get(`/san-pham/${id}/reviews`),
+    addReview: (id, data) => this.post(`/san-pham/${id}/reviews`, data)
   }
 
   // Category endpoints
   categories = {
-    getAll: () => this.get('/categories'),
-    getById: (id) => this.get(`/categories/${id}`),
+    getAll: () => this.get('/danh-muc'),
+    getById: (id) => this.get(`/danh-muc/${id}`),
     getProducts: (id, params = {}) =>
-      this.get(`/categories/${id}/products`, { params })
-    ,
-    create: (data) => this.post('/categories/create', data)
+      this.get(`/danh-muc/${id}/san-pham`, { params }),
+    create: (data) => this.post('/danh-muc/create', data)
   }
 
   // add delete
@@ -270,6 +270,13 @@ class ApiService {
   newsletter = {
     subscribe: (email) => this.post('/newsletter/subscribe', { email }),
     unsubscribe: (email) => this.post('/newsletter/unsubscribe', { email })
+  }
+
+  // Voucher
+  voucher = {
+    getAvailable: () => this.get('/phieu-giam-gia/co-san'),
+    apDung: (data) => this.post('/phieu-giam-gia/ap-dung', data),
+    kiemTra: (data) => this.post('/phieu-giam-gia/kiem-tra', data)
   }
 
   // Contact endpoints
