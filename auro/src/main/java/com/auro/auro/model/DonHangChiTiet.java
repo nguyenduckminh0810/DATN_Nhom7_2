@@ -6,24 +6,24 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "chi_tiet_don_hang")
-@Data 
-@NoArgsConstructor 
+@Table(name = "don_hang_chi_tiet")
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class DonHangChiTiet {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_don_hang", nullable = false)
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private DonHang donHang;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_bien_the", nullable = false)
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private BienTheSanPham bienThe;
 
