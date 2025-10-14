@@ -11,6 +11,7 @@ import com.auro.auro.repository.SanPhamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -27,8 +28,8 @@ public class SanPhamService {
 
   // tìm theo slug
   public Page<SanPhamResponse> getBySlug(String slug, Pageable pageable) {
-    Page<SanPham> page = sanPhamRepository.findBySlugStartsWith(slug, pageable);
-    return page.map(this::mapToResponse);
+    Page<SanPhamResponse> page = sanPhamRepository.findBySlugStartsWith(slug, pageable);
+    return page;
   }
 
   public Page<SanPhamResponse> getPageByCategorySlug(String slug, String search, Pageable pageable) {

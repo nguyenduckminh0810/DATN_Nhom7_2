@@ -35,4 +35,7 @@ public class HinhAnh {
 
     @Column(name = "tao_luc")
     private LocalDateTime taoLuc;
+
+    @Column(name = "la_dai_dien") // tên cột DB
+    private Boolean laDaiDien;
 }
