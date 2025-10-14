@@ -279,6 +279,15 @@ class ApiService {
     kiemTra: (data) => this.post('/phieu-giam-gia/kiem-tra', data)
   }
 
+  // Admin Voucher
+  adminVoucher = {
+    getAll: () => this.get('/phieu-giam-gia/quan-ly'),
+    getById: (id) => this.get(`/phieu-giam-gia/quan-ly/${id}`),
+    create: (data) => this.post('/phieu-giam-gia/quan-ly', data),
+    update: (id, data) => this.put(`/phieu-giam-gia/quan-ly/${id}`, data),
+    delete: (id) => this.delete(`/phieu-giam-gia/quan-ly/${id}`)
+  }
+
   // Contact endpoints
   contact = {
     sendMessage: (data) => this.post('/contact', data),

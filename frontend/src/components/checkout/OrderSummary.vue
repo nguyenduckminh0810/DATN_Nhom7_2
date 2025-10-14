@@ -35,7 +35,7 @@
           <div class="summary-item voucher-item">
             <span class="summary-label">
               <i class="bi bi-ticket-perforated me-1"></i>
-              <span v-if="selectedVoucher">Voucher {{ selectedVoucher.code }}:</span>
+              <span v-if="selectedVoucher">Voucher {{ selectedVoucher.ma }}:</span>
               <span v-else-if="manualVoucherCode">Voucher {{ manualVoucherCode }}:</span>
               <span v-else>Voucher giảm giá:</span>
             </span>
@@ -112,28 +112,65 @@ const shippingFee = computed(() => {
 
 // Tính toán giảm giá dựa trên voucher
 const discountAmount = computed(() => {
-  if (!selectedVoucher.value && !manualVoucherCode.value) return 0
+  console.log('=== DISCOUNT CALCULATION DEBUG ===')
+  console.log('selectedVoucher.value:', selectedVoucher.value)
+  console.log('manualVoucherCode.value:', manualVoucherCode.value)
+  console.log('subtotal.value:', subtotal.value)
+  
+  if (!selectedVoucher.value && !manualVoucherCode.value) {
+    console.log('No voucher selected, returning 0')
+    return 0
+  }
   
   // Nếu có voucher được chọn từ list
   if (selectedVoucher.value) {
-    const { type, value, minOrder } = selectedVoucher.value
+    const { loai, giaTri, donToiThieu } = selectedVoucher.value
+    console.log('Voucher data:', { loai, giaTri, donToiThieu })
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
-    if (subtotal.value < minOrder) return 0
-    
-    if (type === 'percentage') {
-      return Math.floor(subtotal.value * value / 100)
-    } else if (type === 'fixed') {
-      return Math.min(value, subtotal.value) // Không giảm quá giá trị đơn hàng
+    if (subtotal.value < (donToiThieu || 0)) {
+      console.log('Subtotal too low, returning 0')
+      return 0
     }
+    
+    let discount = 0
+    if (loai === 'percent' || loai === 'PHAN_TRAM') {
+      discount = Math.floor(subtotal.value * giaTri / 100)
+    } else if (loai === 'fixed' || loai === 'SO_TIEN') {
+      discount = Math.min(giaTri, subtotal.value) 
+    } else if (loai === 'freeship') {
+      discount = Math.min(30000, subtotal.value)
+    }
+    
+    console.log('Calculated discount:', discount)
+    return discount
   }
   
-  // Nếu có voucher manual (giả sử là fixed amount)
-  if (manualVoucherCode.value && manualVoucherCode.value.trim()) {
-    // Demo: Giảm 50k cho voucher manual
-    return Math.min(50000, subtotal.value)
+  // Nếu có voucher manual và đã được validate
+  if (manualVoucherCode.value && manualVoucherCode.value.trim() && selectedVoucher.value) {
+    const { loai, giaTri, donToiThieu } = selectedVoucher.value
+    console.log('Manual voucher data:', { loai, giaTri, donToiThieu })
+    
+    // Kiểm tra điều kiện đơn hàng tối thiểu
+    if (subtotal.value < (donToiThieu || 0)) {
+      console.log('Manual voucher: Subtotal too low, returning 0')
+      return 0
+    }
+    
+    let discount = 0
+    if (loai === 'percent' || loai === 'PHAN_TRAM') {
+      discount = Math.floor(subtotal.value * giaTri / 100)
+    } else if (loai === 'fixed' || loai === 'SO_TIEN') {
+      discount = Math.min(giaTri, subtotal.value)
+    } else if (loai === 'freeship') {
+      discount = Math.min(30000, subtotal.value) // Giả sử phí ship là 30k
+    }
+    
+    console.log('Manual voucher calculated discount:', discount)
+    return discount
   }
   
+  console.log('No valid voucher found, returning 0')
   return 0
 })
 

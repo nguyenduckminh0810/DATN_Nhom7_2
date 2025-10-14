@@ -36,5 +36,5 @@ public class DangKyRequest {
                (soDienThoai != null && !soDienThoai.trim().isEmpty());
     }
 
-    private String loaiTaiKhoan = "CUSTOMER";
+    private String loaiTaiKhoan = "CUS";
 }

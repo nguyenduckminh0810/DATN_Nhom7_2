@@ -16,7 +16,7 @@ public class GuestUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Set.of(new SimpleGrantedAuthority("ROLE_GUEST"));
+        return Set.of(new SimpleGrantedAuthority("ROLE_GST"));
     }
 
     @Override

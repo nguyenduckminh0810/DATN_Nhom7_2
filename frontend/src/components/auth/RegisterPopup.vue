@@ -318,7 +318,7 @@ const handleRegister = async () => {
     const registerData = {
       hoTen: form.value.fullName.trim(),
       matKhau: form.value.password,
-      loaiTaiKhoan: 'CUSTOMER'
+      loaiTaiKhoan: 'CUS'
     }
 
     if (form.value.email && form.value.email.trim()) {

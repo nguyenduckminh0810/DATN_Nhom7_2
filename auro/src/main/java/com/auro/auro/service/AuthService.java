@@ -65,24 +65,20 @@ public class AuthService {
         }
         //Tìm vai trò
 //Tìm vai trò
-String maVaiTro = request.getLoaiTaiKhoan() != null ? 
-                  request.getLoaiTaiKhoan().toUpperCase() : "CUSTOMER";
+        String maVaiTro = request.getLoaiTaiKhoan() != null ? 
+                  request.getLoaiTaiKhoan().toUpperCase() : "CUS";
 System.out.println("DEBUG - maVaiTro: " + maVaiTro);
 String role;
 switch (maVaiTro) {
-    case "CUSTOMER":
     case "CUS":
         role = "CUS";
         break;
-    case "GUEST":
     case "GST":
         role = "GST";
         break;
-    case "STAFF":
     case "STF":
         role = "STF";
         break;
-    case "ADMIN":
     case "ADM":
         role = "ADM";
         break;

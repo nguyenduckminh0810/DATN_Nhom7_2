@@ -27,12 +27,12 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
     @Query("""
             SELECT v FROM Voucher v
             WHERE (:now BETWEEN v.batDauLuc AND v.ketThucLuc)
-              AND (v.gioiHanSuDung IS NULL OR v.gioiHanSuDung > 0)
+              AND (v.gioiHanSuDung IS NULL OR v.gioiHanSuDung > 0 OR v.gioiHanSuDung = -1)
             """)
     Page<Voucher> findAvailable(@Param("now") LocalDateTime now, Pageable pageable);
 
     // Tăng số lượng đã dùng (dùng khi áp voucher thành công)
     @Modifying
-    @Query("UPDATE Voucher v SET v.gioiHanSuDung = v.gioiHanSuDung - 1 WHERE v.id = :id AND (v.gioiHanSuDung IS NULL OR v.gioiHanSuDung > 0)")
+    @Query("UPDATE Voucher v SET v.gioiHanSuDung = v.gioiHanSuDung - 1 WHERE v.id = :id AND (v.gioiHanSuDung IS NULL OR v.gioiHanSuDung > 0 OR v.gioiHanSuDung = -1)")
     int decreaseLimit(@Param("id") Long id);
 }
