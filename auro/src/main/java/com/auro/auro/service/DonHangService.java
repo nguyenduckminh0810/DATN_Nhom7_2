@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.auro.auro.dto.response.DonHangChiTietResponse;
@@ -137,4 +139,34 @@ public class DonHangService {
         }).collect(Collectors.toList());
     }
 
+    // Lấy toàn bộ đơn hàng có phân trang
+    public Page<DonHangResponse> getDonHangPhanTrang(Pageable pageable) {
+        Page<DonHang> donHangPage = donHangRepository.findAll(pageable);
+
+        return donHangPage.map(dh -> {
+            DonHangResponse dto = new DonHangResponse();
+            dto.setId(dh.getId());
+            dto.setSoDonHang(dh.getSoDonHang());
+            dto.setTamTinh(dh.getTamTinh());
+            dto.setTongThanhToan(dh.getTongThanhToan());
+            dto.setTrangThai(dh.getTrangThai());
+            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiaoSnapshot());
+            dto.setGhiChu(dh.getGhiChu());
+            dto.setTaoLuc(dh.getTaoLuc());
+            dto.setCapNhatLuc(dh.getCapNhatLuc());
+
+            List<DonHangChiTietResponse> chiTietDTOs = dh.getChiTietList().stream().map(ct -> {
+                DonHangChiTietResponse ctDTO = new DonHangChiTietResponse();
+                ctDTO.setId(ct.getId());
+                ctDTO.setTenSanPham(ct.getTenHienThi());
+                ctDTO.setDonGia(ct.getDonGia());
+                ctDTO.setSoLuong(ct.getSoLuong());
+                ctDTO.setThanhTien(ct.getThanhTien());
+                return ctDTO;
+            }).collect(Collectors.toList());
+
+            dto.setChiTietList(chiTietDTOs);
+            return dto;
+        });
+    }
 }

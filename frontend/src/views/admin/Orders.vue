@@ -29,7 +29,7 @@
           <input
             type="text"
             class="form-control search-input"
-            placeholder="Tìm kiếm đơn hàng, khách hàng, số điện thoại..."
+            placeholder="Tìm kiếm theo mã đơn hàng, địa chỉ, ghi chú..."
             v-model="searchQuery"
           />
         </div>
@@ -84,16 +84,6 @@
               <option value="oldest">Cũ nhất</option>
               <option value="amount-high">Giá cao nhất</option>
               <option value="amount-low">Giá thấp nhất</option>
-              <option value="customer-name">Tên khách hàng</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Loại đơn hàng</label>
-            <select class="form-select" v-model="orderType">
-              <option value="">Tất cả</option>
-              <option value="urgent">Khẩn cấp</option>
-              <option value="vip">VIP</option>
-              <option value="bulk">Số lượng lớn</option>
             </select>
           </div>
         </div>
@@ -103,7 +93,7 @@
     <!-- Order Statistics -->
     <div class="order-stats-section">
       <div class="row g-3">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card pending">
             <div class="stat-icon">
               <i class="bi bi-clock"></i>
@@ -114,7 +104,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card processing">
             <div class="stat-icon">
               <i class="bi bi-gear"></i>
@@ -125,7 +115,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card shipped">
             <div class="stat-icon">
               <i class="bi bi-truck"></i>
@@ -136,7 +126,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card delivered">
             <div class="stat-icon">
               <i class="bi bi-check-circle"></i>
@@ -144,6 +134,28 @@
             <div class="stat-content">
               <div class="stat-value">{{ orderStats.delivered }}</div>
               <div class="stat-label">Hoàn thành</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-card payment-pending">
+            <div class="stat-icon">
+              <i class="bi bi-credit-card"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ paymentStats.pending }}</div>
+              <div class="stat-label">Chờ thanh toán</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-card payment-paid">
+            <div class="stat-icon">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ paymentStats.paid }}</div>
+              <div class="stat-label">Đã thanh toán</div>
             </div>
           </div>
         </div>
@@ -178,8 +190,16 @@
         </div>
       </div>
 
+      <!-- Loading State -->
+      <div v-if="loading" class="loading-state">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p>Đang tải dữ liệu...</p>
+      </div>
+
       <!-- Table View -->
-      <div v-if="viewMode === 'table'" class="table-responsive">
+      <div v-else-if="viewMode === 'table' && filteredOrders.length > 0" class="table-responsive">
         <table class="table table-hover">
           <thead>
             <tr>
@@ -187,30 +207,25 @@
                 <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
               </th>
               <th>
-                <button class="sort-btn" @click="sortTable('orderNumber')">
+                <button class="sort-btn" @click="sortTable('soDonHang')">
                   Mã đơn hàng
-                  <i :class="getSortIcon('orderNumber')"></i>
+                  <i :class="getSortIcon('soDonHang')"></i>
                 </button>
               </th>
-              <th>
-                <button class="sort-btn" @click="sortTable('customer')">
-                  Khách hàng
-                  <i :class="getSortIcon('customer')"></i>
-                </button>
-              </th>
+              <th>Địa chỉ giao hàng</th>
               <th>Sản phẩm</th>
               <th>
-                <button class="sort-btn" @click="sortTable('total')">
+                <button class="sort-btn" @click="sortTable('tongThanhToan')">
                   Tổng tiền
-                  <i :class="getSortIcon('total')"></i>
+                  <i :class="getSortIcon('tongThanhToan')"></i>
                 </button>
               </th>
               <th>Trạng thái</th>
               <th>Thanh toán</th>
               <th>
-                <button class="sort-btn" @click="sortTable('createdAt')">
+                <button class="sort-btn" @click="sortTable('taoLuc')">
                   Ngày đặt
-                  <i :class="getSortIcon('createdAt')"></i>
+                  <i :class="getSortIcon('taoLuc')"></i>
                 </button>
               </th>
               <th>Thao tác</th>
@@ -223,65 +238,51 @@
               </td>
               <td>
                 <div class="order-code">
-                  <strong>#{{ order.orderNumber }}</strong>
+                  <strong>#{{ order.soDonHang }}</strong>
                   <div class="order-meta">
                     <div class="order-id">ID: {{ order.id }}</div>
-                    <div class="order-badges">
-                      <span v-if="order.isUrgent" class="urgent-badge">Khẩn cấp</span>
-                      <span v-if="order.isVip" class="vip-badge">VIP</span>
-                      <span v-if="order.items.length > 5" class="bulk-badge">Số lượng lớn</span>
+                    <div v-if="order.ghiChu" class="order-note text-muted">
+                      <small>{{ order.ghiChu }}</small>
                     </div>
                   </div>
                 </div>
               </td>
               <td>
-                <div class="customer-info">
-                  <div class="customer-name">{{ order.customer.name }}</div>
-                  <div class="customer-details">
-                    <div class="customer-phone">{{ order.customer.phone }}</div>
-                    <div class="customer-email">{{ order.customer.email }}</div>
-                  </div>
-                  <div v-if="order.customer.totalOrders > 0" class="customer-stats">
-                    {{ order.customer.totalOrders }} đơn hàng
-                  </div>
+                <div class="shipping-address">
+                  {{ order.diaChiGiaoSnapshot || 'Chưa có địa chỉ' }}
                 </div>
               </td>
               <td>
                 <div class="order-items">
-                  <div class="item-count">{{ order.items.length }} sản phẩm</div>
+                  <div class="item-count">{{ order.chiTietList?.length || 0 }} sản phẩm</div>
                   <div class="item-preview">
-                    <img 
-                      v-for="item in order.items.slice(0, 3)" 
+                    <span 
+                      v-for="item in (order.chiTietList || []).slice(0, 3)" 
                       :key="item.id"
-                      :src="item.image" 
-                      :alt="item.name"
-                      class="item-thumbnail"
-                      :title="item.name"
+                      class="item-badge"
+                      :title="item.tenSanPham"
                     >
-                    <span v-if="order.items.length > 3" class="more-items">+{{ order.items.length - 3 }}</span>
+                      {{ item.tenSanPham }}
+                    </span>
+                    <span v-if="(order.chiTietList || []).length > 3" class="more-items">
+                      +{{ (order.chiTietList || []).length - 3 }}
+                    </span>
                   </div>
                 </div>
               </td>
               <td>
                 <div class="order-amount">
-                  <div class="total-amount">{{ formatCurrency(order.total) }}</div>
-                  <div v-if="order.discount > 0" class="discount-amount">
-                    Giảm: {{ formatCurrency(order.discount) }}
-                  </div>
-                  <div v-if="order.shippingFee > 0" class="shipping-fee">
-                    Phí ship: {{ formatCurrency(order.shippingFee) }}
+                  <div class="total-amount">{{ formatCurrency(order.tongThanhToan || order.tamTinh) }}</div>
+                  <div class="subtotal-amount text-muted">
+                    Tạm tính: {{ formatCurrency(order.tamTinh) }}
                   </div>
                 </div>
               </td>
               <td>
                 <div class="status-info">
-                  <span :class="['status-badge', getStatusClass(order.status)]">
-                    {{ getStatusText(order.status) }}
+                  <span :class="['status-badge', getStatusClass(order.trangThai)]">
+                    {{ getStatusText(order.trangThai) }}
                   </span>
-                  <div v-if="order.estimatedDelivery" class="delivery-info">
-                    <i class="bi bi-calendar"></i>
-                    {{ formatDate(order.estimatedDelivery) }}
-                  </div>
                 </div>
               </td>
               <td>
@@ -294,8 +295,8 @@
               </td>
               <td>
                 <div class="order-date">
-                  <div>{{ formatDate(order.createdAt) }}</div>
-                  <div class="order-time">{{ formatTime(order.createdAt) }}</div>
+                  <div>{{ formatDate(order.taoLuc) }}</div>
+                  <div class="order-time">{{ formatTime(order.taoLuc) }}</div>
                 </div>
               </td>
               <td>
@@ -304,7 +305,7 @@
                     <i class="bi bi-eye"></i>
                   </button>
                   <button 
-                    v-if="order.status === 'pending'"
+                    v-if="order.trangThai === 'pending'"
                     class="btn btn-sm btn-outline-success" 
                     @click="updateOrderStatus(order, 'processing')"
                     title="Xử lý đơn hàng"
@@ -312,7 +313,7 @@
                     <i class="bi bi-play"></i>
                   </button>
                   <button 
-                    v-if="order.status === 'processing'"
+                    v-if="order.trangThai === 'processing'"
                     class="btn btn-sm btn-outline-info" 
                     @click="updateOrderStatus(order, 'shipped')"
                     title="Giao hàng"
@@ -320,7 +321,7 @@
                     <i class="bi bi-truck"></i>
                   </button>
                   <button 
-                    v-if="order.status === 'shipped'"
+                    v-if="order.trangThai === 'shipped'"
                     class="btn btn-sm btn-outline-success" 
                     @click="updateOrderStatus(order, 'delivered')"
                     title="Hoàn thành"
@@ -328,15 +329,20 @@
                     <i class="bi bi-check"></i>
                   </button>
                   <button 
-                    v-if="['pending', 'processing'].includes(order.status)"
+                    v-if="['pending', 'processing'].includes(order.trangThai)"
                     class="btn btn-sm btn-outline-danger" 
                     @click="updateOrderStatus(order, 'cancelled')"
                     title="Hủy đơn hàng"
                   >
                     <i class="bi bi-x"></i>
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary" @click="printOrder(order)" title="In đơn hàng">
-                    <i class="bi bi-printer"></i>
+                  <button 
+                    v-if="order.paymentStatus === 'pending'"
+                    class="btn btn-sm btn-outline-warning" 
+                    @click="updatePaymentStatus(order, 'paid')"
+                    title="Đánh dấu đã thanh toán"
+                  >
+                    <i class="bi bi-credit-card"></i>
                   </button>
                 </div>
               </td>
@@ -345,8 +351,18 @@
         </table>
       </div>
 
+      <!-- Empty State -->
+      <div v-else-if="!loading && filteredOrders.length === 0" class="empty-state">
+        <i class="bi bi-inbox empty-icon"></i>
+        <h5>Không có đơn hàng nào</h5>
+        <p>Không tìm thấy đơn hàng phù hợp với bộ lọc của bạn.</p>
+        <button class="btn btn-primary" @click="clearFilters">
+          <i class="bi bi-arrow-clockwise me-1"></i>Xóa bộ lọc
+        </button>
+      </div>
+
       <!-- Kanban Board View -->
-      <div v-if="viewMode === 'kanban'" class="kanban-board">
+      <div v-else-if="viewMode === 'kanban' && filteredOrders.length > 0" class="kanban-board">
         <div class="kanban-columns">
           <div class="kanban-column" v-for="status in orderStatuses" :key="status.value">
             <div class="column-header">
@@ -361,42 +377,42 @@
                 @click="viewOrder(order)"
               >
                 <div class="card-header">
-                  <div class="order-number">#{{ order.orderNumber }}</div>
-                  <div class="order-badges">
-                    <span v-if="order.isUrgent" class="urgent-badge">Khẩn cấp</span>
-                    <span v-if="order.isVip" class="vip-badge">VIP</span>
-                  </div>
+                  <div class="order-number">#{{ order.soDonHang }}</div>
+                  <span :class="['payment-badge-sm', getPaymentClass(order.paymentStatus)]">
+                    {{ getPaymentText(order.paymentStatus) }}
+                  </span>
                 </div>
                 <div class="card-body">
-                  <div class="customer-info">
-                    <div class="customer-name">{{ order.customer.name }}</div>
-                    <div class="customer-phone">{{ order.customer.phone }}</div>
+                  <div class="shipping-address">
+                    {{ order.diaChiGiaoSnapshot || 'Chưa có địa chỉ' }}
                   </div>
                   <div class="order-items">
-                    <div class="item-count">{{ order.items.length }} sản phẩm</div>
+                    <div class="item-count">{{ order.chiTietList?.length || 0 }} sản phẩm</div>
                     <div class="item-preview">
-                      <img 
-                        v-for="item in order.items.slice(0, 2)" 
+                      <span 
+                        v-for="item in (order.chiTietList || []).slice(0, 2)" 
                         :key="item.id"
-                        :src="item.image" 
-                        :alt="item.name"
-                        class="item-thumbnail"
+                        class="item-badge"
                       >
-                      <span v-if="order.items.length > 2" class="more-items">+{{ order.items.length - 2 }}</span>
+                        {{ item.tenSanPham }}
+                      </span>
+                      <span v-if="(order.chiTietList || []).length > 2" class="more-items">
+                        +{{ (order.chiTietList || []).length - 2 }}
+                      </span>
                     </div>
                   </div>
-                  <div class="order-amount">{{ formatCurrency(order.total) }}</div>
+                  <div class="order-amount">{{ formatCurrency(order.tongThanhToan || order.tamTinh) }}</div>
                 </div>
                 <div class="card-footer">
-                  <div class="order-date">{{ formatDate(order.createdAt) }}</div>
+                  <div class="order-date">{{ formatDate(order.taoLuc) }}</div>
                   <div class="card-actions">
                     <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrder(order)">
                       <i class="bi bi-eye"></i>
                     </button>
                     <button 
-                      v-if="canUpdateStatus(order.status)"
+                      v-if="canUpdateStatus(order.trangThai)"
                       class="btn btn-sm btn-outline-success" 
-                      @click.stop="showStatusModal(order)"
+                      @click.stop="updateOrderStatus(order, getNextStatus(order.trangThai))"
                     >
                       <i class="bi bi-arrow-right"></i>
                     </button>
@@ -410,11 +426,11 @@
     </div>
 
     <!-- Pagination -->
-    <div class="pagination-section">
+    <div v-if="!loading && filteredOrders.length > 0" class="pagination-section">
       <div class="row align-items-center">
         <div class="col-md-6">
           <div class="pagination-info">
-            Hiển thị {{ (currentPage - 1) * itemsPerPage + 1 }} - {{ Math.min(currentPage * itemsPerPage, totalItems) }} 
+            Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalItems) }} 
             trong tổng số {{ totalItems }} đơn hàng
           </div>
         </div>
@@ -453,6 +469,9 @@
           <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('cancelled')">
             <i class="bi bi-x me-1"></i>Hủy
           </button>
+          <button class="btn btn-sm btn-outline-info" @click="bulkUpdatePayment('paid')">
+            <i class="bi bi-credit-card me-1"></i>Đã thanh toán
+          </button>
         </div>
       </div>
     </div>
@@ -461,7 +480,7 @@
     <div v-if="showOrderModal" class="modal-overlay" @click="closeOrderModal">
       <div class="modal-content modal-lg" @click.stop>
         <div class="modal-header">
-          <h5 class="modal-title">Chi tiết đơn hàng #{{ selectedOrder?.orderNumber }}</h5>
+          <h5 class="modal-title">Chi tiết đơn hàng #{{ selectedOrder?.soDonHang }}</h5>
           <button class="btn-close" @click="closeOrderModal">
             <i class="bi bi-x"></i>
           </button>
@@ -475,17 +494,21 @@
                 <tbody>
                   <tr>
                     <td>Mã đơn hàng:</td>
-                    <td><strong>#{{ selectedOrder.orderNumber }}</strong></td>
+                    <td><strong>#{{ selectedOrder.soDonHang }}</strong></td>
                   </tr>
                   <tr>
                     <td>Ngày đặt:</td>
-                    <td>{{ formatDateTime(selectedOrder.createdAt) }}</td>
+                    <td>{{ formatDateTime(selectedOrder.taoLuc) }}</td>
+                  </tr>
+                  <tr>
+                    <td>Cập nhật:</td>
+                    <td>{{ formatDateTime(selectedOrder.capNhatLuc) }}</td>
                   </tr>
                   <tr>
                     <td>Trạng thái:</td>
                     <td>
-                      <span :class="['status-badge', getStatusClass(selectedOrder.status)]">
-                        {{ getStatusText(selectedOrder.status) }}
+                      <span :class="['status-badge', getStatusClass(selectedOrder.trangThai)]">
+                        {{ getStatusText(selectedOrder.trangThai) }}
                       </span>
                     </td>
                   </tr>
@@ -497,30 +520,30 @@
                       </span>
                     </td>
                   </tr>
+                  <tr v-if="selectedOrder.ghiChu">
+                    <td>Ghi chú:</td>
+                    <td>{{ selectedOrder.ghiChu }}</td>
+                  </tr>
                 </tbody>
               </table>
             </div>
 
-            <!-- Customer Info -->
+            <!-- Shipping Info -->
             <div class="col-md-6">
-              <h6>Thông tin khách hàng</h6>
+              <h6>Thông tin giao hàng</h6>
               <table class="table table-sm">
                 <tbody>
                   <tr>
-                    <td>Tên:</td>
-                    <td>{{ selectedOrder.customer.name }}</td>
-                  </tr>
-                  <tr>
-                    <td>Email:</td>
-                    <td>{{ selectedOrder.customer.email }}</td>
-                  </tr>
-                  <tr>
-                    <td>Số điện thoại:</td>
-                    <td>{{ selectedOrder.customer.phone }}</td>
-                  </tr>
-                  <tr>
                     <td>Địa chỉ:</td>
-                    <td>{{ selectedOrder.shippingAddress }}</td>
+                    <td>{{ selectedOrder.diaChiGiaoSnapshot || 'Chưa có địa chỉ' }}</td>
+                  </tr>
+                  <tr>
+                    <td>Kênh bán:</td>
+                    <td>{{ selectedOrder.kenhBan || 'online' }}</td>
+                  </tr>
+                  <tr>
+                    <td>Tiền tệ:</td>
+                    <td>{{ selectedOrder.tienTe || 'VND' }}</td>
                   </tr>
                 </tbody>
               </table>
@@ -541,19 +564,16 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="item in selectedOrder.items" :key="item.id">
+                  <tr v-for="item in selectedOrder.chiTietList" :key="item.id">
                     <td>
-                      <div class="d-flex align-items-center gap-2">
-                        <img :src="item.image" :alt="item.name" class="item-thumbnail">
-                        <div>
-                          <div class="item-name">{{ item.name }}</div>
-                          <div class="item-variant">{{ item.variant }}</div>
-                        </div>
+                      <div>
+                        <div class="item-name">{{ item.tenSanPham }}</div>
+                        <div class="item-variant text-muted">{{ item.tenHienThi }}</div>
                       </div>
                     </td>
-                    <td>{{ item.quantity }}</td>
-                    <td>{{ formatCurrency(item.price) }}</td>
-                    <td><strong>{{ formatCurrency(item.price * item.quantity) }}</strong></td>
+                    <td>{{ item.soLuong }}</td>
+                    <td>{{ formatCurrency(item.donGia) }}</td>
+                    <td><strong>{{ formatCurrency(item.thanhTien) }}</strong></td>
                   </tr>
                 </tbody>
               </table>
@@ -568,23 +588,11 @@
                 <tbody>
                   <tr>
                     <td>Tạm tính:</td>
-                    <td>{{ formatCurrency(selectedOrder.subtotal) }}</td>
-                  </tr>
-                  <tr v-if="selectedOrder.discount > 0">
-                    <td>Giảm giá:</td>
-                    <td class="text-success">-{{ formatCurrency(selectedOrder.discount) }}</td>
-                  </tr>
-                  <tr>
-                    <td>Phí vận chuyển:</td>
-                    <td>{{ formatCurrency(selectedOrder.shippingFee) }}</td>
-                  </tr>
-                  <tr>
-                    <td>Thuế:</td>
-                    <td>{{ formatCurrency(selectedOrder.tax) }}</td>
+                    <td>{{ formatCurrency(selectedOrder.tamTinh) }}</td>
                   </tr>
                   <tr class="table-active">
                     <td><strong>Tổng cộng:</strong></td>
-                    <td><strong>{{ formatCurrency(selectedOrder.total) }}</strong></td>
+                    <td><strong>{{ formatCurrency(selectedOrder.tongThanhToan || selectedOrder.tamTinh) }}</strong></td>
                   </tr>
                 </tbody>
               </table>
@@ -593,6 +601,14 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeOrderModal">Đóng</button>
+          <button 
+            v-if="selectedOrder.paymentStatus === 'pending'"
+            type="button" 
+            class="btn btn-warning" 
+            @click="updatePaymentStatus(selectedOrder, 'paid')"
+          >
+            <i class="bi bi-credit-card me-1"></i>Đánh dấu đã thanh toán
+          </button>
           <button type="button" class="btn btn-primary" @click="printOrder(selectedOrder)">
             <i class="bi bi-printer me-1"></i>In đơn hàng
           </button>
@@ -617,8 +633,15 @@ const totalItems = ref(0);
 
 const searchQuery = ref("");
 const selectedStatus = ref("");
-const sortDir = ref("desc");
+const selectedPayment = ref("");
+const selectedDate = ref("");
+const amountRange = ref({ min: null, max: null });
 const sortBy = ref("newest");
+const sortDir = ref("desc");
+
+// UI state
+const showAdvancedFilters = ref(false);
+const viewMode = ref("table");
 
 // modal & selection
 const showOrderModal = ref(false);
@@ -638,15 +661,25 @@ const orderStatuses = ref([
 // ======= UTILS =======
 const toDate = (value) => (value ? new Date(value) : null);
 
-const formatCurrency = (amount) =>
-  new Intl.NumberFormat("vi-VN", {
+const formatCurrency = (amount) => {
+  if (!amount) return '0 ₫';
+  return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-  }).format(amount ?? 0);
+  }).format(amount);
+};
 
 const formatDate = (date) => {
   const d = toDate(date);
   return d ? new Intl.DateTimeFormat("vi-VN").format(d) : "";
+};
+
+const formatTime = (date) => {
+  const d = toDate(date);
+  return d ? new Intl.DateTimeFormat("vi-VN", {
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(d) : "";
 };
 
 const formatDateTime = (date) => {
@@ -677,12 +710,27 @@ const fetchOrders = async () => {
     });
 
     const data = response.data;
-    orders.value = data.content || [];
+    console.log('API Response:', data); // Debug
+    
+    // Map dữ liệu từ backend sang frontend với payment status
+    orders.value = (data.content || []).map(order => ({
+      ...order,
+      // Thêm payment status mặc định (backend chưa có field này)
+      paymentStatus: order.paymentStatus || 'pending',
+      paymentMethod: order.paymentMethod || 'COD'
+    }));
+    
     totalPages.value = data.totalPages || 1;
     totalItems.value = data.totalItems || orders.value.length;
+    
+    console.log('Processed orders:', orders.value); // Debug
+    
   } catch (err) {
     console.error("Lỗi khi tải đơn hàng:", err);
-    if (err.response) console.error("Response:", err.response.data);
+    if (err.response) {
+      console.error("Response error:", err.response.data);
+      console.error("Status:", err.response.status);
+    }
   } finally {
     loading.value = false;
   }
@@ -698,6 +746,17 @@ const orderStats = computed(() => ({
   delivered: orders.value.filter((o) => o.trangThai === "delivered").length,
   cancelled: orders.value.filter((o) => o.trangThai === "cancelled").length,
 }));
+
+// Thống kê thanh toán
+const paymentStats = computed(() => ({
+  pending: orders.value.filter((o) => o.paymentStatus === "pending").length,
+  paid: orders.value.filter((o) => o.paymentStatus === "paid").length,
+  failed: orders.value.filter((o) => o.paymentStatus === "failed").length,
+}));
+
+// Tổng số đơn hàng và đơn chờ xử lý
+const totalOrders = computed(() => orders.value.length);
+const pendingOrders = computed(() => orderStats.value.pending);
 
 // Lọc và sắp xếp
 const filteredOrders = computed(() => {
@@ -721,15 +780,22 @@ const filteredOrders = computed(() => {
     );
   }
 
+  // Lọc theo thanh toán
+  if (selectedPayment.value) {
+    filtered = filtered.filter(
+      (o) => o.paymentStatus === selectedPayment.value
+    );
+  }
+
   // Sắp xếp
   filtered.sort((a, b) => {
     switch (sortBy.value) {
       case "oldest":
         return new Date(a.taoLuc) - new Date(b.taoLuc);
       case "amount-high":
-        return (b.tongThanhToan ?? 0) - (a.tongThanhToan ?? 0);
+        return (b.tongThanhToan ?? b.tamTinh ?? 0) - (a.tongThanhToan ?? a.tamTinh ?? 0);
       case "amount-low":
-        return (a.tongThanhToan ?? 0) - (b.tongThanhToan ?? 0);
+        return (a.tongThanhToan ?? a.tamTinh ?? 0) - (b.tongThanhToan ?? b.tamTinh ?? 0);
       case "newest":
       default:
         return new Date(b.taoLuc) - new Date(a.taoLuc);
@@ -770,6 +836,32 @@ const getStatusClass = (status) => {
   return map[status] || "bg-secondary";
 };
 
+const getPaymentText = (status) => {
+  const map = {
+    pending: "Chờ thanh toán",
+    paid: "Đã thanh toán",
+    failed: "Thanh toán thất bại",
+  };
+  return map[status] || status;
+};
+
+const getPaymentClass = (status) => {
+  const map = {
+    pending: "bg-warning",
+    paid: "bg-success",
+    failed: "bg-danger",
+  };
+  return map[status] || "bg-secondary";
+};
+
+const getSortIcon = (field) => {
+  return 'bi bi-arrow-down';
+};
+
+const sortTable = (field) => {
+  console.log('Sort by:', field);
+};
+
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
     currentPage.value = page;
@@ -777,9 +869,16 @@ const changePage = (page) => {
   }
 };
 
+const toggleAdvancedFilters = () => {
+  showAdvancedFilters.value = !showAdvancedFilters.value;
+};
+
 const clearFilters = () => {
   searchQuery.value = "";
   selectedStatus.value = "";
+  selectedPayment.value = "";
+  selectedDate.value = "";
+  amountRange.value = { min: null, max: null };
   sortBy.value = "newest";
 };
 
@@ -801,22 +900,93 @@ const toggleSelectAll = () => {
   }
 };
 
+const updateOrderStatus = async (order, newStatus) => {
+  if (confirm(`Cập nhật đơn hàng #${order.soDonHang} sang trạng thái "${getStatusText(newStatus)}"?`)) {
+    try {
+      await axios.put(`/api/don-hang/${order.id}`, {
+        trangThai: newStatus
+      });
+      
+      // Update local state
+      order.trangThai = newStatus;
+      order.capNhatLuc = new Date().toISOString();
+      
+      console.log(`Đã cập nhật đơn hàng #${order.soDonHang} sang ${newStatus}`);
+    } catch (err) {
+      console.error('Lỗi khi cập nhật trạng thái:', err);
+      alert('Có lỗi khi cập nhật trạng thái đơn hàng');
+    }
+  }
+};
+
+const updatePaymentStatus = async (order, newStatus) => {
+  if (confirm(`Cập nhật trạng thái thanh toán đơn hàng #${order.soDonHang} thành "${getPaymentText(newStatus)}"?`)) {
+    try {
+      // Gọi API update payment status (cần thêm endpoint trong backend)
+      // await axios.patch(`/api/don-hang/${order.id}/payment`, {
+      //   paymentStatus: newStatus
+      // });
+      
+      // Update local state (tạm thời)
+      order.paymentStatus = newStatus;
+      order.capNhatLuc = new Date().toISOString();
+      
+      console.log(`Đã cập nhật thanh toán đơn hàng #${order.soDonHang} sang ${newStatus}`);
+    } catch (err) {
+      console.error('Lỗi khi cập nhật trạng thái thanh toán:', err);
+      alert('Có lỗi khi cập nhật trạng thái thanh toán');
+    }
+  }
+};
+
 const bulkUpdateStatus = (status) => {
-  if (
-    confirm(
-      `Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`
-    )
-  ) {
+  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`)) {
     selectedOrders.value.forEach((orderId) => {
       const order = orders.value.find((o) => o.id === orderId);
-      if (order) order.trangThai = status;
+      if (order) {
+        order.trangThai = status;
+        order.capNhatLuc = new Date().toISOString();
+      }
     });
     selectedOrders.value = [];
     selectAll.value = false;
   }
 };
 
-const printOrder = () => window.print();
+const bulkUpdatePayment = (status) => {
+  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái thanh toán cho ${selectedOrders.value.length} đơn hàng?`)) {
+    selectedOrders.value.forEach((orderId) => {
+      const order = orders.value.find((o) => o.id === orderId);
+      if (order) {
+        order.paymentStatus = status;
+        order.capNhatLuc = new Date().toISOString();
+      }
+    });
+    selectedOrders.value = [];
+    selectAll.value = false;
+  }
+};
+
+const getOrdersByStatus = (status) => {
+  return filteredOrders.value.filter(order => order.trangThai === status);
+};
+
+const canUpdateStatus = (status) => {
+  return ['pending', 'processing', 'shipped'].includes(status);
+};
+
+const getNextStatus = (currentStatus) => {
+  const statusFlow = {
+    'pending': 'processing',
+    'processing': 'shipped', 
+    'shipped': 'delivered'
+  };
+  return statusFlow[currentStatus] || currentStatus;
+};
+
+const printOrder = (order) => {
+  window.print();
+};
 
 // ======= LIFECYCLE =======
 onMounted(() => {
