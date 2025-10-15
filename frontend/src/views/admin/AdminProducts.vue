@@ -41,25 +41,12 @@
           <div class="col-md-3">
             <label class="form-label">Danh mục</label>
             <select class="form-select" v-model.number="selectedCategory">
-              <option value="">Tất cả danh mục</option>
-
-              <optgroup label="Áo nam">
-                <option value="ao">Áo (Tất cả)</option>
-                <option value="ao-so-mi">Áo sơ mi</option>
-                <option value="ao-thun">Áo thun</option>
-                <option value="ao-khoac">Áo khoác</option>
-                <option value="ao-len">Áo len/Hoodie</option>
-              </optgroup>
-              <optgroup label="Quần nam">
-                <option value="quan">Quần (Tất cả)</option>
-                <option value="quan-au">Quần âu</option>
-                <option value="quan-jean">Quần jean</option>
-                <option value="quan-kaki">Quần kaki</option>
-                <option value="quan-short">Quần short</option>
-              </optgroup>
-
-              <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.ten }}</option>
-
+              <option :value="''">Tất cả danh mục</option>
+              <option
+                v-for="c in flatCategoryOptions"
+                :key="c.id"
+                :value="c.id"
+              >{{ c.label }}</option>
             </select>
           </div>
           <div class="col-md-3">
@@ -373,7 +360,7 @@
                 <h6 class="product-title">{{ product.name }}</h6>
                 <div class="product-meta">
                   <span class="product-sku">SKU: {{ product.sku }}</span>
-                  <span class="product-category">{{ getCategoryName(product.category) }}</span>
+                  <span class="product-category">{{ getCategoryName(product.categoryId) }}</span>
                 </div>
                 <div class="product-rating">
                   <div class="rating-stars">
@@ -543,24 +530,13 @@
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Danh mục * (CHỈ QUẦN ÁO NAM)</label>
-                  <select class="form-select" v-model="productForm.category" required>
+                  <select class="form-select" v-model="productForm.categoryId" required>
                     <option value="">Chọn danh mục</option>
-                    <optgroup label="ÁO NAM">
-                      <option value="ao">Áo (Tất cả)</option>
-                      <option value="ao-so-mi">Áo sơ mi</option>
-                      <option value="ao-thun">Áo thun</option>
-                      <option value="ao-khoac">Áo khoác</option>
-                      <option value="ao-len">Áo len/Hoodie</option>
-                      <option value="ao-vest">Áo vest</option>
-                    </optgroup>
-                    <optgroup label="QUẦN NAM">
-                      <option value="quan">Quần (Tất cả)</option>
-                      <option value="quan-au">Quần âu</option>
-                      <option value="quan-jean">Quần jean</option>
-                      <option value="quan-kaki">Quần kaki</option>
-                      <option value="quan-short">Quần short</option>
-                      <option value="quan-jogger">Quần jogger</option>
-                    </optgroup>
+                    <option
+                      v-for="c in flatCategoryOptions"
+                      :key="c.id"
+                      :value="c.id"
+                    >{{ c.label }}</option>
                   </select>
                 </div>
                 <div class="col-md-6">
@@ -609,7 +585,7 @@
               :product-id="productForm.id"
               :product-name="productForm.name"
               :product-sku="productForm.sku"
-              :category="getCategoryType(productForm.category)"
+              :category="getCategoryType(productForm.categoryId)"
               :initial-variants="productForm.variants || []"
               :initial-colors="productForm.variantColors || []"
               :initial-material="productForm.material || ''"
@@ -735,19 +711,20 @@ const availableTags = ref(['Bestseller', 'Sale', 'New', 'Premium', 'Limited'])
 
 // Categories fetched from backend
 const categories = ref([])
-
-// Product form (keeps existing UI field names)
-const productForm = ref({
+const products = ref([])        // danh sách sản phẩm
+const totalItems = ref(0)       // tổng bản ghi
+const totalPages = ref(1)       // tổng số trang
+const productForm = ref({       // model cho modal thêm/sửa
+  id: null,
   name: '',
   sku: '',
-  categoryId: '',
+  categoryId: '',      // lưu ID danh mục
   status: 'active',
   price: 0,
   originalPrice: 0,
   stock: 0,
   description: '',
   image: '',
-  // NEW: Advanced fields
   images: [],
   variants: [],
   variantColors: [],
@@ -755,13 +732,39 @@ const productForm = ref({
   slug: '',
   metaTitle: '',
   metaDescription: '',
+  isFeatured: false,
+  isNew: false,
   tags: []
 })
 
-// Products loaded from backend
-const products = ref([])
-const totalItems = ref(0)
-const totalPages = ref(1)
+// flatten categories (tree) into options with indentation
+const flatCategoryOptions = computed(() => {
+  const out = []
+  const walk = (nodes = [], level = 0) => {
+    nodes.forEach(n => {
+      const name = n.ten || n.name || n.slug || ('#' + n.id)
+      const label = (level ? '— '.repeat(level) : '') + name
+      out.push({ id: n.id, label })
+      if (n.children?.length) walk(n.children, level + 1)
+    })
+  }
+  // if categories is already a flat array without children, treat each as level 0
+  if (!categories.value || categories.value.length === 0) return out
+  // detect if items have children -> treat as tree, otherwise just map
+  const firstHasChildren = categories.value.some(c => c.children && c.children.length)
+  if (firstHasChildren) {
+    walk(categories.value, 0)
+  } else {
+    categories.value.forEach(n => {
+      const name = n.ten || n.name || n.slug || ('#' + n.id)
+      out.push({ id: n.id, label: name })
+    })
+  }
+  return out
+})
+
+// categories already declared above
+// const categories = ref([])
 
 function mapFromApi(sp) {
   return {
@@ -812,6 +815,29 @@ const loadProducts = async (pageNumber = 0) => {
     isLoading.value = false
   }
 }
+async function loadProductDetail(id) {
+  try {
+    const res = await sanPhamService.get(id) // thêm hàm này trong service nếu chưa có
+    // Giả sử BE trả kiểu SanPhamResponse mở rộng
+    const sp = mapFromApi(res)
+    // Gộp thêm các field khác nếu BE trả về
+    return {
+      ...sp,
+      images: res.hinhAnhs || [],
+      variants: res.bienThes || [],
+      variantColors: res.mauSac || [],
+      material: res.chatLieu || '',
+      slug: res.slug || '',
+      metaTitle: res.metaTitle || '',
+      metaDescription: res.metaDescription || '',
+      isFeatured: !!res.isFeatured,
+      isNew: !!res.isNew,
+      tags: res.tags || []
+    }
+  } catch {
+    return null
+  }
+}
 
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
@@ -819,12 +845,16 @@ const changePage = (page) => {
   }
 }
 
-const editProduct = (product) => {
-  editingProduct.value = product
-  productForm.value = { ...product }
-  showAddModal.value = true
-}
-
+const editProduct = async (product) => {
+   editingProduct.value = product
+   const full = await loadProductDetail(product.id)
+   productForm.value = full ? { ...full } : { ...product }
+   // đảm bảo có categoryId (phòng trường hợp dữ liệu cũ là 'category')
+   if (!productForm.value.categoryId && productForm.value.category) {
+     productForm.value.categoryId = productForm.value.category
+   }
+   showAddModal.value = true
+ }
 const viewProduct = (product) => {
   // simple detail view - open product page in new tab (if exists)
   const slug = product.name ? product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : product.id
@@ -1143,12 +1173,31 @@ function getStatusClass(status) {
 // load categories for selects
 async function loadCategories() {
   try {
-    const res = await (await import('../../services/api')).default.categories.getAll()
-    // If res is array of categories, map to simple structure
-    categories.value = Array.isArray(res) ? res : []
+    const api = (await import('../../services/api')).default
+    const res = await api.categories.getAll()
+    const mapItem = (item) => ({
+      id: item.id,
+      ten: item.ten || item.name || '',
+      slug: item.slug || '',
+      parentId: item.idCha ?? null,
+      children: []
+    })
+
+    const flat = (Array.isArray(res) ? res : []).map(mapItem)
+    const byId = Object.fromEntries(flat.map(f => [f.id, f]))
+    const roots = []
+    flat.forEach(f => {
+      if (f.parentId && byId[f.parentId]) {
+        byId[f.parentId].children ||= []
+        byId[f.parentId].children.push(f)
+      } else {
+        roots.push(f)
+      }
+    })
+    categories.value = roots
   } catch (e) {
-    // keep fallback
     console.warn('Could not load categories', e)
+    // fallback keep existing categories value
   }
 }
 
@@ -1161,16 +1210,17 @@ const discountPercent = computed(() => {
 })
 
 // NEW: Helper methods
-const getCategoryType = (category) => {
-  // Convert category to 'ao' or 'quan' for VariantManager
-  if (!category) return 'ao'
-  if (category.startsWith('ao')) return 'ao'
-  if (category.startsWith('quan')) return 'quan'
+const getCategoryType = (categoryId) => {
+  const c = categories.value.find(x => Number(x.id) === Number(categoryId))
+  const slug = c?.slug || ''
+  if (slug.startsWith('ao')) return 'ao'
+  if (slug.startsWith('quan')) return 'quan'
   return 'ao'
 }
 
+
 const generateSKU = () => {
-  const prefix = getCategoryType(productForm.value.category).toUpperCase()
+  const prefix = getCategoryType(productForm.value.categoryId).toUpperCase()
   const timestamp = Date.now().toString().slice(-6)
   productForm.value.sku = `${prefix}-${timestamp}`
 }
@@ -1223,11 +1273,8 @@ const handleVariantsUpdate = (variantsData) => {
 
 // Lifecycle
 onMounted(async () => {
-  // Initialize products page
-
   await loadCategories()
-  await loadProducts(0)
-
+await loadProducts((currentPage.value || 1) - 1)
 })
 
 // initial load handled in combined onMounted above
