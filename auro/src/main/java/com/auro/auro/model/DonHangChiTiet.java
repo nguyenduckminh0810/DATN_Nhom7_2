@@ -39,6 +39,6 @@ public class DonHangChiTiet {
     @Column(name = "don_gia", precision = 18, scale = 2)
     private BigDecimal donGia;
 
-    @Column(name = "thanh_tien", insertable = false, updatable = false, precision = 18, scale = 2)
+    @Column(name = "thanh_tien", precision = 18, scale = 2)
     private BigDecimal thanhTien;
 }
