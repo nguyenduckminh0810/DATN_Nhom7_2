@@ -32,21 +32,21 @@ public class Voucher {
     @Column(name = "don_toi_thieu", precision = 18, scale = 2)
     private BigDecimal donToiThieu;
 
-    @Column(name = "bat_dau_luc")
+    @Column(name = "ngay_bat_dau")
     private LocalDateTime batDauLuc;
 
-    @Column(name = "ket_thuc_luc")
+    @Column(name = "ngay_ket_thuc")
     private LocalDateTime ketThucLuc;
 
-    @Column(name = "gioi_han_su_dung")
+    @Column(name = "so_luong", nullable = true)
     private Integer gioiHanSuDung;
 
     @Column(name = "dieu_kien_json", columnDefinition = "NVARCHAR(MAX)")
     private String dieuKienJson;
 
-    @Column(name = "tao_luc")
+    @Column(name = "ngay_tao")
     private LocalDateTime taoLuc;
 
-    @Column(name = "cap_nhat_luc")
+    @Column(name = "ngay_cap_nhat")
     private LocalDateTime capNhatLuc;
 }

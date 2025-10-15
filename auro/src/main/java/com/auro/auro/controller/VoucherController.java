@@ -1,98 +1,94 @@
 package com.auro.auro.controller;
 
+import com.auro.auro.dto.request.VoucherCheckRequest;
+import com.auro.auro.dto.request.VoucherApplyRequest;
+import com.auro.auro.dto.response.VoucherResponse;
+import com.auro.auro.model.Voucher;
+import com.auro.auro.service.VoucherService;
+import com.auro.auro.service.VoucherValidationResult;
+import com.auro.auro.service.VoucherApplicationResult;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Arrays;
+
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/phieu-giam-gia")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class VoucherController {
+    private final VoucherService voucherService;
 
     @GetMapping("/co-san")
-    public ResponseEntity<List<Map<String, Object>>> getCoSan() {
-        // Mock data cho voucher có sẵn
-        List<Map<String, Object>> vouchers = Arrays.asList(
-            Map.of(
-                "id", 1L,
-                "ten", "Giảm 10% cho đơn hàng đầu tiên",
-                "ma", "WELCOME10",
-                "giaTri", 10,
-                "loai", "PHAN_TRAM",
-                "trangThai", "HOAT_DONG",
-                "ngayBatDau", "2025-01-01",
-                "ngayKetThuc", "2025-12-31"
-            ),
-            Map.of(
-                "id", 2L,
-                "ten", "Giảm 50k cho đơn hàng từ 500k",
-                "ma", "SAVE50K",
-                "giaTri", 50000,
-                "loai", "SO_TIEN",
-                "trangThai", "HOAT_DONG",
-                "ngayBatDau", "2025-01-01",
-                "ngayKetThuc", "2025-12-31"
-            )
-        );
-        
-        return ResponseEntity.ok(vouchers);
-    }
+    public ResponseEntity<?> getCoSan() {
+        List<VoucherResponse> vouchers = voucherService.getAllVouchers()
+            .stream()
+            .map(this::convertToResponse)
+            .collect(Collectors.toList());
 
-    @PostMapping("/ap-dung")
-    public ResponseEntity<Map<String, Object>> apDung(@RequestBody Map<String, String> request) {
-        String maVoucher = request.get("maVoucher");
-        
-        // Mock logic kiểm tra voucher
-        if ("WELCOME10".equals(maVoucher)) {
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Áp dụng voucher thành công",
-                "giamGia", 10,
-                "loai", "PHAN_TRAM"
-            ));
-        } else if ("SAVE50K".equals(maVoucher)) {
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Áp dụng voucher thành công",
-                "giamGia", 50000,
-                "loai", "SO_TIEN"
-            ));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Mã voucher không hợp lệ hoặc đã hết hạn"
-            ));
-        }
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "Lấy danh sách voucher thành công",
+            "data", vouchers
+        ));
     }
 
     @PostMapping("/kiem-tra")
-    public ResponseEntity<Map<String, Object>> kiemTra(@RequestBody Map<String, String> request) {
-        String maVoucher = request.get("maVoucher");
-        
-        // Mock logic kiểm tra voucher
-        if ("WELCOME10".equals(maVoucher)) {
+    public ResponseEntity<?> kiemTra(@Valid @RequestBody VoucherCheckRequest request) {
+        VoucherValidationResult result = voucherService.validateVoucher(request.getMaVoucher(), request.getKhachHangId(), request.getDonHangTong());
+
+         if(result.isValid()) {
+            VoucherResponse response = convertToResponse(result.getVoucher());
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Voucher hợp lệ",
-                "giamGia", 10,
-                "loai", "PHAN_TRAM",
-                "moTa", "Giảm 10% cho đơn hàng đầu tiên"
+                "data",response
             ));
-        } else if ("SAVE50K".equals(maVoucher)) {
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Voucher hợp lệ",
-                "giamGia", 50000,
-                "loai", "SO_TIEN",
-                "moTa", "Giảm 50k cho đơn hàng từ 500k"
-            ));
-        } else {
+         }else {
             return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Mã voucher không hợp lệ hoặc đã hết hạn"
+                "success",false,
+                "message", result.getMessage()
+            ));
+         }
+    }
+
+    @PostMapping("/ap-dung")
+    public ResponseEntity<?> apDung(@Valid @RequestBody VoucherApplyRequest request) {
+        VoucherApplicationResult result = voucherService.applyVoucher(request.getMaVoucher(), request.getKhachHangId(), request.getDonHangTong());
+
+        if(result.isSuccess()) {
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", result.getMessage(),
+                "data", Map.of(
+                    "voucher", convertToResponse(result.getVoucher()),
+                    "giamGia", result.getGiamGia()
+                )
+            ));
+        }else {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success",false,
+                "message", result.getMessage()
             ));
         }
     }
+
+    private VoucherResponse convertToResponse(Voucher voucher) {
+        return VoucherResponse.builder()
+            .id(voucher.getId())
+            .ma(voucher.getMa())
+            .loai(voucher.getLoai())
+            .giaTri(voucher.getGiaTri())
+            .giamToiDa(voucher.getGiamToiDa())
+            .donToiThieu(voucher.getDonToiThieu())
+            .batDauLuc(voucher.getBatDauLuc())
+            .ketThucLuc(voucher.getKetThucLuc())
+            .gioiHanSuDung(voucher.getGioiHanSuDung())
+            .build();
+    }
+  
 }

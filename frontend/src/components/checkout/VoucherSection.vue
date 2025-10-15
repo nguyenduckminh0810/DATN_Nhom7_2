@@ -8,60 +8,75 @@
         </h5>
       </div>
 
-      <!-- Voucher Cards -->
-      <div class="section-body">
-        <div class="voucher-cards-container">
-          <!-- Scroll Controls - Đặt bên ngoài để không che khuất nội dung -->
-          <div class="voucher-scroll-controls">
-            <button class="scroll-btn scroll-left" @click="scrollVouchers('left')">
-              <i class="bi bi-chevron-left"></i>
-            </button>
-            <button class="scroll-btn scroll-right" @click="scrollVouchers('right')">
-              <i class="bi bi-chevron-right"></i>
-            </button>
+        <!-- Voucher Cards -->
+        <div class="section-body">
+          <!-- Loading State -->
+          <div v-if="loading" class="voucher-loading">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-2">Đang tải voucher...</p>
           </div>
 
-          <div class="voucher-cards-wrapper">
-            <div class="voucher-cards-scroll" ref="voucherScroll">
-              <div v-for="voucher in sortedVouchers" 
-                   :key="voucher.id" 
-                   class="voucher-card"
-                   :class="{ 
-                     selected: selectedVoucher?.id === voucher.id,
-                     disabled: !isVoucherEligible(voucher)
-                   }"
-                   @click="handleVoucherClick(voucher)">
-                <div class="voucher-perforated-edge"></div>
-                <div class="voucher-content">
-                  <div class="voucher-header">
-                    <div class="voucher-code">{{ voucher.code }}</div>
-                    <div class="voucher-remaining" v-if="voucher.remaining > 0">
-                      Còn {{ voucher.remaining }}
+          <!-- Voucher Cards -->
+          <div v-else-if="availableVouchers.length > 0" class="voucher-cards-container">
+            <!-- Scroll Controls - Đặt bên ngoài để không che khuất nội dung -->
+            <div class="voucher-scroll-controls">
+              <button class="scroll-btn scroll-left" @click="scrollVouchers('left')">
+                <i class="bi bi-chevron-left"></i>
+              </button>
+              <button class="scroll-btn scroll-right" @click="scrollVouchers('right')">
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </div>
+
+            <div class="voucher-cards-wrapper">
+              <div class="voucher-cards-scroll" ref="voucherScroll">
+                <div v-for="voucher in sortedVouchers" 
+                     :key="voucher.id" 
+                     class="voucher-card"
+                     :class="{ 
+                       selected: selectedVoucher?.id === voucher.id,
+                       disabled: !isVoucherEligible(voucher)
+                     }"
+                     @click="handleVoucherClick(voucher)">
+                  <div class="voucher-perforated-edge"></div>
+                  <div class="voucher-content">
+                    <div class="voucher-header">
+                      <div class="voucher-code">{{ voucher.ma }}</div>
+                      <div class="voucher-remaining" v-if="voucher.gioiHanSuDung && voucher.gioiHanSuDung > 0">
+                        Còn {{ voucher.gioiHanSuDung }}
+                      </div>
+                    </div>
+                    <div class="voucher-description">
+                      {{ getVoucherDescription(voucher) }}
+                    </div>
+                    <div class="voucher-footer">
+                      <div class="voucher-expiry">
+                        HSD: {{ formatDate(voucher.ketThucLuc) }}
+                      </div>
+                      <div class="voucher-conditions">
+                        <a href="#" class="text-decoration-none">Điều kiện</a>
+                      </div>
                     </div>
                   </div>
-                  <div class="voucher-description">
-                    {{ voucher.description }}
+                  <div class="voucher-radio">
+                    <input type="radio" 
+                           :value="voucher.id"
+                           v-model="selectedVoucherId"
+                           :id="'voucher-' + voucher.id">
+                    <label :for="'voucher-' + voucher.id"></label>
                   </div>
-                  <div class="voucher-footer">
-                    <div class="voucher-expiry">
-                      HSD: {{ voucher.expiry }}
-                    </div>
-                    <div class="voucher-conditions">
-                      <a href="#" class="text-decoration-none">Điều kiện</a>
-                    </div>
-                  </div>
-                </div>
-                <div class="voucher-radio">
-                  <input type="radio" 
-                         :value="voucher.id"
-                         v-model="selectedVoucherId"
-                         :id="'voucher-' + voucher.id">
-                  <label :for="'voucher-' + voucher.id"></label>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+
+          <!-- Empty State -->
+          <div v-else class="voucher-empty">
+            <i class="bi bi-ticket-perforated display-4 text-muted"></i>
+            <p class="mt-2 text-muted">Không có voucher nào khả dụng</p>
+          </div>
 
         <!-- Manual Voucher Input -->
         <div class="voucher-input-section mt-3">
@@ -69,10 +84,14 @@
             <input type="text" 
                    class="form-control modern-voucher-input" 
                    v-model="manualVoucherCode"
-                   placeholder="Nhập mã giảm giá">
+                   placeholder="Nhập mã giảm giá"
+                   :disabled="loading">
             <button class="btn btn-dark voucher-apply-btn" 
-                    @click="applyVoucher">
-              <i class="bi bi-check me-1"></i>Áp dụng
+                    @click="handleApplyVoucher"
+                    :disabled="loading || !manualVoucherCode.trim()">
+              <span v-if="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
+              <i v-else class="bi bi-check me-1"></i>
+              {{ loading ? 'Đang kiểm tra...' : 'Áp dụng' }}
             </button>
           </div>
           
@@ -90,14 +109,34 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useVoucher } from '@/stores/voucher'
 import { useCart } from '@/composables/useCart'
+import { useUserStore } from '@/stores/user'
 
-const { selectedVoucher, selectedVoucherId, manualVoucherCode, voucherMessage, selectVoucher, clearVoucherSelection, applyVoucher } = useVoucher()
+const { 
+  selectedVoucher, 
+  selectedVoucherId, 
+  manualVoucherCode, 
+  voucherMessage, 
+  availableVouchers,
+  loading,
+  selectVoucher, 
+  clearVoucherSelection, 
+  applyVoucher,
+  loadVouchers,
+  eligibleVouchers
+} = useVoucher()
+
 const { items, formatPrice } = useCart()
+const { user } = useUserStore()
 
 const voucherScroll = ref(null)
+
+// Load vouchers khi component mount
+onMounted(() => {
+  loadVouchers()
+})
 
 // Tính subtotal để kiểm tra điều kiện voucher
 const subtotal = computed(() => {
@@ -122,53 +161,9 @@ const sortedVouchers = computed(() => {
   })
 })
 
-const availableVouchers = ref([
-  {
-    id: 1,
-    code: 'COOL90',
-    description: 'Giảm 100K cho đơn từ 900K',
-    expiry: '11/10/2025',
-    remaining: 5,
-    type: 'fixed',
-    value: 100000,
-    minOrder: 900000
-  },
-  {
-    id: 2,
-    code: 'COOL60',
-    description: 'Giảm 60K cho đơn từ 600K',
-    expiry: '8/10/2025',
-    remaining: 12,
-    type: 'fixed',
-    value: 60000,
-    minOrder: 600000
-  },
-  {
-    id: 3,
-    code: 'COOLNEW',
-    description: '(Khách hàng mới) Giảm 50k cho đơn đầu tiên từ 299k',
-    expiry: '31/10/2025',
-    remaining: 0,
-    type: 'fixed',
-    value: 50000,
-    minOrder: 299000
-  },
-  {
-    id: 4,
-    code: 'VIP10',
-    description: 'VIP - Giảm 10% cho đơn từ 1M',
-    expiry: '15/11/2025',
-    remaining: 3,
-    type: 'percent',
-    value: 10,
-    minOrder: 1000000
-  }
-])
-
-
 // Kiểm tra voucher có đủ điều kiện không
 const isVoucherEligible = (voucher) => {
-  return subtotal.value >= voucher.minOrder
+  return subtotal.value >= (voucher.donToiThieu || 0)
 }
 
 // Function để handle click voucher với kiểm tra điều kiện
@@ -176,12 +171,33 @@ const handleVoucherClick = (voucher) => {
   if (!isVoucherEligible(voucher)) {
     voucherMessage.value = {
       type: 'error',
-      text: `Voucher ${voucher.code} yêu cầu đơn hàng tối thiểu ${formatPrice(voucher.minOrder)}`
+      text: `Voucher ${voucher.ma} yêu cầu đơn hàng tối thiểu ${formatPrice(voucher.donToiThieu || 0)}`
     }
     return
   }
   
   selectVoucher(voucher)
+}
+
+// Function để áp dụng voucher manual
+const handleApplyVoucher = async () => {
+  const khachHangId = user.value?.id || null
+  await applyVoucher(khachHangId, subtotal.value)
+}
+
+// Helper functions
+const getVoucherDescription = (voucher) => {
+  if (voucher.loai === 'percent' || voucher.loai === 'PHAN_TRAM') {
+    return `Giảm ${voucher.giaTri}% cho đơn từ ${formatPrice(voucher.donToiThieu || 0)}`
+  } else {
+    return `Giảm ${formatPrice(voucher.giaTri)} cho đơn từ ${formatPrice(voucher.donToiThieu || 0)}`
+  }
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('vi-VN')
 }
 
 const scrollVouchers = (direction) => {

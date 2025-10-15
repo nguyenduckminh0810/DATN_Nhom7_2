@@ -28,10 +28,10 @@ public class DataInitializer implements CommandLineRunner {
         if (vaiTroRepository.count() == 0) {
             log.info("=== Initializing default roles (via JPA) ===");
 
-            VaiTro customer = new VaiTro(null, "CUSTOMER", "Khách hàng");
-            VaiTro guest = new VaiTro(null, "GUEST", "Khách vãng lai");
-            VaiTro staff = new VaiTro(null, "STAFF", "Nhân viên");
-            VaiTro admin = new VaiTro(null, "ADMIN", "Quản trị viên");
+            VaiTro customer = new VaiTro(null, "CUS", "Khách hàng");
+            VaiTro guest = new VaiTro(null, "GST", "Khách vãng lai");
+            VaiTro staff = new VaiTro(null, "STF", "Nhân viên");
+            VaiTro admin = new VaiTro(null, "ADM", "Quản trị viên");
 
             vaiTroRepository.saveAll(Arrays.asList(customer, guest, staff, admin));
 

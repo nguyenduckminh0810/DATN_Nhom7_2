@@ -123,7 +123,7 @@ public class AuthController {
         
         String maVaiTro = taiKhoan.getVaiTro().getMa();
         
-        if ("CUSTOMER".equals(maVaiTro) || "GUEST".equals(maVaiTro)) {
+        if ("CUS".equals(maVaiTro) || "GST".equals(maVaiTro)) {
             // Tìm KhachHang
             KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
             if (khachHang != null) {
@@ -131,12 +131,12 @@ public class AuthController {
                 kieu = khachHang.getKieu();
             }
             
-        } else if ("STAFF".equals(maVaiTro) || "ADMIN".equals(maVaiTro)) {
+        } else if ("STF".equals(maVaiTro) || "ADM".equals(maVaiTro)) {
             
             NhanVien nhanVien = nhanVienRepository.findByTaiKhoan(taiKhoan).orElse(null);
             if (nhanVien != null) {
                 hoTen = nhanVien.getHoTen();
-                kieu = "STAFF"; 
+                kieu = "STF"; 
             }
         }
         
