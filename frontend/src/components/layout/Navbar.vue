@@ -37,82 +37,45 @@
               <span class="nav-text new-text">NEW</span>
             </router-link>
           </li>
-          <li class="nav-item dropdown dropdown-hover">
-            <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-              <span class="nav-text">ÁO</span>
+
+          <!-- dynamic parent categories -->
+          <li
+            v-for="parent in parentCategories"
+            :key="parent.id"
+            class="nav-item dropdown dropdown-hover"
+          >
+            <a
+              class="nav-link modern-nav-link dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="outside"
+            >
+              <span class="nav-text">{{ parent.name }}</span>
             </a>
-            <ul class="dropdown-menu modern-dropdown">
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-thun-basic">
-                  <i class="bi bi-tshirt me-2"></i>Áo thun
+
+            <ul class="dropdown-menu modern-dropdown" v-if="childrenFor(parent.slug).length">
+              <li v-for="c in childrenFor(parent.slug)" :key="c.id">
+                <router-link class="dropdown-item modern-dropdown-item" :to="`/category/${c.slug}`">
+                  <i class="bi bi-tshirt me-2"></i>{{ c.name }}
                 </router-link>
               </li>
+              <li class="dropdown-divider" v-if="childrenFor(parent.slug).length"></li>
               <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-so-mi">
-                  <i class="bi bi-shop me-2"></i>Áo sơ mi
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-polo">
-                  <i class="bi bi-tshirt me-2"></i>Áo polo
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-khoac">
-                  <i class="bi bi-hanger me-2"></i>Áo khoác
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao-len">
-                  <i class="bi bi-tshirt me-2"></i>Áo len
-                </router-link>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/ao">
-                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả áo
+                <router-link class="dropdown-item modern-dropdown-item" :to="`/category/${parent.slug}`">
+                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả {{ parent.name }}
                 </router-link>
               </li>
             </ul>
+
+            <!-- if no children, clicking goes to parent category page -->
+            <template v-else>
+              <router-link :to="`/category/${parent.slug}`" class="nav-link modern-nav-link">
+                <!-- nothing extra, link already shown in parent text -->
+              </router-link>
+            </template>
           </li>
-          <li class="nav-item dropdown dropdown-hover">
-            <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-              <span class="nav-text">QUẦN</span>
-            </a>
-            <ul class="dropdown-menu modern-dropdown">
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-jean">
-                  <i class="bi bi-shop me-2"></i>Quần jean
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-kaki">
-                  <i class="bi bi-shop me-2"></i>Quần kaki
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-short">
-                  <i class="bi bi-shop me-2"></i>Quần short
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-tay">
-                  <i class="bi bi-shop me-2"></i>Quần tây
-                </router-link>
-              </li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan-jogger">
-                  <i class="bi bi-shop me-2"></i>Quần jogger
-                </router-link>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <router-link class="dropdown-item modern-dropdown-item" to="/category/quan">
-                  <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả quần
-                </router-link>
-              </li>
-            </ul>
-          </li>
+
           <li class="nav-item">
             <router-link class="nav-link modern-nav-link sale-link" to="/category/sale">
               <div class="sale-container">
@@ -224,6 +187,7 @@ import RegisterPopup from '../auth/RegisterPopup.vue'
 import MiniCart from '../cart/MiniCart.vue'
 import { useUserStore } from '../../stores/user'
 import { useToast } from '../../composables/useToast'
+import categoryService from '../../services/categoryService' // << added
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -239,9 +203,48 @@ const showMiniCart = ref(false)
 // Search state
 const searchQuery = ref('')
 
-// Mock user data - replace with actual auth store
-const isLoggedIn = computed(() => userStore.isAuthenticated)
-const user = computed(() => userStore.user)
+// categories for navbar
+const categories = ref([])
+
+// Normalize API items to { id, name, slug, parentId }
+const normalize = (item) => ({
+  id: item.id,
+  name: item.ten || item.name || item.title || item.label || '',
+  slug: item.slug || item.slugLoai || '',
+  parentId: item.idCha ?? item.parentId ?? null,
+  status: (item.hoatDong === 1 || item.hoatDong === true) ? 'active' : 'inactive'
+})
+
+async function loadCategories() {
+  try {
+    const res = await categoryService.getAll()
+    let raw = []
+    if (res && res.success) raw = res.data
+    else raw = res.data || res
+    if (raw?.content && Array.isArray(raw.content)) raw = raw.content
+    if (!Array.isArray(raw)) raw = []
+    // map then filter only active
+    categories.value = raw.map(normalize).filter(c => c.status === 'active')
+  } catch (e) {
+    console.warn('Could not load categories for navbar', e)
+    categories.value = []
+  }
+}
+
+// computed parent categories (top-level)
+const parentCategories = computed(() =>
+  categories.value
+    .filter(c => !c.parentId)
+    .sort((a,b) => a.name.localeCompare(b.name))
+)
+
+// get children by parent slug (fallback to slug-prefix if parent not found)
+function childrenFor(parentSlug) {
+  if (!categories.value.length) return []
+  const parent = categories.value.find(c => c.slug === parentSlug)
+  if (parent) return categories.value.filter(c => c.parentId === parent.id).sort((a,b)=>a.name.localeCompare(b.name))
+  return categories.value.filter(c => c.slug && c.slug.startsWith(parentSlug + '-')).sort((a,b)=>a.name.localeCompare(b.name))
+}
 
 // Login popup methods
 const openLoginPopup = () => {
@@ -329,6 +332,8 @@ const handleScroll = () => {
 
 // Check for register popup trigger on mount
 onMounted(() => {
+  loadCategories()
+  window.addEventListener('categories-updated', loadCategories)
   const showRegisterPopupFlag = localStorage.getItem('auro_show_register_popup')
   if (showRegisterPopupFlag === 'true') {
     localStorage.removeItem('auro_show_register_popup')
@@ -344,6 +349,7 @@ onMounted(() => {
 
 // Cleanup on unmount
 onUnmounted(() => {
+  window.removeEventListener('categories-updated', loadCategories)
   window.removeEventListener('scroll', handleScroll)
 })
 

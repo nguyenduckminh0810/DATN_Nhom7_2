@@ -498,7 +498,8 @@ const buildPayload = () => ({
   slug: categoryForm.value.slug?.trim(),
   idCha: categoryForm.value.parentId ? Number(categoryForm.value.parentId) : null,
   thuTu: Number(categoryForm.value.order) || 0,
-  hoatDong: categoryForm.value.status === 'active'
+  // send numeric flag expected by backend (1 = active, 0 = inactive)
+  hoatDong: categoryForm.value.status === 'active' ? 1 : 0
 })
 
 const categories = ref([])
@@ -590,6 +591,52 @@ const handleDragStart = (cat) => { draggedCategory.value = cat }
 const handleDragEnd = () => { draggedCategory.value = null }
 const handleDrop = (e) => { e.preventDefault(); if (draggedCategory.value) { /* TODO: reorder */ } }
 
+const saveCategory = async () => {
+  try {
+    const payload = buildPayload()
+    if (editingCategory.value && !editingCategory.value.isLocal) {
+      await apiService.put(`/danh-muc/${editingCategory.value.id}`, payload)
+      toast.success('Cập nhật danh mục thành công')
+    } else {
+      await apiService.post('/danh-muc', payload)
+      toast.success('Tạo danh mục thành công')
+    }
+    await loadCategories()
+    // notify clients
+    window.dispatchEvent(new Event('categories-updated'))
+  } catch (err) {
+    toast.error('Lưu danh mục thất bại: ' + (err?.message || 'Không xác định'))
+  } finally {
+    closeModal()
+  }
+}
+
+const deleteCategory = async (cat) => {
+  const ok = await showConfirm(`Bạn có chắc chắn muốn xóa danh mục "${cat.name}"?`)
+  if (!ok) return
+  try {
+    await apiService.categoriesDelete.delete(cat.id, false)
+    await loadCategories()
+    toast.success('Xóa danh mục thành công')
+    // notify clients
+    window.dispatchEvent(new Event('categories-updated'))
+  } catch (err) {
+    const status = err?.status || err?.response?.status
+    if (status === 409) {
+      const force = await showConfirm('Danh mục hoặc danh mục con có liên kết tới sản phẩm. Xóa tất cả?')
+      if (force) {
+        await apiService.categoriesDelete.delete(cat.id, true)
+        await loadCategories()
+        toast.success('Đã xóa kèm dữ liệu liên quan')
+        window.dispatchEvent(new Event('categories-updated'))
+      }
+    } else {
+      toast.error('Xảy ra lỗi khi xóa: ' + (err?.message || 'Không xác định'))
+    }
+  }
+}
+
+// bulk actions (local update) -> also dispatch so navbar refreshes if admin expects change reflected
 const bulkUpdateStatus = (status) => {
   showConfirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedCategories.value.length} danh mục?`)
     .then(ok => {
@@ -600,6 +647,8 @@ const bulkUpdateStatus = (status) => {
       })
       selectedCategories.value = []
       toast.success('Cập nhật trạng thái thành công')
+      // notify clients (if you persist to backend elsewhere, also call event after persistence)
+      window.dispatchEvent(new Event('categories-updated'))
     })
 }
 
@@ -613,6 +662,7 @@ const bulkDelete = () => {
       categories.value = filterTree(categories.value)
       selectedCategories.value = []
       toast.success('Xóa danh mục đã chọn thành công')
+      window.dispatchEvent(new Event('categories-updated'))
     })
 }
 
@@ -653,7 +703,8 @@ const editCategory = async (cat) => {
 
   // Otherwise fetch the latest data from server so the modal shows authoritative values
   try {
-    const res = await apiService.categories.getById(cat.id)
+    let res = await apiService.get(`/danh-muc/${cat.id}`)
+    res = res.data ?? res
     // Map backend fields to form model
     const mapped = {
       id: res.id,
@@ -674,27 +725,30 @@ const editCategory = async (cat) => {
   }
 }
 
-const deleteCategory = async (cat) => {
-  const ok = await showConfirm(`Bạn có chắc chắn muốn xóa danh mục "${cat.name}"?`)
-  if (!ok) return
-  try {
-    await apiService.categoriesDelete.delete(cat.id, false)
-    await loadCategories()
-    toast.success('Xóa danh mục thành công')
-  } catch (err) {
-    const status = err?.status || err?.response?.status
-    if (status === 409) {
-      const force = await showConfirm('Danh mục hoặc danh mục con có liên kết tới sản phẩm. Xóa tất cả?')
-      if (force) {
-        await apiService.categoriesDelete.delete(cat.id, true)
-        await loadCategories()
-        toast.success('Đã xóa kèm dữ liệu liên quan')
-      }
-    } else {
-      toast.error('Xảy ra lỗi khi xóa: ' + (err?.message || 'Không xác định'))
-    }
-  }
-}
+// const deleteCategory = async (cat) => {
+//   const ok = await showConfirm(`Bạn có chắc chắn muốn xóa danh mục "${cat.name}"?`)
+//   if (!ok) return
+//   try {
+//     await apiService.categoriesDelete.delete(cat.id, false)
+//     await loadCategories()
+//     toast.success('Xóa danh mục thành công')
+//     // notify clients
+//     window.dispatchEvent(new Event('categories-updated'))
+//   } catch (err) {
+//     const status = err?.status || err?.response?.status
+//     if (status === 409) {
+//       const force = await showConfirm('Danh mục hoặc danh mục con có liên kết tới sản phẩm. Xóa tất cả?')
+//       if (force) {
+//         await apiService.categoriesDelete.delete(cat.id, true)
+//         await loadCategories()
+//         toast.success('Đã xóa kèm dữ liệu liên quan')
+//         window.dispatchEvent(new Event('categories-updated'))
+//       }
+//     } else {
+//       toast.error('Xảy ra lỗi khi xóa: ' + (err?.message || 'Không xác định'))
+//     }
+//   }
+// }
 
 const closeModal = () => {
   showAddModal.value = false
@@ -702,28 +756,31 @@ const closeModal = () => {
   categoryForm.value = { name:'', slug:'', description:'', icon:'bi bi-folder', parentId:null, order:0, status:'active' }
 }
 
-const saveCategory = async () => {
-  try {
-    const payload = buildPayload()
-    if (editingCategory.value && !editingCategory.value.isLocal) {
-      await apiService.put(`/categories/${editingCategory.value.id}`, payload)
-      toast.success('Cập nhật danh mục thành công')
-    } else {
-      await apiService.categories.create(payload)
-      toast.success('Tạo danh mục thành công')
-    }
-    await loadCategories()
-  } catch (err) {
-    toast.error('Lưu danh mục thất bại: ' + (err?.message || 'Không xác định'))
-  } finally {
-    closeModal()
-  }
-}
+// const saveCategory = async () => {
+//   try {
+//     const payload = buildPayload()
+//     if (editingCategory.value && !editingCategory.value.isLocal) {
+//       await apiService.put(`/categories/${editingCategory.value.id}`, payload)
+//       toast.success('Cập nhật danh mục thành công')
+//     } else {
+//       await apiService.categories.create(payload)
+//       toast.success('Tạo danh mục thành công')
+//     }
+//     await loadCategories()
+//     // notify clients
+//     window.dispatchEvent(new Event('categories-updated'))
+//   } catch (err) {
+//     toast.error('Lưu danh mục thất bại: ' + (err?.message || 'Không xác định'))
+//   } finally {
+//     closeModal()
+//   }
+// }
 
 // lấy dữ liệu & build tree
 const loadCategories = async () => {
   try {
-    const res = await apiService.categories.getAll()
+    const resp = await apiService.get('/danh-muc')
+    const raw = resp.data ?? resp
     const mapItem = (item) => ({
       id: item.id,
       name: item.ten || item.name || '',
@@ -732,14 +789,15 @@ const loadCategories = async () => {
       icon: item.icon || 'bi bi-folder',
       parentId: item.idCha ?? null,
       order: item.thuTu || 0,
-      status: (item.hoatDong === 1 || item.hoatDong === true) ? 'active' : 'inactive',
+      // hoatDong is numeric (1/0) now
+      status: (item.hoatDong === 1) ? 'active' : 'inactive',
       productCount: item.productCount || 0,
       createdAt: item.taoLuc ? new Date(item.taoLuc) : new Date(),
       expanded: false,
       children: []
     })
 
-    const flat = res.map(mapItem)
+    const flat = (Array.isArray(raw) ? raw : []).map(mapItem)
     const byId = Object.fromEntries(flat.map(f => [f.id, f]))
     const roots = []
     flat.forEach(f => {
@@ -799,7 +857,7 @@ onMounted(loadCategories)
 .tree-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .tree-node { border-radius: 8px; background: white; border: 1px solid #e9ecef; transition: all 0.3s ease; }
-.tree-node:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1); }
+.tree-node:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(99,102,241, 0.1); }
 .node-content { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; cursor: pointer; }
 .expand-btn { background: none; border: none; color: #6c757d; cursor: pointer; padding: 0.25rem; border-radius: 4px; transition: all 0.3s ease; }
 .expand-btn:hover { background-color: #f8f9fa; color: #6366f1; }
