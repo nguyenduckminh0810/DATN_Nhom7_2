@@ -20,15 +20,15 @@ public class KhachHang {
     @EqualsAndHashCode.Exclude
     private TaiKhoan taiKhoan;
 
-    @Column(name = "ho_ten", length = 150)
+    @Column(name = "ho_ten", columnDefinition = "NVARCHAR(255)")
     private String hoTen;
 
-    @Column(name = "email", length = 150)
+    @Column(name = "email", columnDefinition = "NVARCHAR(255)")
     private String email;
 
-    @Column(name = "so_dien_thoai", length = 20)
+    @Column(name = "so_dien_thoai", columnDefinition = "NVARCHAR(20)")
     private String soDienThoai;
 
-    @Column(name = "kieu", length = 50)
+    @Column(name = "kieu", columnDefinition = "NVARCHAR(50)")
     private String kieu;
 }

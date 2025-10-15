@@ -21,27 +21,24 @@ public class DiaChi {
     @EqualsAndHashCode.Exclude
     private KhachHang khachHang;
 
-    @Column(name = "ho_ten", length = 150)
+    @Column(name = "ho_ten", columnDefinition = "NVARCHAR(150)")
     private String hoTen;
 
-    @Column(name = "so_dien_thoai", length = 20)
+    @Column(name = "so_dien_thoai", columnDefinition = "NVARCHAR(20)")
     private String soDienThoai;
 
-    @Column(name = "dia_chi_1", length = 255)
+    @Column(name = "dia_chi_1", columnDefinition = "NVARCHAR(255)")
     private String diaChi1;
 
-    @Column(name = "phuong_xa", length = 100)
+    @Column(name = "phuong_xa", columnDefinition = "NVARCHAR(100)")
     private String phuongXa;
 
-    @Column(name = "quan_huyen", length = 100)
+    @Column(name = "quan_huyen", columnDefinition = "NVARCHAR(100)")
     private String quanHuyen;
 
-    @Column(name = "tinh_thanh", length = 100)
+    @Column(name = "tinh_thanh", columnDefinition = "NVARCHAR(100)")
     private String tinhThanh;
 
     @Column(name = "mac_dinh")
     private Boolean macDinh = false;
-
-    @Column(name = "tao_luc")
-    private LocalDateTime taoLuc;
 }

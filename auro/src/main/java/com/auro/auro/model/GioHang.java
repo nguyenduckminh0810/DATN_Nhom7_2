@@ -7,24 +7,24 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "gio_hang")
-@Data 
-@NoArgsConstructor 
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class GioHang {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_khach_hang")
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private KhachHang khachHang;
 
-    @Column(name = "id_phien", length = 100)
+    @Column(name = "id_phien", columnDefinition = "NVARCHAR(100)")
     private String idPhien;
 
-    @Column(name = "tien_te", length = 10)
+    @Column(name = "tien_te", columnDefinition = "NVARCHAR(10)")
     private String tienTe = "VND";
 
     @Column(name = "tao_luc")

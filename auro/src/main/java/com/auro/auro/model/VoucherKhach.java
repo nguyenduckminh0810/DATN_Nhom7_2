@@ -5,7 +5,9 @@ import lombok.*;
 
 @Entity
 @Table(name = "voucher_khach")
-@Data @NoArgsConstructor @AllArgsConstructor
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class VoucherKhach {
 
     @EmbeddedId
@@ -14,15 +16,17 @@ public class VoucherKhach {
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idVoucher")
     @JoinColumn(name = "id_voucher")
-    @ToString.Exclude @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Voucher voucher;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idKhachHang")
     @JoinColumn(name = "id_khach_hang")
-    @ToString.Exclude @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private KhachHang khachHang;
 
-    @Column(name = "trang_thai")  // vd: USED / UNUSED
+    @Column(name = "trang_thai", columnDefinition = "NVARCHAR(20)") // vd: USED / UNUSED
     private String trangThai;
 }

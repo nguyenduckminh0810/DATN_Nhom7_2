@@ -24,6 +24,6 @@ public class VaiTro {
     @Column(name = "ma", nullable = false, unique = true)
     private String ma; // CUS, GST, STF, ADM
 
-    @Column(name = "ten", nullable = false)
+    @Column(name = "ten", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String ten; // Khách hàng, Khách vãng lai, Nhân viên, Quản trị viên
 }

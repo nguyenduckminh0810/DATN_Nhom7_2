@@ -27,7 +27,7 @@ public class HinhAnh {
     @EqualsAndHashCode.Exclude
     private BienTheSanPham bienThe;
 
-    @Column(name = "url", nullable = false, length = 500)
+    @Column(name = "url", nullable = false, columnDefinition = "NVARCHAR(MAX)")
     private String url;
 
     @Column(name = "thu_tu")

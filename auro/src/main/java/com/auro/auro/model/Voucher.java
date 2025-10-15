@@ -20,7 +20,7 @@ public class Voucher {
     @Column(name = "ma", nullable = false, unique = true, length = 50)
     private String ma;
 
-    @Column(name = "loai", length = 50)
+    @Column(name = "loai", columnDefinition = "NVARCHAR(50)")
     private String loai;
 
     @Column(name = "gia_tri", precision = 18, scale = 2)

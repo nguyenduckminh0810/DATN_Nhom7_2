@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bien_the_san_pham")
-@Data 
-@NoArgsConstructor 
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class BienTheSanPham {
     @Id
@@ -17,43 +17,31 @@ public class BienTheSanPham {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_san_pham", nullable = false)
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private SanPham sanPham;
 
-    @Column(name = "sku", length = 100, unique = true)
+    @Column(name = "sku", columnDefinition = "NVARCHAR(100)", unique = true)
     private String sku;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_mau_sac")
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private MauSac mauSac;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_kich_co")
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private KichCo kichCo;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_chat_lieu")
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private ChatLieu chatLieu;
 
-    @Column(name = "thuoc_tinh_bo_sung_json", columnDefinition = "NVARCHAR(MAX)")
-    private String thuocTinhBoSungJson;
-
-    @Column(name = "trong_luong_g")
-    private Integer trongLuongG;
-
-    @Column(name = "trang_thai")
-    private Boolean trangThai = true;
-
-    @Column(name = "tao_luc")
-    private LocalDateTime taoLuc;
-
-    @Column(name = "cap_nhat_luc")
-    private LocalDateTime capNhatLuc;
+    @Column(name = " so_luong_ton", nullable = false)
+    private Integer soLuongTon;
 }

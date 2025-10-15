@@ -14,10 +14,10 @@ public class DanhMuc {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ten", nullable = false, length = 150)
+    @Column(name = "ten", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String ten;
 
-    @Column(name = "slug", nullable = false, length = 200, unique = true)
+    @Column(name = "slug", nullable = false, columnDefinition = "NVARCHAR(200)", unique = true)
     private String slug;
 
     @ManyToOne(fetch = FetchType.LAZY)
