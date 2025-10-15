@@ -34,7 +34,7 @@ public class DonHangService {
         donHang.setTaoLuc(LocalDateTime.now());
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHang.setTienTe("VND");
-        donHang.setKenhBan("online");
+        // donHang.setKenhBan("online");
 
         // Tính toán tổng tiền
         BigDecimal tamTinh = chiTietList.stream()

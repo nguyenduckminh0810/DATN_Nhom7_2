@@ -5,11 +5,14 @@ import lombok.*;
 
 @Entity
 @Table(name = "chat_lieu")
-@Data @NoArgsConstructor @AllArgsConstructor
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class ChatLieu {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ten", length = 100)
+    @Column(name = "ten", columnDefinition = "NVARCHAR(100)")
     private String ten;
 }

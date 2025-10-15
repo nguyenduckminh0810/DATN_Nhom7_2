@@ -8,21 +8,21 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "gia")
-@Data 
-@NoArgsConstructor 
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class Gia {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_bien_the", nullable = false)
-    @ToString.Exclude 
+    @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private BienTheSanPham bienThe;
 
-    @Column(name = "tien_te", length = 10)
+    @Column(name = "tien_te", columnDefinition = "NVARCHAR(10)")
     private String tienTe = "VND";
 
     @Column(name = "gia_niem_yet", precision = 18, scale = 2)

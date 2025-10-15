@@ -17,7 +17,7 @@ public class DonHang {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "so_don_hang", unique = true, length = 100)
+    @Column(name = "so_don_hang", unique = true, columnDefinition = "NVARCHAR(50)")
     private String soDonHang;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -26,7 +26,7 @@ public class DonHang {
     @EqualsAndHashCode.Exclude
     private KhachHang khachHang;
 
-    @Column(name = "trang_thai", length = 50)
+    @Column(name = "trang_thai", columnDefinition = "NVARCHAR(30)")
     private String trangThai;
 
     @Column(name = "tam_tinh", precision = 18, scale = 2)
@@ -47,14 +47,14 @@ public class DonHang {
     @Column(name = "tong_thanh_toan", precision = 18, scale = 2, insertable = false, updatable = false)
     private BigDecimal tongThanhToan;
 
-    @Column(name = "tien_te", length = 10)
+    @Column(name = "tien_te", columnDefinition = "NVARCHAR(10)")
     private String tienTe = "VND";
 
     @Column(name = "dat_luc")
     private LocalDateTime datLuc = LocalDateTime.now();
 
-    @Column(name = "kenh_ban", length = 50)
-    private String kenhBan = "online";
+    // @Column(name = "kenh_ban", length = 50)
+    // private String kenhBan = "online";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_voucher", referencedColumnName = "ma")
@@ -65,7 +65,7 @@ public class DonHang {
     @Column(name = "dia_chi_giao_snapshot", columnDefinition = "NVARCHAR(MAX)")
     private String diaChiGiaoSnapshot;
 
-    @Column(name = "ghi_chu", length = 500)
+    @Column(name = "ghi_chu", columnDefinition = "NVARCHAR(500)")
     private String ghiChu;
 
     @Column(name = "tao_luc")

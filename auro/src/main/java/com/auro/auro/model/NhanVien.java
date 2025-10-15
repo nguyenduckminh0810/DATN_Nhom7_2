@@ -19,9 +19,9 @@ public class NhanVien {
     @EqualsAndHashCode.Exclude
     private TaiKhoan taiKhoan;
 
-    @Column(name = "ho_ten", length = 150)
+    @Column(name = "ho_ten", columnDefinition = "NVARCHAR(255)")
     private String hoTen;
 
-    @Column(name = "so_dien_thoai", length = 20)
+    @Column(name = "so_dien_thoai", columnDefinition = "NVARCHAR(20)")
     private String soDienThoai;
 }
