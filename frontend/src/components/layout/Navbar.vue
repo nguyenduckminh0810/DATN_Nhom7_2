@@ -366,6 +366,12 @@ const initializeDropdownHover = () => {
     }
   })
 }
+
+// expose boolean for template (fix: "Property 'isLoggedIn' was accessed during render")
+const isLoggedIn = computed(() => {
+  // prefer store getter; fallback to stored token for hot reload edge cases
+  return !!userStore.isAuthenticated || !!localStorage.getItem('auro_token')
+})
 </script>
 
 <style scoped>
