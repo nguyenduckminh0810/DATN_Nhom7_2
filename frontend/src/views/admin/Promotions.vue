@@ -695,6 +695,18 @@ const generateCode = () => {
   promotionForm.value.code = `AURO-${timestamp}`
 }
 
+const formatLocalDateTime = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`
+}
+
 const activatePromotion = (promotion) => {
   if (confirm(`Kích hoạt khuyến mãi "${promotion.name}" ngay bây giờ?`)) {
     promotion.status = 'active'
@@ -712,41 +724,74 @@ const viewPromotion = (promotion) => {
   showViewModal.value = true
 }
 
-const duplicatePromotion = (promotion) => {
-  const duplicated = {
-    ...promotion,
-    id: Date.now(),
-    name: promotion.name + ' (Copy)',
-    code: promotion.code + '-COPY',
-    usedCount: 0,
-    status: 'scheduled'
+const duplicatePromotion = async (promotion) => {
+  try {
+    loading.value = true
+
+    const timestamp = Date.now().toString().slice(-6)
+    const newCode = `${promotion.ma}-COPY-${timestamp}`
+
+    const voucherData = {
+      ma: newCode,
+      loai: promotion.loai,
+      giaTri: promotion.giaTri,
+      giamToiDa: promotion.giamToiDa,
+      donToiThieu: promotion.donToiThieu,
+      batDauLuc: promotion.batDauLuc,
+      ketThucLuc: promotion.ketThucLuc,
+      gioiHanSuDung: promotion.gioiHanSuDung
+    }
+
+    console.log('Duplicating voucher:', voucherData)
+
+    const response = await apiService.adminVoucher.create(voucherData)
+
+    promotions.value.push(response.data)
+
+    console.log('Voucher duplicated successfully:', response.data)
+  } catch (err) {
+    error.value = 'Không thể nhân bản voucher: ' + err.message
+    console.error('Lỗi khi nhân bản voucher:', err)
+  } finally {
+    loading.value = false
   }
-  promotions.value.push(duplicated)
-}
+  }
+
 
 const startPromotion = async (promotion) => {
   console.log('Starting promotion:', promotion)
   try {
-    // Cập nhật thời gian bắt đầu thành hiện tại
+    const voucherCode = promotion.ma || `VOUCHER_${Date.now()}`
+    
     const now = new Date()
+    const localNow = formatLocalDateTime(now)
+    
+    let endDate
+    if (promotion.ketThucLuc) {
+      endDate = promotion.ketThucLuc
+    } else {
+      const futureDate = new Date(Date.now() + 30*24*60*60*1000)
+      endDate = formatLocalDateTime(futureDate)
+    }
+    
     const voucherData = {
-      ma: promotion.ma || '',
+      ma: voucherCode,
       loai: promotion.loai || 'fixed',
       giaTri: promotion.giaTri || 0,
       giamToiDa: promotion.giamToiDa || 0,
       donToiThieu: promotion.donToiThieu || 0,
-      batDauLuc: now.toISOString().slice(0, 16), // Format: YYYY-MM-DDTHH:mm
-      ketThucLuc: promotion.ketThucLuc || now.toISOString().slice(0, 16),
-      gioiHanSuDung: promotion.gioiHanSuDung
+      batDauLuc: localNow, 
+      ketThucLuc: endDate, 
+      gioiHanSuDung: promotion.gioiHanSuDung || -1
     }
     
     console.log('Voucher data to update:', voucherData)
     
-    // Gọi API update voucher
     await updateVoucher(promotion.id, voucherData)
     console.log('Promotion started successfully')
   } catch (error) {
     console.error('Error starting promotion:', error)
+    error.value = 'Không thể kích hoạt voucher: ' + error.message
   }
 }
 
@@ -801,10 +846,16 @@ const editPromotion = (promotion) => {
   console.log('Editing promotion:', promotion)
   console.log('Promotion ID:', promotion.id, 'Type:', typeof promotion.id)
   editingPromotion.value = promotion
+  
+  let formType = 'fixed'
+  if (promotion.loai === 'percent') formType = 'percentage'
+  else if (promotion.loai === 'freeship') formType = 'freeship'
+  else if (promotion.loai === 'buy_x_get_y') formType = 'bogo'
+  
   promotionForm.value = {
     name: promotion.ma,
     description: '',
-    type: promotion.loai === 'percent' ? 'percentage' : 'fixed',
+    type: formType, 
     percentValue: promotion.loai === 'percent' ? promotion.giaTri : 0,
     maxDiscount: promotion.giamToiDa,
     fixedValue: promotion.loai === 'fixed' ? promotion.giaTri : 0,
@@ -909,37 +960,18 @@ const createVoucher = async () => {
 }
 
 // Cập nhật voucher
-const updateVoucher = async (id) => {
+const updateVoucher = async (id, voucherData) => {
   try {
     loading.value = true
-    console.log('Updating voucher with ID:', id, 'Type:', typeof id)
-    console.log('Current editingPromotion:', editingPromotion.value)
     
-    // Validation: Kiểm tra giá trị voucher
-    let giaTri
-    if (promotionForm.value.type === 'percentage') {
-      giaTri = promotionForm.value.percentValue
-    } else if (promotionForm.value.type === 'fixed') {
-      giaTri = promotionForm.value.fixedValue
-    } else if (promotionForm.value.type === 'freeship') {
-      giaTri = 0 // Freeship có giá trị 0
+    if (!voucherData.ma || voucherData.ma.trim() === '') {
+      throw new Error('Mã voucher không được để trống')
     }
-    
-    if (promotionForm.value.type !== 'freeship' && (!giaTri || giaTri <= 0)) {
-      error.value = 'Giá trị voucher không được để trống hoặc bằng 0'
-      return
+    if (!voucherData.batDauLuc) {
+      throw new Error('Ngày bắt đầu không được để trống')
     }
-    
-    const voucherData = {
-      ma: promotionForm.value.code,
-      loai: promotionForm.value.type === 'percentage' ? 'percent' : 
-            promotionForm.value.type === 'freeship' ? 'freeship' : 'fixed',
-      giaTri: giaTri,
-      giamToiDa: promotionForm.value.maxDiscount || 0,
-      donToiThieu: promotionForm.value.minOrderValue || 0,
-      batDauLuc: promotionForm.value.startDate,
-      ketThucLuc: promotionForm.value.endDate,
-      gioiHanSuDung: promotionForm.value.usageLimit === null ? -1 : promotionForm.value.usageLimit
+    if (!voucherData.ketThucLuc) {
+      throw new Error('Ngày kết thúc không được để trống')
     }
     
     console.log('Voucher data to update:', voucherData)
@@ -950,7 +982,7 @@ const updateVoucher = async (id) => {
     }
     closeCreateModal()
   } catch (err) {
-    error.value = 'Không thể cập nhật voucher'
+    error.value = 'Không thể cập nhật voucher: ' + err.message
     console.error('Lỗi khi cập nhật voucher:', err)
   } finally {
     loading.value = false
@@ -973,11 +1005,59 @@ const deleteVoucher = async (id) => {
   }
 }
 
-const savePromotion = () => {
-  if (editingPromotion.value) {
-    updateVoucher(editingPromotion.value.id)
-  } else {
-    createVoucher()
+const savePromotion = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    if (!promotionForm.value.code || !promotionForm.value.startDate || !promotionForm.value.endDate) {
+      error.value = 'Vui lòng điền đầy đủ thông tin bắt buộc'
+      loading.value = false
+      return
+    }
+    
+    let giaTri
+    if (promotionForm.value.type === 'percentage') {
+      giaTri = promotionForm.value.percentValue
+    } else if (promotionForm.value.type === 'fixed') {
+      giaTri = promotionForm.value.fixedValue
+    } else if (promotionForm.value.type === 'freeship') {
+      giaTri = 0
+    } else if (promotionForm.value.type === 'bogo') {
+      giaTri = 0
+    }
+    
+    if (!promotionForm.value.type.includes('freeship') && !promotionForm.value.type.includes('bogo') && (!giaTri || giaTri <= 0)) {
+      error.value = 'Giá trị voucher không được để trống hoặc bằng 0'
+      loading.value = false
+      return
+    }
+    
+    const voucherData = {
+      ma: promotionForm.value.code,
+      loai: promotionForm.value.type === 'percentage' ? 'percent' : 
+            promotionForm.value.type === 'freeship' ? 'freeship' :
+            promotionForm.value.type === 'bogo' ? 'buy_x_get_y' : 'fixed',
+      giaTri: giaTri,
+      giamToiDa: promotionForm.value.maxDiscount || 0,
+      donToiThieu: promotionForm.value.minOrderValue || 0,
+      batDauLuc: promotionForm.value.startDate,
+      ketThucLuc: promotionForm.value.endDate,
+      gioiHanSuDung: promotionForm.value.usageLimit === null ? -1 : promotionForm.value.usageLimit
+    }
+    
+    console.log('Voucher data to save:', voucherData)
+     
+    if (editingPromotion.value) {
+      await updateVoucher(editingPromotion.value.id, voucherData)
+    } else {
+      await createVoucher()
+    }
+  } catch (err) {
+    error.value = 'Không thể lưu voucher: ' + (err.message || 'Lỗi không xác định')
+    console.error('Lỗi khi lưu voucher:', err)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -985,6 +1065,18 @@ const savePromotion = () => {
 onMounted(() => {
   loadVouchers()
 })
+
+// const formatDateForAPI = (date) => {
+//   if (!date) return null
+//   const d = new Date(date)
+//   return d.toISOString()
+// }
+
+// const generateVoucherCode = (prefix = 'VOUCHER') => {
+//   const timestamp = Date.now()
+//   const random = Math.floor(Math.random() * 1000)
+//   return `${prefix}_${timestamp}_${random}`
+// }
 </script>
 
 <style scoped>
