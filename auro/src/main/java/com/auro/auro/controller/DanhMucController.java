@@ -50,7 +50,8 @@ public class DanhMucController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DanhMucResponse> getById(@org.springframework.web.bind.annotation.PathVariable("id") Long id) {
+    public ResponseEntity<DanhMucResponse> getById(
+            @org.springframework.web.bind.annotation.PathVariable("id") Long id) {
         DanhMuc dm = danhMucRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"));
         return ResponseEntity.ok(map(dm));
@@ -70,10 +71,10 @@ public class DanhMucController {
         res.setId(dm.getId());
         res.setTen(dm.getTen());
         res.setSlug(dm.getSlug());
-    // moTa/icon are not present on DanhMuc entity in current schema
         res.setIdCha(dm.getDanhMucCha() != null ? dm.getDanhMucCha().getId() : null);
         res.setThuTu(dm.getThuTu());
-        res.setHoatDong(dm.getHoatDong());
+        // return numeric flag (1 or 0)
+        res.setHoatDong(dm.getHoatDong() != null && dm.getHoatDong() == 1 ? 1 : 0);
         return res;
     }
 
@@ -94,13 +95,13 @@ public class DanhMucController {
         }
 
         DanhMuc saved = danhMucRepository.save(dm);
-    DanhMucResponse out = map(saved);
-    return ResponseEntity.ok(out);
+        DanhMucResponse out = map(saved);
+        return ResponseEntity.ok(out);
     }
 
     @org.springframework.web.bind.annotation.PutMapping("/{id}")
     public ResponseEntity<DanhMucResponse> update(@org.springframework.web.bind.annotation.PathVariable("id") Long id,
-                                                  @Valid @RequestBody DanhMucCreateRequest req) {
+            @Valid @RequestBody DanhMucCreateRequest req) {
         DanhMuc existing = danhMucRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"));
 
@@ -121,26 +122,28 @@ public class DanhMucController {
         }
 
         DanhMuc saved = danhMucRepository.save(existing);
-    DanhMucResponse out = map(saved);
-    return ResponseEntity.ok(out);
+        DanhMucResponse out = map(saved);
+        return ResponseEntity.ok(out);
     }
 
-    // Delete category (soft/hard logic). If force=true, will delete related products and descendant categories.
+    // Delete category (soft/hard logic). If force=true, will delete related
+    // products and descendant categories.
     @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
     @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<Object> deleteCategory(@org.springframework.web.bind.annotation.PathVariable("id") Long id,
-                                                 @RequestParam(defaultValue = "false") boolean force) {
-        DanhMuc root = danhMucRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"));
+            @RequestParam(defaultValue = "false") boolean force) {
+        DanhMuc root = danhMucRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"));
 
         // collect all descendant ids (including root)
-        List<Long> toDeleteIds = new java.util.ArrayList<>()
-        ;
+        List<Long> toDeleteIds = new java.util.ArrayList<>();
         collectDescendants(root, toDeleteIds);
 
         // check related products
         long relatedProducts = sanPhamRepository.countByDanhMuc_IdIn(toDeleteIds);
 
-        // gather dependent counts: we'll fetch only product IDs to avoid selecting all product columns
+        // gather dependent counts: we'll fetch only product IDs to avoid selecting all
+        // product columns
         java.util.List<Long> productIds = sanPhamRepository.findIdsByDanhMucIdIn(toDeleteIds);
         long variantCount = 0;
         long imageCount = 0;
@@ -154,15 +157,17 @@ public class DanhMucController {
                 imageCount += hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(pid).size();
             }
             // order items reference variants; sum by variants
-            java.util.List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository.findBySanPham_IdIn(productIds);
-            java.util.List<Long> variantIds = new java.util.ArrayList<>()
-            ;
-            for (com.auro.auro.model.BienTheSanPham v : variants) variantIds.add(v.getId());
+            java.util.List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository
+                    .findBySanPham_IdIn(productIds);
+            java.util.List<Long> variantIds = new java.util.ArrayList<>();
+            for (com.auro.auro.model.BienTheSanPham v : variants)
+                variantIds.add(v.getId());
             if (!variantIds.isEmpty()) {
                 // for order items
                 for (Long vid : variantIds) {
                     orderItemCount += donHangChiTietRepository.findByBienThe_Id(vid).size();
-                    // cart items: no convenient method to count by variant; assume repository exists
+                    // cart items: no convenient method to count by variant; assume repository
+                    // exists
                     // We'll try to delete cart items by variant id if repository supports it
                     try {
                         cartItemCount += gioHangChiTietRepository.findByBienThe_Id(vid).size();
@@ -181,8 +186,7 @@ public class DanhMucController {
                     "variantCount", variantCount,
                     "imageCount", imageCount,
                     "orderItemCount", orderItemCount,
-                    "cartItemCount", cartItemCount
-            ));
+                    "cartItemCount", cartItemCount));
         }
 
         try {
@@ -190,24 +194,31 @@ public class DanhMucController {
                 // Delete dependent resources in safe order
                 // 1) delete order items referencing variants
                 if (!productIds.isEmpty()) {
-                    java.util.List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository.findBySanPham_IdIn(productIds);
+                    java.util.List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository
+                            .findBySanPham_IdIn(productIds);
                     for (com.auro.auro.model.BienTheSanPham v : variants) {
                         try {
                             donHangChiTietRepository.deleteByBienThe_Id(v.getId());
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         try {
                             gioHangChiTietRepository.deleteByBienThe_Id(v.getId());
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                         // delete images for variant if any
                         try {
                             hinhAnhRepository.deleteByBienThe_Id(v.getId());
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                     // delete variants
                     bienTheSanPhamRepository.deleteBySanPham_IdIn(productIds);
                     // delete images for products
                     for (Long pid : productIds) {
-                        try { hinhAnhRepository.deleteBySanPham_Id(pid); } catch (Exception ignored) {}
+                        try {
+                            hinhAnhRepository.deleteBySanPham_Id(pid);
+                        } catch (Exception ignored) {
+                        }
                     }
                     // delete products
                     sanPhamRepository.deleteByDanhMuc_IdIn(toDeleteIds);
@@ -217,7 +228,8 @@ public class DanhMucController {
             // delete categories (children first if cascade not configured)
             toDeleteIds.forEach(danhMucRepository::deleteById);
 
-            return ResponseEntity.ok(java.util.Map.of("message", "Xóa thành công", "deletedProductCount", relatedProducts));
+            return ResponseEntity
+                    .ok(java.util.Map.of("message", "Xóa thành công", "deletedProductCount", relatedProducts));
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi xóa: " + e.getMessage());
         }

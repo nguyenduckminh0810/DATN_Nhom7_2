@@ -15,5 +15,5 @@ public class DanhMucResponse {
     private String icon;
     private Long idCha;
     private Integer thuTu;
-    private Boolean hoatDong;
+    private Integer hoatDong;
 }

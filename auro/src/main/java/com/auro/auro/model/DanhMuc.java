@@ -30,5 +30,5 @@ public class DanhMuc {
     private Integer thuTu;
 
     @Column(name = "hoat_dong")
-    private Boolean hoatDong = true;
+    private Integer hoatDong = 1;
 }
