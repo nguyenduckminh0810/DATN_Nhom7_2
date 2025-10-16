@@ -15,7 +15,6 @@
 
     <!-- Advanced Filters and Search -->
     <div class="filters-section">
-      <!-- Quick Search -->
       <div class="search-row">
         <div class="search-box">
           <i class="ph-magnifying-glass search-icon"></i>
@@ -35,18 +34,15 @@
         </button>
       </div>
 
-      <!-- Advanced Filters -->
       <div v-if="showAdvancedFilters" class="advanced-filters">
         <div class="row g-3">
           <div class="col-md-3">
             <label class="form-label">Danh mục</label>
             <select class="form-select" v-model.number="selectedCategory">
               <option :value="''">Tất cả danh mục</option>
-              <option
-                v-for="c in flatCategoryOptions"
-                :key="c.id"
-                :value="c.id"
-              >{{ c.label }}</option>
+              <option v-for="c in flatCategoryOptions" :key="c.id" :value="c.id">
+                {{ c.label }}
+              </option>
             </select>
           </div>
           <div class="col-md-3">
@@ -123,23 +119,7 @@
     <div class="products-table">
       <!-- Table Actions -->
       <div class="table-actions">
-        <div class="view-options">
-          <span class="view-label">Hiển thị:</span>
-          <button
-            :class="['view-btn', { active: viewMode === 'table' }]"
-            @click="viewMode = 'table'"
-            title="Dạng bảng"
-          >
-            <i class="ph-table"></i>
-          </button>
-          <button
-            :class="['view-btn', { active: viewMode === 'grid' }]"
-            @click="viewMode = 'grid'"
-            title="Dạng lưới"
-          >
-            <i class="ph-grid-four"></i>
-          </button>
-        </div>
+        <div class="view-options"></div>
         <div class="table-stats">
           <span class="stats-text">
             Hiển thị {{ filteredProducts.length }} / {{ products.length }} sản phẩm
@@ -203,7 +183,16 @@
               <td>
                 <div class="product-info">
                   <div class="product-image">
-                    <img :src="product.image" :alt="product.name" class="img-fluid" />
+                    <img
+                      :src="getProductImage(product)"
+                      :alt="product.name"
+                      class="img-fluid"
+                      @error="
+                        ($event) => {
+                          $event.target.src = '/favicon.ico'
+                        }
+                      "
+                    />
                     <div v-if="product.isNew" class="new-badge">Mới</div>
                     <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
                   </div>
@@ -223,7 +212,7 @@
               </td>
               <td>
                 <span class="badge bg-light text-dark">{{
-                  getCategoryName(product.category)
+                  getCategoryName(product.categoryId)
                 }}</span>
               </td>
               <td>
@@ -273,41 +262,43 @@
                 </div>
               </td>
               <td>
-                <div class="action-buttons">
+                <div class="action-buttons framed">
                   <button
                     class="btn btn-sm btn-outline-primary"
                     @click="editProduct(product)"
                     title="Chỉnh sửa"
                   >
-                    <i class="ph-pencil"></i>
+                    <i class="ph-pencil me-1"></i>
+                    Sửa
                   </button>
                   <button
                     class="btn btn-sm btn-outline-info"
                     @click="viewProduct(product)"
                     title="Xem chi tiết"
                   >
-                    <i class="ph-eye"></i>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-success"
-                    @click="duplicateProduct(product)"
-                    title="Nhân bản"
-                  >
-                    <i class="ph-copy"></i>
+                    <i class="ph-eye me-1"></i>
+                    Xem
                   </button>
                   <button
                     class="btn btn-sm btn-outline-warning"
                     @click="toggleFeatured(product)"
                     title="Đánh dấu nổi bật"
                   >
-                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
+                    <i :class="(product.isFeatured ? 'ph-star-fill' : 'ph-star') + ' me-1'"></i>
+                    Nổi bật
+                    <span
+                      class="badge-dot"
+                      :class="{ on: product.isFeatured }"
+                      aria-hidden="true"
+                    ></span>
                   </button>
                   <button
                     class="btn btn-sm btn-outline-danger"
                     @click="deleteProduct(product)"
                     title="Xóa"
                   >
-                    <i class="ph-trash"></i>
+                    <i class="ph-trash me-1"></i>
+                    Xóa
                   </button>
                 </div>
               </td>
@@ -316,97 +307,7 @@
         </table>
       </div>
 
-      <!-- Grid View -->
-      <div v-if="viewMode === 'grid'" class="products-grid">
-        <div class="row g-4">
-          <div
-            v-for="product in filteredProducts"
-            :key="product.id"
-            class="col-lg-3 col-md-4 col-sm-6"
-          >
-            <div class="product-card">
-              <div class="product-card-header">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  v-model="selectedProducts"
-                  :value="product.id"
-                />
-                <div class="product-badges">
-                  <span v-if="product.isNew" class="badge bg-success">Mới</span>
-                  <span v-if="product.isFeatured" class="badge bg-warning">Nổi bật</span>
-                </div>
-              </div>
-              <div class="product-image-container">
-                <img :src="product.image" :alt="product.name" class="product-image" />
-                <div class="product-overlay">
-                  <button
-                    class="btn btn-sm btn-light"
-                    @click="viewProduct(product)"
-                    title="Xem chi tiết"
-                  >
-                    <i class="ph-eye"></i>
-                  </button>
-                  <button
-                    class="btn btn-sm btn-primary"
-                    @click="editProduct(product)"
-                    title="Chỉnh sửa"
-                  >
-                    <i class="ph-pencil"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="product-card-body">
-                <h6 class="product-title">{{ product.name }}</h6>
-                <div class="product-meta">
-                  <span class="product-sku">SKU: {{ product.sku }}</span>
-                  <span class="product-category">{{ getCategoryName(product.categoryId) }}</span>
-                </div>
-                <div class="product-rating">
-                  <div class="rating-stars">
-                    <i
-                      v-for="i in 5"
-                      :key="i"
-                      :class="['star', { filled: i <= product.rating }]"
-                    ></i>
-                  </div>
-                  <span class="rating-count">({{ product.reviewCount }})</span>
-                </div>
-                <div class="product-price">
-                  <span class="current-price">{{ formatCurrency(product.price) }}</span>
-                  <span v-if="product.originalPrice" class="original-price">{{
-                    formatCurrency(product.originalPrice)
-                  }}</span>
-                </div>
-                <div class="product-stock">
-                  <span :class="['stock-badge', getStockClass(product.stock)]">
-                    {{ product.stock }} sản phẩm
-                  </span>
-                  <span :class="['status-badge', getStatusClass(product.status)]">
-                    {{ getStatusText(product.status) }}
-                  </span>
-                </div>
-              </div>
-              <div class="product-card-footer">
-                <div class="product-actions">
-                  <button class="btn btn-sm btn-outline-primary" @click="editProduct(product)">
-                    <i class="ph-pencil"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-success" @click="duplicateProduct(product)">
-                    <i class="ph-copy"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-warning" @click="toggleFeatured(product)">
-                    <i :class="product.isFeatured ? 'ph-star-fill' : 'ph-star'"></i>
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger" @click="deleteProduct(product)">
-                    <i class="ph-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Grid view removed for cleaner layout -->
     </div>
 
     <!-- Pagination -->
@@ -501,13 +402,6 @@
               {{ productForm.variants.length }}
             </span>
           </button>
-          <button
-            :class="['tab-btn', { active: activeTab === 'seo' }]"
-            @click="activeTab = 'seo'"
-          >
-            <i class="bi bi-search me-1"></i>
-            SEO & Marketing
-          </button>
         </div>
 
         <div class="modal-body">
@@ -517,13 +411,18 @@
               <div class="row g-3">
                 <div class="col-md-8">
                   <label class="form-label">Tên sản phẩm *</label>
-                  <input type="text" class="form-control" v-model="productForm.name" required>
+                  <input type="text" class="form-control" v-model="productForm.name" required />
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">SKU *</label>
                   <div class="input-group">
-                    <input type="text" class="form-control" v-model="productForm.sku" required>
-                    <button type="button" class="btn btn-outline-secondary" @click="generateSKU" title="Tạo SKU tự động">
+                    <input type="text" class="form-control" v-model="productForm.sku" required />
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      @click="generateSKU"
+                      title="Tạo SKU tự động"
+                    >
                       <i class="bi bi-arrow-clockwise"></i>
                     </button>
                   </div>
@@ -532,11 +431,9 @@
                   <label class="form-label">Danh mục * (CHỈ QUẦN ÁO NAM)</label>
                   <select class="form-select" v-model="productForm.categoryId" required>
                     <option value="">Chọn danh mục</option>
-                    <option
-                      v-for="c in flatCategoryOptions"
-                      :key="c.id"
-                      :value="c.id"
-                    >{{ c.label }}</option>
+                    <option v-for="c in flatCategoryOptions" :key="c.id" :value="c.id">
+                      {{ c.label }}
+                    </option>
                   </select>
                 </div>
                 <div class="col-md-6">
@@ -549,19 +446,41 @@
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Giá bán *</label>
-                  <input type="number" class="form-control" v-model.number="productForm.price" required min="0">
+                  <input
+                    type="number"
+                    class="form-control"
+                    v-model.number="productForm.price"
+                    required
+                    min="0"
+                  />
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Giá gốc</label>
-                  <input type="number" class="form-control" v-model.number="productForm.originalPrice" min="0">
+                  <input
+                    type="number"
+                    class="form-control"
+                    v-model.number="productForm.originalPrice"
+                    min="0"
+                  />
                 </div>
                 <div class="col-md-4">
                   <label class="form-label">Giảm giá (%)</label>
-                  <input type="number" class="form-control" :value="discountPercent" readonly disabled>
+                  <input
+                    type="number"
+                    class="form-control"
+                    :value="discountPercent"
+                    readonly
+                    disabled
+                  />
                 </div>
                 <div class="col-12">
                   <label class="form-label">Mô tả sản phẩm</label>
-                  <textarea class="form-control" rows="4" v-model="productForm.description" placeholder="Nhập mô tả chi tiết về sản phẩm..."></textarea>
+                  <textarea
+                    class="form-control"
+                    rows="4"
+                    v-model="productForm.description"
+                    placeholder="Nhập mô tả chi tiết về sản phẩm..."
+                  ></textarea>
                 </div>
               </div>
             </form>
@@ -590,72 +509,8 @@
               :initial-colors="productForm.variantColors || []"
               :initial-material="productForm.material || ''"
               @update="handleVariantsUpdate"
+              @cancel="activeTab = 'basic'"
             />
-          </div>
-
-          <!-- Tab 4: SEO & Marketing -->
-          <div v-show="activeTab === 'seo'" class="tab-content">
-            <form>
-              <div class="row g-3">
-                <div class="col-12">
-                  <label class="form-label">URL Slug</label>
-                  <div class="input-group">
-                    <span class="input-group-text">/product/</span>
-                    <input type="text" class="form-control" v-model="productForm.slug" placeholder="ao-so-mi-nam-cao-cap">
-                    <button type="button" class="btn btn-outline-secondary" @click="generateSlug" title="Tạo slug từ tên">
-                      <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Meta Title (SEO)</label>
-                  <input type="text" class="form-control" v-model="productForm.metaTitle" placeholder="Áo sơ mi nam cao cấp | AURO" maxlength="60">
-                  <small class="text-muted">{{ (productForm.metaTitle || '').length }}/60 ký tự</small>
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Meta Description (SEO)</label>
-                  <textarea class="form-control" rows="3" v-model="productForm.metaDescription" placeholder="Mô tả ngắn gọn cho Google..." maxlength="160"></textarea>
-                  <small class="text-muted">{{ (productForm.metaDescription || '').length }}/160 ký tự</small>
-                </div>
-                <div class="col-12">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" v-model="productForm.isFeatured" id="featuredCheck">
-                    <label class="form-check-label" for="featuredCheck">
-                      <i class="bi bi-star me-1"></i>
-                      Sản phẩm nổi bật (hiển thị trên trang chủ)
-                    </label>
-                  </div>
-                </div>
-                <div class="col-12">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" v-model="productForm.isNew" id="newCheck">
-                    <label class="form-check-label" for="newCheck">
-                      <i class="bi bi-badge-wc me-1"></i>
-                      Sản phẩm mới (badge "NEW")
-                    </label>
-                  </div>
-                </div>
-                <div class="col-12">
-                  <label class="form-label">Tags (để tìm kiếm dễ hơn)</label>
-                  <div class="tags-input">
-                    <span v-for="(tag, index) in (productForm.tags || [])" :key="index" class="tag-item">
-                      {{ tag }}
-                      <button type="button" @click="removeTag(index)" class="tag-remove">
-                        <i class="bi bi-x"></i>
-                      </button>
-                    </span>
-                    <input
-                      type="text"
-                      class="tag-input"
-                      placeholder="VD: Bestseller, Sale, Premium..."
-                      @keydown.enter.prevent="addTag"
-                      v-model="newTag"
-                    />
-                  </div>
-                  <small class="text-muted">Gợi ý: Bestseller, Sale, Premium, Limited, Summer, Formal, Casual</small>
-                </div>
-              </div>
-            </form>
           </div>
         </div>
 
@@ -694,7 +549,6 @@ const isLoading = ref(false)
 
 // NEW: Tab management
 const activeTab = ref('basic')
-const newTag = ref('')
 
 // Advanced filters
 const showAdvancedFilters = ref(false)
@@ -711,14 +565,15 @@ const availableTags = ref(['Bestseller', 'Sale', 'New', 'Premium', 'Limited'])
 
 // Categories fetched from backend
 const categories = ref([])
-const products = ref([])        // danh sách sản phẩm
-const totalItems = ref(0)       // tổng bản ghi
-const totalPages = ref(1)       // tổng số trang
-const productForm = ref({       // model cho modal thêm/sửa
+const products = ref([]) // danh sách sản phẩm
+const totalItems = ref(0) // tổng bản ghi
+const totalPages = ref(1) // tổng số trang
+const productForm = ref({
+  // model cho modal thêm/sửa
   id: null,
   name: '',
   sku: '',
-  categoryId: '',      // lưu ID danh mục
+  categoryId: '', // lưu ID danh mục
   status: 'active',
   price: 0,
   originalPrice: 0,
@@ -729,34 +584,30 @@ const productForm = ref({       // model cho modal thêm/sửa
   variants: [],
   variantColors: [],
   material: '',
-  slug: '',
-  metaTitle: '',
-  metaDescription: '',
+  // SEO tab removed, keep minimal flags
   isFeatured: false,
   isNew: false,
-  tags: []
+  tags: [],
 })
 
 // flatten categories (tree) into options with indentation
 const flatCategoryOptions = computed(() => {
   const out = []
   const walk = (nodes = [], level = 0) => {
-    nodes.forEach(n => {
-      const name = n.ten || n.name || n.slug || ('#' + n.id)
+    nodes.forEach((n) => {
+      const name = n.ten || n.name || n.slug || '#' + n.id
       const label = (level ? '— '.repeat(level) : '') + name
       out.push({ id: n.id, label })
       if (n.children?.length) walk(n.children, level + 1)
     })
   }
-  // if categories is already a flat array without children, treat each as level 0
   if (!categories.value || categories.value.length === 0) return out
-  // detect if items have children -> treat as tree, otherwise just map
-  const firstHasChildren = categories.value.some(c => c.children && c.children.length)
+  const firstHasChildren = categories.value.some((c) => c.children && c.children.length)
   if (firstHasChildren) {
     walk(categories.value, 0)
   } else {
-    categories.value.forEach(n => {
-      const name = n.ten || n.name || n.slug || ('#' + n.id)
+    categories.value.forEach((n) => {
+      const name = n.ten || n.name || n.slug || '#' + n.id
       out.push({ id: n.id, label: name })
     })
   }
@@ -771,13 +622,13 @@ function mapFromApi(sp) {
     id: sp.id,
     name: sp.ten,
     sku: sp.sku || '',
-    categoryId: sp.danhMucId || '',
+    categoryId: sp.danhMucId || sp.categoryId || sp.danhMuc?.id || '',
     price: Number(sp.gia) || 0,
     originalPrice: null,
     stock: 0,
     status: sp.trangThai || 'active',
     description: sp.moTa,
-    image: sp.hinhAnhUrl || '',
+    image: sp.anhDaiDien || '',
     createdAt: sp.taoLuc ? new Date(sp.taoLuc) : new Date(),
   }
 }
@@ -804,6 +655,13 @@ const loadProducts = async (pageNumber = 0) => {
     const res = await sanPhamService.page(params)
     // res is expected to be a Page<SanPhamResponse>
     products.value = (res.content || []).map(mapFromApi)
+    // Eagerly load images for rows missing thumbnails
+    for (const p of products.value) {
+      if (!p.image) {
+        // fire and forget; will set when done
+        ensureProductImageLoaded(p)
+      }
+    }
     totalItems.value = res.totalElements || (res.content || []).length
     totalPages.value = res.totalPages || 1
     // controller returns 0-based page number; expose 1-based for UI
@@ -832,7 +690,7 @@ async function loadProductDetail(id) {
       metaDescription: res.metaDescription || '',
       isFeatured: !!res.isFeatured,
       isNew: !!res.isNew,
-      tags: res.tags || []
+      tags: res.tags || [],
     }
   } catch {
     return null
@@ -846,15 +704,15 @@ const changePage = (page) => {
 }
 
 const editProduct = async (product) => {
-   editingProduct.value = product
-   const full = await loadProductDetail(product.id)
-   productForm.value = full ? { ...full } : { ...product }
-   // đảm bảo có categoryId (phòng trường hợp dữ liệu cũ là 'category')
-   if (!productForm.value.categoryId && productForm.value.category) {
-     productForm.value.categoryId = productForm.value.category
-   }
-   showAddModal.value = true
- }
+  editingProduct.value = product
+  const full = await loadProductDetail(product.id)
+  productForm.value = full ? { ...full } : { ...product }
+  // đảm bảo có categoryId (phòng trường hợp dữ liệu cũ là 'category')
+  if (!productForm.value.categoryId && productForm.value.category) {
+    productForm.value.categoryId = productForm.value.category
+  }
+  showAddModal.value = true
+}
 const viewProduct = (product) => {
   // simple detail view - open product page in new tab (if exists)
   const slug = product.name ? product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : product.id
@@ -880,12 +738,45 @@ const closeModal = () => {
 const saveProduct = async () => {
   const payload = mapToApi(productForm.value)
   try {
+    let productId
     if (editingProduct.value) {
-      await sanPhamService.update(editingProduct.value.id, payload)
+      const res = await sanPhamService.update(editingProduct.value.id, payload)
+      productId = res?.id || editingProduct.value.id
     } else {
-      await sanPhamService.create(payload)
+      const res = await sanPhamService.create(payload)
+      productId = res?.id
     }
-    await loadProducts(currentPage.value)
+
+    // Upload newly added images (those having a File attached)
+    const images = productForm.value.images || []
+    const newFiles = images.filter((img) => img.file instanceof File)
+    let firstUploadedUrl = ''
+    if (productId && newFiles.length > 0) {
+      const { default: api } = await import('../../services/api')
+      for (let i = 0; i < newFiles.length; i++) {
+        const img = newFiles[i]
+        try {
+          const saved = await api.upload(`/hinh-anh/san-pham/${productId}`, img.file, {
+            laDaiDien: !!img.isPrimary,
+            thuTu: typeof img.order === 'number' ? img.order : i,
+          })
+          if (!firstUploadedUrl && saved?.url) firstUploadedUrl = saved.url
+        } catch (e) {
+          console.warn('Upload image failed:', e)
+        }
+      }
+    }
+
+    // Nếu có ảnh mới, cập nhật ngay trong danh sách hiện tại để hiển thị tức thì
+    if (firstUploadedUrl) {
+      const idx = products.value.findIndex((p) => String(p.id) === String(productId))
+      if (idx > -1) {
+        products.value[idx].image = firstUploadedUrl
+      }
+    }
+
+    // Reload current page (convert 1-based UI page to 0-based API page) để đồng bộ dữ liệu
+    await loadProducts((currentPage.value || 1) - 1)
     closeModal()
   } catch (e) {
     console.error('Save product error', e)
@@ -897,25 +788,12 @@ const deleteProduct = async (product) => {
   if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`)) return
   try {
     await sanPhamService.delete(product.id)
-    await loadProducts(currentPage.value)
+    // Reload current page (convert 1-based UI page to 0-based API page)
+    await loadProducts((currentPage.value || 1) - 1)
   } catch (e) {
     console.error('Delete product error', e)
     alert('Xóa sản phẩm lỗi: ' + (e?.message || JSON.stringify(e)))
   }
-}
-
-const duplicateProduct = (product) => {
-  // For now duplicating locally; you may want to implement server-side clone
-  const duplicatedProduct = {
-    ...product,
-    id: Date.now(),
-    name: product.name + ' (Copy)',
-    sku: product.sku + '-COPY',
-    createdAt: new Date(),
-    isNew: true,
-    isFeatured: false,
-  }
-  products.value.unshift(duplicatedProduct)
 }
 
 const toggleFeatured = (product) => {
@@ -1055,9 +933,9 @@ const formatDate = (date) => {
 
 const getStatusText = (status) => {
   const statuses = {
-    'active': 'Đang bán',
-    'inactive': 'Ngừng bán',
-    'out-of-stock': 'Hết hàng'
+    active: 'Đang bán',
+    inactive: 'Ngừng bán',
+    'out-of-stock': 'Hết hàng',
   }
   return statuses[status] || status
 }
@@ -1120,8 +998,11 @@ const sortTable = (field) => {
 
 function getCategoryName(categoryId) {
   if (!categoryId) return ''
+  // try flat options (includes nested children flattened)
+  const opt = flatCategoryOptions.value.find((x) => Number(x.id) === Number(categoryId))
+  if (opt) return opt.label.replace(/^—\s+/g, '')
   const c = categories.value.find((x) => Number(x.id) === Number(categoryId))
-  return c ? c.ten : ''
+  return c ? c.ten || c.name || '' : ''
 }
 
 function formatCurrency(v) {
@@ -1139,6 +1020,48 @@ function formatTime(d) {
   if (!d) return ''
   const dt = new Date(d)
   return dt.toLocaleTimeString()
+}
+
+const productImageCache = new Map()
+async function ensureProductImageLoaded(product) {
+  if (!product || !product.id) return
+  if (product.image && typeof product.image === 'string') return
+  if (productImageCache.has(product.id)) {
+    product.image = productImageCache.get(product.id)
+    return
+  }
+  try {
+    const { default: api } = await import('../../services/api')
+    const images = await api.get(`/hinh-anh/san-pham/${product.id}`)
+    const first =
+      Array.isArray(images) && images.length ? images.find((i) => i.laDaiDien) || images[0] : null
+    if (first?.url) {
+      product.image = first.url
+      productImageCache.set(product.id, first.url)
+    }
+  } catch {
+    // ignore; fallback will handle
+  }
+}
+
+function getProductImage(product) {
+  const url = product?.image
+  if (!url || typeof url !== 'string') {
+    // lazy load images for this product once
+    ensureProductImageLoaded(product)
+    return '/favicon.ico'
+  }
+  if (/^https?:\/\/via\.placeholder\.com\//.test(url)) return '/favicon.ico'
+  if (url.startsWith('/files/')) {
+    try {
+      const base = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+      const origin = new URL(base).origin
+      return origin + url
+    } catch {
+      return url
+    }
+  }
+  return url
 }
 
 // function getStockClass(stock) {
@@ -1180,13 +1103,13 @@ async function loadCategories() {
       ten: item.ten || item.name || '',
       slug: item.slug || '',
       parentId: item.idCha ?? null,
-      children: []
+      children: [],
     })
 
     const flat = (Array.isArray(res) ? res : []).map(mapItem)
-    const byId = Object.fromEntries(flat.map(f => [f.id, f]))
+    const byId = Object.fromEntries(flat.map((f) => [f.id, f]))
     const roots = []
-    flat.forEach(f => {
+    flat.forEach((f) => {
       if (f.parentId && byId[f.parentId]) {
         byId[f.parentId].children ||= []
         byId[f.parentId].children.push(f)
@@ -1211,13 +1134,12 @@ const discountPercent = computed(() => {
 
 // NEW: Helper methods
 const getCategoryType = (categoryId) => {
-  const c = categories.value.find(x => Number(x.id) === Number(categoryId))
+  const c = categories.value.find((x) => Number(x.id) === Number(categoryId))
   const slug = c?.slug || ''
   if (slug.startsWith('ao')) return 'ao'
   if (slug.startsWith('quan')) return 'quan'
   return 'ao'
 }
-
 
 const generateSKU = () => {
   const prefix = getCategoryType(productForm.value.categoryId).toUpperCase()
@@ -1225,39 +1147,12 @@ const generateSKU = () => {
   productForm.value.sku = `${prefix}-${timestamp}`
 }
 
-const generateSlug = () => {
-  if (!productForm.value.name) return
-  productForm.value.slug = productForm.value.name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .trim()
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-}
-
-const addTag = () => {
-  if (newTag.value.trim()) {
-    if (!productForm.value.tags) {
-      productForm.value.tags = []
-    }
-    if (!productForm.value.tags.includes(newTag.value.trim())) {
-      productForm.value.tags.push(newTag.value.trim())
-    }
-    newTag.value = ''
-  }
-}
-
-const removeTag = (index) => {
-  productForm.value.tags.splice(index, 1)
-}
+// SEO & tag helpers removed with SEO tab
 
 const handleImagesUpdate = (images) => {
   productForm.value.images = images
   // Set primary image as main product image
-  const primary = images.find(img => img.isPrimary)
+  const primary = images.find((img) => img.isPrimary)
   if (primary) {
     productForm.value.image = primary.url
   }
@@ -1274,7 +1169,7 @@ const handleVariantsUpdate = (variantsData) => {
 // Lifecycle
 onMounted(async () => {
   await loadCategories()
-await loadProducts((currentPage.value || 1) - 1)
+  await loadProducts((currentPage.value || 1) - 1)
 })
 
 // initial load handled in combined onMounted above
@@ -1642,6 +1537,57 @@ await loadProducts((currentPage.value || 1) - 1)
 
 .action-buttons .btn {
   padding: 0.375rem 0.75rem;
+}
+
+.action-buttons.framed {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.25rem;
+  background: #f8f9fa;
+}
+
+.badge-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-left: 6px;
+  background: #ced4da; /* off state */
+}
+.badge-dot.on {
+  background: #f59e0b; /* amber when featured */
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+
+/* Dark theme: make outline buttons more visible */
+.action-buttons .btn-outline-info {
+  color: #0dcaf0;
+  border-color: #0dcaf0;
+}
+.action-buttons .btn-outline-info:hover {
+  background-color: rgba(13, 202, 240, 0.1);
+}
+.action-buttons .btn-outline-warning {
+  color: #f59e0b;
+  border-color: #f59e0b;
+}
+.action-buttons .btn-outline-warning:hover {
+  background-color: rgba(245, 158, 11, 0.12);
+}
+.action-buttons .btn-outline-danger {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+.action-buttons .btn-outline-danger:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+}
+/* Remove border for Edit button only to make it look primary without outline */
+.action-buttons .btn-outline-primary {
+  border-color: transparent;
+  color: #3b82f6;
+}
+.action-buttons .btn-outline-primary:hover {
+  background-color: rgba(59, 130, 246, 0.12);
 }
 
 /* Grid View */

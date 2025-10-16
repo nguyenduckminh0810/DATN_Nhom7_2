@@ -7,8 +7,8 @@ class ApiService {
       baseURL: this.baseURL,
       timeout: 10000,
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+      },
     })
     this.setupInterceptors()
   }
@@ -17,13 +17,23 @@ class ApiService {
     // Request interceptor
     this.client.interceptors.request.use(
       (config) => {
+        const method = (config.method || 'get').toLowerCase()
+        const url = config.url || ''
+        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh']
+        const isPublicGet = method === 'get' && publicGetPrefixes.some((p) => url.startsWith(p))
+
         const token = localStorage.getItem('auro_token')
-        if (token) {
+        if (token && !isPublicGet) {
           config.headers.Authorization = `Bearer ${token}`
+        } else {
+          // ensure we don't accidentally send a stale header
+          if (config.headers && 'Authorization' in config.headers) {
+            delete config.headers.Authorization
+          }
         }
         return config
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     )
 
     // Response interceptor
@@ -36,7 +46,7 @@ class ApiService {
           window.location.href = '/'
         }
         return Promise.reject(error)
-      }
+      },
     )
   }
 
@@ -87,12 +97,17 @@ class ApiService {
   }
 
   // File upload
-  async upload(url, file, onProgress = null) {
+  async upload(url, file, fields = {}, onProgress = null) {
     const formData = new FormData()
     formData.append('file', file)
+    if (fields && typeof fields === 'object') {
+      Object.entries(fields).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) formData.append(k, v)
+      })
+    }
 
     const config = {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     }
 
     if (onProgress) {
@@ -114,23 +129,28 @@ class ApiService {
   handleError(error) {
     if (error.response) {
       const { status, data } = error.response
+      const message =
+        (typeof data === 'string' ? data : null) ||
+        data?.message ||
+        data?.error ||
+        'Có lỗi xảy ra từ server'
       return {
-        message: data.message || 'Có lỗi xảy ra từ server',
+        message,
         status,
-        data: data.data || null,
-        type: 'server_error'
+        data: (typeof data === 'object' ? data.data : null) || null,
+        type: 'server_error',
       }
     } else if (error.request) {
       return {
         message: 'Không thể kết nối đến server',
         status: 0,
-        type: 'network_error'
+        type: 'network_error',
       }
     } else {
       return {
         message: error.message || 'Có lỗi không xác định',
         status: 0,
-        type: 'unknown_error'
+        type: 'unknown_error',
       }
     }
   }
@@ -145,30 +165,27 @@ class ApiService {
       be?.data?.token ||
       be?.data?.jwt
 
-    const user =
-      be?.user ||
+    const user = be?.user ||
       be?.data?.user || {
         id: be?.data?.id ?? be?.id ?? null,
         name: be?.data?.name ?? be?.name ?? be?.username ?? null,
         email: be?.data?.email ?? be?.email ?? null,
-        role: be?.data?.role ?? be?.role ?? 'user'
+        role: be?.data?.role ?? be?.role ?? 'user',
       }
 
     const success =
       be?.success ??
       be?.ok ??
-      (typeof be?.status === 'string'
-        ? be.status.toUpperCase() === 'OK'
-        : undefined) ??
+      (typeof be?.status === 'string' ? be.status.toUpperCase() === 'OK' : undefined) ??
       Boolean(accessToken)
 
     return {
       success: Boolean(success),
       data: {
         accessToken: accessToken || null,
-        user: user || null
+        user: user || null,
       },
-      message: be?.message || 'OK'
+      message: be?.message || 'OK',
     }
   }
 
@@ -181,7 +198,7 @@ class ApiService {
         return {
           success: false,
           data: { accessToken: null, user: null },
-          message: mapped.message || 'Đăng nhập thất bại: thiếu accessToken'
+          message: mapped.message || 'Đăng nhập thất bại: thiếu accessToken',
         }
       }
       return mapped
@@ -191,9 +208,8 @@ class ApiService {
     logout: () => this.post('/auth/logout'),
     refresh: () => this.post('/auth/refresh'),
     forgotPassword: (email) => this.post('/auth/forgot-password', { email }),
-    resetPassword: (token, password) =>
-      this.post('/auth/reset-password', { token, password }),
-    verifyEmail: (token) => this.post('/auth/verify-email', { token })
+    resetPassword: (token, password) => this.post('/auth/reset-password', { token, password }),
+    verifyEmail: (token) => this.post('/auth/verify-email', { token }),
   }
 
   // User endpoints
@@ -201,12 +217,11 @@ class ApiService {
     getProfile: () => this.get('/auth/me'),
     updateProfile: (data) => this.put('/user/profile', data),
     changePassword: (data) => this.post('/user/change-password', data),
-    uploadAvatar: (file, onProgress) =>
-      this.upload('/user/avatar', file, onProgress),
+    uploadAvatar: (file, onProgress) => this.upload('/user/avatar', file, onProgress),
     getAddresses: () => this.get('/user/addresses'),
     addAddress: (data) => this.post('/user/addresses', data),
     updateAddress: (id, data) => this.put(`/user/addresses/${id}`, data),
-    deleteAddress: (id) => this.delete(`/user/addresses/${id}`)
+    deleteAddress: (id) => this.delete(`/user/addresses/${id}`),
   }
 
   // Product endpoints
@@ -220,21 +235,20 @@ class ApiService {
     getFeatured: () => this.get('/san-pham/featured'),
     getRelated: (id) => this.get(`/san-pham/${id}/related`),
     getReviews: (id) => this.get(`/san-pham/${id}/reviews`),
-    addReview: (id, data) => this.post(`/san-pham/${id}/reviews`, data)
+    addReview: (id, data) => this.post(`/san-pham/${id}/reviews`, data),
   }
 
   // Category endpoints
   categories = {
     getAll: () => this.get('/danh-muc'),
     getById: (id) => this.get(`/danh-muc/${id}`),
-    getProducts: (id, params = {}) =>
-      this.get(`/danh-muc/${id}/san-pham`, { params }),
-    create: (data) => this.post('/danh-muc/create', data)
+    getProducts: (id, params = {}) => this.get(`/danh-muc/${id}/san-pham`, { params }),
+    create: (data) => this.post('/danh-muc/create', data),
   }
 
   // add delete
   categoriesDelete = {
-    delete: (id, force = false) => this.delete(`/danh-muc/${id}`, { params: { force } })
+    delete: (id, force = false) => this.delete(`/danh-muc/${id}`, { params: { force } }),
   }
 
   // Cart endpoints
@@ -245,7 +259,7 @@ class ApiService {
     removeItem: (id) => this.delete(`/cart/items/${id}`),
     clear: () => this.delete('/cart'),
     applyCoupon: (code) => this.post('/cart/coupon', { code }),
-    removeCoupon: () => this.delete('/cart/coupon')
+    removeCoupon: () => this.delete('/cart/coupon'),
   }
 
   // Order endpoints
@@ -255,28 +269,27 @@ class ApiService {
     create: (data) => this.post('/orders', data),
     update: (id, data) => this.put(`/orders/${id}`, data),
     cancel: (id) => this.post(`/orders/${id}/cancel`),
-    getStatus: (id) => this.get(`/orders/${id}/status`)
+    getStatus: (id) => this.get(`/orders/${id}/status`),
   }
 
   // Payment endpoints
   payment = {
-    createPayment: (orderId, method) =>
-      this.post('/payment/create', { orderId, method }),
+    createPayment: (orderId, method) => this.post('/payment/create', { orderId, method }),
     verifyPayment: (paymentId) => this.post('/payment/verify', { paymentId }),
-    getMethods: () => this.get('/payment/methods')
+    getMethods: () => this.get('/payment/methods'),
   }
 
   // Newsletter endpoints
   newsletter = {
     subscribe: (email) => this.post('/newsletter/subscribe', { email }),
-    unsubscribe: (email) => this.post('/newsletter/unsubscribe', { email })
+    unsubscribe: (email) => this.post('/newsletter/unsubscribe', { email }),
   }
 
   // Voucher
   voucher = {
     getAvailable: () => this.get('/phieu-giam-gia/co-san'),
     apDung: (data) => this.post('/phieu-giam-gia/ap-dung', data),
-    kiemTra: (data) => this.post('/phieu-giam-gia/kiem-tra', data)
+    kiemTra: (data) => this.post('/phieu-giam-gia/kiem-tra', data),
   }
 
   // Admin Voucher
@@ -285,13 +298,13 @@ class ApiService {
     getById: (id) => this.get(`/phieu-giam-gia/quan-ly/${id}`),
     create: (data) => this.post('/phieu-giam-gia/quan-ly', data),
     update: (id, data) => this.put(`/phieu-giam-gia/quan-ly/${id}`, data),
-    delete: (id) => this.delete(`/phieu-giam-gia/quan-ly/${id}`)
+    delete: (id) => this.delete(`/phieu-giam-gia/quan-ly/${id}`),
   }
 
   // Contact endpoints
   contact = {
     sendMessage: (data) => this.post('/contact', data),
-    getFaq: () => this.get('/contact/faq')
+    getFaq: () => this.get('/contact/faq'),
   }
 }
 
