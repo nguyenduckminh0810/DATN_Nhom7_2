@@ -45,8 +45,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/logout").permitAll()
                         // .requestMatchers("/api/auth/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/san-pham").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/san-pham/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/danh-muc").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/danh-muc/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/hinh-anh/**").permitAll()
+                        // Static uploaded files
+                        .requestMatchers("/files/**").permitAll()
 
                         // API TEST (DÙNG XONG NHỚ XÓA)
                         .requestMatchers("/api/test/**").permitAll()
@@ -72,10 +77,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/dia-chi/**").hasAnyRole("CUS", "STF", "ADM")
 
                         // Staff + admin endpoints
-                        // crud sản phẩm
+                        // CRUD sản phẩm
+                        // Cho phép PUT cho người dùng đã đăng nhập (CUS/STF/ADM) để thuận tiện phát
+                        // triển
                         .requestMatchers(HttpMethod.POST, "/api/san-pham").hasAnyRole("STF", "ADM")
-                        .requestMatchers(HttpMethod.PUT, "/api/san-pham/**").hasAnyRole("STF", "ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/san-pham/**").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers(HttpMethod.DELETE, "/api/san-pham/**").hasAnyRole("STF", "ADM")
+
+                        // upload/delete hình ảnh sản phẩm
+                        .requestMatchers(HttpMethod.POST, "/api/hinh-anh/**").hasAnyRole("STF", "ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/hinh-anh/**").hasAnyRole("STF", "ADM")
 
                         // crud danh mục
                         .requestMatchers(HttpMethod.POST, "/api/danh-muc").hasAnyRole("STF", "ADM")

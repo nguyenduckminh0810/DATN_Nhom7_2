@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "hinh_anh")
@@ -19,12 +20,14 @@ public class HinhAnh {
     @JoinColumn(name = "id_san_pham")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private SanPham sanPham;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_bien_the")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @JsonIgnore
     private BienTheSanPham bienThe;
 
     @Column(name = "url", nullable = false, columnDefinition = "NVARCHAR(MAX)")

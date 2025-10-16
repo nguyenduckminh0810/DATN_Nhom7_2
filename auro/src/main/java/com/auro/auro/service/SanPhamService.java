@@ -8,16 +8,15 @@ import com.auro.auro.model.DanhMuc;
 import com.auro.auro.model.SanPham;
 import com.auro.auro.repository.DanhMucRepository;
 import com.auro.auro.repository.SanPhamRepository;
+import com.auro.auro.repository.HinhAnhRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +24,7 @@ public class SanPhamService {
 
   private final SanPhamRepository sanPhamRepository;
   private final DanhMucRepository danhMucRepository;
+  private final HinhAnhRepository hinhAnhRepository;
 
   // tìm theo slug
   public Page<SanPhamResponse> getBySlug(String slug, Pageable pageable) {
@@ -144,6 +144,19 @@ public class SanPhamService {
     res.setTrangThai(sp.getTrangThai());
     res.setTaoLuc(sp.getTaoLuc());
     res.setCapNhatLuc(sp.getCapNhatLuc());
+    try {
+      // set ảnh đại diện: ưu tiên laDaiDien=true, nếu không có lấy ảnh đầu tiên theo
+      // thứ tự
+      var list = hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(sp.getId());
+      if (list != null && !list.isEmpty()) {
+        String url = list.stream().filter(ha -> Boolean.TRUE.equals(ha.getLaDaiDien()))
+            .map(com.auro.auro.model.HinhAnh::getUrl)
+            .findFirst()
+            .orElseGet(() -> list.get(0).getUrl());
+        res.setAnhDaiDien(url);
+      }
+    } catch (Exception ignored) {
+    }
     return res;
   }
 
