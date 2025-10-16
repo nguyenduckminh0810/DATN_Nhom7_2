@@ -7,7 +7,7 @@
         <p class="page-subtitle">Quản lý danh mục sản phẩm của cửa hàng</p>
       </div>
       <div class="header-right">
-        <button class="btn btn-auro-primary" @click="showAddModal = true">
+        <button class="btn btn-auro-primary" @click="openCreateModal">
           <i class="bi bi-plus me-2"></i>Thêm danh mục
         </button>
       </div>
@@ -422,7 +422,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeModal">Hủy</button>
-          <button type="button" class="btn btn-auro-primary" @click="saveCategory">
+          <button type="button" class="btn btn-auro-primary" @click="editingCategory ? updateCategory() : createCategory()">
             {{ editingCategory ? 'Cập nhật' : 'Thêm danh mục' }}
           </button>
         </div>
@@ -591,23 +591,69 @@ const handleDragStart = (cat) => { draggedCategory.value = cat }
 const handleDragEnd = () => { draggedCategory.value = null }
 const handleDrop = (e) => { e.preventDefault(); if (draggedCategory.value) { /* TODO: reorder */ } }
 
-const saveCategory = async () => {
+// add helper to open modal for creating
+const openCreateModal = () => {
+  editingCategory.value = null
+  categoryForm.value = { name:'', slug:'', description:'', icon:'bi bi-folder', parentId:null, order:0, status:'active' }
+  showAddModal.value = true
+}
+
+// replace unified saveCategory with createCategory + updateCategory
+const createCategory = async () => {
   try {
-    const payload = buildPayload()
-    if (editingCategory.value && !editingCategory.value.isLocal) {
-      await apiService.put(`/danh-muc/${editingCategory.value.id}`, payload)
-      toast.success('Cập nhật danh mục thành công')
-    } else {
-      await apiService.post('/danh-muc', payload)
-      toast.success('Tạo danh mục thành công')
+    const payload = {
+      ten: categoryForm.value.name?.trim(),
+      slug: categoryForm.value.slug?.trim(),
+      moTa: categoryForm.value.description?.trim(),
+      icon: categoryForm.value.icon,
+      idCha: categoryForm.value.parentId ? Number(categoryForm.value.parentId) : null,
+      thuTu: Number(categoryForm.value.order) || 0,
+      hoatDong: categoryForm.value.status === 'active' ? 1 : 0
     }
+    console.info('Create payload:', payload)
+    if (!payload.ten || !payload.slug) {
+      toast.error('Tên và slug là bắt buộc')
+      return
+    }
+    const res = await apiService.post('/danh-muc/create', payload)
+    console.info('Create response:', res)
+    toast.success('Tạo danh mục thành công')
     await loadCategories()
-    // notify clients
     window.dispatchEvent(new Event('categories-updated'))
-  } catch (err) {
-    toast.error('Lưu danh mục thất bại: ' + (err?.message || 'Không xác định'))
-  } finally {
     closeModal()
+  } catch (err) {
+    console.error('Create category error:', err, err?.response?.data)
+    const detail = err?.response?.data || err?.message || 'Lỗi server'
+    toast.error('Tạo thất bại: ' + (detail?.message || JSON.stringify(detail)))
+  }
+}
+
+const updateCategory = async () => {
+  if (!editingCategory.value || editingCategory.value.isLocal) {
+    toast.error('Không có danh mục để cập nhật')
+    return
+  }
+  try {
+    const payload = {
+      ten: categoryForm.value.name?.trim(),
+      slug: categoryForm.value.slug?.trim(),
+      moTa: categoryForm.value.description?.trim(),
+      icon: categoryForm.value.icon,
+      idCha: categoryForm.value.parentId ? Number(categoryForm.value.parentId) : null,
+      thuTu: Number(categoryForm.value.order) || 0,
+      hoatDong: categoryForm.value.status === 'active' ? 1 : 0
+    }
+    console.info('Update payload:', payload)
+    const res = await apiService.put(`/danh-muc/${editingCategory.value.id}`, payload)
+    console.info('Update response:', res)
+    toast.success('Cập nhật danh mục thành công')
+    await loadCategories()
+    window.dispatchEvent(new Event('categories-updated'))
+    closeModal()
+  } catch (err) {
+    console.error('Update category error:', err, err?.response?.data)
+    const detail = err?.response?.data || err?.message || 'Lỗi server'
+    toast.error('Cập nhật thất bại: ' + (detail?.message || JSON.stringify(detail)))
   }
 }
 
