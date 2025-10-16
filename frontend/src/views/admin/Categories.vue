@@ -422,8 +422,9 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeModal">Hủy</button>
-          <button type="button" class="btn btn-auro-primary" @click="editingCategory ? updateCategory() : createCategory()">
-            {{ editingCategory ? 'Cập nhật' : 'Thêm danh mục' }}
+          <button type="button" class="btn btn-auro-primary"
+            @click="(editingCategory && !editingCategory.isLocal) ? updateCategory() : createCategory()">
+            {{ (editingCategory && !editingCategory.isLocal) ? 'Cập nhật' : 'Thêm danh mục' }}
           </button>
         </div>
       </div>
@@ -629,10 +630,16 @@ const createCategory = async () => {
 }
 
 const updateCategory = async () => {
-  if (!editingCategory.value || editingCategory.value.isLocal) {
+  // nếu đây là item local (chưa persist) => thực hiện create thay vì từ chối
+  if (editingCategory.value?.isLocal) {
+    return await createCategory()
+  }
+
+  if (!editingCategory.value) {
     toast.error('Không có danh mục để cập nhật')
     return
   }
+
   try {
     const payload = {
       ten: categoryForm.value.name?.trim(),
