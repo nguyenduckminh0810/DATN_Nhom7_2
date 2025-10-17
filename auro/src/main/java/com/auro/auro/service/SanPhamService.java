@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +27,38 @@ public class SanPhamService {
   private final SanPhamRepository sanPhamRepository;
   private final DanhMucRepository danhMucRepository;
   private final HinhAnhRepository hinhAnhRepository;
+
+  public Page<SanPhamResponse> getPageByCategorySlugIncludingChildren(
+      String slug, String search, Pageable pageable) {
+
+    DanhMuc root = danhMucRepository.findBySlug(slug)
+        .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại: " + slug));
+
+    // thu thập id cha + các con
+    List<Long> ids = new ArrayList<>();
+    ids.add(root.getId());
+    collectDescendantIds(root.getId(), ids); // viết ở dưới
+
+    Page<SanPham> page;
+    if (StringUtils.hasText(search)) {
+      // nếu muốn search FE/BE có thể thêm method _IdInAndTenContaining..., tạm thời
+      // search toàn cục:
+      page = sanPhamRepository.findByTenContainingIgnoreCaseOrMoTaContainingIgnoreCase(search, search, pageable);
+    } else {
+      page = sanPhamRepository.findByDanhMuc_IdIn(ids, pageable);
+    }
+    return page.map(this::mapToResponse);
+  }
+
+  private void collectDescendantIds(Long parentId, List<Long> ids) {
+    List<DanhMuc> children = danhMucRepository.findByDanhMucCha_Id(parentId);
+    if (children != null) {
+      for (DanhMuc child : children) {
+        ids.add(child.getId());
+        collectDescendantIds(child.getId(), ids);
+      }
+    }
+  }
 
   // tìm theo slug
   public Page<SanPhamResponse> getBySlug(String slug, Pageable pageable) {
