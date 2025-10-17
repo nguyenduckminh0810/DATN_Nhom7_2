@@ -13,8 +13,8 @@ export default {
 
   getByProductSlug: (slug) => api.get(`/san-pham/slug/${slug}`),
   // Lấy theo SLUG danh mục
-  getByCategorySlug: (slug, params = {}) =>
-    api.get(`/san-pham/danh-muc/${slug}`, { params }),
+getByCategorySlug: (slug, params = {}) => api.get(`/san-pham/danh-muc/${slug}`, { params }),
+
 
   // CRUD
   create: (data) => api.post('/san-pham', data),

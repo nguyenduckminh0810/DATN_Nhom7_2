@@ -198,18 +198,24 @@ const buildParams = () => {
 const fetchProductsByCategory = async (slug) => {
   isLoading.value = true; error.value = null
   try {
-    const data = await sanPhamService.getByProductSlug(slug, {
-      // page: currentPage.value - 1, // BE 0-based
-      // size: itemsPerPage,
-      // search: ... // nếu có
-    })
-    products.value = data.content ?? []
-    totalPages.value = data.totalPages ?? 0
-    totalElements.value = data.totalElements ?? products.value.length
-    currentPage.value = (data.number ?? 0) + 1
-    categoryName.value = slug.split('-').map(s => s.toUpperCase()).join(' ')
+    // lấy response thô (có thể là axios response hoặc service wrapper)
+    const resp = await sanPhamService.getByCategorySlug(slug, { params: buildParams() })
+    // lấy payload thực sự (resp.data nếu axios, hoặc resp nếu service trả thẳng)
+    const payload = resp?.data ?? resp
+    // debug nhanh nếu payload không như mong đợi
+    if (!payload) {
+      console.error('fetchProductsByCategory: empty payload', resp)
+      throw new Error('Server trả về dữ liệu không hợp lệ')
+    }
+
+    products.value = payload.content ?? []
+    totalPages.value = payload.totalPages ?? 0
+    totalElements.value = payload.totalElements ?? products.value.length
+    currentPage.value = (payload.number ?? 0) + 1
+    categoryName.value = toTitle(slug)
   } catch (e) {
-    error.value = e.message || 'Không thể tải sản phẩm theo danh mục'
+    console.error('fetchProductsByCategory error', e)
+    error.value = e?.response?.data?.message || e?.message || 'Không thể tải sản phẩm theo danh mục'
     products.value = []; totalPages.value = 0; totalElements.value = 0
   } finally {
     isLoading.value = false
@@ -217,25 +223,24 @@ const fetchProductsByCategory = async (slug) => {
 }
 
 const fetchAllProducts = async () => {
+  isLoading.value = true; error.value = null
   try {
-    isLoading.value = true
-    error.value = null
     categoryName.value = 'TẤT CẢ SẢN PHẨM'
+    const resp = await sanPhamService.page(buildParams())
+    const payload = resp?.data ?? resp
+    if (!payload) {
+      console.error('fetchAllProducts: empty payload', resp)
+      throw new Error('Server trả về dữ liệu không hợp lệ')
+    }
 
-    const { data } = await sanPhamService.get(
-      `/san-pham`,
-      { params: buildParams() }
-    )
-
-    products.value = data?.content ?? []
-    totalPages.value = data?.totalPages ?? 0
-    totalElements.value = data?.totalElements ?? products.value.length
-    currentPage.value = (data?.number ?? 0) + 1
+    products.value = payload.content ?? []
+    totalPages.value = payload.totalPages ?? 0
+    totalElements.value = payload.totalElements ?? products.value.length
+    currentPage.value = (payload.number ?? 0) + 1
   } catch (e) {
-    error.value = e?.response?.data?.message || 'Có lỗi xảy ra từ server'
-    products.value = []
-    totalPages.value = 0
-    totalElements.value = 0
+    console.error('fetchAllProducts error', e)
+    error.value = e?.response?.data?.message || e?.message || 'Có lỗi xảy ra từ server'
+    products.value = []; totalPages.value = 0; totalElements.value = 0
   } finally {
     isLoading.value = false
   }

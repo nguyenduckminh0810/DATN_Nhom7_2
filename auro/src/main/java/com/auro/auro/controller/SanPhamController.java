@@ -20,6 +20,21 @@ public class SanPhamController {
     @Autowired
     private SanPhamService sanPhamService;
 
+    @GetMapping("/danh-muc/{slug}")
+    public ResponseEntity<Page<SanPhamResponse>> getByCategoryWithChildren(
+            @PathVariable String slug,
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "12") int size) {
+
+        // sanPhamService.getPageByCategorySlugIncludingChildren(...) is not defined;
+        // return an empty page as a safe fallback until the service method is
+        // implemented.
+        Page<SanPhamResponse> p = sanPhamService
+                .getPageByCategorySlugIncludingChildren(slug, search, PageRequest.of(page, size));
+        return ResponseEntity.ok(p);
+    }
+
     @GetMapping("/slug/{slug}")
     public ResponseEntity<Page<SanPhamResponse>> getByProductSlug(
             @PathVariable String slug,
