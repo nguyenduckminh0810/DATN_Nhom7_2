@@ -183,16 +183,15 @@
               <td>
                 <div class="product-info">
                   <div class="product-image">
-                    <img
-                      :src="getProductImage(product)"
-                      :alt="product.name"
-                      class="img-fluid"
-                      @error="
-                        ($event) => {
-                          $event.target.src = '/favicon.ico'
-                        }
-                      "
-                    />
+<div class="product-image">
+  <img
+    :src="getProductImage(product)"
+
+  />
+  <div v-if="product.isNew" class="new-badge">Mới</div>
+  <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
+</div>
+
                     <div v-if="product.isNew" class="new-badge">Mới</div>
                     <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
                   </div>
@@ -1043,26 +1042,20 @@ async function ensureProductImageLoaded(product) {
     // ignore; fallback will handle
   }
 }
+function apiOrigin() {
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
+  return new URL(base).origin // -> http://localhost:8080
+}
 
 function getProductImage(product) {
   const url = product?.image
   if (!url || typeof url !== 'string') {
-    // lazy load images for this product once
     ensureProductImageLoaded(product)
     return '/favicon.ico'
   }
-  if (/^https?:\/\/via\.placeholder\.com\//.test(url)) return '/favicon.ico'
-  if (url.startsWith('/files/')) {
-    try {
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
-      const origin = new URL(base).origin
-      return origin + url
-    } catch {
-      return url
-    }
-  }
-  return url
+  return url           // cho phép '/files/..' đi qua proxy
 }
+
 
 // function getStockClass(stock) {
 //   if (stock == null) return 'bg-light'
