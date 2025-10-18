@@ -30,8 +30,8 @@ public class DonHangChiTiet {
     @Column(name = "ten_hien_thi", columnDefinition = "NVARCHAR(255)")
     private String tenHienThi;
 
-    @Column(name = "thuoc_tinh_json", columnDefinition = "NVARCHAR(MAX)")
-    private String thuocTinhJson;
+    @Column(name = "thuoc_tinh", columnDefinition = "NVARCHAR(MAX)")
+    private String thuocTinh;
 
     @Column(name = "so_luong", nullable = false)
     private Integer soLuong;

@@ -24,9 +24,6 @@ public class GioHang {
     @Column(name = "id_phien", columnDefinition = "NVARCHAR(100)")
     private String idPhien;
 
-    @Column(name = "tien_te", columnDefinition = "NVARCHAR(10)")
-    private String tienTe = "VND";
-
     @Column(name = "tao_luc")
     private LocalDateTime taoLuc;
 

@@ -3,6 +3,7 @@ package com.auro.auro.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -44,4 +45,7 @@ public class BienTheSanPham {
 
     @Column(name = " so_luong_ton", nullable = false)
     private Integer soLuongTon;
+
+    @Column(name = "gia", precision = 12, scale = 2)
+    private BigDecimal gia; // nếu null thì dùng giá của SanPham
 }

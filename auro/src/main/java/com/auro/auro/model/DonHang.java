@@ -38,23 +38,11 @@ public class DonHang {
     @Column(name = "phi_van_chuyen", precision = 18, scale = 2)
     private BigDecimal phiVanChuyen;
 
-    @Column(name = "thue_suat", precision = 5, scale = 2)
-    private BigDecimal thueSuat;
-
-    @Column(name = "tong_thue", precision = 18, scale = 2)
-    private BigDecimal tongThue;
-
     @Column(name = "tong_thanh_toan", precision = 18, scale = 2, insertable = false, updatable = false)
     private BigDecimal tongThanhToan;
 
-    @Column(name = "tien_te", columnDefinition = "NVARCHAR(10)")
-    private String tienTe = "VND";
-
     @Column(name = "dat_luc")
     private LocalDateTime datLuc = LocalDateTime.now();
-
-    // @Column(name = "kenh_ban", length = 50)
-    // private String kenhBan = "online";
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ma_voucher", referencedColumnName = "ma")
@@ -62,8 +50,8 @@ public class DonHang {
     @EqualsAndHashCode.Exclude
     private Voucher voucher;
 
-    @Column(name = "dia_chi_giao_snapshot", columnDefinition = "NVARCHAR(MAX)")
-    private String diaChiGiaoSnapshot;
+    @Column(name = "dia_chi_giao", columnDefinition = "NVARCHAR(MAX)")
+    private String diaChiGiao;
 
     @Column(name = "ghi_chu", columnDefinition = "NVARCHAR(500)")
     private String ghiChu;
