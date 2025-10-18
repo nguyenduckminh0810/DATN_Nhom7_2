@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build backend and frontend",
+			"type": "shell",
+			"command": "echo Building backend && cd auro && ./mvnw -q -DskipTests package && echo Backend build done && cd .. && echo Building frontend && cd frontend && npm ci --silent && npm run -s build && echo Frontend build done",
+			"problemMatcher": [
+				"$gcc"
+			]
+		}
+	]
+}

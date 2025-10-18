@@ -20,60 +20,80 @@
               <span v-if="!sidebarCollapsed">Dashboard</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/products" class="nav-link" :class="{ active: $route.path.startsWith('/admin/products') }">
+            <router-link
+              to="/admin/products"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/products') }"
+            >
               <i class="bi bi-box"></i>
               <span v-if="!sidebarCollapsed">Sản phẩm</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/categories" class="nav-link" :class="{ active: $route.path.startsWith('/admin/categories') }">
+            <router-link
+              to="/admin/categories"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/categories') }"
+            >
               <i class="bi bi-folder"></i>
               <span v-if="!sidebarCollapsed">Danh mục</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/orders" class="nav-link" :class="{ active: $route.path.startsWith('/admin/orders') }">
+            <router-link
+              to="/admin/orders"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/orders') }"
+            >
               <i class="bi bi-cart3"></i>
               <span v-if="!sidebarCollapsed">Đơn hàng</span>
               <span v-if="!sidebarCollapsed" class="badge bg-danger">3</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/users" class="nav-link" :class="{ active: $route.path.startsWith('/admin/users') }">
+            <router-link
+              to="/admin/users"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/users') }"
+            >
               <i class="bi bi-people"></i>
-              <span v-if="!sidebarCollapsed">Người dùng</span>
+              <span v-if="!sidebarCollapsed">Tài khoản</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/analytics" class="nav-link" :class="{ active: $route.path.startsWith('/admin/analytics') }">
+            <router-link
+              to="/admin/analytics"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/analytics') }"
+            >
               <i class="bi bi-bar-chart"></i>
               <span v-if="!sidebarCollapsed">Thống kê</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/inventory" class="nav-link" :class="{ active: $route.path.startsWith('/admin/inventory') }">
-              <i class="bi bi-archive"></i>
-              <span v-if="!sidebarCollapsed">Tồn kho</span>
-              <span v-if="!sidebarCollapsed && lowStockCount > 0" class="badge bg-warning">{{ lowStockCount }}</span>
-            </router-link>
-          </li>
-          
-          <li class="nav-item">
-            <router-link to="/admin/promotions" class="nav-link" :class="{ active: $route.path.startsWith('/admin/promotions') }">
+            <router-link
+              to="/admin/promotions"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/promotions') }"
+            >
               <i class="bi bi-tag"></i>
               <span v-if="!sidebarCollapsed">Khuyến mãi</span>
             </router-link>
           </li>
-          
+
           <li class="nav-item">
-            <router-link to="/admin/settings" class="nav-link" :class="{ active: $route.path.startsWith('/admin/settings') }">
+            <router-link
+              to="/admin/settings"
+              class="nav-link"
+              :class="{ active: $route.path.startsWith('/admin/settings') }"
+            >
               <i class="bi bi-gear"></i>
               <span v-if="!sidebarCollapsed">Cài đặt</span>
             </router-link>
@@ -112,7 +132,7 @@
           <div class="header-search">
             <div class="search-input-group">
               <i class="bi bi-search search-icon"></i>
-              <input type="text" class="search-input" placeholder="Tìm kiếm...">
+              <input type="text" class="search-input" placeholder="Tìm kiếm..." />
             </div>
           </div>
 
@@ -134,15 +154,13 @@
                 <span class="user-name">Admin</span>
                 <i class="bi bi-caret-down"></i>
               </button>
-              
+
               <div v-if="showUserMenu" class="user-dropdown-menu">
                 <a href="#" class="dropdown-item">
                   <i class="bi bi-person me-2"></i>Thông tin cá nhân
                 </a>
-                <a href="#" class="dropdown-item">
-                  <i class="bi bi-gear me-2"></i>Cài đặt
-                </a>
-                <hr class="dropdown-divider">
+                <a href="#" class="dropdown-item"> <i class="bi bi-gear me-2"></i>Cài đặt </a>
+                <hr class="dropdown-divider" />
                 <a href="#" class="dropdown-item" @click="logout">
                   <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
                 </a>
@@ -216,8 +234,7 @@ const showUserMenu = ref(false)
 const showNotifications = ref(false)
 const showMobileOverlay = ref(false)
 
-// Mock low stock count (sẽ fetch từ API sau)
-const lowStockCount = ref(12)
+// Removed lowStockCount since inventory menu item is hidden
 
 // Computed
 const currentPageTitle = computed(() => {
@@ -230,15 +247,15 @@ const currentPageTitle = computed(() => {
     '/admin/analytics': 'Thống kê',
     '/admin/inventory': 'Quản lý tồn kho',
     '/admin/promotions': 'Khuyến mãi & Voucher',
-    '/admin/settings': 'Cài đặt'
+    '/admin/settings': 'Cài đặt',
   }
-  
+
   for (const [path, title] of Object.entries(titles)) {
     if (route.path.startsWith(path)) {
       return title
     }
   }
-  
+
   return 'Admin'
 })
 
@@ -270,7 +287,7 @@ const logout = async () => {
     }, 500)
   } catch (err) {
     error('Có lỗi khi đăng xuất. Vui lòng thử lại.')
-    console.error('Logout error:', error)
+    console.error('Logout error:', err)
   }
 }
 
@@ -286,7 +303,10 @@ const handleClickOutside = (event) => {
   if (!event.target.closest('.user-dropdown')) {
     showUserMenu.value = false
   }
-  if (!event.target.closest('.header-notifications') && !event.target.closest('.notifications-panel')) {
+  if (
+    !event.target.closest('.header-notifications') &&
+    !event.target.closest('.notifications-panel')
+  ) {
     showNotifications.value = false
   }
 }
@@ -295,7 +315,7 @@ const handleClickOutside = (event) => {
 onMounted(() => {
   window.addEventListener('resize', handleResize)
   document.addEventListener('click', handleClickOutside)
-  
+
   // Check initial screen size
   handleResize()
 })
@@ -802,27 +822,27 @@ onUnmounted(() => {
   .admin-sidebar {
     transform: translateX(-100%);
   }
-  
+
   .admin-sidebar:not(.collapsed) {
     transform: translateX(0);
   }
-  
+
   .admin-main {
     margin-left: 0;
   }
-  
+
   .mobile-sidebar-toggle {
     display: block;
   }
-  
+
   .header-search {
     display: none;
   }
-  
+
   .search-input {
     width: 200px;
   }
-  
+
   .notifications-panel {
     right: 1rem;
     width: calc(100vw - 2rem);
@@ -833,11 +853,11 @@ onUnmounted(() => {
   .admin-header {
     padding: 1rem;
   }
-  
+
   .admin-content {
     padding: 1rem;
   }
-  
+
   .header-right {
     gap: 0.5rem;
   }
