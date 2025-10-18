@@ -1,10 +1,6 @@
 <template>
   <div class="home">
-    <!-- USP Bar -->
     <UspBar />
-
-    
-    <!-- Hero Carousel Section -->
     <section class="hero-carousel-section">
       <div class="custom-carousel">
         <div class="carousel-indicators">
@@ -17,74 +13,203 @@
             :aria-label="`Slide ${index + 1}`"
           ></button>
         </div>
-
         <div
           class="carousel-inner"
           :style="{
             transform: `translateX(-${currentIndex * 20}%)`,
-            transition: isAnimating ? 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' : 'none'
+            transition: isAnimating ? 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' : 'none',
           }"
           @transitionend="onTransitionEnd"
         >
-          <!-- [cloneLast, ...heroSlides, cloneFirst] -->
           <div
             v-for="(slide, index) in extendedSlides"
             :key="'ext-' + index"
             class="carousel-slide"
           >
-            <!-- giữ nguyên HTML bên trong slide của bạn -->
-            <div class="hero-slide" :style="{ 
-              backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1)), url(${slide.backgroundImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-              minHeight: '100vh',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }">
-              <div class="hero-content-wrapper" style="display: flex; width: 100%; max-width: 1200px; margin: 0 auto; padding: 2rem; align-items: center; position: relative; z-index: 2;">
-                <div class="hero-text" style="flex: 1; padding-right: 2rem;">
-                  <div class="badge-new" style="background: #cd7f32; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.875rem; font-weight: bold; display: inline-block; margin-bottom: 1rem;">{{ slide.badge }}</div>
-                  <h1 class="hero-title" style="font-size: 3rem; font-weight: bold; color: white; margin-bottom: 1rem; line-height: 1.2;">{{ slide.title }}</h1>
-                  <p class="hero-description" style="font-size: 1.125rem; color: rgba(255,255,255,0.9); margin-bottom: 2rem; line-height: 1.6;">{{ slide.description }}</p>
-                  <div class="hero-promo" v-if="slide.promo" style="background: rgba(255,255,255,0.1); padding: 1rem; border-radius: 8px; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
-                    <span class="promo-text" style="color: white; flex: 1;">{{ slide.promo }}</span>
-                    <div class="promo-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                      <i class="bi bi-plus-circle" style="color: #cd7f32; font-size: 1.5rem;"></i>
-                      <img :src="slide.promoImage" :alt="slide.promoItem" class="promo-image" style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover;">
+            <div
+              class="hero-slide"
+              :style="{
+                backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1)), url(${slide.backgroundImage})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                minHeight: '100vh',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }"
+            >
+              <div
+                class="hero-content-wrapper"
+                style="
+                  display: flex;
+                  width: 100%;
+                  max-width: 1200px;
+                  margin: 0 auto;
+                  padding: 2rem;
+                  align-items: center;
+                  position: relative;
+                  z-index: 2;
+                "
+              >
+                <div class="hero-text" style="flex: 1; padding-right: 2rem">
+                  <div
+                    class="badge-new"
+                    style="
+                      background: #cd7f32;
+                      color: white;
+                      padding: 0.5rem 1rem;
+                      border-radius: 20px;
+                      font-size: 0.875rem;
+                      font-weight: bold;
+                      display: inline-block;
+                      margin-bottom: 1rem;
+                    "
+                  >
+                    {{ slide.badge }}
+                  </div>
+                  <h1
+                    class="hero-title"
+                    style="
+                      font-size: 3rem;
+                      font-weight: bold;
+                      color: white;
+                      margin-bottom: 1rem;
+                      line-height: 1.2;
+                    "
+                  >
+                    {{ slide.title }}
+                  </h1>
+                  <p
+                    class="hero-description"
+                    style="
+                      font-size: 1.125rem;
+                      color: rgba(255, 255, 255, 0.9);
+                      margin-bottom: 2rem;
+                      line-height: 1.6;
+                    "
+                  >
+                    {{ slide.description }}
+                  </p>
+                  <div
+                    class="hero-promo"
+                    v-if="slide.promo"
+                    style="
+                      background: rgba(255, 255, 255, 0.1);
+                      padding: 1rem;
+                      border-radius: 8px;
+                      margin-bottom: 2rem;
+                      display: flex;
+                      align-items: center;
+                      gap: 1rem;
+                    "
+                  >
+                    <span class="promo-text" style="color: white; flex: 1">{{ slide.promo }}</span>
+                    <div class="promo-item" style="display: flex; align-items: center; gap: 0.5rem">
+                      <i class="bi bi-plus-circle" style="color: #cd7f32; font-size: 1.5rem"></i>
+                      <img
+                        :src="slide.promoImage"
+                        :alt="slide.promoItem"
+                        class="promo-image"
+                        style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover"
+                      />
                     </div>
                   </div>
-                  <router-link :to="slide.ctaLink" class="btn-hero-cta" style="background: #cd7f32; color: white; padding: 1rem 2rem; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.3s ease;">
+                  <router-link
+                    :to="slide.ctaLink"
+                    class="btn-hero-cta"
+                    style="
+                      background: #cd7f32;
+                      color: white;
+                      padding: 1rem 2rem;
+                      border-radius: 8px;
+                      text-decoration: none;
+                      font-weight: bold;
+                      display: inline-flex;
+                      align-items: center;
+                      gap: 0.5rem;
+                      transition: all 0.3s ease;
+                    "
+                  >
                     {{ slide.ctaText }}
-                    <i class="bi bi-arrow-right" style="font-size: 1.25rem;"></i>
+                    <i class="bi bi-arrow-right" style="font-size: 1.25rem"></i>
                   </router-link>
                 </div>
-                <div class="hero-image" style="flex: 1; text-align: center;">
-                  <img :src="slide.mainImage" :alt="slide.title" class="hero-main-image" style="width: 100%; height: 100vh; object-fit: cover; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);">
+                <div class="hero-image" style="flex: 1; text-align: center">
+                  <img
+                    :src="slide.mainImage"
+                    :alt="slide.title"
+                    class="hero-main-image"
+                    style="
+                      width: 100%;
+                      height: 100vh;
+                      object-fit: cover;
+                      border-radius: 12px;
+                      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+                    "
+                  />
                 </div>
               </div>
             </div>
-            <!-- /giữ nguyên -->
           </div>
         </div>
-
-        <button class="carousel-control-prev" type="button" @click="previousSlide" style="position: absolute; left: 2rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s ease;">
-          <i class="bi bi-caret-left" style="font-size: 1.5rem;"></i>
+        <button
+          class="carousel-control-prev"
+          type="button"
+          @click="previousSlide"
+          style="
+            position: absolute;
+            left: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="bi bi-caret-left" style="font-size: 1.5rem"></i>
         </button>
-        <button class="carousel-control-next" type="button" @click="nextSlide" style="position: absolute; right: 2rem; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.5); border: none; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; transition: all 0.3s ease;">
-          <i class="bi bi-caret-right" style="font-size: 1.5rem;"></i>
+        <button
+          class="carousel-control-next"
+          type="button"
+          @click="nextSlide"
+          style="
+            position: absolute;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="bi bi-caret-right" style="font-size: 1.5rem"></i>
         </button>
       </div>
     </section>
-
-    <!-- Categories Section -->
     <section class="categories-section section-full">
-      <!-- Category Filter -->
       <div class="category-filters">
-        <button 
-          v-for="filter in categoryFilters" 
+        <button
+          v-for="filter in categoryFilters"
           :key="filter.id"
           :class="['category-filter-btn', { active: selectedFilter === filter.id }]"
           @click="selectFilter(filter.id)"
@@ -92,317 +217,56 @@
           {{ filter.name }}
         </button>
       </div>
-      
-      <!-- Full-width categories carousel -->
       <div class="categories-carousel-container">
-        <button class="section-nav-btn prev" @click="scrollCategories('prev')">
-          ‹
-        </button>
-        
+        <button class="section-nav-btn prev" @click="scrollCategories('prev')">‹</button>
         <div class="section-list categories-grid" ref="categoriesGrid">
-          <!-- Loading state -->
-          <SkeletonLoader 
-            v-if="isLoading" 
-            v-for="n in 5" 
-            :key="`category-skeleton-${n}`" 
-            variant="card" 
-            class="category-item section-item" 
-          />
-          
-          <!-- Categories -->
-          <div 
-            v-else
-            v-for="category in displayCategories" 
-            :key="category.id"
-            class="category-item section-item"
-            @click="goToCategory(category.slug)"
-          >
-            <img :src="category.image" :alt="category.name" class="section-item__image"/>
-            <div class="category-content">
-              <h5 class="category-title">{{ category.name }}</h5>
-              <p class="category-description">{{ category.description }}</p>
+          <template v-if="isLoading">
+            <SkeletonLoader
+              v-for="n in 5"
+              :key="`category-skeleton-${n}`"
+              variant="card"
+              class="category-item section-item"
+            />
+          </template>
+          <template v-else>
+            <div
+              v-for="category in displayCategories"
+              :key="category.id"
+              class="category-item section-item"
+              @click="goToCategory(category.slug)"
+            >
+              <img :src="category.image" :alt="category.name" class="section-item__image" />
+              <div class="category-content">
+                <h5 class="category-title">{{ category.name }}</h5>
+                <p class="category-description">{{ category.description }}</p>
+              </div>
             </div>
-          </div>
+          </template>
         </div>
-        
-        <button class="section-nav-btn next" @click="scrollCategories('next')">
-          ›
-        </button>
+        <button class="section-nav-btn next" @click="scrollCategories('next')">›</button>
       </div>
     </section>
-
-
-    <!-- Best Sellers -->
     <BestSellers />
-
-    <!-- New Arrivals -->
     <NewArrivals />
-
-    <!-- Featured Products -->
-    <section class="featured-products-section">
-      <!-- Header with container -->
-      <div class="container">
-        <div class="section-header">
-          <h2 class="section-title">Sản phẩm nổi bật</h2>
-          <router-link to="/san-pham?sort=featured" class="btn-view-all">
-            Xem tất cả
-          </router-link>
-        </div>
-      </div>
-      
-      <!-- Full-width products carousel -->
-      <div class="products-carousel-container">
-        <button class="prev-btn" @click="scrollFeatured('prev')">
-          ‹
-        </button>
-        
-          <<div class="products-grid" ref="featuredProductsGrid">
-  <!-- Loading state -->
-  <SkeletonLoader 
-    v-if="isLoadingFeatured" 
-    v-for="n in 5" 
-    :key="`skeleton-${n}`" 
-    variant="product" 
-  />
-  
-  <!-- Error state -->
-  <div v-else-if="featuredError" class="col-12 text-center py-5">
-    <div class="alert alert-danger d-inline-block">
-      <i class="bi bi-exclamation-triangle-fill me-2"></i>
-      {{ featuredError }}
-    </div>
-  </div>
-  
-  <!-- Products -->
-  <ProductCard
-    v-else
-    v-for="(product, index) in displayFeaturedProducts"
-    :key="`${product.id}-${index}`"
-    :id="product.id"
-    :name="product.name"
-    :img="product.image"
-    :hover-img="product.hoverImage"
-    :price-now="product.price"
-    :price-old="product.originalPrice"
-    :discount="product.discount"
-    :promotional-badge="product.promotionalBadge"
-    :color-options="product.colorOptions"
-    :sizes="product.sizes"
-    :available-sizes="product.availableSizes"
-    :color-size-mapping="product.colorSizeMapping"
-    :stock="product.stock || 10"
-  />
-</div>
-        
-        <button class="next-btn" @click="scrollFeatured('next')">
-          ›
-        </button>
-      </div>
-    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { useCartStore } from '../stores/cart'
-import { useProductStore } from '../stores/product'
-import LazyImage from '../components/common/LazyImage.vue'
 import UspBar from '../components/home/UspBar.vue'
-import Hero from '../components/home/Hero.vue'
 import BestSellers from '../components/home/BestSellers.vue'
 import NewArrivals from '../components/home/NewArrivals.vue'
-import ProductCard from '../components/product/ProductCard.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 
-const cartStore = useCartStore()
-const productStore = useProductStore()
+defineOptions({ name: 'HomeView' })
+
 const router = useRouter()
-
-// State
-const featuredProducts = ref([])
-const isLoadingFeatured = ref(true)
-const featuredError = ref(null)
-
-// API Function
-const fetchFeaturedProducts = async () => {
-  try {
-    isLoadingFeatured.value = true
-    featuredError.value = null
-    
-    const result = await productStore.fetchFeaturedProducts()
-    
-    if (result.success && result.data?.products) {
-      featuredProducts.value = result.data.products
-    } else {
-      // Fallback mock data for development when API is not ready
-      console.warn('API not available, using mock data for Featured Products')
-      featuredProducts.value = [
-        {
-          id: 1,
-          name: 'Áo thun nam cao cấp',
-          image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&h=600&fit=crop',
-          price: 299000,
-          originalPrice: 399000,
-          discount: 25,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#dc3545', '#007bff', '#28a745'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-          colorSizeMapping: {
-            '#dc3545': ['S', 'M', 'L'],
-            '#007bff': ['M', 'L', 'XL', '2XL'],
-            '#28a745': ['L', 'XL', '2XL', '3XL']
-          }
-        },
-        {
-          id: 2,
-          name: 'Quần short nữ thể thao',
-          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-          price: 199000,
-          originalPrice: 299000,
-          discount: 33,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#ff69b4', '#007bff', '#000000'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL'],
-          colorSizeMapping: {
-            '#ff69b4': ['S', 'M', 'L'],
-            '#007bff': ['M', 'L', 'XL'],
-            '#000000': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 3,
-          name: 'Áo khoác nam dài tay',
-          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-          price: 599000,
-          originalPrice: 799000,
-          discount: 25,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-          colorOptions: ['#000000', '#808080', '#8b4513'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#000000': ['L', 'XL', '2XL'],
-            '#808080': ['XL', '2XL', '3XL'],
-            '#8b4513': ['2XL', '3XL']
-          }
-        },
-        {
-          id: 4,
-          name: 'Váy nữ công sở',
-          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          price: 399000,
-          originalPrice: 499000,
-          discount: 20,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#000000', '#ffffff', '#ff69b4'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-          colorSizeMapping: {
-            '#000000': ['S', 'M', 'L'],
-            '#ffffff': ['M', 'L', 'XL'],
-            '#ff69b4': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 5,
-          name: 'Áo sơ mi nam trắng',
-          image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=500&h=600&fit=crop',
-          price: 249000,
-          originalPrice: 349000,
-          discount: 29,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#ffffff', '#000000', '#007bff'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#ffffff': ['S', 'M', 'L', 'XL'],
-            '#000000': ['M', 'L', 'XL', '2XL'],
-            '#007bff': ['L', 'XL', '2XL', '3XL']
-          }
-        }
-      ]
-    }
-  } catch (err) {
-    // Fallback mock data for development
-    console.warn('API error, using mock data for Featured Products:', err.message)
-    featuredProducts.value = [
-      {
-        id: 1,
-        name: 'Áo thun nam cao cấp',
-        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&h=600&fit=crop',
-        price: 299000,
-        originalPrice: 399000,
-        discount: 25,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-        colorOptions: ['#dc3545', '#007bff', '#28a745'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-        colorSizeMapping: {
-          '#dc3545': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL', '2XL'],
-          '#28a745': ['L', 'XL', '2XL', '3XL']
-        }
-      },
-      {
-        id: 2,
-        name: 'Quần short nữ thể thao',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 199000,
-        originalPrice: 299000,
-        discount: 33,
-        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-        colorOptions: ['#ff69b4', '#007bff', '#000000'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL'],
-          '#000000': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 3,
-        name: 'Áo khoác nam dài tay',
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-        price: 599000,
-        originalPrice: 799000,
-        discount: 25,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-        colorOptions: ['#000000', '#808080', '#8b4513'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['L', 'XL', '2XL', '3XL'],
-        colorSizeMapping: {
-          '#000000': ['L', 'XL', '2XL'],
-          '#808080': ['XL', '2XL', '3XL'],
-          '#8b4513': ['2XL', '3XL']
-        }
-      }
-    ]
-  } finally {
-    isLoadingFeatured.value = false
-  }
-}
-
-// Loading state - disabled for better performance
 const isLoading = ref(false)
 const carouselInterval = ref(null)
-
-// ===== Infinite loop state =====
-const currentIndex = ref(1)       // hiển thị phần tử thật đầu tiên (sau cloneLast)
+const currentIndex = ref(1)
 const isAnimating = ref(false)
 
-// Hero carousel slides data
 const heroSlides = ref([
   {
     id: 1,
@@ -462,48 +326,34 @@ const extendedSlides = computed(() => {
   return [list[list.length - 1], ...list, list[0]]
 })
 
-// Index thực để tô active cho indicators
 const visibleIndex = computed(() => {
   if (currentIndex.value === 0) return heroSlides.value.length - 1
   if (currentIndex.value === extendedSlides.value.length - 1) return 0
   return currentIndex.value - 1
 })
 
-const onTransitionEnd = async () => {
+const onTransitionEnd = () => {
   isAnimating.value = false
-  
-  // nếu đang ở cloneFirst (index 4), nhảy tức thời về real first (index 1)
-  if (currentIndex.value === extendedSlides.value.length - 1) {
-    isAnimating.value = false
-    currentIndex.value = 1
-  }
-  // nếu đang ở cloneLast (index 0), nhảy tức thời về real last (index 3)
-  if (currentIndex.value === 0) {
-    isAnimating.value = false
-    currentIndex.value = heroSlides.value.length
-  }
+  if (currentIndex.value === extendedSlides.value.length - 1) currentIndex.value = 1
+  if (currentIndex.value === 0) currentIndex.value = heroSlides.value.length
 }
 
-// No more mock featured products - using API
-
-// Category filters
 const categoryFilters = ref([
   { id: 'ao', name: 'ÁO' },
-  { id: 'quan', name: 'QUẦN' }
+  { id: 'quan', name: 'QUẦN' },
 ])
 
 const selectedFilter = ref('ao')
 
-// All categories with images
 const allCategories = ref([
-  // ÁO categories
   {
     id: 1,
     name: 'ÁO THUN',
     slug: 'ao-thun',
     description: 'Áo thun nam cao cấp',
     filter: 'ao',
-    image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 2,
@@ -511,7 +361,8 @@ const allCategories = ref([
     slug: 'ao-so-mi',
     description: 'Áo sơ mi nam công sở',
     filter: 'ao',
-    image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 3,
@@ -519,7 +370,8 @@ const allCategories = ref([
     slug: 'ao-khoac',
     description: 'Áo khoác nam thời trang',
     filter: 'ao',
-    image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 4,
@@ -527,16 +379,17 @@ const allCategories = ref([
     slug: 'ao-polo',
     description: 'Áo polo nam cao cấp',
     filter: 'ao',
-    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
-  // QUẦN categories
   {
     id: 5,
     name: 'QUẦN ÂU',
     slug: 'quan-au',
     description: 'Quần âu nam công sở',
     filter: 'quan',
-    image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 6,
@@ -544,7 +397,8 @@ const allCategories = ref([
     slug: 'quan-jean',
     description: 'Quần jean nam thời trang',
     filter: 'quan',
-    image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 7,
@@ -552,7 +406,8 @@ const allCategories = ref([
     slug: 'quan-short',
     description: 'Quần short nam thể thao',
     filter: 'quan',
-    image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 8,
@@ -560,7 +415,8 @@ const allCategories = ref([
     slug: 'ao-hoodie',
     description: 'Áo hoodie nam thời trang',
     filter: 'ao',
-    image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+    image:
+      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
   },
   {
     id: 9,
@@ -568,19 +424,18 @@ const allCategories = ref([
     slug: 'quan-jogger',
     description: 'Quần jogger nam thể thao',
     filter: 'quan',
-    image: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  }
+    image:
+      'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+  },
 ])
 
-// Computed filtered categories
-const filteredCategories = computed(() => {
-  return allCategories.value.filter(category => category.filter === selectedFilter.value)
-})
+const filteredCategories = computed(() =>
+  allCategories.value.filter((c) => c.filter === selectedFilter.value),
+)
 
-// Display 5 categories starting from currentCategoryIndex
+const currentCategoryIndex = ref(0)
 const displayCategories = computed(() => {
   if (filteredCategories.value.length === 0) return []
-  
   const result = []
   for (let i = 0; i < 5; i++) {
     const index = (currentCategoryIndex.value + i) % filteredCategories.value.length
@@ -589,105 +444,43 @@ const displayCategories = computed(() => {
   return result
 })
 
-// Methods
 const selectFilter = (filterId) => {
   selectedFilter.value = filterId
-  // Reset category index when filter changes
   currentCategoryIndex.value = 0
 }
-
 const goToCategory = (slug) => {
   router.push(`/category/${slug}`)
 }
-
-// Category navigation
 const categoriesGrid = ref(null)
-const currentCategoryIndex = ref(0)
-
 const scrollCategories = (direction) => {
-  // For fixed layout, we need to cycle through categories
-  // This will be handled by changing the displayed categories
-  if (direction === 'next') {
-    // Move to next set of categories
-    currentCategoryIndex.value = (currentCategoryIndex.value + 1) % filteredCategories.value.length
-  } else {
-    // Move to previous set of categories
-    currentCategoryIndex.value = (currentCategoryIndex.value - 1 + filteredCategories.value.length) % filteredCategories.value.length
-  }
+  currentCategoryIndex.value =
+    direction === 'next'
+      ? (currentCategoryIndex.value + 1) % filteredCategories.value.length
+      : (currentCategoryIndex.value - 1 + filteredCategories.value.length) %
+        filteredCategories.value.length
 }
 
-// Featured products navigation
-const featuredProductsGrid = ref(null)
-const currentFeaturedIndex = ref(0)
-
-const scrollFeatured = (direction) => {
-  // For fixed layout, we need to cycle through products
-  // This will be handled by changing the displayed products
-  if (direction === 'next') {
-    // Move to next set of products
-    currentFeaturedIndex.value = (currentFeaturedIndex.value + 1) % featuredProducts.value.length
-  } else {
-    // Move to previous set of products
-    currentFeaturedIndex.value = (currentFeaturedIndex.value - 1 + featuredProducts.value.length) % featuredProducts.value.length
-  }
-}
-
-// Display 5 featured products starting from currentFeaturedIndex
-const displayFeaturedProducts = computed(() => {
-  if (featuredProducts.value.length === 0) return []
-  
-  const result = []
-  for (let i = 0; i < 5; i++) {
-    const index = (currentFeaturedIndex.value + i) % featuredProducts.value.length
-    result.push(featuredProducts.value[index])
-  }
-  return result
-})
-
-const handleFeaturedScroll = () => {
-  // Disable scroll handling for fixed layout
-  // Cards are displayed in fixed positions with space-between
-  return
-}
-
-const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-  }).format(price)
-}
-
-// Carousel methods
 const goToSlide = (index) => {
   if (isAnimating.value) return
   isAnimating.value = true
-  currentIndex.value = index + 1 // +1 vì trước nó có cloneLast
+  currentIndex.value = index + 1
 }
-
 const nextSlide = () => {
   if (isAnimating.value) return
   isAnimating.value = true
   currentIndex.value += 1
 }
-
 const previousSlide = () => {
   if (isAnimating.value) return
   isAnimating.value = true
   currentIndex.value -= 1
 }
-
-// Auto-advance carousel
 const startCarousel = () => {
-  if (carouselInterval.value) {
-    clearInterval(carouselInterval.value)
-  }
+  if (carouselInterval.value) clearInterval(carouselInterval.value)
   carouselInterval.value = setInterval(() => {
-    if (!isAnimating.value) {
-      nextSlide()
-    }
+    if (!isAnimating.value) nextSlide()
   }, 5000)
 }
-
 const stopCarousel = () => {
   if (carouselInterval.value) {
     clearInterval(carouselInterval.value)
@@ -695,66 +488,15 @@ const stopCarousel = () => {
   }
 }
 
-const addToCart = (product) => {
-  cartStore.addItem(product)
-
-  // Show success toast
-  if (window.$toast) {
-    window.$toast.success(
-      `${product.name} đã được thêm vào giỏ hàng`,
-      'Thêm vào giỏ hàng thành công',
-    )
-  }
-}
-
-// Intersection Observer for scroll animations
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: '0px 0px -50px 0px',
-}
-
-const observer = new IntersectionObserver((entries) => {
-  entries.forEach((entry) => {
-    if (entry.isIntersecting) {
-      entry.target.classList.add('animate')
-    }
-  })
-}, observerOptions)
-
-onMounted(async () => {
-  // Fetch featured products from API
-  await fetchFeaturedProducts()
-  
-  // Start carousel auto-advance immediately
+onMounted(() => {
   startCarousel()
-
-  // Pause carousel on hover
-  const carouselElement = document.querySelector('.custom-carousel')
-  if (carouselElement) {
-    carouselElement.addEventListener('mouseenter', stopCarousel)
-    carouselElement.addEventListener('mouseleave', startCarousel)
-  }
-
-  // Initialize Featured Products index
-  nextTick(() => {
-    if (featuredProducts.value.length > 0) {
-      currentFeaturedIndex.value = 0
-    }
-  })
-
-  // Skip scroll animations for better performance
-  // const elements = document.querySelectorAll('.animate-on-scroll')
-  // elements.forEach((el) => observer.observe(el))
 })
-
 onUnmounted(() => {
-  // Clean up carousel interval
   stopCarousel()
 })
 </script>
 
 <style scoped>
-/* Prevent horizontal scroll and remove extra spacing */
 .home {
   overflow-x: hidden;
   width: 100%;
@@ -762,39 +504,31 @@ onUnmounted(() => {
   margin: 0;
   padding: 0;
 }
-
-/* Global reset for hero section */
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
 }
-
-/* Ensure no padding-top for body on hero page */
 body {
   padding-top: 0 !important;
 }
-
-.hero, .hero * {
+.hero,
+.hero * {
   scroll-margin-top: 0;
 }
-
-/* Hero content styling */
 .hero-content-wrapper {
   margin-top: 0 !important;
   padding-top: 0 !important;
 }
-
-.hero-text, .hero-image {
+.hero-text,
+.hero-image {
   padding-top: 0 !important;
   margin-top: 0 !important;
 }
-
 .hero-main-image {
   display: block;
   border-radius: 24px;
 }
-
-/* Section Header - Layout: title center, button bottom right */
 .section-header {
   position: relative;
   display: flex;
@@ -804,7 +538,79 @@ body {
   width: 100%;
   text-align: center;
 }
-
+.btn-view-all {
+  position: absolute;
+  bottom: -60px;
+  right: -350px;
+  background: #000;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+.categories-section.section-full {
+  margin-top: 2rem;
+}
+.section-list {
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+.section-item {
+  width: calc(20% - 0.8rem);
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.section-item:hover {
+  transform: translateY(-2px);
+}
+.section-item__image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+.category-content {
+  padding: 0.75rem 0.5rem 0;
+}
+.category-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+.category-description {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0.25rem 0 0;
+}
+.section-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  font-size: 20px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.section-nav-btn:hover {
+  background: #f8f8f8;
+}
+.section-nav-btn:active {
+  transform: scale(0.96);
+}
 .btn-view-all {
   position: absolute;
   bottom: -60px;
@@ -824,7 +630,7 @@ body {
   background: #333;
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Hero Carousel Section */
@@ -881,7 +687,6 @@ body {
   margin: 0;
   padding: 0;
 }
-
 
 .hero-content {
   position: relative;
@@ -1061,12 +866,12 @@ body {
     text-align: center !important;
     padding: 1rem !important;
   }
-  
+
   .hero-text {
     padding-right: 0 !important;
     margin-bottom: 2rem;
   }
-  
+
   .hero-title {
     font-size: 2.5rem;
   }
@@ -1099,11 +904,11 @@ body {
   .hero-carousel-section {
     padding-top: 80px;
   }
-  
+
   .hero-content-wrapper {
     padding: 0.5rem !important;
   }
-  
+
   .hero-title {
     font-size: 2rem;
   }
@@ -1121,13 +926,13 @@ body {
     font-size: 0.75rem;
     padding: 0.375rem 0.75rem;
   }
-  
+
   .carousel-control-prev,
   .carousel-control-next {
     width: 40px;
     height: 40px;
   }
-  
+
   .carousel-control-prev {
     left: 0.5rem;
   }
@@ -1325,7 +1130,6 @@ body {
 
 /* Skeleton loading for categories */
 
-
 /* Responsive Categories - handled by sections.css */
 
 /* Scroll animations */
@@ -1368,7 +1172,6 @@ body {
   margin: 0;
 }
 
-
 .products-carousel-container {
   position: relative;
   display: flex;
@@ -1403,7 +1206,8 @@ body {
 }
 
 /* Carousel Navigation Buttons */
-.prev-btn, .next-btn {
+.prev-btn,
+.next-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -1424,7 +1228,8 @@ body {
   justify-content: center;
 }
 
-.prev-btn:hover, .next-btn:hover {
+.prev-btn:hover,
+.next-btn:hover {
   background: #000;
   color: #fff;
 }
@@ -1470,8 +1275,9 @@ body {
     max-width: calc((100vw - 40px - 20px) / 2);
     min-width: calc((100vw - 40px - 20px) / 2);
   }
-  
-  .prev-btn, .next-btn {
+
+  .prev-btn,
+  .next-btn {
     display: none;
   }
 }
@@ -1480,7 +1286,7 @@ body {
   .section-title {
     font-size: 2rem;
   }
-  
+
   .section-header {
     margin-bottom: 2rem;
   }
@@ -1490,28 +1296,28 @@ body {
   .products-grid {
     gap: 14px;
   }
-  
+
   .products-carousel-container {
     padding: 0 15px;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
     margin-bottom: 2rem;
   }
-  
+
   .btn-view-all {
     position: static;
     margin-top: 1rem;
     align-self: center;
   }
-  
+
   .section-title {
     font-size: 1.75rem;
   }
-  
+
   .featured-products-section {
     padding: 2rem 0;
   }

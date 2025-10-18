@@ -8,13 +8,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: 'Lấy danh sách sản phẩm thành công'
+        message: 'Lấy danh sách sản phẩm thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi lấy danh sách sản phẩm'
+        message: error.message || 'Lỗi khi lấy danh sách sản phẩm',
       }
     }
   }
@@ -26,13 +26,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: 'Lấy thông tin sản phẩm thành công'
+        message: 'Lấy thông tin sản phẩm thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi lấy thông tin sản phẩm'
+        message: error.message || 'Lỗi khi lấy thông tin sản phẩm',
       }
     }
   }
@@ -44,13 +44,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: 'Lấy sản phẩm theo danh mục thành công'
+        message: 'Lấy sản phẩm theo danh mục thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi lấy sản phẩm theo danh mục'
+        message: error.message || 'Lỗi khi lấy sản phẩm theo danh mục',
       }
     }
   }
@@ -62,31 +62,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: 'Tìm kiếm sản phẩm thành công'
+        message: 'Tìm kiếm sản phẩm thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi tìm kiếm sản phẩm'
-      }
-    }
-  }
-
-  // Lấy sản phẩm nổi bật
-  async getFeatured() {
-    try {
-      const response = await apiService.products.getFeatured()
-      return {
-        success: true,
-        data: response.data || response,
-        message: 'Lấy sản phẩm nổi bật thành công'
-      }
-    } catch (error) {
-      return {
-        success: false,
-        data: null,
-        message: error.message || 'Lỗi khi lấy sản phẩm nổi bật'
+        message: error.message || 'Lỗi khi tìm kiếm sản phẩm',
       }
     }
   }
@@ -98,13 +80,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: 'Lấy sản phẩm liên quan thành công'
+        message: 'Lấy sản phẩm liên quan thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi lấy sản phẩm liên quan'
+        message: error.message || 'Lỗi khi lấy sản phẩm liên quan',
       }
     }
   }
@@ -116,13 +98,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: 'Lấy đánh giá sản phẩm thành công'
+        message: 'Lấy đánh giá sản phẩm thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi lấy đánh giá sản phẩm'
+        message: error.message || 'Lỗi khi lấy đánh giá sản phẩm',
       }
     }
   }
@@ -134,13 +116,13 @@ class ProductService {
       return {
         success: true,
         data: response.data || response,
-        message: response.message || 'Thêm đánh giá thành công'
+        message: response.message || 'Thêm đánh giá thành công',
       }
     } catch (error) {
       return {
         success: false,
         data: null,
-        message: error.message || 'Lỗi khi thêm đánh giá'
+        message: error.message || 'Lỗi khi thêm đánh giá',
       }
     }
   }

@@ -8,12 +8,11 @@ export const useProductStore = defineStore('product', () => {
   // Cache instance
   const apiCache = useApiCache({
     ttl: 5 * 60 * 1000, // 5 minutes
-    maxSize: 100
+    maxSize: 100,
   })
 
   // Product State
   const products = ref([])
-  const featuredProducts = ref([])
   const categories = ref([])
   const currentProduct = ref(null)
   const relatedProducts = ref([])
@@ -24,15 +23,13 @@ export const useProductStore = defineStore('product', () => {
     page: 1,
     limit: 12,
     total: 0,
-    totalPages: 0
+    totalPages: 0,
   })
 
   // Product Getters
   const hasProducts = computed(() => products.value.length > 0)
-  const hasFeaturedProducts = computed(() => featuredProducts.value.length > 0)
   const hasCategories = computed(() => categories.value.length > 0)
   const productCount = computed(() => products.value.length)
-  const featuredCount = computed(() => featuredProducts.value.length)
   const categoryCount = computed(() => categories.value.length)
 
   // Actions
@@ -57,10 +54,6 @@ export const useProductStore = defineStore('product', () => {
 
   const setProducts = (newProducts) => {
     products.value = newProducts
-  }
-
-  const setFeaturedProducts = (newProducts) => {
-    featuredProducts.value = newProducts
   }
 
   const setCategories = (newCategories) => {
@@ -91,7 +84,7 @@ export const useProductStore = defineStore('product', () => {
 
       // Create cache key from parameters
       const cacheKey = `products_${JSON.stringify(params)}`
-      
+
       // Try to get from cache first
       const cached = apiCache.get(cacheKey)
       if (cached) {
@@ -102,36 +95,14 @@ export const useProductStore = defineStore('product', () => {
       }
 
       const response = await apiService.products.getAll(params)
-      
+
       if (response.success) {
         setProducts(response.data.products)
         setPagination(response.data.pagination)
-        
+
         // Cache the response
         apiCache.set(cacheKey, response.data)
-        
-        return { success: true, data: response.data }
-      } else {
-        setError(response.message)
-        return { success: false, message: response.message }
-      }
-    } catch (err) {
-      return handleError(err, 'Products')
-    } finally {
-      setLoading(false)
-    }
-  }
 
-  // Fetch featured products
-  const fetchFeaturedProducts = async () => {
-    try {
-      setLoading(true)
-      clearError()
-
-      const response = await apiService.products.getFeatured()
-      
-      if (response.success) {
-        setFeaturedProducts(response.data.products)
         return { success: true, data: response.data }
       } else {
         setError(response.message)
@@ -152,7 +123,7 @@ export const useProductStore = defineStore('product', () => {
 
       // Create cache key
       const cacheKey = `product_${id}`
-      
+
       // Try to get from cache first
       const cached = apiCache.get(cacheKey)
       if (cached) {
@@ -162,13 +133,13 @@ export const useProductStore = defineStore('product', () => {
       }
 
       const response = await apiService.products.getById(id)
-      
+
       if (response.success) {
         setCurrentProduct(response.data.product)
-        
+
         // Cache the response
         apiCache.set(cacheKey, response.data)
-        
+
         return { success: true, data: response.data }
       } else {
         setError(response.message)
@@ -188,7 +159,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.products.getByCategory(categoryId, params)
-      
+
       if (response.success) {
         setProducts(response.data.products)
         setPagination(response.data.pagination)
@@ -211,7 +182,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.products.search(query, params)
-      
+
       if (response.success) {
         setProducts(response.data.products)
         setPagination(response.data.pagination)
@@ -234,7 +205,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.products.getRelated(id)
-      
+
       if (response.success) {
         setRelatedProducts(response.data.products)
         return { success: true, data: response.data }
@@ -256,7 +227,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.products.getReviews(id)
-      
+
       if (response.success) {
         setProductReviews(response.data.reviews)
         return { success: true, data: response.data }
@@ -278,7 +249,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.products.addReview(id, reviewData)
-      
+
       if (response.success) {
         // Refresh reviews
         await fetchProductReviews(id)
@@ -301,7 +272,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.categories.getAll()
-      
+
       if (response.success) {
         setCategories(response.data.categories)
         return { success: true, data: response.data }
@@ -323,7 +294,7 @@ export const useProductStore = defineStore('product', () => {
       clearError()
 
       const response = await apiService.categories.getById(id)
-      
+
       if (response.success) {
         return { success: true, data: response.data }
       } else {
@@ -339,17 +310,17 @@ export const useProductStore = defineStore('product', () => {
 
   // Get product by ID from current products
   const getProductById = (id) => {
-    return products.value.find(product => product.id === id)
+    return products.value.find((product) => product.id === id)
   }
 
   // Get category by ID
   const getCategoryById = (id) => {
-    return categories.value.find(category => category.id === id)
+    return categories.value.find((category) => category.id === id)
   }
 
   // Get products by category ID
   const getProductsByCategoryId = (categoryId) => {
-    return products.value.filter(product => product.categoryId === categoryId)
+    return products.value.filter((product) => product.categoryId === categoryId)
   }
 
   // Clear current product
@@ -362,7 +333,7 @@ export const useProductStore = defineStore('product', () => {
   // Clear all data
   const clearAll = () => {
     products.value = []
-    featuredProducts.value = []
+    // removed featured state
     categories.value = []
     currentProduct.value = null
     relatedProducts.value = []
@@ -371,16 +342,14 @@ export const useProductStore = defineStore('product', () => {
       page: 1,
       limit: 12,
       total: 0,
-      totalPages: 0
+      totalPages: 0,
     }
     clearError()
   }
 
-
   return {
     // Product State
     products,
-    featuredProducts,
     categories,
     currentProduct,
     relatedProducts,
@@ -389,18 +358,14 @@ export const useProductStore = defineStore('product', () => {
     error,
     pagination,
 
-
     // Product Getters
     hasProducts,
-    hasFeaturedProducts,
     hasCategories,
     productCount,
-    featuredCount,
     categoryCount,
 
     // Product Actions
     fetchProducts,
-    fetchFeaturedProducts,
     fetchProductById,
     fetchProductsByCategory,
     searchProducts,
@@ -415,6 +380,5 @@ export const useProductStore = defineStore('product', () => {
     clearCurrentProduct,
     clearAll,
     clearError,
-
   }
 })

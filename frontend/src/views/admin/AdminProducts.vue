@@ -183,17 +183,12 @@
               <td>
                 <div class="product-info">
                   <div class="product-image">
-<div class="product-image">
-  <img
-    :src="getProductImage(product)"
-
-  />
-  <div v-if="product.isNew" class="new-badge">Mới</div>
-  <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
-</div>
+                    <div class="product-image">
+                      <img :src="getProductImage(product)" />
+                      <div v-if="product.isNew" class="new-badge">Mới</div>
+                    </div>
 
                     <div v-if="product.isNew" class="new-badge">Mới</div>
-                    <div v-if="product.isFeatured" class="featured-badge">Nổi bật</div>
                   </div>
                   <div class="product-details">
                     <div class="product-name">{{ product.name }}</div>
@@ -277,19 +272,6 @@
                   >
                     <i class="ph-eye me-1"></i>
                     Xem
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-warning"
-                    @click="toggleFeatured(product)"
-                    title="Đánh dấu nổi bật"
-                  >
-                    <i :class="(product.isFeatured ? 'ph-star-fill' : 'ph-star') + ' me-1'"></i>
-                    Nổi bật
-                    <span
-                      class="badge-dot"
-                      :class="{ on: product.isFeatured }"
-                      aria-hidden="true"
-                    ></span>
                   </button>
                   <button
                     class="btn btn-sm btn-outline-danger"
@@ -584,7 +566,6 @@ const productForm = ref({
   variantColors: [],
   material: '',
   // SEO tab removed, keep minimal flags
-  isFeatured: false,
   isNew: false,
   tags: [],
 })
@@ -687,7 +668,6 @@ async function loadProductDetail(id) {
       slug: res.slug || '',
       metaTitle: res.metaTitle || '',
       metaDescription: res.metaDescription || '',
-      isFeatured: !!res.isFeatured,
       isNew: !!res.isNew,
       tags: res.tags || [],
     }
@@ -793,10 +773,6 @@ const deleteProduct = async (product) => {
     console.error('Delete product error', e)
     alert('Xóa sản phẩm lỗi: ' + (e?.message || JSON.stringify(e)))
   }
-}
-
-const toggleFeatured = (product) => {
-  product.isFeatured = !product.isFeatured
 }
 
 const toggleSelectAll = () => {
@@ -1042,10 +1018,6 @@ async function ensureProductImageLoaded(product) {
     // ignore; fallback will handle
   }
 }
-function apiOrigin() {
-  const base = import.meta.env.VITE_API_URL || 'http://localhost:8080/api'
-  return new URL(base).origin // -> http://localhost:8080
-}
 
 function getProductImage(product) {
   const url = product?.image
@@ -1053,9 +1025,8 @@ function getProductImage(product) {
     ensureProductImageLoaded(product)
     return '/favicon.ico'
   }
-  return url           // cho phép '/files/..' đi qua proxy
+  return url // cho phép '/files/..' đi qua proxy
 }
-
 
 // function getStockClass(stock) {
 //   if (stock == null) return 'bg-light'
@@ -1379,8 +1350,7 @@ onMounted(async () => {
   object-fit: cover;
 }
 
-.new-badge,
-.featured-badge {
+.new-badge {
   position: absolute;
   top: 0.25rem;
   right: 0.25rem;
@@ -1395,10 +1365,7 @@ onMounted(async () => {
   background: #28a745;
 }
 
-.featured-badge {
-  background: #ffc107;
-  color: #212529;
-}
+/* removed .featured-badge */
 
 .product-tags {
   display: flex;
@@ -1547,10 +1514,7 @@ onMounted(async () => {
   margin-left: 6px;
   background: #ced4da; /* off state */
 }
-.badge-dot.on {
-  background: #f59e0b; /* amber when featured */
-  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
-}
+/* removed .badge-dot.on (no featured state) */
 
 /* Dark theme: make outline buttons more visible */
 .action-buttons .btn-outline-info {
