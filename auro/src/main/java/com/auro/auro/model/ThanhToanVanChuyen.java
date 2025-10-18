@@ -55,8 +55,8 @@ public class ThanhToanVanChuyen {
     @Column(name = "giao_thanh_cong_luc")
     private LocalDateTime giaoThanhCongLuc;
 
-    @Column(name = "du_lieu_json", columnDefinition = "NVARCHAR(MAX)")
-    private String duLieuJson;
+    @Column(name = "du_lieu", columnDefinition = "NVARCHAR(MAX)")
+    private String duLieu;
 
     @Column(name = "tao_luc")
     private LocalDateTime taoLuc;

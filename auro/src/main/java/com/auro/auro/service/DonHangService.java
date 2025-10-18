@@ -33,7 +33,6 @@ public class DonHangService {
         donHang.setSoDonHang("DH-" + UUID.randomUUID().toString());
         donHang.setTaoLuc(LocalDateTime.now());
         donHang.setCapNhatLuc(LocalDateTime.now());
-        donHang.setTienTe("VND");
         // donHang.setKenhBan("online");
 
         // Tính toán tổng tiền
@@ -77,7 +76,7 @@ public class DonHangService {
             throw new RuntimeException("Chỉ sửa đơn hàng ở trạng thái pending");
         }
         donHang.setTrangThai(updatedDonHang.getTrangThai());
-        donHang.setDiaChiGiaoSnapshot(updatedDonHang.getDiaChiGiaoSnapshot());
+        donHang.setDiaChiGiao(updatedDonHang.getDiaChiGiao());
         donHang.setGhiChu(updatedDonHang.getGhiChu());
         donHang.setCapNhatLuc(LocalDateTime.now());
         return donHangRepository.save(donHang);
@@ -119,7 +118,7 @@ public class DonHangService {
             dto.setTamTinh(dh.getTamTinh());
             dto.setTongThanhToan(dh.getTongThanhToan());
             dto.setTrangThai(dh.getTrangThai());
-            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiaoSnapshot());
+            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
             dto.setGhiChu(dh.getGhiChu());
             dto.setTaoLuc(dh.getTaoLuc());
             dto.setCapNhatLuc(dh.getCapNhatLuc());
@@ -150,7 +149,7 @@ public class DonHangService {
             dto.setTamTinh(dh.getTamTinh());
             dto.setTongThanhToan(dh.getTongThanhToan());
             dto.setTrangThai(dh.getTrangThai());
-            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiaoSnapshot());
+            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
             dto.setGhiChu(dh.getGhiChu());
             dto.setTaoLuc(dh.getTaoLuc());
             dto.setCapNhatLuc(dh.getCapNhatLuc());
