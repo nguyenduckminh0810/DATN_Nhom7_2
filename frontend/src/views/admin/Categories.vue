@@ -673,20 +673,32 @@ const deleteCategory = async (cat) => {
     toast.success('Xóa danh mục thành công')
     // notify clients
     window.dispatchEvent(new Event('categories-updated'))
-  } catch (err) {
-    const status = err?.status || err?.response?.status
-    if (status === 409) {
-      const force = await showConfirm('Danh mục hoặc danh mục con có liên kết tới sản phẩm. Xóa tất cả?')
-      if (force) {
-        await apiService.categoriesDelete.delete(cat.id, true)
-        await loadCategories()
-        toast.success('Đã xóa kèm dữ liệu liên quan')
-        window.dispatchEvent(new Event('categories-updated'))
-      }
-    } else {
-      toast.error('Xảy ra lỗi khi xóa: ' + (err?.message || 'Không xác định'))
+} catch (err) {
+  const status = err?.status || err?.response?.status
+  if (status === 409) {
+    // DEBUG: xem server trả gì
+    console.log('409 payload:', err?.response?.data)
+
+    // Ưu tiên số từ server; nếu không có, fallback về tổng ngay trên node hiện tại
+    const srv = err?.response?.data?.relatedProducts
+    const related = (typeof srv === 'number' && !Number.isNaN(srv))
+      ? srv
+      : Number(cat.productCount ?? 0)
+
+    const force = await showConfirm(
+      `Danh mục hoặc danh mục con có liên kết tới ${related} sản phẩm. Xóa tất cả?`
+    )
+
+    if (force) {
+      await apiService.categoriesDelete.delete(cat.id, true)
+      await loadCategories()
+      toast.success('Đã xóa kèm dữ liệu liên quan')
+      window.dispatchEvent(new Event('categories-updated'))
     }
+  } else {
+    toast.error('Xảy ra lỗi khi xóa: ' + (err?.message || 'Không xác định'))
   }
+}
 }
 
 // bulk actions (local update) -> also dispatch so navbar refreshes if admin expects change reflected

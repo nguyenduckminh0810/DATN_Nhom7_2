@@ -16,4 +16,5 @@ public class DanhMucResponse {
     private Long idCha;
     private Integer thuTu;
     private Integer hoatDong;
+    private Long productCount;
 }
