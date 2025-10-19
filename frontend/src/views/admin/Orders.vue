@@ -344,6 +344,14 @@
                   >
                     <i class="bi bi-credit-card"></i>
                   </button>
+                  <button
+                  v-if="['pending', 'processing'].includes(order.trangThai)"
+                  class="btn btn-sm btn-outline-danger"
+                  @click="deleteOrder(order)"
+                  title="Xóa đơn hàng"
+                >
+                  <i class="bi bi-trash"></i>
+                </button>
                 </div>
               </td>
             </tr>
@@ -472,6 +480,9 @@
           <button class="btn btn-sm btn-outline-info" @click="bulkUpdatePayment('paid')">
             <i class="bi bi-credit-card me-1"></i>Đã thanh toán
           </button>
+          <button class="btn btn-sm btn-outline-danger" @click="bulkDeleteOrders">
+          <i class="bi bi-trash me-1"></i>Xóa
+        </button>
         </div>
       </div>
     </div>
@@ -986,6 +997,43 @@ const getNextStatus = (currentStatus) => {
 
 const printOrder = (order) => {
   window.print();
+};
+
+const deleteOrder = async (order) => {
+  if (confirm(`Bạn có chắc chắn muốn xóa đơn hàng #${order.soDonHang}?`)) {
+    try {
+      await axios.delete(`/api/don-hang/${order.id}`);
+      // Remove the order from local state
+      orders.value = orders.value.filter((o) => o.id !== order.id);
+      totalItems.value = orders.value.length;
+      console.log(`Đã xóa đơn hàng #${order.soDonHang}`);
+    } catch (err) {
+      console.error("Lỗi khi xóa đơn hàng:", err);
+      alert("Có lỗi khi xóa đơn hàng");
+    }
+  }
+};
+
+const bulkDeleteOrders = async () => {
+  if (confirm(`Bạn có chắc chắn muốn xóa ${selectedOrders.value.length} đơn hàng?`)) {
+    try {
+      // Send individual delete requests for each selected order
+      await Promise.all(
+        selectedOrders.value.map((orderId) =>
+          axios.delete(`/api/don-hang/${orderId}`)
+        )
+      );
+      // Remove deleted orders from local state
+      orders.value = orders.value.filter((o) => !selectedOrders.value.includes(o.id));
+      totalItems.value = orders.value.length;
+      selectedOrders.value = [];
+      selectAll.value = false;
+      console.log(`Đã xóa ${selectedOrders.value.length} đơn hàng`);
+    } catch (err) {
+      console.error("Lỗi khi xóa hàng loạt đơn hàng:", err);
+      alert("Có lỗi khi xóa hàng loạt đơn hàng");
+    }
+  }
 };
 
 // ======= LIFECYCLE =======
