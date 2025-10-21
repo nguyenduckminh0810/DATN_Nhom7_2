@@ -388,7 +388,7 @@ const setPrimaryImage = (index) => {
 
 const deleteImage = (index) => {
   if (confirm('Bạn có chắc muốn xóa ảnh này?')) {
-    const wassPrimary = images.value[index].isPrimary
+    const wasPrimary = images.value[index].isPrimary
     images.value.splice(index, 1)
     
     // If deleted was primary, set first image as primary

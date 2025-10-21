@@ -92,8 +92,8 @@
             <!-- Product Price -->
             <div class="product-price mb-4">
                 <div class="price-container">
-                  <span class="current-price">{{ formatPrice(product?.price) }}</span>
-                  <span v-if="product?.originalPrice && product?.originalPrice > product?.price" 
+                  <span class="current-price">{{ formatPrice(currentPrice) }}</span>
+                  <span v-if="product?.originalPrice && product?.originalPrice > currentPrice" 
                         class="original-price">{{ formatPrice(product?.originalPrice) }}</span>
               </div>
             </div>
@@ -142,6 +142,19 @@
                   <a href="#bang-size" class="size-guide-link">
                     <i class="bi bi-rulers me-1"></i>Hướng dẫn chọn size
                   </a>
+              </div>
+
+              <!-- Variant Info Badge (shows when variant is selected) -->
+              <div v-if="currentVariant && selectedColor && selectedSize" class="variant-info-badge">
+                <div class="variant-badge-content">
+                  <i class="bi bi-info-circle me-2"></i>
+                  <span class="variant-text">
+                    Đã chọn: <strong>{{ getColorName(selectedColor) }}</strong> - <strong>{{ selectedSize }}</strong>
+                    <span v-if="currentVariant.price && currentVariant.price !== product?.price" class="variant-price-badge">
+                      ({{ formatPrice(currentVariant.price) }})
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -432,7 +445,7 @@
 
     <!-- Mobile Sticky Bottom Bar -->
     <div class="mobile-sticky-bar" v-if="isMobile">
-      <div class="mobile-price">{{ formatPrice(product?.price) }}</div>
+      <div class="mobile-price">{{ formatPrice(currentPrice) }}</div>
       <button class="mobile-cta" :disabled="!canAddToCart" @click="handleAddToCart">
         {{ canAddToCart ? 'Thêm vào giỏ' : 'Chọn size' }}
       </button>
@@ -485,63 +498,91 @@ const fetchProductDetail = async (productId) => {
     isLoading.value = true
     error.value = null
     
-  // Always use mock data for now to ensure page displays
-  console.log('Using mock data for Product Detail:', productId)
-  
-      // Fallback mock data for development when API is not ready
-      console.warn('API not available, using mock data for Product Detail')
-  
-    product.value = {
-      id: productId,
-      name: 'Áo thun nam cao cấp',
-      description: 'Áo thun nam chất liệu cotton cao cấp, thoáng mát, thấm hút mồ hôi tốt. Thiết kế đơn giản nhưng thanh lịch, phù hợp cho mọi hoạt động hàng ngày.',
-      price: 299000,
-      originalPrice: 399000,
-      discount: 25,
-      promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-      img: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=800&fit=crop',
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=800&fit=crop',
-      images: [
-        'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=800&h=800&fit=crop',
-        'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=800&h=800&fit=crop'
-      ],
-      colors: [
-        { name: 'Đỏ', value: '#dc3545', available: true },
-        { name: 'Xanh dương', value: '#007bff', available: true },
-        { name: 'Xanh lá', value: '#28a745', available: true }
-      ],
-      sizes: [
-        { name: 'S', available: true },
-        { name: 'M', available: true },
-        { name: 'L', available: true },
-        { name: 'XL', available: true },
-        { name: '2XL', available: true }
-      ],
-      variants: [
-        { color: '#dc3545', size: 'S', stock: 10 },
-        { color: '#dc3545', size: 'M', stock: 15 },
-        { color: '#dc3545', size: 'L', stock: 8 },
-        { color: '#007bff', size: 'M', stock: 12 },
-        { color: '#007bff', size: 'L', stock: 20 },
-        { color: '#007bff', size: 'XL', stock: 5 },
-        { color: '#28a745', size: 'L', stock: 7 },
-        { color: '#28a745', size: 'XL', stock: 18 },
-        { color: '#28a745', size: '2XL', stock: 3 }
-      ],
-      category: 'Áo thun',
-      brand: 'AURO',
-      rating: 4.5,
-      reviewCount: 128,
-      inStock: true,
-      tags: ['cotton', 'thoáng mát', 'nam']
+  try {
+    // Fetch product detail from API
+    const { default: sanPhamService } = await import('../services/sanPhamService')
+    const productData = await sanPhamService.getDetail(productId)
+    
+    if (!productData) {
+      throw new Error('Product not found')
     }
     
-  // Set loading to false immediately after setting mock data
+    // Map API response to product object
+    product.value = {
+      id: productData.id,
+      name: productData.ten,
+      description: productData.moTa || 'Chưa có mô tả sản phẩm',
+      price: productData.gia || 0,
+      originalPrice: productData.giaGoc || productData.gia,
+      discount: productData.giamGia || 0,
+      promotionalBadge: productData.nhanKhuyenMai || null,
+      img: productData.anhDaiDien || productData.hinhAnhs?.[0]?.url || '',
+      image: productData.anhDaiDien || productData.hinhAnhs?.[0]?.url || '',
+      images: productData.hinhAnhs?.map(img => img.url) || [],
+      category: productData.danhMucTen || '',
+      brand: 'AURO',
+      rating: productData.danhGia || 4.5,
+      reviewCount: productData.soLuongDanhGia || 0,
+      inStock: productData.trangThai === 'active',
+      tags: productData.tags || [],
+      sku: productData.sku || '',
+      variants: []
+    }
+    
+    // Map variants from detail response
+    if (productData.bienThes && productData.bienThes.length > 0) {
+      product.value.variants = productData.bienThes.map(v => ({
+        id: v.id,
+        color: v.colorHex || '#000000',
+        colorName: v.mauSac || 'Mặc định',
+        size: v.kichThuoc || 'M',
+        stock: v.tonKho || 0,
+        price: v.gia || productData.gia,
+        imageUrl: v.hinhAnh,
+        available: (v.tonKho || 0) > 0
+      }))
+      
+      // Extract unique colors and sizes from variants
+      const uniqueColors = [...new Set(product.value.variants.map(v => v.color))]
+      const uniqueSizes = [...new Set(product.value.variants.map(v => v.size))]
+      
+      product.value.colors = uniqueColors.map(color => {
+        const variant = product.value.variants.find(v => v.color === color)
+        return {
+          name: variant?.colorName || color,
+          value: color,
+          available: product.value.variants.some(v => v.color === color && v.available)
+        }
+      })
+      
+      product.value.sizes = uniqueSizes.map(size => ({
+        name: size,
+        available: product.value.variants.some(v => v.size === size && v.available)
+      }))
+      
+      console.log('Loaded variants:', product.value.variants.length)
+    } else {
+      // No variants, use default mock data
+      product.value.colors = [
+        { name: 'Mặc định', value: '#000000', available: true }
+      ]
+      product.value.sizes = [
+        { name: 'M', available: true }
+      ]
+    }
+    
+  } catch (err) {
+    console.error('Failed to load product:', err)
+    error.value = 'Không thể tải thông tin sản phẩm'
+    product.value = null
+  } finally {
     isLoading.value = false
+  }
   
   // Fetch related products with fallback (async, don't wait)
-  fetchRelatedProducts(productId)
+  if (product.value) {
+    fetchRelatedProducts(productId)
+  }
   
   // Debug: Log related products
   console.log('Related products after fetch:', relatedProducts.value)
@@ -554,124 +595,14 @@ const fetchRelatedProducts = async (productId) => {
     if (result.success && result.data?.products) {
       relatedProducts.value = result.data.products
     } else {
-      // Fallback mock data for related products
-      console.warn('API not available, using mock data for Related Products')
-      relatedProducts.value = [
-        {
-          id: 2,
-          name: 'Quần jogger nữ cao cấp',
-          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-          price: 199000,
-          originalPrice: 299000,
-          discount: 33,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#ff69b4', '#007bff', '#000000'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL'],
-          colorSizeMapping: {
-            '#ff69b4': ['S', 'M', 'L'],
-            '#007bff': ['M', 'L', 'XL'],
-            '#000000': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 3,
-          name: 'Áo khoác da nam biker',
-          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-          price: 599000,
-          originalPrice: 799000,
-          discount: 25,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-          colorOptions: ['#000000', '#808080', '#8b4513'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#000000': ['L', 'XL', '2XL'],
-            '#808080': ['XL', '2XL', '3XL'],
-            '#8b4513': ['2XL', '3XL']
-          }
-        },
-        {
-          id: 4,
-          name: 'Váy đầm nữ dự tiệc',
-          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          price: 399000,
-          originalPrice: 499000,
-          discount: 20,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#000000', '#ffffff', '#ff69b4'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-          colorSizeMapping: {
-            '#000000': ['S', 'M', 'L'],
-            '#ffffff': ['M', 'L', 'XL'],
-            '#ff69b4': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 5,
-          name: 'Áo sơ mi nam công sở',
-          image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=500&h=600&fit=crop',
-          price: 249000,
-          originalPrice: 349000,
-          discount: 29,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#ffffff', '#000000', '#007bff'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#ffffff': ['S', 'M', 'L', 'XL'],
-            '#000000': ['M', 'L', 'XL', '2XL'],
-            '#007bff': ['L', 'XL', '2XL', '3XL']
-          }
-        }
-      ]
+      // Fallback: use empty array instead of mock data to avoid loading unnecessary data
+      console.warn('Related products API not available')
+      relatedProducts.value = []
     }
-  } catch (err) {
-    // Fallback mock data for related products
-    console.warn('API error, using mock data for Related Products:', err.message)
-    relatedProducts.value = [
-      {
-        id: 2,
-        name: 'Quần jogger nữ cao cấp',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 199000,
-        originalPrice: 299000,
-        discount: 33,
-        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-        colorOptions: ['#ff69b4', '#007bff', '#000000'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL'],
-          '#000000': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 3,
-        name: 'Áo khoác da nam biker',
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-        price: 599000,
-        originalPrice: 799000,
-        discount: 25,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-        colorOptions: ['#000000', '#808080', '#8b4513'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['L', 'XL', '2XL', '3XL'],
-        colorSizeMapping: {
-          '#000000': ['L', 'XL', '2XL'],
-          '#808080': ['XL', '2XL', '3XL'],
-          '#8b4513': ['2XL', '3XL']
-        }
-      }
-    ]
+  } catch (error) {
+    // Silently handle error and show no related products
+    console.warn('Error fetching related products:', error.message)
+    relatedProducts.value = []
   }
 }
 
@@ -701,12 +632,33 @@ const availableColorsForSize = computed(() => {
   )
 })
 
+// Computed: Current selected variant (reusable)
+const currentVariant = computed(() => {
+  if (!selectedColor.value || !selectedSize.value || !product.value?.variants) {
+    return null
+  }
+  
+  return product.value.variants.find(
+    v => v.color === selectedColor.value && v.size === selectedSize.value
+  )
+})
+
 // Computed: Current variant stock (for compatibility)
 const currentVariantStock = computed(() => {
   if (!selectedColor.value || !selectedSize.value || !product.value?.variants) {
     return getTotalStock(product.value?.variants || [])
   }
   return getVariantStock(product.value.variants, selectedColor.value, selectedSize.value)
+})
+
+// Computed: Current variant price (use variant price if available, otherwise product price)
+const currentPrice = computed(() => {
+  if (!currentVariant.value) {
+    return product.value?.price || 0
+  }
+  
+  // Use variant price if available, otherwise fall back to product price
+  return currentVariant.value.price || product.value?.price || 0
 })
 
 // Computed: Total stock (for compatibility)
@@ -803,6 +755,9 @@ const selectColor = (color) => {
     selectedSize.value = ''
   }
   
+  // Update product image if variant has image
+  updateVariantImage()
+  
   // Reset quantity
   if (quantity.value > currentVariantStock.value) {
     quantity.value = Math.min(1, currentVariantStock.value)
@@ -818,12 +773,37 @@ const selectSize = (size) => {
   
   selectedSize.value = size
   
+  // Reset color if current color is not available for new size
+  if (selectedColor.value && !availableColorsForSize.value.includes(selectedColor.value)) {
+    selectedColor.value = ''
+  }
+  
+  // Update product image if variant has image
+  updateVariantImage()
+  
   // Reset quantity if exceeds new stock
   if (quantity.value > currentVariantStock.value) {
-    quantity.value = Math.min(quantity.value, currentVariantStock.value)
+    quantity.value = Math.min(1, currentVariantStock.value)
   }
   
   updateURL()
+}
+
+const updateVariantImage = () => {
+  if (!currentVariant.value) {
+    return
+  }
+  
+  // Update main image if variant has image
+  if (currentVariant.value.imageUrl) {
+    // If images array doesn't include variant image, prepend it
+    if (!product.value.images.includes(currentVariant.value.imageUrl)) {
+      product.value.images = [currentVariant.value.imageUrl, ...product.value.images.slice(0, 4)]
+    }
+    // Set as main image
+    product.value.image = currentVariant.value.imageUrl
+    product.value.img = currentVariant.value.imageUrl
+  }
 }
 
 const decreaseQuantity = () => {
@@ -1884,6 +1864,57 @@ watch(() => route.params.id, (newId) => {
 
 .size-guide-link:hover {
   text-decoration: underline;
+}
+
+/* Variant Info Badge */
+.variant-info-badge {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.variant-badge-content {
+  display: flex;
+  align-items: center;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.variant-badge-content i {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.variant-text {
+  flex: 1;
+}
+
+.variant-text strong {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.variant-price-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 /* Quantity Selection */

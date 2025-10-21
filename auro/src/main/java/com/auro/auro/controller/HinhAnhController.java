@@ -1,7 +1,9 @@
 package com.auro.auro.controller;
 
+import com.auro.auro.model.BienTheSanPham;
 import com.auro.auro.model.HinhAnh;
 import com.auro.auro.model.SanPham;
+import com.auro.auro.repository.BienTheSanPhamRepository;
 import com.auro.auro.repository.HinhAnhRepository;
 import com.auro.auro.repository.SanPhamRepository;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ public class HinhAnhController {
 
     private final HinhAnhRepository hinhAnhRepository;
     private final SanPhamRepository sanPhamRepository;
+    private final BienTheSanPhamRepository bienTheSanPhamRepository;
 
     @Value("${file.upload-dir:uploads}")
     private String uploadDir;
@@ -84,6 +87,116 @@ public class HinhAnhController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Lỗi upload: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
         }
+    }
+
+    @PreAuthorize("hasAnyRole('STF','ADM')")
+    @PostMapping("/bien-the/{idBienThe}")
+    public ResponseEntity<?> uploadForBienThe(
+            @PathVariable("idBienThe") Long idBienThe,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "laDaiDien", required = false) Boolean laDaiDien,
+            @RequestParam(value = "thuTu", required = false) Integer thuTu) {
+        try {
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File rỗng hoặc không hợp lệ");
+            }
+
+            BienTheSanPham bienThe = bienTheSanPhamRepository.findById(idBienThe)
+                    .orElseThrow(() -> new IllegalArgumentException("Biến thể không tồn tại: " + idBienThe));
+
+            // Ensure upload directory exists
+            Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+
+            String original = file.getOriginalFilename();
+            if (original == null)
+                original = "";
+            String ext = "";
+            int dot = original.lastIndexOf('.');
+            if (dot > -1)
+                ext = original.substring(dot);
+            String filename = UUID.randomUUID() + ext;
+            Path target = dir.resolve(filename);
+            Files.copy(file.getInputStream(), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            // Public URL via static-path-pattern /files/**
+            String url = "/files/" + filename;
+
+            HinhAnh ha = new HinhAnh();
+            ha.setBienThe(bienThe);
+            ha.setUrl(url);
+            ha.setLaDaiDien(Boolean.TRUE.equals(laDaiDien));
+            ha.setThuTu(thuTu);
+            ha.setTaoLuc(LocalDateTime.now());
+
+            HinhAnh saved = hinhAnhRepository.save(ha);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi upload: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+        }
+    }
+
+    // Upload temporary variant image (not yet linked to a specific variant)
+    @PreAuthorize("hasAnyRole('STF','ADM')")
+    @PostMapping("/bien-the-temp")
+    public ResponseEntity<?> uploadTempForBienThe(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File rỗng hoặc không hợp lệ");
+            }
+
+            // Ensure upload directory exists
+            Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Files.createDirectories(dir);
+
+            String original = file.getOriginalFilename();
+            if (original == null)
+                original = "";
+            String ext = "";
+            int dot = original.lastIndexOf('.');
+            if (dot > -1)
+                ext = original.substring(dot);
+            String filename = UUID.randomUUID() + ext;
+            Path target = dir.resolve(filename);
+            Files.copy(file.getInputStream(), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+            // Return just the URL - file will be linked to variant when variant is saved
+            String url = "/files/" + filename;
+            return ResponseEntity.ok(java.util.Collections.singletonMap("url", url));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Lỗi upload: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('STF','ADM')")
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(
+            @PathVariable("id") Long id,
+            @RequestBody java.util.Map<String, Object> updates) {
+        var opt = hinhAnhRepository.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Hình ảnh không tồn tại");
+        }
+
+        HinhAnh ha = opt.get();
+
+        // Update laDaiDien if provided
+        if (updates.containsKey("laDaiDien")) {
+            ha.setLaDaiDien(Boolean.TRUE.equals(updates.get("laDaiDien")));
+        }
+
+        // Update thuTu if provided
+        if (updates.containsKey("thuTu")) {
+            Object thuTuObj = updates.get("thuTu");
+            if (thuTuObj instanceof Number) {
+                ha.setThuTu(((Number) thuTuObj).intValue());
+            }
+        }
+
+        HinhAnh saved = hinhAnhRepository.save(ha);
+        return ResponseEntity.ok(saved);
     }
 
     @PreAuthorize("hasAnyRole('STF','ADM')")

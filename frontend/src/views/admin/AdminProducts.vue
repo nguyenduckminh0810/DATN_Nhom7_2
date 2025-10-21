@@ -266,6 +266,14 @@
                     Sửa
                   </button>
                   <button
+                    class="btn btn-sm btn-outline-success"
+                    @click="manageVariants(product)"
+                    title="Quản lý biến thể"
+                  >
+                    <i class="ph-stack me-1"></i>
+                    Biến thể
+                  </button>
+                  <button
                     class="btn btn-sm btn-outline-info"
                     @click="viewProduct(product)"
                     title="Xem chi tiết"
@@ -373,16 +381,6 @@
               {{ productForm.images.length }}
             </span>
           </button>
-          <button
-            :class="['tab-btn', { active: activeTab === 'variants' }]"
-            @click="activeTab = 'variants'"
-          >
-            <i class="bi bi-grid-3x3 me-1"></i>
-            Biến thể & Tồn kho
-            <span v-if="productForm.variants && productForm.variants.length > 0" class="tab-badge">
-              {{ productForm.variants.length }}
-            </span>
-          </button>
         </div>
 
         <div class="modal-body">
@@ -478,21 +476,6 @@
               @update="handleImagesUpdate"
             />
           </div>
-
-          <!-- Tab 3: Variants -->
-          <div v-show="activeTab === 'variants'" class="tab-content">
-            <VariantManagerAdmin
-              :product-id="productForm.id"
-              :product-name="productForm.name"
-              :product-sku="productForm.sku"
-              :category="getCategoryType(productForm.categoryId)"
-              :initial-variants="productForm.variants || []"
-              :initial-colors="productForm.variantColors || []"
-              :initial-material="productForm.material || ''"
-              @update="handleVariantsUpdate"
-              @cancel="activeTab = 'basic'"
-            />
-          </div>
         </div>
 
         <div class="modal-footer">
@@ -504,6 +487,35 @@
             <i class="bi bi-check me-2"></i>
             {{ editingProduct ? 'Cập nhật' : 'Thêm sản phẩm' }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Variant Management Modal -->
+    <div v-if="showVariantModal" class="modal-overlay" @click="closeVariantModal">
+      <div class="modal-content modal-large" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-grid-3x3 me-2"></i>
+            Quản lý biến thể - {{ productForm.name }}
+          </h5>
+          <button class="btn-close" @click="closeVariantModal">
+            <i class="ph-x"></i>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <VariantManagerAdmin
+            :product-id="productForm.id"
+            :product-name="productForm.name"
+            :product-sku="productForm.sku"
+            :category="getCategoryType(productForm.categoryId)"
+            :initial-variants="productForm.variants || []"
+            :initial-colors="productForm.variantColors || []"
+            :initial-material="productForm.material || ''"
+            @update="handleVariantsUpdate"
+            @cancel="closeVariantModal"
+          />
         </div>
       </div>
     </div>
@@ -525,6 +537,7 @@ const selectAll = ref(false)
 const currentPage = ref(0) // backend uses 0-based pages
 const itemsPerPage = 10
 const showAddModal = ref(false)
+const showVariantModal = ref(false)
 const editingProduct = ref(null)
 const isLoading = ref(false)
 
@@ -655,13 +668,30 @@ const loadProducts = async (pageNumber = 0) => {
 }
 async function loadProductDetail(id) {
   try {
-    const res = await sanPhamService.get(id) // thêm hàm này trong service nếu chưa có
-    // Giả sử BE trả kiểu SanPhamResponse mở rộng
+    const res = await sanPhamService.get(id)
     const sp = mapFromApi(res)
-    // Gộp thêm các field khác nếu BE trả về
+    
+    // Load hình ảnh chi tiết từ API riêng
+    let images = []
+    try {
+      const { default: api } = await import('../../services/api')
+      const hinhAnhs = await api.get(`/hinh-anh/san-pham/${id}`)
+      if (hinhAnhs && Array.isArray(hinhAnhs)) {
+        images = hinhAnhs.map(ha => ({
+          id: ha.id,
+          url: ha.url,
+          isPrimary: ha.laDaiDien || false,
+          order: ha.thuTu || 0,
+          alt: sp.name
+        }))
+      }
+    } catch (e) {
+      console.warn('Could not load images:', e)
+    }
+    
     return {
       ...sp,
-      images: res.hinhAnhs || [],
+      images: images,
       variants: res.bienThes || [],
       variantColors: res.mauSac || [],
       material: res.chatLieu || '',
@@ -682,6 +712,7 @@ const changePage = (page) => {
   }
 }
 
+// Nút Sửa - chỉ mở modal thông tin
 const editProduct = async (product) => {
   editingProduct.value = product
   const full = await loadProductDetail(product.id)
@@ -690,12 +721,51 @@ const editProduct = async (product) => {
   if (!productForm.value.categoryId && productForm.value.category) {
     productForm.value.categoryId = productForm.value.category
   }
+  // Mở modal ở tab thông tin cơ bản (không phải tab biến thể)
+  activeTab.value = 'basic'
   showAddModal.value = true
 }
+
+const manageVariants = async (product) => {
+  editingProduct.value = product
+  const full = await loadProductDetail(product.id)
+  productForm.value = full ? { ...full } : { ...product }
+  // đảm bảo có categoryId
+  if (!productForm.value.categoryId && productForm.value.category) {
+    productForm.value.categoryId = productForm.value.category
+  }
+  // Mở modal quản lý biến thể riêng
+  showVariantModal.value = true
+}
+
+// Nút Xóa - hiển thị số lượng biến thể
+const deleteProduct1 = async (product) => {
+  // Lấy số lượng biến thể
+  const { default: variantService } = await import('../../services/variantService')
+  let variantCount = 0
+  try {
+    const variants = await variantService.getBySanPham(product.id)
+    variantCount = variants ? variants.length : 0
+  } catch (e) {
+    console.warn('Could not load variants:', e)
+  }
+  
+  // Hiển thị thông báo xác nhận với số lượng biến thể
+  let message = `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`
+  if (variantCount > 0) {
+    message = `Bạn có muốn xóa ${variantCount} biến thể của sản phẩm và sản phẩm "${product.name}" không?`
+  }
+  
+  if (!confirm(message)) return
+  
+  await sanPhamService.delete(product.id)
+  // Reload current page (convert 1-based UI page to 0-based API page)
+  await loadProducts((currentPage.value || 1) - 1)
+}
+
 const viewProduct = (product) => {
-  // simple detail view - open product page in new tab (if exists)
-  const slug = product.name ? product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : product.id
-  window.open(`/product/${slug}`, '_blank')
+  // Chuyển đến trang chi tiết sản phẩm
+  window.open(`/product/${product.id}`, '_blank')
 }
 
 const closeModal = () => {
@@ -714,6 +784,12 @@ const closeModal = () => {
   }
 }
 
+const closeVariantModal = () => {
+  showVariantModal.value = false
+  // Reload products to reflect variant changes
+  loadProducts(currentPage.value - 1)
+}
+
 const saveProduct = async () => {
   const payload = mapToApi(productForm.value)
   try {
@@ -726,31 +802,85 @@ const saveProduct = async () => {
       productId = res?.id
     }
 
-    // Upload newly added images (those having a File attached)
-    const images = productForm.value.images || []
-    const newFiles = images.filter((img) => img.file instanceof File)
-    let firstUploadedUrl = ''
-    if (productId && newFiles.length > 0) {
+    // Xử lý hình ảnh nếu có productId
+    if (productId && productForm.value.images) {
       const { default: api } = await import('../../services/api')
+      const images = productForm.value.images || []
+      
+      // 1. Lấy danh sách hình ảnh hiện tại từ backend (nếu đang edit)
+      let existingImages = []
+      if (editingProduct.value) {
+        try {
+          existingImages = await api.get(`/hinh-anh/san-pham/${productId}`)
+        } catch (e) {
+          console.warn('Could not load existing images:', e)
+        }
+      }
+      
+      // 2. Xóa các ảnh không còn trong danh sách
+      const currentImageUrls = images.map(img => img.url).filter(Boolean)
+      for (const existingImg of existingImages) {
+        if (!currentImageUrls.includes(existingImg.url)) {
+          try {
+            await api.delete(`/hinh-anh/${existingImg.id}`)
+            console.log('Deleted image:', existingImg.id)
+          } catch (e) {
+            console.warn('Failed to delete image:', e)
+          }
+        }
+      }
+      
+      // 3. Upload các ảnh mới (có file)
+      const newFiles = images.filter((img) => img.file instanceof File)
+      let firstUploadedUrl = ''
       for (let i = 0; i < newFiles.length; i++) {
         const img = newFiles[i]
         try {
           const saved = await api.upload(`/hinh-anh/san-pham/${productId}`, img.file, {
             laDaiDien: !!img.isPrimary,
-            thuTu: typeof img.order === 'number' ? img.order : i,
+            thuTu: images.indexOf(img),
           })
           if (!firstUploadedUrl && saved?.url) firstUploadedUrl = saved.url
+          console.log('Uploaded new image:', saved)
         } catch (e) {
           console.warn('Upload image failed:', e)
         }
       }
-    }
+      
+      // 4. Cập nhật thứ tự và ảnh đại diện cho các ảnh đã tồn tại
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i]
+        // Chỉ xử lý ảnh đã có ID (đã lưu trên server)
+        if (img.id && !img.file) {
+          const existingImg = existingImages.find(e => e.id === img.id)
+          if (existingImg) {
+            // Kiểm tra xem có thay đổi không
+            const needsUpdate = 
+              existingImg.thuTu !== i || 
+              existingImg.laDaiDien !== !!img.isPrimary
+            
+            if (needsUpdate) {
+              try {
+                // Cập nhật trong DB
+                await api.put(`/hinh-anh/${img.id}`, {
+                  laDaiDien: !!img.isPrimary,
+                  thuTu: i
+                })
+                console.log('Updated image order/primary:', img.id)
+              } catch (e) {
+                console.warn('Failed to update image:', e)
+              }
+            }
+          }
+        }
+      }
 
-    // Nếu có ảnh mới, cập nhật ngay trong danh sách hiện tại để hiển thị tức thì
-    if (firstUploadedUrl) {
-      const idx = products.value.findIndex((p) => String(p.id) === String(productId))
-      if (idx > -1) {
-        products.value[idx].image = firstUploadedUrl
+      // Nếu có ảnh mới, cập nhật ngay trong danh sách hiện tại để hiển thị tức thì
+      if (firstUploadedUrl) {
+        const idx = products.value.findIndex((p) => String(p.id) === String(productId))
+        if (idx > -1) {
+          products.value[idx].image = firstUploadedUrl
+        }
       }
     }
 
@@ -764,8 +894,25 @@ const saveProduct = async () => {
 }
 
 const deleteProduct = async (product) => {
-  if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`)) return
   try {
+    // Lấy số lượng biến thể của sản phẩm
+    const { default: variantService } = await import('../../services/variantService')
+    let variantCount = 0
+    try {
+      const variants = await variantService.getBySanPham(product.id)
+      variantCount = variants ? variants.length : 0
+    } catch (e) {
+      console.warn('Could not load variants:', e)
+    }
+    
+    // Hiển thị thông báo xác nhận với số lượng biến thể
+    let message = `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`
+    if (variantCount > 0) {
+      message = `Bạn có muốn xóa ${variantCount} biến thể của sản phẩm và sản phẩm "${product.name}" không?`
+    }
+    
+    if (!confirm(message)) return
+    
     await sanPhamService.delete(product.id)
     // Reload current page (convert 1-based UI page to 0-based API page)
     await loadProducts((currentPage.value || 1) - 1)
@@ -1523,6 +1670,13 @@ onMounted(async () => {
 }
 .action-buttons .btn-outline-info:hover {
   background-color: rgba(13, 202, 240, 0.1);
+}
+.action-buttons .btn-outline-success {
+  color: #10b981;
+  border-color: #10b981;
+}
+.action-buttons .btn-outline-success:hover {
+  background-color: rgba(16, 185, 129, 0.1);
 }
 .action-buttons .btn-outline-warning {
   color: #f59e0b;
