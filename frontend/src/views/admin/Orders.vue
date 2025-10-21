@@ -49,11 +49,11 @@
             <label class="form-label">Trạng thái</label>
             <select class="form-select" v-model="selectedStatus">
               <option value="">Tất cả trạng thái</option>
-              <option value="pending">Chờ xử lý</option>
-              <option value="processing">Đang xử lý</option>
-              <option value="shipped">Đã giao</option>
-              <option value="delivered">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
+              <option value="Chờ xác nhận">Chờ xử lý</option>
+              <option value="Đang xử lý">Đang xử lý</option>
+              <option value="Đã giao">Đã giao</option>
+              <option value="Hoàn tất">Hoàn thành</option>
+              <option value="Đã hủy">Đã hủy</option>
             </select>
           </div>
           <div class="col-md-2">
@@ -305,25 +305,25 @@
                     <i class="bi bi-eye"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Chờ xác nhận' || order.trangThai === 'pending'"
+                    v-if="order.trangThai === 'Chờ xác nhận'"
                     class="btn btn-sm btn-outline-success" 
-                    @click="updateOrderStatus(order, 'Đang xử lý || processing')"
+                    @click="quickUpdateStatus(order, 'Đang xử lý')"
                     title="Xử lý đơn hàng"
                   >
                     <i class="bi bi-play"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Đang xử lý' || order.trangThai === 'processing'"
+                    v-if="order.trangThai === 'Đang xử lý'"
                     class="btn btn-sm btn-outline-info" 
-                    @click="updateOrderStatus(order, 'Đã giao || shipped')"
+                    @click="quickUpdateStatus(order, 'Đã giao')"
                     title="Giao hàng"
                   >
                     <i class="bi bi-truck"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Đã giao' || order.trangThai === 'shipped'"
+                    v-if="order.trangThai === 'Đã giao'"
                     class="btn btn-sm btn-outline-success" 
-                    @click="updateOrderStatus(order, 'Hoàn tất || delivered')"
+                    @click="quickUpdateStatus(order, 'Hoàn tất')"
                     title="Hoàn thành"
                   >
                     <i class="bi bi-check"></i>
@@ -331,7 +331,7 @@
                   <button 
                     v-if="['Chờ xác nhận', 'Đang xử lý'].includes(order.trangThai)"
                     class="btn btn-sm btn-outline-danger" 
-                    @click="updateOrderStatus(order, 'Đã hủy || cancelled')"
+                    @click="quickUpdateStatus(order, 'Đã hủy')"
                     title="Hủy đơn hàng"
                   >
                     <i class="bi bi-x"></i>
@@ -345,7 +345,7 @@
                     <i class="bi bi-credit-card"></i>
                   </button>
                   <button
-                    v-if="!['Đã giao', 'Hoàn tất', 'Đã hủy'].includes(order.trangThai)"
+                    v-if="['Chờ xác nhận', 'Đang xử lý'].includes(order.trangThai)"
                     class="btn btn-sm btn-outline-warning"
                     @click="editOrder(order)"
                     title="Chỉnh sửa đơn hàng"
@@ -473,16 +473,16 @@
       <div class="bulk-actions-content">
         <span class="selected-count">{{ selectedOrders.length }} đơn hàng đã chọn</span>
         <div class="bulk-buttons">
-          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('Đang xử lý || processing')">
+          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('Đang xử lý')">
             <i class="bi bi-check me-1"></i>Xử lý
           </button>
-          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus('Đã giao || shipped')">
+          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus('Đã giao')">
             <i class="bi bi-truck me-1"></i>Giao hàng
           </button>
-          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('Hoàn tất || delivered')">
+          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('Hoàn tất')">
             <i class="bi bi-check-circle me-1"></i>Hoàn thành
           </button>
-          <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('Đã hủy || cancelled')">
+          <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('Đã hủy')">
             <i class="bi bi-x me-1"></i>Hủy
           </button>
           <button class="btn btn-sm btn-outline-info" @click="bulkUpdatePayment('paid')">
@@ -634,9 +634,10 @@
         </div>
       </div>
     </div>
+
     <!-- Modal chỉnh sửa đơn hàng -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
-      <div class="modal-content modal-lg" @click.stop>
+      <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h5 class="modal-title">Chỉnh sửa đơn hàng #{{ editingOrder?.soDonHang }}</h5>
           <button class="btn-close" @click="closeEditModal">
@@ -644,52 +645,70 @@
           </button>
         </div>
         <div class="modal-body" v-if="editingOrder">
-          <div class="row">
-            <div class="col-md-6">
-              <h6>Thông tin đơn hàng</h6>
+          <!-- Tab Navigation -->
+          <ul class="nav nav-tabs">
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">Thông tin</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" :class="{ active: activeTab === 'status' }" @click="activeTab = 'status'">Trạng thái</button>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content mt-3">
+            <!-- Tab Thông tin -->
+            <div v-show="activeTab === 'info'" class="tab-pane active">
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Địa chỉ giao hàng <span class="text-danger">*</span></label>
+                    <input 
+                      type="text" 
+                      class="form-control" 
+                      v-model="editingOrder.diaChiGiao"
+                      placeholder="Nhập địa chỉ giao hàng"
+                    >
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label class="form-label">Ghi chú</label>
+                    <textarea 
+                      class="form-control" 
+                      v-model="editingOrder.ghiChu" 
+                      rows="3"
+                      placeholder="Ghi chú xử lý đơn hàng"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Tab Trạng thái -->
+            <div v-show="activeTab === 'status'" class="tab-pane active">
               <div class="mb-3">
                 <label class="form-label">Trạng thái</label>
                 <select class="form-select" v-model="editingOrder.trangThai">
-                  <option value="pending">Chờ xử lý</option>
-                  <option value="processing">Đang xử lý</option>
-                  <option value="shipped">Đã giao</option>
-                  <option value="delivered">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
+                  <option value="Chờ xác nhận">Chờ xác nhận</option>
+                  <option value="Đang xử lý">Đang xử lý</option>
+                  <option value="Đã giao">Đã giao</option>
+                  <option value="Hoàn tất">Hoàn tất</option>
+                  <option value="Đã hủy">Đã hủy</option>
                 </select>
               </div>
-              <div class="mb-3">
-                <label class="form-label">Thanh toán</label>
-                <select class="form-select" v-model="editingOrder.paymentStatus">
-                  <option value="pending">Chờ thanh toán</option>
-                  <option value="paid">Đã thanh toán</option>
-                  <option value="failed">Thanh toán thất bại</option>
-                </select>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Ghi chú</label>
-                <textarea class="form-control" v-model="editingOrder.ghiChu" rows="3"></textarea>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <h6>Thông tin giao hàng</h6>
-              <div class="mb-3">
-                <label class="form-label">Địa chỉ giao hàng</label>
-                <input type="text" class="form-control" v-model="editingOrder.diaChiGiaoSnapshot">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Kênh bán</label>
-                <input type="text" class="form-control" v-model="editingOrder.kenhBan">
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Tiền tệ</label>
-                <input type="text" class="form-control" v-model="editingOrder.tienTe">
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                Thay đổi trạng thái sẽ được lưu sau khi nhấn nút "Lưu thay đổi"
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeEditModal">Hủy</button>
-          <button type="button" class="btn btn-primary" @click="saveOrder">Lưu</button>
+          <button type="button" class="btn btn-primary" @click="saveOrderChanges()">
+            <i class="bi bi-save me-1"></i>Lưu
+          </button>
         </div>
       </div>
     </div>
@@ -724,6 +743,7 @@ const viewMode = ref("table");
 // UI state cho modal chỉnh sửa
 const showEditModal = ref(false);
 const editingOrder = ref(null);
+const activeTab = ref('info');
 
 // modal & selection
 const showOrderModal = ref(false);
@@ -733,11 +753,11 @@ const selectedOrders = ref([]);
 
 // ======= CONSTANTS =======
 const orderStatuses = ref([
-  { value: "Chờ xác nhận || pending", label: "Chờ xử lý", color: "#ffc107" },
-  { value: "Đang xử lý || processing", label: "Đang xử lý", color: "#17a2b8" },
-  { value: "Đã giao || shipped", label: "Đã giao", color: "#6f42c1" },
-  { value: "Hoàn tất || delivered", label: "Hoàn thành", color: "#28a745" },
-  { value: "Đã hủy || cancelled", label: "Đã hủy", color: "#dc3545" },
+  { value: "Chờ xác nhận", label: "Chờ xử lý", color: "#ffc107" },
+  { value: "Đang xử lý", label: "Đang xử lý", color: "#17a2b8" },
+  { value: "Đã giao", label: "Đã giao", color: "#6f42c1" },
+  { value: "Hoàn tất", label: "Hoàn thành", color: "#28a745" },
+  { value: "Đã hủy", label: "Đã hủy", color: "#dc3545" },
 ]);
 
 // ======= UTILS =======
@@ -822,11 +842,11 @@ const fetchOrders = async () => {
 
 // Thống kê trạng thái đơn hàng
 const orderStats = computed(() => ({
-  pending: orders.value.filter((o) => o.trangThai === "Chờ xác nhận || pending").length,
-  processing: orders.value.filter((o) => o.trangThai === "Đang xử lý || processing").length,
-  shipped: orders.value.filter((o) => o.trangThai === "Đã giao || shipped").length,
-  delivered: orders.value.filter((o) => o.trangThai === "Hoàn tất || delivered").length,
-  cancelled: orders.value.filter((o) => o.trangThai === "Đã hủy || cancelled").length,
+  pending: orders.value.filter((o) => o.trangThai === "Chờ xác nhận").length,
+  processing: orders.value.filter((o) => o.trangThai === "Đang xử lý").length,
+  shipped: orders.value.filter((o) => o.trangThai === "Đã giao").length,
+  delivered: orders.value.filter((o) => o.trangThai === "Hoàn tất").length,
+  cancelled: orders.value.filter((o) => o.trangThai === "Đã hủy").length,
 }));
 
 // Thống kê thanh toán
@@ -895,47 +915,24 @@ const visiblePages = computed(() => {
   return pages;
 });
 
-// ======= METHODS =======
-// const getStatusText = (status) => {
-//   const map = {
-//     pending: "Chờ xử lý",
-//     processing: "Đang xử lý",
-//     shipped: "Đã giao",
-//     delivered: "Hoàn thành",
-//     cancelled: "Đã hủy",
-//   };
-//   return map[status] || status;
-// };
-
-// const getStatusClass = (status) => {
-//   const map = {
-//     pending: "bg-warning",
-//     processing: "bg-info",
-//     shipped: "bg-primary",
-//     delivered: "bg-success",
-//     cancelled: "bg-danger",
-//   };
-//   return map[status] || "bg-secondary";
-// };
-
 const getStatusText = (status) => {
   const map = {
-    'chờ xác nhận': 'Chờ xác nhận',
-    'Đang xử lí': 'Đang xử lý',
-    'đã giao': 'Đã giao',
-    'hoàn tất': 'Hoàn tất',
-    'đã hủy': 'Đã hủy'
+    'Chờ xác nhận': 'Chờ xác nhận',
+    'Đang xử lý': 'Đang xử lý',
+    'Đã giao': 'Đã giao',
+    'Hoàn tất': 'Hoàn tất',
+    'Đã hủy': 'Đã hủy'
   };
   return map[status] || status;
 };
 
 const getStatusClass = (status) => {
   const map = {
-    'chờ xác nhận': 'bg-warning',
-    'Đang xử lí': 'bg-info',
-    'đã giao': 'bg-primary',
-    'hoàn tất': 'bg-success',
-    'đã hủy': 'bg-danger'
+    'Chờ xác nhận': 'bg-warning',
+    'Đang xử lý': 'bg-info',
+    'Đã giao': 'bg-primary',
+    'Hoàn tất': 'bg-success',
+    'Đã hủy': 'bg-danger'
   };
   return map[status] || 'bg-secondary';
 };
@@ -1004,25 +1001,6 @@ const toggleSelectAll = () => {
   }
 };
 
-const updateOrderStatus = async (order, newStatus) => {
-  if (confirm(`Cập nhật đơn hàng #${order.soDonHang} sang trạng thái "${getStatusText(newStatus)}"?`)) {
-    try {
-      await axios.put(`/api/don-hang/${order.id}`, {
-        trangThai: newStatus
-      });
-      
-      // Update local state
-      order.trangThai = newStatus;
-      order.capNhatLuc = new Date().toISOString();
-      
-      console.log(`Đã cập nhật đơn hàng #${order.soDonHang} sang ${newStatus}`);
-    } catch (err) {
-      console.error('Lỗi khi cập nhật trạng thái:', err);
-      alert('Có lỗi khi cập nhật trạng thái đơn hàng');
-    }
-  }
-};
-
 const updatePaymentStatus = async (order, newStatus) => {
   if (confirm(`Cập nhật trạng thái thanh toán đơn hàng #${order.soDonHang} thành "${getPaymentText(newStatus)}"?`)) {
     try {
@@ -1040,20 +1018,6 @@ const updatePaymentStatus = async (order, newStatus) => {
       console.error('Lỗi khi cập nhật trạng thái thanh toán:', err);
       alert('Có lỗi khi cập nhật trạng thái thanh toán');
     }
-  }
-};
-
-const bulkUpdateStatus = (status) => {
-  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`)) {
-    selectedOrders.value.forEach((orderId) => {
-      const order = orders.value.find((o) => o.id === orderId);
-      if (order) {
-        order.trangThai = status;
-        order.capNhatLuc = new Date().toISOString();
-      }
-    });
-    selectedOrders.value = [];
-    selectAll.value = false;
   }
 };
 
@@ -1079,22 +1043,17 @@ const canUpdateStatus = (status) => {
   return ['Chờ xác nhận', 'Đang xử lý', 'Đã giao'].includes(status);
 };
 
-// const getNextStatus = (currentStatus) => {
-//   const statusFlow = {
-//     'pending': 'processing',
-//     'processing': 'shipped', 
-//     'shipped': 'delivered'
-//   };
-//   return statusFlow[currentStatus] || currentStatus;
-// };
-
 const getNextStatus = (currentStatus) => {
   const statusFlow = {
-    'chờ xác nhận': 'Đang xử lí',
-    'Đang xử lí': 'đã giao', 
-    'đã giao': 'hoàn tất'
+    'Chờ xác nhận': 'Đang xử lý',
+    'Đang xử lý': 'Đã giao', 
+    'Đã giao': 'Hoàn tất'
   };
   return statusFlow[currentStatus] || currentStatus;
+};
+
+const updateOrderStatus = async (order, newStatus) => {
+  await quickUpdateStatus(order, newStatus);
 };
 
 const printOrder = (order) => {
@@ -1106,8 +1065,7 @@ const deleteOrder = async (order) => {
     try {
       await axios.delete(`/api/don-hang/${order.id}`);
       // Remove the order from local state
-      orders.value = orders.value.filter((o) => o.id !== order.id);
-      totalItems.value = orders.value.length;
+      await fetchOrders();
       console.log(`Đã xóa đơn hàng #${order.soDonHang}`);
     } catch (err) {
       console.error("Lỗi khi xóa đơn hàng:", err);
@@ -1117,7 +1075,8 @@ const deleteOrder = async (order) => {
 };
 
 const bulkDeleteOrders = async () => {
-  if (confirm(`Bạn có chắc chắn muốn xóa ${selectedOrders.value.length} đơn hàng?`)) {
+  const count = selectedOrders.value.length;
+  if (confirm(`Bạn có chắc chắn muốn xóa ${count} đơn hàng?`)) {
     try {
       // Send individual delete requests for each selected order
       await Promise.all(
@@ -1125,12 +1084,13 @@ const bulkDeleteOrders = async () => {
           axios.delete(`/api/don-hang/${orderId}`)
         )
       );
+      await fetchOrders();
+
       // Remove deleted orders from local state
-      orders.value = orders.value.filter((o) => !selectedOrders.value.includes(o.id));
-      totalItems.value = orders.value.length;
       selectedOrders.value = [];
       selectAll.value = false;
-      console.log(`Đã xóa ${selectedOrders.value.length} đơn hàng`);
+
+      console.log(`Đã xóa ${count} đơn hàng`);
     } catch (err) {
       console.error("Lỗi khi xóa hàng loạt đơn hàng:", err);
       alert("Có lỗi khi xóa hàng loạt đơn hàng");
@@ -1139,38 +1099,88 @@ const bulkDeleteOrders = async () => {
 };
 
 const editOrder = (order) => {
-  // Sao chép đối tượng để tránh thay đổi trực tiếp trước khi lưu
-  editingOrder.value = { ...order };
-  showEditModal.value = true;
+  editingOrder.value = {
+    id: order.id,
+    soDonHang: order.soDonHang,
+    diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot || '',
+    ghiChu: order.ghiChu || '',
+    trangThai: order.trangThai || 'Chờ xác nhận'
+  };
+
+   showEditModal.value = true;
+  activeTab.value = 'info';
 };
 
 const closeEditModal = () => {
   showEditModal.value = false;
   editingOrder.value = null;
+  activeTab.value = 'info';
 };
 
-const saveOrder = async () => {
-  if (confirm(`Bạn có chắc chắn muốn lưu thay đổi cho đơn hàng #${editingOrder.value.soDonHang}?`)) {
-    try {
-      const updatedOrder = {
-        trangThai: editingOrder.value.trangThai,
-        paymentStatus: editingOrder.value.paymentStatus,
-        ghiChu: editingOrder.value.ghiChu,
-        diaChiGiaoSnapshot: editingOrder.value.diaChiGiaoSnapshot,
-        kenhBan: editingOrder.value.kenhBan,
-        tienTe: editingOrder.value.tienTe,
+const saveOrderChanges = async () => {
+  if (!editingOrder.value) {
+    alert('Không có dữ liệu để lưu!');
+    return;
+  }
+
+  if (!editingOrder.value.diaChiGiao?.trim()) {
+    alert('Vui lòng nhập địa chỉ giao hàng!');
+    return;
+  }
+
+  try {
+    const updates = {
+      diaChiGiao: editingOrder.value.diaChiGiao.trim(),
+      ghiChu: editingOrder.value.ghiChu?.trim() || '',
+      trangThai: editingOrder.value.trangThai
+    };
+
+    await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates);
+
+    const index = orders.value.findIndex(o => o.id === editingOrder.value.id);
+    if (index !== -1) {
+      orders.value[index] = {
+        ...orders.value[index],
+        diaChiGiao: updates.diaChiGiao,
+        diaChiGiaoSnapshot: updates.diaChiGiao,
+        ghiChu: updates.ghiChu,
+        trangThai: updates.trangThai,
+        capNhatLuc: new Date().toISOString()
       };
-      await axios.put(`/api/don-hang/${editingOrder.value.id}`, updatedOrder);
-      // Cập nhật danh sách orders cục bộ
-      const index = orders.value.findIndex((o) => o.id === editingOrder.value.id);
+    }
+
+    closeEditModal();
+    alert('Cập nhật đơn hàng thành công!');
+  } catch (err) {
+    console.error('Lỗi cập nhật:', err);
+    alert('Có lỗi khi cập nhật đơn hàng: ' + (err.response?.data?.message || err.message));
+  }
+};
+
+const quickUpdateStatus = async (order, newStatus) => {
+  if (confirm(`Cập nhật trạng thái đơn hàng #${order.soDonHang} sang "${getStatusText(newStatus)}"?`)) {
+    try {
+      const updates = {
+        diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
+        ghiChu: order.ghiChu || '',
+        trangThai: newStatus
+      };
+
+      await axios.put(`/api/don-hang/${order.id}`, updates);
+
+      const index = orders.value.findIndex(o => o.id === order.id);
       if (index !== -1) {
-        orders.value[index] = { ...orders.value[index], ...updatedOrder, capNhatLuc: new Date().toISOString() };
+        orders.value[index] = {
+          ...orders.value[index],
+          trangThai: newStatus,
+          capNhatLuc: new Date().toISOString()
+        };
       }
-      console.log(`Đã cập nhật đơn hàng #${editingOrder.value.soDonHang}`);
-      closeEditModal();
+
+      console.log(`Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${newStatus}`);
     } catch (err) {
-      console.error("Lỗi khi cập nhật đơn hàng:", err);
-      alert("Có lỗi khi cập nhật đơn hàng");
+      console.error('Lỗi khi cập nhật trạng thái:', err);
+      alert('Có lỗi khi cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
     }
   }
 };

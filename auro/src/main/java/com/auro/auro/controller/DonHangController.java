@@ -41,12 +41,6 @@ public class DonHangController {
         return ResponseEntity.ok(donHangService.createDonHang(request.getDonHang(), request.getChiTietList()));
     }
 
-    // Lấy danh sách đơn hàng
-    // @GetMapping
-    // public ResponseEntity<List<DonHang>> getAllDonHang() {
-    // return ResponseEntity.ok(donHangService.getAllDonHang());
-    // }
-
     @GetMapping
     public List<DonHangResponse> getAllDonHang() {
         return donHangService.getAllDonHangDTO();
@@ -66,15 +60,39 @@ public class DonHangController {
 
     // Cập nhật trạng thái đơn hàng
     @PutMapping("/{id}")
-    public ResponseEntity<DonHang> updateDonHang(@PathVariable Long id, @RequestBody DonHang donHang) {
-        return ResponseEntity.ok(donHangService.updateDonHang(id, donHang));
+    public ResponseEntity<DonHangResponse> updateDonHang(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> request) {
+
+        System.out.println("=== UPDATE DON HANG ===");
+        System.out.println("ID: " + id);
+        System.out.println("Request body: " + request);
+
+        try {
+            DonHangResponse updated = donHangService.updateDonHang(id, request);
+            System.out.println("Updated successfully: " + updated);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            System.err.println("Error updating: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     // Xóa đơn hàng
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDonHang(@PathVariable Long id) {
-        donHangService.deleteDonHang(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Map<String, String>> deleteDonHang(@PathVariable Long id) {
+        try {
+            donHangService.deleteDonHang(id);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Xóa đơn hàng thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("Error deleting: " + e.getMessage());
+            throw e;
+        }
     }
 
     // Phân trang đơn hàng
