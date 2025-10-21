@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -79,19 +80,29 @@ public class DonHangController {
         }
     }
 
-    // Xóa đơn hàng
+    // Xóa mềm đơn hàng (chuyển sang trạng thái Đã hủy)
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deleteDonHang(@PathVariable Long id) {
+        Map<String, String> response = new HashMap<>();
+
         try {
-            donHangService.deleteDonHang(id);
+            System.out.println("Xóa mềm đơn hàng ID: " + id);
 
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Xóa đơn hàng thành công");
+            donHangService.softDeleteDonHang(id);
 
+            response.put("message", "Đã hủy đơn hàng thành công");
             return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            System.err.println("RuntimeException: " + e.getMessage());
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
         } catch (Exception e) {
-            System.err.println("Error deleting: " + e.getMessage());
-            throw e;
+            System.err.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+            response.put("error", "Lỗi hệ thống: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

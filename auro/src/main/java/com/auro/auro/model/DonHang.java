@@ -62,7 +62,7 @@ public class DonHang {
     @Column(name = "cap_nhat_luc")
     private LocalDateTime capNhatLuc;
 
-    @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DonHangChiTiet> chiTietList;
 
 }

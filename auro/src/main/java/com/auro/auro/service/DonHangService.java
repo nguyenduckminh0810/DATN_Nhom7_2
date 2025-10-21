@@ -96,29 +96,39 @@ public class DonHangService {
     // Xóa đơn hàng
     @Transactional
     public void deleteDonHang(Long id) {
-        DonHang donHang = getDonHangById(id);
-
-        // Cho phép xóa ở nhiều trạng thái
-        List<String> deletableStatuses = List.of("Chờ xác nhận", "Đang xử lý", "Đã hủy");
-        if (!deletableStatuses.contains(donHang.getTrangThai())) {
-            throw new RuntimeException("Chỉ được xóa đơn hàng ở trạng thái Chờ xác nhận, Đang xử lý hoặc Đã hủy");
+        // Kiểm tra đơn hàng tồn tại
+        if (!donHangRepository.existsById(id)) {
+            throw new RuntimeException("Không tìm thấy đơn hàng");
         }
 
-        // Xóa chi tiết trước
-        donHangChiTietRepository.deleteAll(donHangChiTietRepository.findByDonHang_Id(id));
+        // Lấy danh sách chi tiết theo ID (không qua lazy loading)
+        List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
 
-        // Xóa đơn hàng
+        // Xóa chi tiết trước
+        if (!chiTietList.isEmpty()) {
+            donHangChiTietRepository.deleteAll(chiTietList);
+        }
+
+        // Sau đó xóa đơn hàng
         donHangRepository.deleteById(id);
     }
 
-    // Xóa mềm đơn hàng
-    // Delete (Soft delete)
+    // Xóa mềm đơn hàng (chuyển trạng thái sang Đã hủy)
     @Transactional
     public void softDeleteDonHang(Long id) {
-        DonHang donHang = getDonHangById(id);
-        if (!"pending".equals(donHang.getTrangThai())) {
-            throw new RuntimeException("Chỉ xóa đơn hàng ở trạng thái pending");
+        DonHang donHang = donHangRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
+
+        // Kiểm tra trạng thái có được phép hủy không
+        if ("Hoàn tất".equals(donHang.getTrangThai())) {
+            throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
         }
+
+        if ("Đã hủy".equals(donHang.getTrangThai())) {
+            throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
+        }
+
+        // Đổi trạng thái sang Đã hủy
         donHang.setTrangThai("Đã hủy");
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
@@ -139,7 +149,7 @@ public class DonHangService {
         return donHangPage.map(this::convertToDTO);
     }
 
-    // ===== HELPER METHOD: CONVERT ENTITY TO DTO =====
+    // convert từ entity sang dto
     private DonHangResponse convertToDTO(DonHang dh) {
         DonHangResponse dto = new DonHangResponse();
         dto.setId(dh.getId());
