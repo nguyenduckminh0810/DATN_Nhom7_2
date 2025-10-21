@@ -3,6 +3,7 @@ package com.auro.auro.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,7 +61,8 @@ public class DonHangService {
 
     // Lấy đơn hàng theo ID
     public DonHang getDonHangById(Long id) {
-        return donHangRepository.findById(id).orElse(null);
+        return donHangRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
     }
 
     // Lấy chi tiết đơn hàng theo ID đơn hàng
@@ -68,92 +70,100 @@ public class DonHangService {
         return donHangChiTietRepository.findByDonHang_Id(donHangId);
     }
 
-    // Cập nhật trạng thái đơn hàng
+    // Cập nhật đơn hàng
     @Transactional
-    public DonHang updateDonHang(Long id, DonHang updatedDonHang) {
+    public DonHangResponse updateDonHang(Long id, Map<String, Object> updates) {
         DonHang donHang = getDonHangById(id);
-        if (!"pending".equals(donHang.getTrangThai())) {
-            throw new RuntimeException("Chỉ sửa đơn hàng ở trạng thái pending");
+
+        // Cập nhật các field
+        if (updates.containsKey("diaChiGiao")) {
+            donHang.setDiaChiGiao((String) updates.get("diaChiGiao"));
         }
-        donHang.setTrangThai(updatedDonHang.getTrangThai());
-        donHang.setDiaChiGiao(updatedDonHang.getDiaChiGiao());
-        donHang.setGhiChu(updatedDonHang.getGhiChu());
+        if (updates.containsKey("ghiChu")) {
+            donHang.setGhiChu((String) updates.get("ghiChu"));
+        }
+        if (updates.containsKey("trangThai")) {
+            donHang.setTrangThai((String) updates.get("trangThai"));
+        }
+
         donHang.setCapNhatLuc(LocalDateTime.now());
-        return donHangRepository.save(donHang);
+        DonHang updated = donHangRepository.save(donHang);
+
+        // Convert sang DTO trước khi return
+        return convertToDTO(updated);
     }
 
     // Xóa đơn hàng
+    @Transactional
     public void deleteDonHang(Long id) {
+        // Kiểm tra đơn hàng tồn tại
         if (!donHangRepository.existsById(id)) {
-            throw new RuntimeException("Không tìm thấy đơn hàng với id = " + id);
+            throw new RuntimeException("Không tìm thấy đơn hàng");
         }
-        // Xóa chi tiết trước
+
+        // Lấy danh sách chi tiết theo ID (không qua lazy loading)
         List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
-        donHangChiTietRepository.deleteAll(chiTietList);
+
+        // Xóa chi tiết trước
+        if (!chiTietList.isEmpty()) {
+            donHangChiTietRepository.deleteAll(chiTietList);
+        }
+
+        // Sau đó xóa đơn hàng
         donHangRepository.deleteById(id);
     }
 
-    // Xóa mềm đơn hàng
-    // Delete (Soft delete)
+    // Xóa mềm đơn hàng (chuyển trạng thái sang Đã hủy)
     @Transactional
     public void softDeleteDonHang(Long id) {
-        DonHang donHang = getDonHangById(id);
-        if (!"pending".equals(donHang.getTrangThai())) {
-            throw new RuntimeException("Chỉ xóa đơn hàng ở trạng thái pending");
+        DonHang donHang = donHangRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
+
+        // Kiểm tra trạng thái có được phép hủy không
+        if ("Hoàn tất".equals(donHang.getTrangThai())) {
+            throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
         }
-        donHang.setTrangThai("cancelled");
+
+        if ("Đã hủy".equals(donHang.getTrangThai())) {
+            throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
+        }
+
+        // Đổi trạng thái sang Đã hủy
+        donHang.setTrangThai("Đã hủy");
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
     }
 
-    //
+    // Lấy toàn bộ đơn hàng DTO
     @Transactional
     public List<DonHangResponse> getAllDonHangDTO() {
         List<DonHang> donHangList = donHangRepository.findAllWithChiTiet();
-
-        return donHangList.stream().map(dh -> {
-            DonHangResponse dto = new DonHangResponse();
-            dto.setId(dh.getId());
-            dto.setSoDonHang(dh.getSoDonHang());
-            dto.setTamTinh(dh.getTamTinh());
-            dto.setTongThanhToan(dh.getTongThanhToan());
-            dto.setTrangThai(dh.getTrangThai());
-            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
-            dto.setGhiChu(dh.getGhiChu());
-            dto.setTaoLuc(dh.getTaoLuc());
-            dto.setCapNhatLuc(dh.getCapNhatLuc());
-
-            List<DonHangChiTietResponse> chiTietDTOs = dh.getChiTietList().stream().map(ct -> {
-                DonHangChiTietResponse ctDTO = new DonHangChiTietResponse();
-                ctDTO.setId(ct.getId());
-                ctDTO.setTenSanPham(ct.getTenHienThi());
-                ctDTO.setDonGia(ct.getDonGia());
-                ctDTO.setSoLuong(ct.getSoLuong());
-                ctDTO.setThanhTien(ct.getThanhTien());
-                return ctDTO;
-            }).collect(Collectors.toList());
-
-            dto.setChiTietList(chiTietDTOs);
-            return dto;
-        }).collect(Collectors.toList());
+        return donHangList.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // Lấy toàn bộ đơn hàng có phân trang
     public Page<DonHangResponse> getDonHangPhanTrang(Pageable pageable) {
         Page<DonHang> donHangPage = donHangRepository.findAll(pageable);
+        return donHangPage.map(this::convertToDTO);
+    }
 
-        return donHangPage.map(dh -> {
-            DonHangResponse dto = new DonHangResponse();
-            dto.setId(dh.getId());
-            dto.setSoDonHang(dh.getSoDonHang());
-            dto.setTamTinh(dh.getTamTinh());
-            dto.setTongThanhToan(dh.getTongThanhToan());
-            dto.setTrangThai(dh.getTrangThai());
-            dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
-            dto.setGhiChu(dh.getGhiChu());
-            dto.setTaoLuc(dh.getTaoLuc());
-            dto.setCapNhatLuc(dh.getCapNhatLuc());
+    // convert từ entity sang dto
+    private DonHangResponse convertToDTO(DonHang dh) {
+        DonHangResponse dto = new DonHangResponse();
+        dto.setId(dh.getId());
+        dto.setSoDonHang(dh.getSoDonHang());
+        dto.setTamTinh(dh.getTamTinh());
+        dto.setTongThanhToan(dh.getTongThanhToan());
+        dto.setTrangThai(dh.getTrangThai());
+        dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
+        dto.setGhiChu(dh.getGhiChu());
+        dto.setTaoLuc(dh.getTaoLuc());
+        dto.setCapNhatLuc(dh.getCapNhatLuc());
 
+        // Convert chi tiết list (nếu có)
+        if (dh.getChiTietList() != null) {
             List<DonHangChiTietResponse> chiTietDTOs = dh.getChiTietList().stream().map(ct -> {
                 DonHangChiTietResponse ctDTO = new DonHangChiTietResponse();
                 ctDTO.setId(ct.getId());
@@ -165,7 +175,8 @@ public class DonHangService {
             }).collect(Collectors.toList());
 
             dto.setChiTietList(chiTietDTOs);
-            return dto;
-        });
+        }
+
+        return dto;
     }
 }

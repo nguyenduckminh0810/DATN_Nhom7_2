@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,12 +42,6 @@ public class DonHangController {
         return ResponseEntity.ok(donHangService.createDonHang(request.getDonHang(), request.getChiTietList()));
     }
 
-    // Lấy danh sách đơn hàng
-    // @GetMapping
-    // public ResponseEntity<List<DonHang>> getAllDonHang() {
-    // return ResponseEntity.ok(donHangService.getAllDonHang());
-    // }
-
     @GetMapping
     public List<DonHangResponse> getAllDonHang() {
         return donHangService.getAllDonHangDTO();
@@ -66,15 +61,49 @@ public class DonHangController {
 
     // Cập nhật trạng thái đơn hàng
     @PutMapping("/{id}")
-    public ResponseEntity<DonHang> updateDonHang(@PathVariable Long id, @RequestBody DonHang donHang) {
-        return ResponseEntity.ok(donHangService.updateDonHang(id, donHang));
+    public ResponseEntity<DonHangResponse> updateDonHang(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> request) {
+
+        System.out.println("=== UPDATE DON HANG ===");
+        System.out.println("ID: " + id);
+        System.out.println("Request body: " + request);
+
+        try {
+            DonHangResponse updated = donHangService.updateDonHang(id, request);
+            System.out.println("Updated successfully: " + updated);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            System.err.println("Error updating: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
-    // Xóa đơn hàng
+    // Xóa mềm đơn hàng (chuyển sang trạng thái Đã hủy)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteDonHang(@PathVariable Long id) {
-        donHangService.deleteDonHang(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Map<String, String>> deleteDonHang(@PathVariable Long id) {
+        Map<String, String> response = new HashMap<>();
+
+        try {
+            System.out.println("Xóa mềm đơn hàng ID: " + id);
+
+            donHangService.softDeleteDonHang(id);
+
+            response.put("message", "Đã hủy đơn hàng thành công");
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+            System.err.println("RuntimeException: " + e.getMessage());
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+
+        } catch (Exception e) {
+            System.err.println("Exception: " + e.getMessage());
+            e.printStackTrace();
+            response.put("error", "Lỗi hệ thống: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // Phân trang đơn hàng
