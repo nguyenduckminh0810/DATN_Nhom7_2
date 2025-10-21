@@ -2,6 +2,7 @@ package com.auro.auro.controller;
 
 import com.auro.auro.dto.request.SanPhamRequest;
 import com.auro.auro.dto.response.SanPhamResponse;
+import com.auro.auro.dto.response.SanPhamDetailResponse;
 import com.auro.auro.service.SanPhamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -69,6 +70,11 @@ public class SanPhamController {
     @GetMapping("/id/{id}")
     public ResponseEntity<SanPhamResponse> get(@PathVariable Long id) {
         return ResponseEntity.ok(sanPhamService.getById(id));
+    }
+
+    @GetMapping("/id/{id}/detail")
+    public ResponseEntity<SanPhamDetailResponse> getDetail(@PathVariable Long id) {
+        return ResponseEntity.ok(sanPhamService.getDetailById(id));
     }
 
     @PostMapping

@@ -228,6 +228,56 @@
           <span>Hết hàng (0)</span>
         </div>
       </div>
+
+      <!-- Variant Details: Price & Image -->
+      <div class="variant-details-section">
+        <h6 class="details-title">
+          <i class="bi bi-currency-dollar me-2"></i>
+          Chi tiết giá và hình ảnh (tùy chọn)
+        </h6>
+        <p class="text-muted small mb-3">
+          Để trống giá nếu muốn dùng giá chung của sản phẩm. Upload ảnh cho từng biến thể để hiển thị khi khách chọn.
+        </p>
+        <div class="details-grid">
+          <div 
+            v-for="color in selectedColors" 
+            :key="color.hex"
+            class="color-group"
+          >
+            <div class="color-group-header">
+              <div class="color-dot" :style="{ backgroundColor: color.hex }"></div>
+              <strong>{{ color.name }}</strong>
+            </div>
+            <div class="size-details">
+              <div 
+                v-for="size in availableSizes" 
+                :key="size"
+                class="size-detail-row"
+              >
+                <div class="size-label">{{ size }}</div>
+                <input
+                  type="number"
+                  :value="getVariantPrice(size, color.hex)"
+                  @input="updateVariantPrice(size, color.hex, $event.target.value)"
+                  class="price-input form-control form-control-sm"
+                  placeholder="Giá (VNĐ)"
+                  min="0"
+                  step="1000"
+                />
+                <VariantImageUploader
+                  v-if="productId"
+                  :product-id="productId"
+                  :size="size"
+                  :color="color.name"
+                  :image-url="getVariantImage(size, color.hex)"
+                  @uploaded="(url) => updateVariantImage(size, color.hex, url)"
+                  @removed="() => updateVariantImage(size, color.hex, null)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Variant Summary -->
@@ -275,13 +325,14 @@
 
     <!-- Actions -->
     <div class="manager-actions">
-      <button type="button" class="btn btn-secondary" @click="handleCancel">
+      <button type="button" class="btn btn-secondary" @click="handleCancel" :disabled="isSaving">
         <i class="bi bi-x me-2"></i>
         Hủy
       </button>
-      <button type="button" class="btn btn-success" @click="handleSave">
-        <i class="bi bi-check me-2"></i>
-        Lưu biến thể ({{ totalVariants }} biến thể)
+      <button type="button" class="btn btn-success" @click="handleSave" :disabled="isSaving || isLoading">
+        <i v-if="isSaving" class="bi bi-hourglass-split me-2 spinner"></i>
+        <i v-else class="bi bi-check me-2"></i>
+        {{ isSaving ? 'Đang lưu...' : `Lưu biến thể (${totalVariants} biến thể)` }}
       </button>
     </div>
 
@@ -316,7 +367,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import variantService from '@/services/variantService'
+import VariantImageUploader from './VariantImageUploader.vue'
 
 const props = defineProps({
   productId: {
@@ -356,11 +409,15 @@ const emit = defineEmits(['save', 'cancel', 'update'])
 const selectedColors = ref([...props.initialColors])
 const selectedMaterial = ref(props.initialMaterial || '')
 const variantStocks = ref({})
+const variantPrices = ref({}) // Lưu giá riêng cho từng biến thể
+const variantImages = ref({}) // Lưu ảnh riêng cho từng biến thể
 const showColorPicker = ref(false)
 const customColorName = ref('')
 const customColorHex = ref('#000000')
 const showFillModal = ref(false)
 const bulkStockValue = ref(0)
+const isLoading = ref(false)
+const isSaving = ref(false)
 
 // Size configurations
 const sizeConfigs = {
@@ -415,7 +472,18 @@ const availableSizes = computed(() => sizeConfigs[props.category]?.sizes || [])
 const categoryName = computed(() => sizeConfigs[props.category]?.name || props.category)
 
 const totalVariants = computed(() => {
-  return selectedColors.value.length * availableSizes.value.length
+  // Chỉ đếm các biến thể có stock > 0 (đã nhập số lượng)
+  let count = 0
+  selectedColors.value.forEach(color => {
+    availableSizes.value.forEach(size => {
+      const stock = getVariantStock(size, color.hex)
+      // Kiểm tra stock là số và > 0
+      if (stock !== '' && !isNaN(stock) && parseInt(stock) > 0) {
+        count++
+      }
+    })
+  })
+  return count
 })
 
 const totalStock = computed(() => {
@@ -437,8 +505,9 @@ const variantsInStock = computed(() => {
 })
 
 const variantsOutOfStock = computed(() => {
-  const definedVariants = totalVariants.value
-  return definedVariants - variantsInStock.value
+  // Tổng số tổ hợp có thể có - số biến thể thực tế đã tạo
+  const possibleCombinations = selectedColors.value.length * availableSizes.value.length
+  return possibleCombinations - totalVariants.value
 })
 
 const lowStockVariants = computed(() => {
@@ -446,7 +515,8 @@ const lowStockVariants = computed(() => {
   selectedColors.value.forEach(color => {
     availableSizes.value.forEach(size => {
       const stock = getVariantStock(size, color.hex)
-      if (stock > 0 && stock < 5) {
+      // Chỉ thêm vào warning nếu có stock và stock > 0 và < 5
+      if (stock !== '' && !isNaN(stock) && stock > 0 && stock < 5) {
         lowStock.push({
           size,
           colorName: color.name,
@@ -467,18 +537,54 @@ const getVariantKey = (size, colorHex) => {
 
 const getVariantStock = (size, colorHex) => {
   const key = getVariantKey(size, colorHex)
-  return parseInt(variantStocks.value[key]) || 0
+  const stock = variantStocks.value[key]
+  // Chỉ trả về giá trị nếu đã được set, ngược lại trả về ''
+  return stock !== undefined && stock !== null ? parseInt(stock) : ''
 }
 
 const updateVariantStock = (size, colorHex, value) => {
   const key = getVariantKey(size, colorHex)
-  variantStocks.value[key] = Math.max(0, parseInt(value) || 0)
+  
+  // Nếu input trống hoặc không hợp lệ, xóa key
+  if (value === '' || value === null || value === undefined) {
+    delete variantStocks.value[key]
+  } else {
+    const numValue = parseInt(value)
+    if (!isNaN(numValue) && numValue > 0) {
+      variantStocks.value[key] = numValue
+    } else {
+      delete variantStocks.value[key]
+    }
+  }
+  
+  emitUpdate()
+}
+
+const getVariantPrice = (size, colorHex) => {
+  const key = getVariantKey(size, colorHex)
+  return variantPrices.value[key] || null
+}
+
+const updateVariantPrice = (size, colorHex, value) => {
+  const key = getVariantKey(size, colorHex)
+  variantPrices.value[key] = value ? parseFloat(value) : null
+  emitUpdate()
+}
+
+const getVariantImage = (size, colorHex) => {
+  const key = getVariantKey(size, colorHex)
+  return variantImages.value[key] || null
+}
+
+const updateVariantImage = (size, colorHex, imageUrl) => {
+  const key = getVariantKey(size, colorHex)
+  variantImages.value[key] = imageUrl
   emitUpdate()
 }
 
 const getStockClass = (size, colorHex) => {
   const stock = getVariantStock(size, colorHex)
-  if (stock === 0) return 'stock-zero'
+  if (stock === '' || stock === 0) return 'stock-zero'
   if (stock < 5) return 'stock-low'
   if (stock < 20) return 'stock-medium'
   return 'stock-high'
@@ -486,7 +592,7 @@ const getStockClass = (size, colorHex) => {
 
 const getStockIndicatorClass = (size, colorHex) => {
   const stock = getVariantStock(size, colorHex)
-  if (stock === 0) return 'indicator-gray'
+  if (stock === '' || stock === 0) return 'indicator-gray'
   if (stock < 5) return 'indicator-red'
   if (stock < 20) return 'indicator-yellow'
   return 'indicator-green'
@@ -495,7 +601,11 @@ const getStockIndicatorClass = (size, colorHex) => {
 const getSizeTotal = (size) => {
   let total = 0
   selectedColors.value.forEach(color => {
-    total += getVariantStock(size, color.hex)
+    const stock = getVariantStock(size, color.hex)
+    // Chỉ cộng nếu có giá trị (không phải '')
+    if (stock !== '' && !isNaN(stock)) {
+      total += parseInt(stock)
+    }
   })
   return total
 }
@@ -503,7 +613,11 @@ const getSizeTotal = (size) => {
 const getColorTotal = (colorHex) => {
   let total = 0
   availableSizes.value.forEach(size => {
-    total += getVariantStock(size, colorHex)
+    const stock = getVariantStock(size, colorHex)
+    // Chỉ cộng nếu có giá trị (không phải '')
+    if (stock !== '' && !isNaN(stock)) {
+      total += parseInt(stock)
+    }
   })
   return total
 }
@@ -620,15 +734,22 @@ const buildVariantsData = () => {
   selectedColors.value.forEach(color => {
     availableSizes.value.forEach(size => {
       const stock = getVariantStock(size, color.hex)
-      variants.push({
-        size,
-        color: color.name,
-        colorHex: color.hex,
-        material: selectedMaterial.value,
-        stock,
-        sku: generateSKU(size, color),
-        available: stock > 0
-      })
+      
+      // Chỉ thêm biến thể nếu có stock là số và > 0
+      if (stock !== '' && !isNaN(stock) && parseInt(stock) > 0) {
+        const key = getVariantKey(size, color.hex)
+        variants.push({
+          size,
+          color: color.name,
+          colorHex: color.hex,
+          material: selectedMaterial.value,
+          stock: parseInt(stock),
+          sku: generateSKU(size, color),
+          price: variantPrices.value[key] || null, // Giá riêng
+          imageUrl: variantImages.value[key] || null, // Ảnh riêng
+          available: true
+        })
+      }
     })
   })
   
@@ -637,22 +758,101 @@ const buildVariantsData = () => {
     colors: selectedColors.value,
     material: selectedMaterial.value,
     totalStock: totalStock.value,
-    totalVariants: totalVariants.value
+    totalVariants: variants.length // Cập nhật để đếm đúng số biến thể thực tế
   }
 }
 
-const handleSave = () => {
+const handleSave = async () => {
   if (selectedColors.value.length === 0) {
     alert('Vui lòng chọn ít nhất 1 màu sắc!')
     return
   }
   
-  const variantsData = buildVariantsData()
-  emit('save', variantsData)
+  if (!props.productId) {
+    alert('Không tìm thấy ID sản phẩm. Vui lòng lưu sản phẩm trước.')
+    return
+  }
+
+  // Kiểm tra xem có biến thể nào được tạo không
+  if (totalVariants.value === 0) {
+    alert('Vui lòng nhập số lượng tồn kho cho ít nhất 1 biến thể!')
+    return
+  }
+
+  isSaving.value = true
+  
+  try {
+    const variantsData = buildVariantsData()
+    
+    // Gọi API để lưu biến thể
+    const response = await variantService.upsertVariants(props.productId, {
+      material: selectedMaterial.value,
+      variants: variantsData.variants.map(v => ({
+        size: v.size,
+        color: v.color,
+        colorHex: v.colorHex,
+        sku: v.sku,
+        stock: v.stock,
+        price: v.price,
+        imageUrl: v.imageUrl
+      }))
+    })
+    
+    alert(`Đã lưu thành công ${response.length} biến thể!`)
+    emit('save', variantsData)
+  } catch (error) {
+    console.error('Lỗi khi lưu biến thể:', error)
+    alert('Có lỗi xảy ra khi lưu biến thể: ' + (error.response?.data?.message || error.message))
+  } finally {
+    isSaving.value = false
+  }
 }
 
 const handleCancel = () => {
   emit('cancel')
+}
+
+// Load existing variants when component is mounted
+const loadExistingVariants = async () => {
+  if (!props.productId) return
+  
+  isLoading.value = true
+  try {
+    const variants = await variantService.getBySanPham(props.productId)
+    
+    // Map variants to our data structure
+    variants.forEach(variant => {
+      if (variant.size && variant.colorHex) {
+        const key = getVariantKey(variant.size, variant.colorHex)
+        variantStocks.value[key] = variant.stock || 0
+        
+        // Load price and image if available
+        if (variant.price) {
+          variantPrices.value[key] = variant.price
+        }
+        if (variant.imageUrl) {
+          variantImages.value[key] = variant.imageUrl
+        }
+        
+        // Add color to selected colors if not exists
+        if (!selectedColors.value.some(c => c.hex === variant.colorHex)) {
+          selectedColors.value.push({
+            name: variant.color,
+            hex: variant.colorHex
+          })
+        }
+      }
+      
+      // Set material if exists
+      if (variant.material && !selectedMaterial.value) {
+        selectedMaterial.value = variant.material
+      }
+    })
+  } catch (error) {
+    console.error('Lỗi khi tải biến thể:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // Initialize from props
@@ -666,9 +866,21 @@ const initializeVariants = () => {
 }
 
 // Lifecycle
+onMounted(async () => {
+  // Load existing variants from API if productId exists
+  if (props.productId) {
+    await loadExistingVariants()
+  } else {
+    // Otherwise initialize from props
+    initializeVariants()
+  }
+})
+
 watch(() => props.initialVariants, () => {
-  initializeVariants()
-}, { immediate: true })
+  if (!props.productId) {
+    initializeVariants()
+  }
+}, { immediate: false })
 
 watch(() => props.category, () => {
   // Reset khi đổi category
@@ -1321,6 +1533,79 @@ watch(() => props.category, () => {
   .summary-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Loading Spinner */
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Variant Details Section */
+.variant-details-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.details-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.color-group {
+  background: #f8fafb;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.color-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.size-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.size-detail-row {
+  display: grid;
+  grid-template-columns: 40px 120px 100px;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.size-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #475569;
+}
+
+.price-input {
+  font-size: 0.85rem;
 }
 </style>
 

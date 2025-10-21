@@ -2,10 +2,12 @@ package com.auro.auro.service;
 
 import com.auro.auro.dto.request.SanPhamRequest;
 import com.auro.auro.dto.response.SanPhamResponse;
+import com.auro.auro.dto.response.SanPhamDetailResponse;
 import com.auro.auro.exception.BadRequestException;
 import com.auro.auro.exception.ResourceNotFoundException;
 import com.auro.auro.model.DanhMuc;
 import com.auro.auro.model.SanPham;
+import com.auro.auro.repository.BienTheSanPhamRepository;
 import com.auro.auro.repository.DanhMucRepository;
 import com.auro.auro.repository.SanPhamRepository;
 import com.auro.auro.repository.HinhAnhRepository;
@@ -14,11 +16,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class SanPhamService {
   private final SanPhamRepository sanPhamRepository;
   private final DanhMucRepository danhMucRepository;
   private final HinhAnhRepository hinhAnhRepository;
+  private final BienTheSanPhamRepository bienTheSanPhamRepository;
 
   public Page<SanPhamResponse> getPageByCategorySlugIncludingChildren(
       String slug, String search, Pageable pageable) {
@@ -101,6 +106,12 @@ public class SanPhamService {
     return mapToResponse(sp);
   }
 
+  public SanPhamDetailResponse getDetailById(Long id) {
+    SanPham sp = sanPhamRepository.findById(id)
+        .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại: " + id));
+    return mapToDetailResponse(sp);
+  }
+
   public SanPhamResponse create(SanPhamRequest req) {
     if (req.getDanhMucId() == null) {
       throw new BadRequestException("Danh mục là bắt buộc");
@@ -158,9 +169,26 @@ public class SanPhamService {
     return mapToResponse(saved);
   }
 
+  @Transactional
   public void delete(Long id) {
     SanPham sp = sanPhamRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại: " + id));
+
+    // 1. Lấy danh sách tất cả biến thể của sản phẩm
+    List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository.findBySanPham_Id(id);
+
+    // 2. Xóa hình ảnh của từng biến thể
+    for (com.auro.auro.model.BienTheSanPham variant : variants) {
+      hinhAnhRepository.deleteByBienThe_Id(variant.getId());
+    }
+
+    // 3. Xóa tất cả biến thể của sản phẩm
+    bienTheSanPhamRepository.deleteBySanPham_Id(id);
+
+    // 4. Xóa hình ảnh của sản phẩm
+    hinhAnhRepository.deleteBySanPham_Id(id);
+
+    // 5. Cuối cùng xóa sản phẩm
     sanPhamRepository.delete(sp);
   }
 
@@ -191,6 +219,88 @@ public class SanPhamService {
       }
     } catch (Exception ignored) {
     }
+    return res;
+  }
+
+  private SanPhamDetailResponse mapToDetailResponse(SanPham sp) {
+    SanPhamDetailResponse res = new SanPhamDetailResponse();
+    res.setId(sp.getId());
+    res.setTen(sp.getTen());
+    res.setSlug(sp.getSlug());
+    res.setMoTa(sp.getMoTa());
+    if (sp.getDanhMuc() != null) {
+      res.setDanhMucId(sp.getDanhMuc().getId());
+      res.setDanhMucTen(sp.getDanhMuc().getTen());
+    }
+    res.setGia(sp.getGia());
+    res.setTrangThai(sp.getTrangThai());
+    res.setTaoLuc(sp.getTaoLuc());
+    res.setCapNhatLuc(sp.getCapNhatLuc());
+
+    // Load images
+    try {
+      var hinhAnhList = hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(sp.getId());
+      if (hinhAnhList != null && !hinhAnhList.isEmpty()) {
+        List<SanPhamDetailResponse.HinhAnhInfo> hinhAnhs = hinhAnhList.stream()
+            .map(ha -> new SanPhamDetailResponse.HinhAnhInfo(
+                ha.getId(),
+                ha.getUrl(),
+                ha.getLaDaiDien(),
+                ha.getThuTu()))
+            .collect(Collectors.toList());
+        res.setHinhAnhs(hinhAnhs);
+
+        // Set ảnh đại diện
+        String anhDaiDien = hinhAnhList.stream()
+            .filter(ha -> Boolean.TRUE.equals(ha.getLaDaiDien()))
+            .map(com.auro.auro.model.HinhAnh::getUrl)
+            .findFirst()
+            .orElseGet(() -> hinhAnhList.get(0).getUrl());
+        res.setAnhDaiDien(anhDaiDien);
+      }
+    } catch (Exception ignored) {
+    }
+
+    // Load variants
+    try {
+      var variants = bienTheSanPhamRepository.findBySanPham_Id(sp.getId());
+      if (variants != null && !variants.isEmpty()) {
+        List<SanPhamDetailResponse.BienTheInfo> bienThes = variants.stream()
+            .map(bt -> {
+              SanPhamDetailResponse.BienTheInfo info = new SanPhamDetailResponse.BienTheInfo();
+              info.setId(bt.getId());
+
+              // Set màu sắc
+              if (bt.getMauSac() != null) {
+                info.setMauSac(bt.getMauSac().getTen());
+                info.setColorHex(bt.getMauSac().getMa());
+              }
+
+              // Set kích thước
+              if (bt.getKichCo() != null) {
+                info.setKichThuoc(bt.getKichCo().getTen());
+              }
+
+              info.setTonKho(bt.getSoLuongTon());
+              info.setGia(bt.getGia() != null ? bt.getGia() : sp.getGia());
+
+              // Load hình ảnh biến thể
+              try {
+                var btHinhAnhList = hinhAnhRepository.findByBienThe_IdOrderByThuTuAscIdAsc(bt.getId());
+                if (btHinhAnhList != null && !btHinhAnhList.isEmpty()) {
+                  info.setHinhAnh(btHinhAnhList.get(0).getUrl());
+                }
+              } catch (Exception ignored) {
+              }
+
+              return info;
+            })
+            .collect(Collectors.toList());
+        res.setBienThes(bienThes);
+      }
+    } catch (Exception ignored) {
+    }
+
     return res;
   }
 
