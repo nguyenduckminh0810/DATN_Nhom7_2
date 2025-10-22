@@ -57,6 +57,7 @@ const onDrop      = (e) => emit('drop', e)
         <div class="node-details">
           <div class="node-topline">
             <span class="node-name">{{ node.name }}</span>
+            <!-- Số SẢN PHẨM: dùng productCount từ BE -->
             <span class="pill pill-count" :title="(node.productCount || 0) + ' sản phẩm'">
               <i class="bi bi-box"></i> {{ node.productCount || 0 }}
             </span>

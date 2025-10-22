@@ -8,6 +8,9 @@ export default {
   // Lấy theo ID
   get: (id) => api.get(`/san-pham/id/${id}`),
 
+  // Lấy chi tiết sản phẩm với đầy đủ hình ảnh và biến thể
+  getDetail: (id) => api.get(`/san-pham/id/${id}/detail`),
+
   // Lấy theo SLUG sản phẩm
   getBySlug: (slug) => api.get(`/san-pham/slug/${slug}`),
 

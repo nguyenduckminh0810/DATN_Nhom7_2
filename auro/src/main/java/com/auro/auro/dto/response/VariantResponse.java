@@ -15,4 +15,7 @@ public class VariantResponse {
     private String colorHex;
     private String material;
     private Integer stock;
+    private java.math.BigDecimal price; // giá riêng của biến thể
+    private String imageUrl; // ảnh của biến thể
+    private Boolean available; // có còn hàng không
 }

@@ -22,5 +22,7 @@ public class VariantUpsertRequest {
         private String colorHex;
         private String sku; // optional
         private Integer stock;
+        private java.math.BigDecimal price; // optional - giá riêng cho biến thể
+        private String imageUrl; // optional - ảnh của biến thể
     }
 }

@@ -3,6 +3,7 @@ package com.auro.auro.controller;
 import com.auro.auro.dto.request.DanhMucCreateRequest;
 import com.auro.auro.dto.response.DanhMucResponse;
 import com.auro.auro.dto.response.SanPhamResponse;
+import com.auro.auro.exception.ResourceNotFoundException;
 import com.auro.auro.model.DanhMuc;
 import com.auro.auro.repository.DanhMucRepository;
 import com.auro.auro.repository.SanPhamRepository;
@@ -12,6 +13,7 @@ import com.auro.auro.repository.HinhAnhRepository;
 import com.auro.auro.repository.DonHangChiTietRepository;
 import com.auro.auro.repository.GioHangChiTietRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.validation.Valid;
@@ -19,7 +21,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,7 +32,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -46,18 +52,61 @@ public class DanhMucController {
 
     @GetMapping
     public ResponseEntity<List<DanhMucResponse>> getAll() {
-        List<DanhMucResponse> list = danhMucRepository.findAll().stream()
-                .map(this::map)
-                .collect(Collectors.toList());
+        List<DanhMuc> all = danhMucRepository.findAll();
+
+        // Tự build childrenMap, tránh key = null
+        Map<Long, List<Long>> childrenMap = new java.util.HashMap<>();
+        for (DanhMuc dm : all) {
+            Long parentId = (dm.getDanhMucCha() != null) ? dm.getDanhMucCha().getId() : 0L; // 0L = gốc
+            childrenMap.computeIfAbsent(parentId, k -> new java.util.ArrayList<>()).add(dm.getId());
+        }
+
+        List<DanhMucResponse> list = new java.util.ArrayList<>();
+        for (DanhMuc dm : all) {
+            // Thu thập id của chính nó + toàn bộ con cháu
+            java.util.List<Long> ids = new java.util.ArrayList<>();
+            ids.add(dm.getId());
+            collectDescendantIds(dm.getId(), childrenMap, ids);
+
+            long count = sanPhamRepository.countByDanhMuc_IdIn(ids);
+
+            DanhMucResponse res = map(dm);
+            res.setProductCount(count);
+            list.add(res);
+        }
         return ResponseEntity.ok(list);
     }
 
+    private void collectDescendantIds(Long parentId,
+            java.util.Map<Long, java.util.List<Long>> childrenMap,
+            java.util.List<Long> out) {
+        java.util.List<Long> children = childrenMap.getOrDefault(parentId, java.util.Collections.emptyList());
+        for (Long childId : children) {
+            out.add(childId);
+            collectDescendantIds(childId, childrenMap, out);
+        }
+    }
+
+    private void collectDescendantIds(Long parentId, List<Long> out) {
+        List<DanhMuc> children = danhMucRepository.findByDanhMucCha_Id(parentId);
+        if (children != null) {
+            for (DanhMuc c : children) {
+                out.add(c.getId());
+                collectDescendantIds(c.getId(), out);
+            }
+        }
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<DanhMucResponse> getById(
-            @org.springframework.web.bind.annotation.PathVariable("id") Long id) {
+    public ResponseEntity<DanhMucResponse> getById(@PathVariable Long id) {
         DanhMuc dm = danhMucRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"));
-        return ResponseEntity.ok(map(dm));
+        List<Long> ids = new ArrayList<>();
+        ids.add(dm.getId());
+        collectDescendantIds(dm.getId(), ids);
+        DanhMucResponse res = map(dm);
+        res.setProductCount(sanPhamRepository.countByDanhMuc_IdIn(ids));
+        return ResponseEntity.ok(res);
     }
 
     @GetMapping("/page")
@@ -131,111 +180,44 @@ public class DanhMucController {
 
     // Delete category (soft/hard logic). If force=true, will delete related
     // products and descendant categories.
-    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
-    @org.springframework.transaction.annotation.Transactional
-    public ResponseEntity<Object> deleteCategory(@org.springframework.web.bind.annotation.PathVariable("id") Long id,
-            @RequestParam(defaultValue = "false") boolean force) {
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id,
+            @RequestParam(name = "force", defaultValue = "false") boolean force) {
+
         DanhMuc root = danhMucRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại"));
+                .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại: " + id));
 
-        // collect all descendant ids (including root)
-        List<Long> toDeleteIds = new java.util.ArrayList<>();
-        collectDescendants(root, toDeleteIds);
+        // Thu thập toàn bộ id: chính nó + con cháu
+        List<Long> toDeleteIds = new ArrayList<>();
+        toDeleteIds.add(root.getId());
+        collectDescendantIds(root.getId(), toDeleteIds);
 
-        // check related products
+        // ĐẾM tổng số sản phẩm thuộc bất kỳ id nào ở trên
         long relatedProducts = sanPhamRepository.countByDanhMuc_IdIn(toDeleteIds);
 
-        // gather dependent counts: we'll fetch only product IDs to avoid selecting all
-        // product columns
-        java.util.List<Long> productIds = sanPhamRepository.findIdsByDanhMucIdIn(toDeleteIds);
-        long variantCount = 0;
-        long imageCount = 0;
-        long orderItemCount = 0;
-        long cartItemCount = 0;
-
-        if (!productIds.isEmpty()) {
-            variantCount = bienTheSanPhamRepository.findBySanPham_IdIn(productIds).size();
-            // images
-            for (Long pid : productIds) {
-                imageCount += hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(pid).size();
-            }
-            // order items reference variants; sum by variants
-            java.util.List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository
-                    .findBySanPham_IdIn(productIds);
-            java.util.List<Long> variantIds = new java.util.ArrayList<>();
-            for (com.auro.auro.model.BienTheSanPham v : variants)
-                variantIds.add(v.getId());
-            if (!variantIds.isEmpty()) {
-                // for order items
-                for (Long vid : variantIds) {
-                    orderItemCount += donHangChiTietRepository.findByBienThe_Id(vid).size();
-                    // cart items: no convenient method to count by variant; assume repository
-                    // exists
-                    // We'll try to delete cart items by variant id if repository supports it
-                    try {
-                        cartItemCount += gioHangChiTietRepository.findByBienThe_Id(vid).size();
-                    } catch (NoSuchMethodError | AbstractMethodError ex) {
-                        // repository may not implement findByBienThe_Id; ignore for counting
-                    }
-                }
-            }
-        }
-
         if (relatedProducts > 0 && !force) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(java.util.Map.of(
-                    "message", "Danh mục hoặc các danh mục con có liên kết tới sản phẩm",
-                    "relatedCategoryIds", toDeleteIds,
+            Map<String, Object> body = Map.of(
+                    "message", "Danh mục hoặc danh mục con có liên kết tới " + relatedProducts + " sản phẩm",
                     "relatedProducts", relatedProducts,
-                    "variantCount", variantCount,
-                    "imageCount", imageCount,
-                    "orderItemCount", orderItemCount,
-                    "cartItemCount", cartItemCount));
+                    "relatedCategoryIds", toDeleteIds);
+            return ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON).body(body);
         }
 
-        try {
-            if (relatedProducts > 0 && force) {
-                // Delete dependent resources in safe order
-                // 1) delete order items referencing variants
-                if (!productIds.isEmpty()) {
-                    java.util.List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository
-                            .findBySanPham_IdIn(productIds);
-                    for (com.auro.auro.model.BienTheSanPham v : variants) {
-                        try {
-                            donHangChiTietRepository.deleteByBienThe_Id(v.getId());
-                        } catch (Exception ignored) {
-                        }
-                        try {
-                            gioHangChiTietRepository.deleteByBienThe_Id(v.getId());
-                        } catch (Exception ignored) {
-                        }
-                        // delete images for variant if any
-                        try {
-                            hinhAnhRepository.deleteByBienThe_Id(v.getId());
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    // delete variants
-                    bienTheSanPhamRepository.deleteBySanPham_IdIn(productIds);
-                    // delete images for products
-                    for (Long pid : productIds) {
-                        try {
-                            hinhAnhRepository.deleteBySanPham_Id(pid);
-                        } catch (Exception ignored) {
-                        }
-                    }
-                    // delete products
-                    sanPhamRepository.deleteByDanhMuc_IdIn(toDeleteIds);
-                }
-            }
-
-            // delete categories (children first if cascade not configured)
-            toDeleteIds.forEach(danhMucRepository::deleteById);
-
-            return ResponseEntity
-                    .ok(java.util.Map.of("message", "Xóa thành công", "deletedProductCount", relatedProducts));
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Lỗi khi xóa: " + e.getMessage());
+        // Nếu force: có thể xoá sản phẩm trước, rồi xoá danh mục theo thứ tự con -> cha
+        if (relatedProducts > 0) {
+            sanPhamRepository.deleteByDanhMuc_IdIn(toDeleteIds);
         }
+
+        // Xoá danh mục từ lá lên gốc
+        // (nếu anh có deleteAllByIdInBatch thì dùng, còn không thì for ngược)
+        for (int i = toDeleteIds.size() - 1; i >= 0; i--) {
+            danhMucRepository.deleteById(toDeleteIds.get(i));
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "deletedCategoryIds", toDeleteIds,
+                "deletedProducts", relatedProducts));
     }
 
     private void collectDescendants(DanhMuc node, List<Long> out) {
