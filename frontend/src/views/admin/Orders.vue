@@ -45,47 +45,48 @@
       <!-- Advanced Filters -->
       <div v-if="showAdvancedFilters" class="advanced-filters">
         <div class="row g-3">
-          <div class="col-md-2">
-            <label class="form-label">Trạng thái</label>
-            <select class="form-select" v-model="selectedStatus">
-              <option value="">Tất cả trạng thái</option>
-              <option value="Chờ xác nhận">Chờ xử lý</option>
-              <option value="Đang xử lý">Đang xử lý</option>
-              <option value="Đã giao">Đã giao</option>
-              <option value="Hoàn tất">Hoàn thành</option>
-              <option value="Đã hủy">Đã hủy</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Thanh toán</label>
-            <select class="form-select" v-model="selectedPayment">
-              <option value="">Tất cả thanh toán</option>
-              <option value="pending">Chờ thanh toán</option>
-              <option value="paid">Đã thanh toán</option>
-              <option value="failed">Thanh toán thất bại</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Ngày đặt</label>
-            <input type="date" class="form-control" v-model="selectedDate">
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Khoảng tiền</label>
-            <div class="amount-range">
-              <input type="number" class="form-control" placeholder="Từ" v-model.number="amountRange.min">
-              <span class="range-separator">-</span>
-              <input type="number" class="form-control" placeholder="Đến" v-model.number="amountRange.max">
+            <div class="col-md-2">
+              <label class="form-label">Trạng thái</label>
+              <select class="form-select" v-model="selectedStatus">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Chờ xác nhận">Chờ xử lý</option>
+                <option value="Đang xử lý">Đang xử lý</option>
+                <option value="Đang giao">Đang giao</option>
+                <option value="Đã giao">Đã giao</option>
+                <option value="Hoàn tất">Hoàn thành</option>
+                <option value="Đã hủy">Đã hủy</option>
+              </select>
             </div>
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">Sắp xếp</label>
-            <select class="form-select" v-model="sortBy">
-              <option value="newest">Mới nhất</option>
-              <option value="oldest">Cũ nhất</option>
-              <option value="amount-high">Giá cao nhất</option>
-              <option value="amount-low">Giá thấp nhất</option>
-            </select>
-          </div>
+            <div class="col-md-2">
+              <label class="form-label">Thanh toán</label>
+              <select class="form-select" v-model="selectedPayment">
+                <option value="">Tất cả thanh toán</option>
+                <option value="pending">Chờ thanh toán</option>
+                <option value="paid">Đã thanh toán</option>
+                <option value="failed">Thanh toán thất bại</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Ngày đặt</label>
+              <input type="date" class="form-control" v-model="selectedDate">
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Khoảng tiền</label>
+              <div class="amount-range">
+                <input type="number" class="form-control" placeholder="Từ" v-model.number="amountRange.min">
+                <span class="range-separator">-</span>
+                <input type="number" class="form-control" placeholder="Đến" v-model.number="amountRange.max">
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Sắp xếp</label>
+              <select class="form-select" v-model="sortBy">
+                <option value="newest">Mới nhất</option>
+                <option value="oldest">Cũ nhất</option>
+                <option value="amount-high">Giá cao nhất</option>
+                <option value="amount-low">Giá thấp nhất</option>
+              </select>
+            </div>
         </div>
       </div>
     </div>
@@ -93,7 +94,7 @@
     <!-- Order Statistics -->
     <div class="order-stats-section">
       <div class="row g-3">
-        <div class="col-md-2">
+        <div class="col-md-3">
           <div class="stat-card pending">
             <div class="stat-icon">
               <i class="bi bi-clock"></i>
@@ -104,7 +105,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
           <div class="stat-card processing">
             <div class="stat-icon">
               <i class="bi bi-gear"></i>
@@ -115,7 +116,18 @@
             </div>
           </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
+        <div class="stat-card shipping">
+          <div class="stat-icon">
+            <i class="bi bi-bicycle"></i>  <!-- hoặc bi-box-seam -->
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ orderStats.shipping }}</div>
+            <div class="stat-label">Đang giao</div>
+          </div>
+        </div>
+      </div>
+        <div class="col-md-3">
           <div class="stat-card shipped">
             <div class="stat-icon">
               <i class="bi bi-truck"></i>
@@ -126,7 +138,8 @@
             </div>
           </div>
         </div>
-        <div class="col-md-2">
+        <div  class="row g-3 mt-2">
+          <div class="col-md-4">
           <div class="stat-card delivered">
             <div class="stat-icon">
               <i class="bi bi-check-circle"></i>
@@ -137,7 +150,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-4">
           <div class="stat-card payment-pending">
             <div class="stat-icon">
               <i class="bi bi-credit-card"></i>
@@ -148,7 +161,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-4">
           <div class="stat-card payment-paid">
             <div class="stat-icon">
               <i class="bi bi-check-circle"></i>
@@ -158,6 +171,7 @@
               <div class="stat-label">Đã thanh toán</div>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -315,10 +329,18 @@
                   <button 
                     v-if="order.trangThai === 'Đang xử lý'"
                     class="btn btn-sm btn-outline-info" 
-                    @click="quickUpdateStatus(order, 'Đã giao')"
-                    title="Giao hàng"
+                    @click="quickUpdateStatus(order, 'Đang giao')"
+                    title="Bắt đầu giao hàng"
                   >
-                    <i class="bi bi-truck"></i>
+                    <i class="bi bi-bicycle"></i>
+                  </button>
+                  <button 
+                    v-if="order.trangThai === 'Đang giao'"
+                    class="btn btn-sm btn-outline-success" 
+                    @click="quickUpdateStatus(order, 'Đã giao')"
+                    title="Xác nhận đã giao"
+                  >
+                    <i class="bi bi-check-circle"></i>
                   </button>
                   <button 
                     v-if="order.trangThai === 'Đã giao'"
@@ -692,6 +714,7 @@
                 <select class="form-select" v-model="editingOrder.trangThai">
                   <option value="Chờ xác nhận">Chờ xác nhận</option>
                   <option value="Đang xử lý">Đang xử lý</option>
+                  <option value="Đang giao">Đang giao</option>
                   <option value="Đã giao">Đã giao</option>
                   <option value="Hoàn tất">Hoàn tất</option>
                   <option value="Đã hủy">Đã hủy</option>
@@ -755,6 +778,7 @@ const selectedOrders = ref([]);
 const orderStatuses = ref([
   { value: "Chờ xác nhận", label: "Chờ xử lý", color: "#ffc107" },
   { value: "Đang xử lý", label: "Đang xử lý", color: "#17a2b8" },
+  { value: "Đang giao", label: "Đang giao", color: "#ff6b6b" },
   { value: "Đã giao", label: "Đã giao", color: "#6f42c1" },
   { value: "Hoàn tất", label: "Hoàn thành", color: "#28a745" },
   { value: "Đã hủy", label: "Đã hủy", color: "#dc3545" },
@@ -844,6 +868,7 @@ const fetchOrders = async () => {
 const orderStats = computed(() => ({
   pending: orders.value.filter((o) => o.trangThai === "Chờ xác nhận").length,
   processing: orders.value.filter((o) => o.trangThai === "Đang xử lý").length,
+  shipping: orders.value.filter((o) => o.trangThai === "Đang giao").length, 
   shipped: orders.value.filter((o) => o.trangThai === "Đã giao").length,
   delivered: orders.value.filter((o) => o.trangThai === "Hoàn tất").length,
   cancelled: orders.value.filter((o) => o.trangThai === "Đã hủy").length,
@@ -936,6 +961,7 @@ const getStatusText = (status) => {
   const map = {
     'Chờ xác nhận': 'Chờ xác nhận',
     'Đang xử lý': 'Đang xử lý',
+    'Đang giao': 'Đang giao',
     'Đã giao': 'Đã giao',
     'Hoàn tất': 'Hoàn tất',
     'Đã hủy': 'Đã hủy'
@@ -947,6 +973,7 @@ const getStatusClass = (status) => {
   const map = {
     'Chờ xác nhận': 'bg-warning',
     'Đang xử lý': 'bg-info',
+    'Đang giao': 'bg-danger',
     'Đã giao': 'bg-primary',
     'Hoàn tất': 'bg-success',
     'Đã hủy': 'bg-danger'
@@ -1101,13 +1128,14 @@ const getOrdersByStatus = (status) => {
 };
 
 const canUpdateStatus = (status) => {
-  return ['Chờ xác nhận', 'Đang xử lý', 'Đã giao'].includes(status);
+  return ['Chờ xác nhận', 'Đang xử lý', 'Đang giao', 'Đã giao'].includes(status);
 };
 
 const getNextStatus = (currentStatus) => {
   const statusFlow = {
     'Chờ xác nhận': 'Đang xử lý',
-    'Đang xử lý': 'Đã giao', 
+    'Đang xử lý': 'Đang giao', 
+    'Đang giao': 'Đã giao',
     'Đã giao': 'Hoàn tất'
   };
   return statusFlow[currentStatus] || currentStatus;
@@ -1512,6 +1540,14 @@ onMounted(() => {
   padding-left: 2.5rem;
 }
 
+.stat-card.shipping {
+  border-left: 4px solid #ff6b6b;
+}
+
+.stat-card.shipping .stat-icon {
+  background: #ff6b6b;
+}
+
 .orders-table {
   background: white;
   border-radius: 12px;
@@ -1571,6 +1607,14 @@ onMounted(() => {
 
 .stat-card.payment-pending .stat-icon {
   background: #ffc107;
+}
+
+.stat-card.payment-pending {
+  border-left: 4px solid #ffc107;
+}
+
+.stat-card.payment-paid {
+  border-left: 4px solid #28a745;
 }
 
 .stat-card.payment-paid .stat-icon {
