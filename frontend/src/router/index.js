@@ -84,8 +84,8 @@ const router = createRouter({
       component: () => import('../layouts/AdminLayout.vue'),
       meta: {
         title: 'Admin Dashboard - AURO',
-        requiresAuth: true,
-        requiresAdmin: true
+        // requiresAuth: true,
+        // requiresAdmin: true
       },
       children: [
         {
@@ -129,8 +129,8 @@ const router = createRouter({
           name: 'admin-users',
           component: AdminUsers,
           meta: { title: 'Quản lý người dùng - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
+            // requiresAuth: true,
+            // requiresAdmin: true
            }
         },
         {
