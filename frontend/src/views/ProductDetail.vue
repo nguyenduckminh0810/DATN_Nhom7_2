@@ -49,7 +49,8 @@
               <div class="product-gallery">
           <ImageGallery
             :images="productImages"
-            :initial-index="0"
+            :initial-index="currentImageIndex"
+            :key="`gallery-${currentImageIndex}`"
             :main-image-width="600"
             :main-image-height="600"
             :thumbnail-width="80"
@@ -487,6 +488,7 @@ const activeTab = ref('description')
 const selectedSize = ref('')
 const selectedColor = ref('')
 const quantity = ref(1)
+const currentImageIndex = ref(0)
 
 // New reactive data for Coolmate layout
 const activeSection = ref('mo-ta')
@@ -507,31 +509,13 @@ const fetchProductDetail = async (productId) => {
       throw new Error('Product not found')
     }
     
-    // Map API response to product object
-    product.value = {
-      id: productData.id,
-      name: productData.ten,
-      description: productData.moTa || 'Chưa có mô tả sản phẩm',
-      price: productData.gia || 0,
-      originalPrice: productData.giaGoc || productData.gia,
-      discount: productData.giamGia || 0,
-      promotionalBadge: productData.nhanKhuyenMai || null,
-      img: productData.anhDaiDien || productData.hinhAnhs?.[0]?.url || '',
-      image: productData.anhDaiDien || productData.hinhAnhs?.[0]?.url || '',
-      images: productData.hinhAnhs?.map(img => img.url) || [],
-      category: productData.danhMucTen || '',
-      brand: 'AURO',
-      rating: productData.danhGia || 4.5,
-      reviewCount: productData.soLuongDanhGia || 0,
-      inStock: productData.trangThai === 'active',
-      tags: productData.tags || [],
-      sku: productData.sku || '',
-      variants: []
-    }
+    // Collect all product images
+    const productImages = productData.hinhAnhs?.map(img => img.url) || []
     
-    // Map variants from detail response
+    // Map variants from detail response and collect variant images
+    let variants = []
     if (productData.bienThes && productData.bienThes.length > 0) {
-      product.value.variants = productData.bienThes.map(v => ({
+      variants = productData.bienThes.map(v => ({
         id: v.id,
         color: v.colorHex || '#000000',
         colorName: v.mauSac || 'Mặc định',
@@ -541,6 +525,39 @@ const fetchProductDetail = async (productId) => {
         imageUrl: v.hinhAnh,
         available: (v.tonKho || 0) > 0
       }))
+      
+      // Add variant images to product images if not already included
+      variants.forEach(variant => {
+        if (variant.imageUrl && !productImages.includes(variant.imageUrl)) {
+          productImages.push(variant.imageUrl)
+        }
+      })
+    }
+    
+    // Map API response to product object
+    product.value = {
+      id: productData.id,
+      name: productData.ten,
+      description: productData.moTa || 'Chưa có mô tả sản phẩm',
+      price: productData.gia || 0,
+      originalPrice: productData.giaGoc || productData.gia,
+      discount: productData.giamGia || 0,
+      promotionalBadge: productData.nhanKhuyenMai || null,
+      img: productData.anhDaiDien || productImages[0] || '',
+      image: productData.anhDaiDien || productImages[0] || '',
+      images: productImages,
+      category: productData.danhMucTen || '',
+      brand: 'AURO',
+      rating: productData.danhGia || 4.5,
+      reviewCount: productData.soLuongDanhGia || 0,
+      inStock: productData.trangThai === 'active',
+      tags: productData.tags || [],
+      sku: productData.sku || '',
+      variants: variants
+    }
+    
+    // Continue with variants processing
+    if (variants.length > 0) {
       
       // Extract unique colors and sizes from variants
       const uniqueColors = [...new Set(product.value.variants.map(v => v.color))]
@@ -561,6 +578,8 @@ const fetchProductDetail = async (productId) => {
       }))
       
       console.log('Loaded variants:', product.value.variants.length)
+      console.log('Total images (product + variants):', product.value.images.length)
+      console.log('Variant images:', product.value.variants.filter(v => v.imageUrl).map(v => v.imageUrl))
     } else {
       // No variants, use default mock data
       product.value.colors = [
@@ -671,13 +690,55 @@ const displayQuantity = computed(() => {
   return quantity.value || 1
 })
 
+// Store image-variant mapping separately
+const imageVariantMap = computed(() => {
+  if (!product.value || !product.value.variants) return new Map()
+  
+  const map = new Map()
+  
+  product.value.variants.forEach(variant => {
+    if (variant.imageUrl) {
+      if (!map.has(variant.imageUrl)) {
+        map.set(variant.imageUrl, [])
+      }
+      map.get(variant.imageUrl).push({
+        color: variant.color,
+        colorName: variant.colorName,
+        size: variant.size,
+        variantId: variant.id,
+        price: variant.price,
+        stock: variant.stock
+      })
+    }
+  })
+  
+  return map
+})
+
 const productImages = computed(() => {
   if (!product.value) return []
   
-  return product.value.images.map((src, index) => ({
+  // Return images in the format ImageGallery expects: { src, alt }
+  const images = product.value.images.map((src, index) => ({
     src,
     alt: `${product.value.name} - Hình ${index + 1}`
   }))
+  
+  console.log('Product Images:', images)
+  console.log('Image-Variant Map:', imageVariantMap.value)
+  
+  return images
+})
+
+// Computed: Active image index based on selected variant
+const activeImageIndex = computed(() => {
+  if (!currentVariant.value || !currentVariant.value.imageUrl || !product.value?.images) {
+    return 0
+  }
+  
+  // Find the index of the image URL in the product images array
+  const index = product.value.images.findIndex(imgUrl => imgUrl === currentVariant.value.imageUrl)
+  return index >= 0 ? index : 0
 })
 
 // New computed properties for Coolmate layout
@@ -791,18 +852,28 @@ const selectSize = (size) => {
 
 const updateVariantImage = () => {
   if (!currentVariant.value) {
+    console.log('No current variant selected')
     return
   }
   
   // Update main image if variant has image
   if (currentVariant.value.imageUrl) {
-    // If images array doesn't include variant image, prepend it
-    if (!product.value.images.includes(currentVariant.value.imageUrl)) {
-      product.value.images = [currentVariant.value.imageUrl, ...product.value.images.slice(0, 4)]
-    }
+    // Update current image index to highlight the correct thumbnail
+    const newIndex = activeImageIndex.value
+    currentImageIndex.value = newIndex
+    
     // Set as main image
     product.value.image = currentVariant.value.imageUrl
     product.value.img = currentVariant.value.imageUrl
+    
+    console.log('Updated variant image:', {
+      variantImageUrl: currentVariant.value.imageUrl,
+      newIndex: newIndex,
+      color: currentVariant.value.colorName,
+      size: currentVariant.value.size
+    })
+  } else {
+    console.log('Current variant has no image URL')
   }
 }
 
@@ -1023,7 +1094,32 @@ const addToCart = (productToAdd = product.value) => {
 }
 
 const handleImageChange = (data) => {
-  // Image changed event - can be used for analytics
+  // When user clicks on a thumbnail, automatically select the corresponding variant
+  if (!data || !productImages.value || data.index < 0 || data.index >= productImages.value.length) return
+  
+  const clickedImage = productImages.value[data.index]
+  const imageSrc = clickedImage.src
+  
+  // Check if this image has associated variants
+  const variants = imageVariantMap.value.get(imageSrc)
+  
+  if (variants && variants.length > 0) {
+    // Get the first variant associated with this image
+    const variantInfo = variants[0]
+    
+    // Auto-select the color and size
+    if (variantInfo.color && availableColors.value.includes(variantInfo.color)) {
+      selectedColor.value = variantInfo.color
+    }
+    
+    if (variantInfo.size && availableSizes.value.includes(variantInfo.size)) {
+      selectedSize.value = variantInfo.size
+    }
+    
+    console.log('Auto-selected variant from image:', variantInfo)
+  } else {
+    console.log('No variant associated with this image')
+  }
 }
 
 const handleLightboxOpen = (data) => {
@@ -1050,6 +1146,12 @@ watch([selectedColor, selectedSize], () => {
   if (currentVariantStock.value > 0 && quantity.value > currentVariantStock.value) {
     quantity.value = currentVariantStock.value
   }
+})
+
+// Watch for active image index changes to update current image index
+watch(activeImageIndex, (newIndex) => {
+  currentImageIndex.value = newIndex
+  console.log('Active image index changed to:', newIndex)
 })
 
 // Watch route params to fetch product when ID changes
@@ -3108,6 +3210,30 @@ watch(() => route.params.id, (newId) => {
 .product-image-section .thumbnail {
   width: 80px !important;
   height: 80px !important;
+  overflow: hidden !important;
+}
+
+/* Force thumbnails to only show images */
+.product-image-section .thumbnail img,
+.product-image-section .thumbnail-img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* Hide any text or non-image content in thumbnails */
+.product-image-section .thumbnail *:not(img):not(.lazy-image-container) {
+  display: none !important;
+  visibility: hidden !important;
+}
+
+.product-image-section .thumbnail::before,
+.product-image-section .thumbnail::after,
+.product-image-section .thumbnail-item::before,
+.product-image-section .thumbnail-item::after {
+  content: none !important;
+  display: none !important;
 }
 
 /* Remove any extra spacing */
