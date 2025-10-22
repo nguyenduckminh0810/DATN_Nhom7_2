@@ -86,6 +86,13 @@ public class DonHangService {
             donHang.setTrangThai((String) updates.get("trangThai"));
         }
 
+        if (updates.containsKey("paymentStatus")) {
+            donHang.setPaymentStatus((String) updates.get("paymentStatus"));
+        }
+        if (updates.containsKey("paymentMethod")) {
+            donHang.setPaymentMethod((String) updates.get("paymentMethod"));
+        }
+
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang updated = donHangRepository.save(donHang);
 
@@ -161,6 +168,9 @@ public class DonHangService {
         dto.setGhiChu(dh.getGhiChu());
         dto.setTaoLuc(dh.getTaoLuc());
         dto.setCapNhatLuc(dh.getCapNhatLuc());
+
+        dto.setPaymentStatus(dh.getPaymentStatus() != null ? dh.getPaymentStatus() : "pending");
+        dto.setPaymentMethod(dh.getPaymentMethod() != null ? dh.getPaymentMethod() : "COD");
 
         // Convert chi tiết list (nếu có)
         if (dh.getChiTietList() != null) {

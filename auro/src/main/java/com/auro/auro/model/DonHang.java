@@ -62,7 +62,14 @@ public class DonHang {
     @Column(name = "cap_nhat_luc")
     private LocalDateTime capNhatLuc;
 
+    // Thêm 2 trường cho chức năng cập nhật trạng thái thanh toán tại admin.order
+
+    @Column(name = "payment_status")
+    private String paymentStatus; // pending, paid, failed
+
+    @Column(name = "payment_method")
+    private String paymentMethod; // COD, BANK_TRANSFER, MOMO
+
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DonHangChiTiet> chiTietList;
-
 }
