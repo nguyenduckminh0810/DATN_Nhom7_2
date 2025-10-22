@@ -15,6 +15,9 @@ public class DonHangResponse {
     private LocalDateTime taoLuc;
     private LocalDateTime capNhatLuc;
 
+    private String paymentStatus;
+    private String paymentMethod;
+
     // Danh sách chi tiết đơn hàng
     private List<DonHangChiTietResponse> chiTietList;
 
@@ -97,6 +100,22 @@ public class DonHangResponse {
 
     public void setChiTietList(List<DonHangChiTietResponse> chiTietList) {
         this.chiTietList = chiTietList;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
     }
 
 }

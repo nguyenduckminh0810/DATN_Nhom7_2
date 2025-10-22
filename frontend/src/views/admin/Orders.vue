@@ -1054,19 +1054,20 @@ const toggleSelectAll = () => {
 const updatePaymentStatus = async (order, newStatus) => {
   if (confirm(`Cập nhật trạng thái thanh toán đơn hàng #${order.soDonHang} thành "${getPaymentText(newStatus)}"?`)) {
     try {
-      // Gọi API update payment status (cần thêm endpoint trong backend)
-      // await axios.patch(`/api/don-hang/${order.id}/payment`, {
-      //   paymentStatus: newStatus
-      // });
+      await axios.put(`/api/don-hang/${order.id}`, {
+        diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
+        ghiChu: order.ghiChu || '',
+        trangThai: order.trangThai,
+        paymentStatus: newStatus 
+      });
       
-      // Update local state (tạm thời)
-      order.paymentStatus = newStatus;
-      order.capNhatLuc = new Date().toISOString();
+      // Refresh data
+      await fetchOrders();
       
-      console.log(`Đã cập nhật thanh toán đơn hàng #${order.soDonHang} sang ${newStatus}`);
+      alert('Cập nhật thanh toán thành công!');
     } catch (err) {
-      console.error('Lỗi khi cập nhật trạng thái thanh toán:', err);
-      alert('Có lỗi khi cập nhật trạng thái thanh toán');
+      console.error('Lỗi:', err);
+      alert('Có lỗi khi cập nhật thanh toán');
     }
   }
 };
