@@ -51,7 +51,7 @@
             >
               <i class="bi bi-cart3"></i>
               <span v-if="!sidebarCollapsed">Đơn hàng</span>
-              <span v-if="!sidebarCollapsed" class="badge bg-danger">3</span>
+              <!-- <span v-if="!sidebarCollapsed" class="badge bg-danger">3</span> -->
             </router-link>
           </li>
 
