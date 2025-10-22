@@ -6,14 +6,12 @@
   >
     <!-- Placeholder -->
     <div 
-      v-if="!loaded && !error"
+      v-if="!loaded && !error && actualSrc"
       class="lazy-image-placeholder"
       :class="placeholderClass"
     >
       <div class="placeholder-content">
         <div v-if="showSpinner" class="spinner"></div>
-        <i v-else-if="placeholderIcon" :class="placeholderIcon"></i>
-        <span v-if="placeholderText">{{ placeholderText }}</span>
       </div>
     </div>
 
@@ -31,7 +29,8 @@
 
     <!-- Actual Image -->
     <img
-      v-show="loaded && !error"
+      v-if="actualSrc"
+      v-show="!error"
       ref="imageRef"
       :src="actualSrc"
       :alt="alt"
@@ -360,10 +359,23 @@ defineExpose({
 }
 
 .lazy-image {
-  display: block;
+  display: block !important;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  position: relative;
+  z-index: 1;
+}
+
+/* Hide any text content inside lazy image */
+.lazy-image-container::before,
+.lazy-image-container::after {
+  content: none !important;
+}
+
+/* Ensure image is always visible and text is hidden */
+.lazy-image-container > *:not(img):not(.lazy-image-placeholder):not(.lazy-image-error) {
+  display: none !important;
 }
 
 .lazy-image.fade-in {

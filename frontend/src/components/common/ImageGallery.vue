@@ -741,7 +741,34 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
+  display: block !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* Force thumbnail container to only show images */
+.thumbnail * {
+  pointer-events: none;
+}
+
+.thumbnail img {
+  pointer-events: auto;
+}
+
+/* Hide any text content in thumbnails */
+.thumbnail::before,
+.thumbnail::after,
+.thumbnail-item::before,
+.thumbnail-item::after {
+  content: none !important;
+  display: none !important;
+}
+
+/* Ensure only images are visible in thumbnail */
+.thumbnail > *:not(.lazy-image-container):not(img) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
 /* Lightbox - Global styles for Teleport */
