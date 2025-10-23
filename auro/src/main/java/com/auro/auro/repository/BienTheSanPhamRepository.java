@@ -2,6 +2,9 @@ package com.auro.auro.repository;
 
 import com.auro.auro.model.BienTheSanPham;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,11 +15,19 @@ public interface BienTheSanPhamRepository extends JpaRepository<BienTheSanPham, 
     // Find variants for multiple products
     List<BienTheSanPham> findBySanPham_IdIn(Iterable<Long> sanPhamIds);
 
+    // Get variant IDs for multiple products (only IDs, no entity loading)
+    @Query("SELECT b.id FROM BienTheSanPham b WHERE b.sanPham.id IN :sanPhamIds")
+    List<Long> findIdsBySanPham_IdIn(@Param("sanPhamIds") Iterable<Long> sanPhamIds);
+
     // Delete variants for a list of products
-    void deleteBySanPham_IdIn(Iterable<Long> sanPhamIds);
+    @Modifying
+    @Query("DELETE FROM BienTheSanPham b WHERE b.sanPham.id IN :sanPhamIds")
+    void deleteBySanPham_IdIn(@Param("sanPhamIds") Iterable<Long> sanPhamIds);
 
     // Delete variants by product id
-    void deleteBySanPham_Id(Long idSanPham);
+    @Modifying
+    @Query("DELETE FROM BienTheSanPham b WHERE b.sanPham.id = :sanPhamId")
+    void deleteBySanPham_Id(@Param("sanPhamId") Long idSanPham);
 
     boolean existsBySku(String sku);
 

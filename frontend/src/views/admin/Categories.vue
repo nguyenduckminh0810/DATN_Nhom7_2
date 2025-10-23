@@ -384,7 +384,14 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Slug *</label>
-                <input type="text" class="form-control" v-model="categoryForm.slug" required>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  v-model="categoryForm.slug" 
+                  readonly 
+                  disabled
+                  placeholder="Tự động tạo"
+                >
               </div>
 
               <div class="col-md-6">
@@ -595,7 +602,15 @@ const handleDrop = (e) => { e.preventDefault(); if (draggedCategory.value) { /* 
 // add helper to open modal for creating
 const openCreateModal = () => {
   editingCategory.value = null
-  categoryForm.value = { name:'', slug:'', description:'', icon:'bi bi-folder', parentId:null, order:0, status:'active' }
+  categoryForm.value = { 
+    name:'', 
+    slug: `slug-${Date.now().toString().slice(-10)}`, // Tạo slug random
+    description:'', 
+    icon:'bi bi-folder', 
+    parentId:null, 
+    order:0, 
+    status:'active' 
+  }
   showAddModal.value = true
 }
 
@@ -735,7 +750,7 @@ const addSubCategory = (parent) => {
   const child = {
     id: Date.now(),
     name: 'Danh mục con mới',
-    slug: 'sub-' + Date.now(),
+    slug: `slug-${Date.now().toString().slice(-10)}`, // Tạo slug random
     description: '',
     icon: 'bi bi-folder',
     level: (parent.level || 0) + 1,

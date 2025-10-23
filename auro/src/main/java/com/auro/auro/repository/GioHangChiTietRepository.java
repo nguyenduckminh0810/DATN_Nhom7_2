@@ -16,6 +16,9 @@ public interface GioHangChiTietRepository extends JpaRepository<GioHangChiTiet, 
     // Find cart items by variant id
     java.util.List<GioHangChiTiet> findByBienThe_Id(Long idBienThe);
 
+    // Count cart items by variant id
+    long countByBienThe_Id(Long idBienThe);
+
     // Delete cart items by variant id
     void deleteByBienThe_Id(Long idBienThe);
 }

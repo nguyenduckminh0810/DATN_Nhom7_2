@@ -11,6 +11,9 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet, 
     // Find order items by variant id (bien the)
     java.util.List<DonHangChiTiet> findByBienThe_Id(Long idBienThe);
 
+    // Count order items by variant id
+    long countByBienThe_Id(Long idBienThe);
+
     // Delete by variant id
     void deleteByBienThe_Id(Long idBienThe);
 }
