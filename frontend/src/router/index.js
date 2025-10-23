@@ -12,14 +12,17 @@ const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFoun
 
 // Admin routes - lazy loaded separately with admin chunk
 const AdminDashboard = () => import(/* webpackChunkName: "admin" */ '../views/admin/Dashboard.vue')
-const AdminProducts = () => import(/* webpackChunkName: "admin" */ '../views/admin/AdminProducts.vue')
-const AdminCategories = () => import(/* webpackChunkName: "admin" */ '../views/admin/Categories.vue')
+const AdminProducts = () =>
+  import(/* webpackChunkName: "admin" */ '../views/admin/AdminProducts.vue')
+const AdminCategories = () =>
+  import(/* webpackChunkName: "admin" */ '../views/admin/Categories.vue')
 const AdminOrders = () => import(/* webpackChunkName: "admin" */ '../views/admin/Orders.vue')
 const AdminUsers = () => import(/* webpackChunkName: "admin" */ '../views/admin/Users.vue')
 const AdminAnalytics = () => import(/* webpackChunkName: "admin" */ '../views/admin/Analytics.vue')
 const AdminSettings = () => import(/* webpackChunkName: "admin" */ '../views/admin/Settings.vue')
 const AdminInventory = () => import(/* webpackChunkName: "admin" */ '../views/admin/Inventory.vue')
-const AdminPromotions = () => import(/* webpackChunkName: "admin" */ '../views/admin/Promotions.vue')
+const AdminPromotions = () =>
+  import(/* webpackChunkName: "admin" */ '../views/admin/Promotions.vue')
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,55 +31,55 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: Home,
-      meta: { title: 'Trang chủ - AURO' }
+      meta: { title: 'Trang chủ - AURO' },
     },
     {
       path: '/category/:slug?',
       name: 'category',
       component: Category,
-      meta: { title: 'Danh mục sản phẩm - AURO' }
+      meta: { title: 'Danh mục sản phẩm - AURO' },
     },
     {
       path: '/product/:id',
       name: 'product-detail',
       component: ProductDetail,
-      meta: { title: 'Chi tiết sản phẩm - AURO' }
+      meta: { title: 'Chi tiết sản phẩm - AURO' },
     },
     {
       path: '/cart',
       name: 'cart',
       component: Cart,
-      meta: { title: 'Giỏ hàng - AURO' }
+      meta: { title: 'Giỏ hàng - AURO' },
     },
     {
       path: '/login',
       name: 'login',
       redirect: '/',
-      meta: { title: 'Đăng nhập - AURO' }
+      meta: { title: 'Đăng nhập - AURO' },
     },
     {
       path: '/register',
       name: 'register',
       redirect: '/',
-      meta: { title: 'Đăng ký - AURO' }
+      meta: { title: 'Đăng ký - AURO' },
     },
     {
       path: '/profile',
       name: 'profile',
       component: Profile,
-      meta: { title: 'Thông tin cá nhân - AURO', requiresAuth: true }
+      meta: { title: 'Thông tin cá nhân - AURO', requiresAuth: true },
     },
     {
       path: '/orders',
       name: 'orders',
       component: Orders,
-      meta: { title: 'Đơn hàng của tôi - AURO', requiresAuth: true }
+      meta: { title: 'Đơn hàng của tôi - AURO', requiresAuth: true },
     },
     {
       path: '/search',
       name: 'search',
       component: SearchResults,
-      meta: { title: 'Tìm kiếm - AURO' }
+      meta: { title: 'Tìm kiếm - AURO' },
     },
     {
       path: '/admin',
@@ -85,98 +88,71 @@ const router = createRouter({
       meta: {
         title: 'Admin Dashboard - AURO',
         requiresAuth: true,
-        requiresAdmin: true
+        requiresAdmin: true,
       },
       children: [
         {
           path: '',
           name: 'admin-dashboard',
           component: AdminDashboard,
-          meta: { title: 'Admin Dashboard - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Admin Dashboard - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'products',
           name: 'admin-products',
           component: () => import('@/views/admin/AdminProducts.vue'),
-          meta: { title: 'Quản lý sản phẩm - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Quản lý sản phẩm - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'categories',
           name: 'admin-categories',
           component: AdminCategories,
-          meta: { title: 'Quản lý danh mục - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Quản lý danh mục - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'orders',
           name: 'admin-orders',
           component: AdminOrders,
-          meta: { title: 'Quản lý đơn hàng - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Quản lý đơn hàng - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'users',
           name: 'admin-users',
           component: AdminUsers,
-          meta: { title: 'Quản lý người dùng - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Quản lý người dùng - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'analytics',
           name: 'admin-analytics',
           component: AdminAnalytics,
-          meta: { title: 'Thống kê & Báo cáo - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Thống kê & Báo cáo - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'settings',
           name: 'admin-settings',
           component: AdminSettings,
-          meta: { title: 'Cài đặt - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Cài đặt - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'inventory',
           name: 'admin-inventory',
           component: AdminInventory,
-          meta: { title: 'Quản lý tồn kho - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
+          meta: { title: 'Quản lý tồn kho - AURO', requiresAuth: true, requiresAdmin: true },
         },
         {
           path: 'promotions',
           name: 'admin-promotions',
           component: AdminPromotions,
-          meta: { title: 'Khuyến mãi & Voucher - AURO',
-            requiresAuth: true,
-            requiresAdmin: true
-           }
-        }
-      ]
+          meta: { title: 'Khuyến mãi & Voucher - AURO', requiresAuth: true, requiresAdmin: true },
+        },
+      ],
     },
     {
       path: '/:pathMatch(.*)*',
       name: 'not-found',
       component: NotFound,
-      meta: { title: 'Không tìm thấy trang - AURO' }
-    }
+      meta: { title: 'Không tìm thấy trang - AURO' },
+    },
   ],
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
@@ -184,7 +160,7 @@ const router = createRouter({
     } else {
       return { top: 0 }
     }
-  }
+  },
 })
 
 // Navigation guards
@@ -207,8 +183,15 @@ router.beforeEach((to, from, next) => {
   }
   if (to.meta.requiresAdmin) {
     const user = JSON.parse(localStorage.getItem('auro_user') || '{}')
-    if (!user.vaiTro || !['ADM', 'STF'].includes(user.vaiTro)) {
+    console.log('Router check - User from localStorage:', user)
+
+    // Kiểm tra cả vaiTro, vaiTroMa và role
+    const userRole = user.vaiTroMa || user.vaiTro || user.role
+    console.log('Router check - User role:', userRole)
+
+    if (!userRole || !['ADM', 'STF', 'admin', 'staff'].includes(userRole)) {
       // Redirect to home if not admin/staff
+      console.log('Access denied - redirecting to home')
       next('/')
       return
     }

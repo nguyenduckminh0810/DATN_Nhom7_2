@@ -11,9 +11,26 @@ export const useUserStore = defineStore('user', () => {
 
   // Getters
   const isAuthenticated = computed(() => !!user.value)
-  const userRole = computed(() => user.value?.role || 'guest')
-  const isAdmin = computed(() => user.value?.role === 'admin')
-  const userName = computed(() => user.value?.name || '')
+  const userRole = computed(() => {
+    if (!user.value) return 'guest'
+
+    // Backend trả về vaiTro với các giá trị: ADM, STF, CUS, GST
+    const role = user.value.vaiTroMa || user.value.role || user.value.vaiTro || 'guest'
+    console.log('User object:', user.value)
+    console.log('Role from backend:', role)
+
+    // Map các giá trị từ backend sang frontend
+    const roleMap = {
+      ADM: 'admin',
+      STF: 'staff',
+      CUS: 'customer',
+      GST: 'guest',
+    }
+
+    return roleMap[role] || role.toLowerCase()
+  })
+  const isAdmin = computed(() => userRole.value === 'admin')
+  const userName = computed(() => user.value?.name || user.value?.hoTen || '')
   const userEmail = computed(() => user.value?.email || '')
   const userAvatar = computed(() => user.value?.avatar || null)
 
@@ -41,7 +58,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.auth.login(credentials)
-      
+
       if (response.success) {
         setToken(response.data.accessToken)
         setUser(response.data.user)
@@ -63,7 +80,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.auth.register(userData)
-      
+
       if (response.success) {
         setToken(response.data.accessToken)
         setUser(response.data.user)
@@ -112,7 +129,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.user.updateProfile(profileData)
-      
+
       if (response.success) {
         setUser(response.data.user)
         return { success: true, data: response.data }
@@ -133,7 +150,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.user.changePassword(passwordData)
-      
+
       if (response.success) {
         return { success: true, message: response.message }
       } else {
@@ -153,7 +170,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.user.uploadAvatar(file, onProgress)
-      
+
       if (response.success) {
         setUser({ ...user.value, avatar: response.data.avatar })
         return { success: true, data: response.data }
@@ -174,7 +191,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.auth.forgotPassword(email)
-      
+
       if (response.success) {
         return { success: true, message: response.message }
       } else {
@@ -194,7 +211,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.auth.resetPassword(token, password)
-      
+
       if (response.success) {
         return { success: true, message: response.message }
       } else {
@@ -214,7 +231,7 @@ export const useUserStore = defineStore('user', () => {
       error.value = null
 
       const response = await apiService.auth.verifyEmail(token)
-      
+
       if (response.success) {
         setUser(response.data.user)
         return { success: true, message: response.message }
@@ -232,9 +249,9 @@ export const useUserStore = defineStore('user', () => {
     try {
       isLoading.value = true
       error.value = null
-  
+
       const response = await apiService.auth.me()
-      
+
       if (response.success) {
         setUser(response.data)
         return { success: true, data: response.data }
@@ -253,7 +270,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       const storedUser = localStorage.getItem('auro_user')
       const storedToken = localStorage.getItem('auro_token')
-      
+
       if (storedUser && storedToken) {
         user.value = JSON.parse(storedUser)
         return true
@@ -309,6 +326,6 @@ export const useUserStore = defineStore('user', () => {
     verifyEmail,
     loadUserFromStorage,
     getCurrentUser,
-    clearError
+    clearError,
   }
 })
