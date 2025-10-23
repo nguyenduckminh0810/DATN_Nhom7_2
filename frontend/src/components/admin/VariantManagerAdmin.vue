@@ -46,7 +46,14 @@
       </div>
 
       <!-- Color Presets -->
-      <div class="color-presets">
+      <div v-if="isLoadingColors" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Đang tải màu sắc...</span>
+        </div>
+        <p class="mt-2 text-muted">Đang tải màu sắc...</p>
+      </div>
+      
+      <div v-else class="color-presets">
         <div
           v-for="color in colorPresets"
           :key="color.hex"
@@ -229,52 +236,41 @@
         </div>
       </div>
 
-      <!-- Variant Details: Price & Image -->
-      <div class="variant-details-section">
+      <!-- Variant Images: One image per color -->
+      <div class="variant-images-section">
         <h6 class="details-title">
-          <i class="bi bi-currency-dollar me-2"></i>
-          Chi tiết giá và hình ảnh (tùy chọn)
+          <i class="bi bi-image me-2"></i>
+          Hình ảnh cho từng màu
         </h6>
         <p class="text-muted small mb-3">
-          Để trống giá nếu muốn dùng giá chung của sản phẩm. Upload ảnh cho từng biến thể để hiển thị khi khách chọn.
+          Upload một ảnh đại diện cho mỗi màu. Ảnh này sẽ hiển thị khi khách hàng chọn màu tương ứng.
         </p>
-        <div class="details-grid">
+        
+        <!-- Warning if no productId -->
+        <div v-if="!productId" class="alert alert-warning mb-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Lưu ý:</strong> Bạn cần lưu thông tin sản phẩm trước khi upload ảnh cho biến thể.
+        </div>
+        
+        <div class="color-images-grid">
           <div 
             v-for="color in selectedColors" 
             :key="color.hex"
-            class="color-group"
+            class="color-image-item"
           >
-            <div class="color-group-header">
+            <div class="color-image-header">
               <div class="color-dot" :style="{ backgroundColor: color.hex }"></div>
               <strong>{{ color.name }}</strong>
             </div>
-            <div class="size-details">
-              <div 
-                v-for="size in availableSizes" 
-                :key="size"
-                class="size-detail-row"
-              >
-                <div class="size-label">{{ size }}</div>
-                <input
-                  type="number"
-                  :value="getVariantPrice(size, color.hex)"
-                  @input="updateVariantPrice(size, color.hex, $event.target.value)"
-                  class="price-input form-control form-control-sm"
-                  placeholder="Giá (VNĐ)"
-                  min="0"
-                  step="1000"
-                />
-                <VariantImageUploader
-                  v-if="productId"
-                  :product-id="productId"
-                  :size="size"
-                  :color="color.name"
-                  :image-url="getVariantImage(size, color.hex)"
-                  @uploaded="(url) => updateVariantImage(size, color.hex, url)"
-                  @removed="() => updateVariantImage(size, color.hex, null)"
-                />
-              </div>
-            </div>
+            <VariantImageUploader
+              :product-id="productId || 'temp'"
+              :size="'common'"
+              :color="color.name"
+              :image-url="getColorImage(color.hex)"
+              :disabled="!productId"
+              @uploaded="(url) => updateColorImage(color.hex, url)"
+              @removed="() => updateColorImage(color.hex, null)"
+            />
           </div>
         </div>
       </div>
@@ -369,6 +365,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import variantService from '@/services/variantService'
+import colorService from '@/services/colorService'
 import VariantImageUploader from './VariantImageUploader.vue'
 
 const props = defineProps({
@@ -409,8 +406,7 @@ const emit = defineEmits(['save', 'cancel', 'update'])
 const selectedColors = ref([...props.initialColors])
 const selectedMaterial = ref(props.initialMaterial || '')
 const variantStocks = ref({})
-const variantPrices = ref({}) // Lưu giá riêng cho từng biến thể
-const variantImages = ref({}) // Lưu ảnh riêng cho từng biến thể
+const colorImages = ref({}) // Lưu ảnh cho mỗi màu (không theo size)
 const showColorPicker = ref(false)
 const customColorName = ref('')
 const customColorHex = ref('#000000')
@@ -418,6 +414,8 @@ const showFillModal = ref(false)
 const bulkStockValue = ref(0)
 const isLoading = ref(false)
 const isSaving = ref(false)
+const colorPresets = ref([]) // Load from DB
+const isLoadingColors = ref(false)
 
 // Size configurations
 const sizeConfigs = {
@@ -432,24 +430,6 @@ const sizeConfigs = {
     name: 'Quần'
   }
 }
-
-// Color presets for men's clothing
-const colorPresets = [
-  { name: 'Đen', hex: '#000000' },
-  { name: 'Trắng', hex: '#FFFFFF' },
-  { name: 'Xám', hex: '#808080' },
-  { name: 'Xám đậm', hex: '#4A4A4A' },
-  { name: 'Xanh navy', hex: '#000080' },
-  { name: 'Xanh dương', hex: '#0066CC' },
-  { name: 'Xanh denim', hex: '#1560BD' },
-  { name: 'Nâu', hex: '#8B4513' },
-  { name: 'Be', hex: '#F5F5DC' },
-  { name: 'Camel', hex: '#C19A6B' },
-  { name: 'Xanh rêu', hex: '#556B2F' },
-  { name: 'Xanh lá đậm', hex: '#2D5016' },
-  { name: 'Đỏ đô', hex: '#8B0000' },
-  { name: 'Kaki', hex: '#C3B091' }
-]
 
 // Material options for men's clothing
 const materialOptions = [
@@ -560,25 +540,16 @@ const updateVariantStock = (size, colorHex, value) => {
   emitUpdate()
 }
 
-const getVariantPrice = (size, colorHex) => {
-  const key = getVariantKey(size, colorHex)
-  return variantPrices.value[key] || null
+const getColorImage = (colorHex) => {
+  return colorImages.value[colorHex] || null
 }
 
-const updateVariantPrice = (size, colorHex, value) => {
-  const key = getVariantKey(size, colorHex)
-  variantPrices.value[key] = value ? parseFloat(value) : null
-  emitUpdate()
-}
-
-const getVariantImage = (size, colorHex) => {
-  const key = getVariantKey(size, colorHex)
-  return variantImages.value[key] || null
-}
-
-const updateVariantImage = (size, colorHex, imageUrl) => {
-  const key = getVariantKey(size, colorHex)
-  variantImages.value[key] = imageUrl
+const updateColorImage = (colorHex, imageUrl) => {
+  if (imageUrl) {
+    colorImages.value[colorHex] = imageUrl
+  } else {
+    delete colorImages.value[colorHex]
+  }
   emitUpdate()
 }
 
@@ -648,25 +619,47 @@ const toggleColor = (color) => {
   emitUpdate()
 }
 
-const addCustomColor = () => {
+const addCustomColor = async () => {
   if (!customColorName.value.trim()) {
     alert('Vui lòng nhập tên màu')
     return
   }
   
-  const newColor = {
-    name: customColorName.value.trim(),
-    hex: customColorHex.value
+  try {
+    // Tạo màu mới trong DB
+    const newColorData = {
+      ten: customColorName.value.trim(),
+      ma: customColorHex.value
+    }
+    
+    const savedColor = await colorService.create(newColorData)
+    
+    const newColor = {
+      name: savedColor.ten,
+      hex: savedColor.ma,
+      id: savedColor.id
+    }
+    
+    // Thêm vào danh sách presets
+    if (!colorPresets.value.some(c => c.hex === newColor.hex)) {
+      colorPresets.value.push(newColor)
+    }
+    
+    // Chọn màu vừa tạo
+    if (!isColorSelected(newColor.hex)) {
+      selectedColors.value.push(newColor)
+    }
+    
+    customColorName.value = ''
+    customColorHex.value = '#000000'
+    showColorPicker.value = false
+    emitUpdate()
+    
+    alert('Đã thêm màu mới thành công!')
+  } catch (error) {
+    console.error('Lỗi khi thêm màu:', error)
+    alert('Có lỗi khi thêm màu: ' + (error.response?.data?.message || error.message))
   }
-  
-  if (!isColorSelected(newColor.hex)) {
-    selectedColors.value.push(newColor)
-  }
-  
-  customColorName.value = ''
-  customColorHex.value = '#000000'
-  showColorPicker.value = false
-  emitUpdate()
 }
 
 const removeColor = (hex) => {
@@ -737,17 +730,14 @@ const buildVariantsData = () => {
       
       // Chỉ thêm biến thể nếu có stock là số và > 0
       if (stock !== '' && !isNaN(stock) && parseInt(stock) > 0) {
-        const key = getVariantKey(size, color.hex)
         variants.push({
-          size,
+          size: size,
           color: color.name,
           colorHex: color.hex,
-          material: selectedMaterial.value,
           stock: parseInt(stock),
           sku: generateSKU(size, color),
-          price: variantPrices.value[key] || null, // Giá riêng
-          imageUrl: variantImages.value[key] || null, // Ảnh riêng
-          available: true
+          price: null, // Không dùng giá riêng nữa
+          imageUrl: colorImages.value[color.hex] || null // Dùng ảnh chung của màu
         })
       }
     })
@@ -784,7 +774,13 @@ const handleSave = async () => {
   try {
     const variantsData = buildVariantsData()
     
-    // Gọi API để lưu biến thể
+    // Log data để debug
+    console.log('Sending data to API:', {
+      material: selectedMaterial.value,
+      variants: variantsData.variants
+    })
+    
+    // Gọi API để lưu biến thể - Gửi đúng format backend mong đợi
     const response = await variantService.upsertVariants(props.productId, {
       material: selectedMaterial.value,
       variants: variantsData.variants.map(v => ({
@@ -794,7 +790,7 @@ const handleSave = async () => {
         sku: v.sku,
         stock: v.stock,
         price: v.price,
-        imageUrl: v.imageUrl
+        imageUrl: v.imageUrl // Ảnh chung theo màu
       }))
     })
     
@@ -802,7 +798,14 @@ const handleSave = async () => {
     emit('save', variantsData)
   } catch (error) {
     console.error('Lỗi khi lưu biến thể:', error)
-    alert('Có lỗi xảy ra khi lưu biến thể: ' + (error.response?.data?.message || error.message))
+    console.error('Error response:', error.response)
+    
+    const errorMessage = error.response?.data?.message 
+      || error.response?.data?.error
+      || error.message 
+      || 'Lỗi không xác định'
+    
+    alert('Có lỗi xảy ra khi lưu biến thể: ' + errorMessage)
   } finally {
     isSaving.value = false
   }
@@ -826,12 +829,9 @@ const loadExistingVariants = async () => {
         const key = getVariantKey(variant.size, variant.colorHex)
         variantStocks.value[key] = variant.stock || 0
         
-        // Load price and image if available
-        if (variant.price) {
-          variantPrices.value[key] = variant.price
-        }
-        if (variant.imageUrl) {
-          variantImages.value[key] = variant.imageUrl
+        // Load image for color (chỉ cần load 1 lần cho mỗi màu)
+        if (variant.imageUrl && !colorImages.value[variant.colorHex]) {
+          colorImages.value[variant.colorHex] = variant.imageUrl
         }
         
         // Add color to selected colors if not exists
@@ -855,6 +855,33 @@ const loadExistingVariants = async () => {
   }
 }
 
+// Load all colors from database
+const loadColors = async () => {
+  isLoadingColors.value = true
+  try {
+    const colors = await colorService.getAll()
+    colorPresets.value = colors.map(color => ({
+      id: color.id,
+      name: color.ten,
+      hex: color.ma
+    }))
+  } catch (error) {
+    console.error('Lỗi khi tải màu sắc:', error)
+    // Nếu lỗi, dùng màu mặc định
+    colorPresets.value = [
+      { name: 'Đen', hex: '#000000' },
+      { name: 'Trắng', hex: '#FFFFFF' },
+      { name: 'Xám', hex: '#808080' },
+      { name: 'Xanh navy', hex: '#000080' },
+      { name: 'Xanh dương', hex: '#0066CC' },
+      { name: 'Nâu', hex: '#8B4513' },
+      { name: 'Be', hex: '#F5F5DC' }
+    ]
+  } finally {
+    isLoadingColors.value = false
+  }
+}
+
 // Initialize from props
 const initializeVariants = () => {
   if (props.initialVariants && props.initialVariants.length > 0) {
@@ -867,6 +894,9 @@ const initializeVariants = () => {
 
 // Lifecycle
 onMounted(async () => {
+  // Load colors from database first
+  await loadColors()
+  
   // Load existing variants from API if productId exists
   if (props.productId) {
     await loadExistingVariants()
@@ -1549,6 +1579,37 @@ watch(() => props.category, () => {
   }
 }
 
+/* Variant Images Section */
+.variant-images-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.color-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.color-image-item {
+  background: #f8fafb;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.color-image-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
 /* Variant Details Section */
 .variant-details-section {
   margin-top: 2rem;
@@ -1561,6 +1622,8 @@ watch(() => props.category, () => {
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
 }
 
 .details-grid {

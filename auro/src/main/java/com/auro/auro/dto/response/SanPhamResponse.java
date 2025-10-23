@@ -22,4 +22,5 @@ public class SanPhamResponse {
     private LocalDateTime taoLuc;
     private LocalDateTime capNhatLuc;
     private String anhDaiDien;
+    private Integer tonKho;
 }

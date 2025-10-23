@@ -105,7 +105,7 @@
             @click="clearAllItems"
             v-if="items.length > 0"
           >
-            <i class="bi bi-trash me-1"></i>Xóa tất cả
+            <i class="bi bi-trash me-1" ></i>Xóa tất cả
           </button>
           <router-link 
             to="/cart" 

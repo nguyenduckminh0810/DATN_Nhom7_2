@@ -7,7 +7,7 @@
         <p class="page-subtitle">Quản lý danh sách sản phẩm của cửa hàng</p>
       </div>
       <div class="header-right">
-        <button class="btn btn-auro-primary" @click="showAddModal = true">
+        <button class="btn btn-auro-primary" @click="openAddModal">
           <i class="ph-plus me-2"></i>Thêm sản phẩm
         </button>
       </div>
@@ -192,7 +192,7 @@
                   </div>
                   <div class="product-details">
                     <div class="product-name">{{ product.name }}</div>
-                    <div class="product-sku">SKU: {{ product.sku }}</div>
+                    <div class="product-sku" v-if="product.sku">SKU: {{ product.sku }}</div>
                     <div v-if="product.tags && product.tags.length" class="product-tags">
                       <span v-for="tag in product.tags.slice(0, 2)" :key="tag" class="tag">{{
                         tag
@@ -393,18 +393,15 @@
                   <input type="text" class="form-control" v-model="productForm.name" required />
                 </div>
                 <div class="col-md-4">
-                  <label class="form-label">SKU *</label>
-                  <div class="input-group">
-                    <input type="text" class="form-control" v-model="productForm.sku" required />
-                    <button
-                      type="button"
-                      class="btn btn-outline-secondary"
-                      @click="generateSKU"
-                      title="Tạo SKU tự động"
-                    >
-                      <i class="bi bi-arrow-clockwise"></i>
-                    </button>
-                  </div>
+                  <label class="form-label">SKU</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    v-model="productForm.sku" 
+                    readonly 
+                    disabled
+                    placeholder="Tự động tạo"
+                  />
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Danh mục * (CHỈ QUẦN ÁO NAM)</label>
@@ -423,7 +420,7 @@
                     <option value="out-of-stock">Hết hàng</option>
                   </select>
                 </div>
-                <div class="col-md-4">
+                <div class="">
                   <label class="form-label">Giá bán *</label>
                   <input
                     type="number"
@@ -433,25 +430,7 @@
                     min="0"
                   />
                 </div>
-                <div class="col-md-4">
-                  <label class="form-label">Giá gốc</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    v-model.number="productForm.originalPrice"
-                    min="0"
-                  />
-                </div>
-                <div class="col-md-4">
-                  <label class="form-label">Giảm giá (%)</label>
-                  <input
-                    type="number"
-                    class="form-control"
-                    :value="discountPercent"
-                    readonly
-                    disabled
-                  />
-                </div>
+              
                 <div class="col-12">
                   <label class="form-label">Mô tả sản phẩm</label>
                   <textarea
@@ -514,6 +493,7 @@
             :initial-colors="productForm.variantColors || []"
             :initial-material="productForm.material || ''"
             @update="handleVariantsUpdate"
+            @save="handleVariantsSave"
             @cancel="closeVariantModal"
           />
         </div>
@@ -570,7 +550,7 @@ const productForm = ref({
   categoryId: '', // lưu ID danh mục
   status: 'active',
   price: 0,
-  originalPrice: 0,
+  originalPrice: 0, // Đặt 0 thay vì null
   stock: 0,
   description: '',
   image: '',
@@ -617,10 +597,10 @@ function mapFromApi(sp) {
     sku: sp.sku || '',
     categoryId: sp.danhMucId || sp.categoryId || sp.danhMuc?.id || '',
     price: Number(sp.gia) || 0,
-    originalPrice: null,
-    stock: 0,
+    originalPrice: sp.giaGoc ? Number(sp.giaGoc) : 0, // Đặt 0 thay vì null
+    stock: sp.tonKho || 0,
     status: sp.trangThai || 'active',
-    description: sp.moTa,
+    description: sp.moTa || '',
     image: sp.anhDaiDien || '',
     createdAt: sp.taoLuc ? new Date(sp.taoLuc) : new Date(),
   }
@@ -712,6 +692,31 @@ const changePage = (page) => {
   }
 }
 
+// Mở modal thêm sản phẩm mới
+const openAddModal = () => {
+  // Reset form
+  productForm.value = {
+    id: null,
+    name: '',
+    sku: `SKU-${Date.now().toString().slice(-8)}`,
+    categoryId: '',
+    status: 'active',
+    price: 0,
+    originalPrice: 0, // Đặt 0 thay vì null để hiển thị được
+    stock: 0,
+    description: '',
+    image: '',
+    images: [],
+    variants: [],
+    variantColors: [],
+    material: '',
+    isNew: false,
+    tags: [],
+  }
+  activeTab.value = 'basic'
+  showAddModal.value = true
+}
+
 // Nút Sửa - chỉ mở modal thông tin
 const editProduct = async (product) => {
   editingProduct.value = product
@@ -738,30 +743,7 @@ const manageVariants = async (product) => {
   showVariantModal.value = true
 }
 
-// Nút Xóa - hiển thị số lượng biến thể
-const deleteProduct1 = async (product) => {
-  // Lấy số lượng biến thể
-  const { default: variantService } = await import('../../services/variantService')
-  let variantCount = 0
-  try {
-    const variants = await variantService.getBySanPham(product.id)
-    variantCount = variants ? variants.length : 0
-  } catch (e) {
-    console.warn('Could not load variants:', e)
-  }
-  
-  // Hiển thị thông báo xác nhận với số lượng biến thể
-  let message = `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`
-  if (variantCount > 0) {
-    message = `Bạn có muốn xóa ${variantCount} biến thể của sản phẩm và sản phẩm "${product.name}" không?`
-  }
-  
-  if (!confirm(message)) return
-  
-  await sanPhamService.delete(product.id)
-  // Reload current page (convert 1-based UI page to 0-based API page)
-  await loadProducts((currentPage.value || 1) - 1)
-}
+
 
 const viewProduct = (product) => {
   // Chuyển đến trang chi tiết sản phẩm
@@ -777,7 +759,7 @@ const closeModal = () => {
     categoryId: '',
     status: 'active',
     price: 0,
-    originalPrice: 0,
+    originalPrice: 0, // Đặt 0 thay vì null
     stock: 0,
     description: '',
     image: '',
@@ -908,12 +890,13 @@ const deleteProduct = async (product) => {
     // Hiển thị thông báo xác nhận với số lượng biến thể
     let message = `Bạn có chắc chắn muốn xóa sản phẩm "${product.name}"?`
     if (variantCount > 0) {
-      message = `Bạn có muốn xóa ${variantCount} biến thể của sản phẩm và sản phẩm "${product.name}" không?`
+      message = `Sản phẩm "${product.name}" có ${variantCount} biến thể.\n\nXóa sản phẩm sẽ xóa toàn bộ ${variantCount} biến thể này.\n\nBạn có chắc chắn muốn tiếp tục?`
     }
     
     if (!confirm(message)) return
     
     await sanPhamService.delete(product.id)
+    alert(`Đã xóa thành công sản phẩm "${product.name}"${variantCount > 0 ? ` và ${variantCount} biến thể` : ''}`)
     // Reload current page (convert 1-based UI page to 0-based API page)
     await loadProducts((currentPage.value || 1) - 1)
   } catch (e) {
@@ -1275,6 +1258,13 @@ const handleVariantsUpdate = (variantsData) => {
   productForm.value.material = variantsData.material
   // Update total stock
   productForm.value.stock = variantsData.totalStock
+}
+
+const handleVariantsSave = (variantsData) => {
+  // Cập nhật dữ liệu
+  handleVariantsUpdate(variantsData)
+  // Đóng modal sau khi lưu thành công
+  closeVariantModal()
 }
 
 // Lifecycle

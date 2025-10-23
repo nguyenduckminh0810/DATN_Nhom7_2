@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +51,7 @@ public class BienTheService {
         SanPham sanPham = sanPhamRepository.findById(sanPhamId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + sanPhamId));
 
-        // Lấy danh sách các biến thể hiện tại để xóa hình ảnh trước
+        // Lấy danh sách các biến thể hiện tại
         List<BienTheSanPham> existingVariants = bienTheSanPhamRepository.findBySanPham_Id(sanPhamId);
 
         // Xóa tất cả hình ảnh của các biến thể trước
@@ -60,7 +60,7 @@ public class BienTheService {
         }
         hinhAnhRepository.flush();
 
-        // Sau đó mới xóa các biến thể
+        // Xóa các biến thể cũ
         bienTheSanPhamRepository.deleteBySanPham_Id(sanPhamId);
         bienTheSanPhamRepository.flush();
 
@@ -75,6 +75,7 @@ public class BienTheService {
                         newChatLieu.setTen(request.getMaterial());
                         return chatLieuRepository.save(newChatLieu);
                     });
+            chatLieuRepository.flush();
         }
 
         // Tạo các biến thể mới
@@ -88,24 +89,30 @@ public class BienTheService {
             variant.setSanPham(sanPham);
 
             // Xử lý màu sắc
+            MauSac mauSac = null;
             if (item.getColor() != null && !item.getColor().isEmpty()) {
-                MauSac mauSac = mauSacRepository.findByTen(item.getColor())
+                mauSac = mauSacRepository.findByTen(item.getColor())
                         .orElseGet(() -> {
                             MauSac newMauSac = new MauSac();
                             newMauSac.setTen(item.getColor());
                             newMauSac.setMa(item.getColorHex());
-                            return mauSacRepository.save(newMauSac);
+                            MauSac saved = mauSacRepository.save(newMauSac);
+                            mauSacRepository.flush();
+                            return saved;
                         });
                 variant.setMauSac(mauSac);
             }
 
             // Xử lý kích cỡ
+            KichCo kichCo = null;
             if (item.getSize() != null && !item.getSize().isEmpty()) {
-                KichCo kichCo = kichCoRepository.findByTen(item.getSize())
+                kichCo = kichCoRepository.findByTen(item.getSize())
                         .orElseGet(() -> {
                             KichCo newKichCo = new KichCo();
                             newKichCo.setTen(item.getSize());
-                            return kichCoRepository.save(newKichCo);
+                            KichCo saved = kichCoRepository.save(newKichCo);
+                            kichCoRepository.flush();
+                            return saved;
                         });
                 variant.setKichCo(kichCo);
             }
@@ -113,11 +120,8 @@ public class BienTheService {
             // Gán chất liệu
             variant.setChatLieu(chatLieu);
 
-            // Gán SKU (nếu không có thì tự sinh)
-            String sku = item.getSku();
-            if (sku == null || sku.isEmpty()) {
-                sku = generateSku("SP" + sanPham.getId(), item.getSize(), item.getColor());
-            }
+            // Generate unique SKU
+            String sku = generateUniqueSku(sanPham.getId(), item.getSize(), item.getColor(), mauSac, kichCo);
             variant.setSku(sku);
 
             // Gán số lượng tồn
@@ -131,12 +135,10 @@ public class BienTheService {
             }
 
             BienTheSanPham saved = bienTheSanPhamRepository.save(variant);
+            bienTheSanPhamRepository.flush();
 
             // Xử lý hình ảnh nếu có imageUrl
             if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-                // Xóa hình ảnh cũ của biến thể này (nếu có)
-                hinhAnhRepository.deleteByBienThe_Id(saved.getId());
-
                 // Tạo hình ảnh mới
                 HinhAnh hinhAnh = new HinhAnh();
                 hinhAnh.setBienThe(saved);
@@ -148,6 +150,8 @@ public class BienTheService {
 
             savedVariants.add(saved);
         }
+
+        hinhAnhRepository.flush();
 
         return savedVariants.stream()
                 .map(this::toVariantResponse)
@@ -225,12 +229,27 @@ public class BienTheService {
     }
 
     /**
-     * Sinh SKU tự động
+     * Sinh SKU unique với UUID ngắn để tránh trùng lặp hoàn toàn
      */
-    private String generateSku(String baseSku, String size, String color) {
+    private String generateUniqueSku(Long productId, String size, String color, MauSac mauSac, KichCo kichCo) {
+        // Lấy code màu (3 ký tự đầu của tên màu)
         String colorCode = color != null && color.length() >= 3
                 ? color.substring(0, 3).toUpperCase()
                 : "XXX";
-        return String.format("%s-%s-%s", baseSku, size, colorCode);
+
+        // Generate random part (8 ký tự từ UUID)
+        String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+
+        // SKU format: SP{productId}-{size}-{colorCode}-{random}
+        // VD: SP123-S-TRA-A1B2C3D4
+        String sku = String.format("SP%d-%s-%s-%s", productId, size, colorCode, randomPart);
+
+        // Đảm bảo unique (tuy UUID gần như không trùng, nhưng vẫn check)
+        while (bienTheSanPhamRepository.existsBySku(sku)) {
+            randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+            sku = String.format("SP%d-%s-%s-%s", productId, size, colorCode, randomPart);
+        }
+
+        return sku;
     }
 }

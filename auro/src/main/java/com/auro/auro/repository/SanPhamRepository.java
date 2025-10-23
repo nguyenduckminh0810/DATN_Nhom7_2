@@ -1,10 +1,10 @@
 package com.auro.auro.repository;
 
-import com.auro.auro.dto.response.SanPhamResponse;
 import com.auro.auro.model.SanPham;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,21 +16,16 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
   Page<SanPham> findByDanhMuc_IdIn(List<Long> danhMucIds, Pageable pageable);
 
   @Query(value = """
-        SELECT new com.auro.auro.dto.response.SanPhamResponse(
-            sp.id, sp.ten, sp.slug, sp.moTa,
-            dm.id, dm.ten, sp.gia, sp.trangThai, sp.taoLuc, sp.capNhatLuc,
-            (SELECT ha.url FROM HinhAnh ha
-             WHERE ha.sanPham.id = sp.id AND ha.laDaiDien = true)
-        )
+        SELECT sp
         FROM SanPham sp
-        LEFT JOIN sp.danhMuc dm
+        LEFT JOIN FETCH sp.danhMuc dm
         WHERE sp.slug LIKE CONCAT(:slug, '%')
       """, countQuery = """
         SELECT COUNT(sp.id)
         FROM SanPham sp
         WHERE sp.slug LIKE CONCAT(:slug, '%')
       """)
-  Page<SanPhamResponse> findBySlugStartsWith(@Param("slug") String slug, Pageable pageable);
+  Page<SanPham> findBySlugStartsWith(@Param("slug") String slug, Pageable pageable);
 
   Page<SanPham> findByDanhMuc_Slug(String slug, Pageable pageable);
 
@@ -63,6 +58,11 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
   void deleteByDanhMuc_Id(Long danhMucId);
 
   void deleteByDanhMuc_IdIn(Iterable<Long> danhMucIds);
+
+  // Delete product by id using JPQL to avoid loading entity
+  @Modifying
+  @Query("DELETE FROM SanPham sp WHERE sp.id = :id")
+  void deleteProductById(@Param("id") Long id);
 
   // Optionally: delete products by ids - JpaRepository#deleteAllById exists, but
   // we may also declare a convenience method if needed in service/controller.

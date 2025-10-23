@@ -204,13 +204,35 @@ public class DanhMucController {
             return ResponseEntity.status(HttpStatus.CONFLICT).contentType(MediaType.APPLICATION_JSON).body(body);
         }
 
-        // Nếu force: có thể xoá sản phẩm trước, rồi xoá danh mục theo thứ tự con -> cha
+        // Nếu force: xóa theo thứ tự Hình ảnh → Biến thể → Sản phẩm → Danh mục
         if (relatedProducts > 0) {
+            // Lấy danh sách ID sản phẩm thuộc các danh mục này (chỉ ID, không load entity)
+            List<Long> sanPhamIds = sanPhamRepository.findByDanhMuc_IdIn(toDeleteIds)
+                    .stream()
+                    .map(sp -> sp.getId())
+                    .collect(Collectors.toList());
+
+            if (!sanPhamIds.isEmpty()) {
+                // Lấy danh sách ID biến thể (chỉ ID, không load entity)
+                List<Long> bienTheIds = bienTheSanPhamRepository.findIdsBySanPham_IdIn(sanPhamIds);
+
+                // Bước 1: Xóa hình ảnh của biến thể
+                if (!bienTheIds.isEmpty()) {
+                    hinhAnhRepository.deleteByBienThe_IdIn(bienTheIds);
+                }
+
+                // Bước 2: Xóa hình ảnh của sản phẩm
+                hinhAnhRepository.deleteBySanPham_IdIn(sanPhamIds);
+
+                // Bước 3: Xóa biến thể
+                bienTheSanPhamRepository.deleteBySanPham_IdIn(sanPhamIds);
+            }
+
+            // Bước 4: Xóa sản phẩm
             sanPhamRepository.deleteByDanhMuc_IdIn(toDeleteIds);
         }
 
-        // Xoá danh mục từ lá lên gốc
-        // (nếu anh có deleteAllByIdInBatch thì dùng, còn không thì for ngược)
+        // Bước 5: Xóa danh mục từ lá lên gốc
         for (int i = toDeleteIds.size() - 1; i >= 0; i--) {
             danhMucRepository.deleteById(toDeleteIds.get(i));
         }

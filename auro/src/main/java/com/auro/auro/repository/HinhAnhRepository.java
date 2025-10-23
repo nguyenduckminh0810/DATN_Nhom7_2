@@ -2,6 +2,9 @@ package com.auro.auro.repository;
 
 import com.auro.auro.model.HinhAnh;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,8 +23,22 @@ public interface HinhAnhRepository extends JpaRepository<HinhAnh, Long> {
     Optional<HinhAnh> findFirstByBienThe_IdOrderByThuTuAscIdAsc(Long idBienThe);
 
     // Xóa ảnh theo sản phẩm
-    void deleteBySanPham_Id(Long idSanPham);
+    @Modifying
+    @Query("DELETE FROM HinhAnh h WHERE h.sanPham.id = :sanPhamId")
+    void deleteBySanPham_Id(@Param("sanPhamId") Long idSanPham);
 
     // Xóa ảnh theo biến thể
-    void deleteByBienThe_Id(Long idBienThe);
+    @Modifying
+    @Query("DELETE FROM HinhAnh h WHERE h.bienThe.id = :bienTheId")
+    void deleteByBienThe_Id(@Param("bienTheId") Long idBienThe);
+
+    // Xóa ảnh theo nhiều biến thể
+    @Modifying
+    @Query("DELETE FROM HinhAnh h WHERE h.bienThe.id IN :bienTheIds")
+    void deleteByBienThe_IdIn(@Param("bienTheIds") Iterable<Long> bienTheIds);
+
+    // Xóa ảnh theo nhiều sản phẩm
+    @Modifying
+    @Query("DELETE FROM HinhAnh h WHERE h.sanPham.id IN :sanPhamIds")
+    void deleteBySanPham_IdIn(@Param("sanPhamIds") Iterable<Long> sanPhamIds);
 }

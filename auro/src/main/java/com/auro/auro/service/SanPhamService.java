@@ -11,6 +11,8 @@ import com.auro.auro.repository.BienTheSanPhamRepository;
 import com.auro.auro.repository.DanhMucRepository;
 import com.auro.auro.repository.SanPhamRepository;
 import com.auro.auro.repository.HinhAnhRepository;
+import com.auro.auro.repository.GioHangChiTietRepository;
+import com.auro.auro.repository.DonHangChiTietRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +35,8 @@ public class SanPhamService {
   private final DanhMucRepository danhMucRepository;
   private final HinhAnhRepository hinhAnhRepository;
   private final BienTheSanPhamRepository bienTheSanPhamRepository;
+  private final GioHangChiTietRepository gioHangChiTietRepository;
+  private final DonHangChiTietRepository donHangChiTietRepository;
 
   public Page<SanPhamResponse> getPageByCategorySlugIncludingChildren(
       String slug, String search, Pageable pageable) {
@@ -67,8 +72,8 @@ public class SanPhamService {
 
   // tìm theo slug
   public Page<SanPhamResponse> getBySlug(String slug, Pageable pageable) {
-    Page<SanPhamResponse> page = sanPhamRepository.findBySlugStartsWith(slug, pageable);
-    return page;
+    Page<SanPham> page = sanPhamRepository.findBySlugStartsWith(slug, pageable);
+    return page.map(this::mapToResponse);
   }
 
   public Page<SanPhamResponse> getPageByCategorySlug(String slug, String search, Pageable pageable) {
@@ -171,15 +176,38 @@ public class SanPhamService {
 
   @Transactional
   public void delete(Long id) {
-    SanPham sp = sanPhamRepository.findById(id)
-        .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại: " + id));
+    // Kiểm tra sản phẩm tồn tại
+    if (!sanPhamRepository.existsById(id)) {
+      throw new ResourceNotFoundException("Sản phẩm không tồn tại: " + id);
+    }
 
-    // 1. Lấy danh sách tất cả biến thể của sản phẩm
-    List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository.findBySanPham_Id(id);
+    // 1. Kiểm tra xem có biến thể nào trong giỏ hàng hoặc đơn hàng không
+    // Lấy danh sách ID biến thể (không load full entity để tránh
+    // TransientObjectException)
+    List<Long> variantIds = bienTheSanPhamRepository.findBySanPham_Id(id)
+        .stream()
+        .map(com.auro.auro.model.BienTheSanPham::getId)
+        .collect(java.util.stream.Collectors.toList());
 
-    // 2. Xóa hình ảnh của từng biến thể
-    for (com.auro.auro.model.BienTheSanPham variant : variants) {
-      hinhAnhRepository.deleteByBienThe_Id(variant.getId());
+    for (Long variantId : variantIds) {
+      long cartCount = gioHangChiTietRepository.countByBienThe_Id(variantId);
+      if (cartCount > 0) {
+        throw new BadRequestException(
+            "Không thể xóa sản phẩm vì có " + cartCount + " mục trong giỏ hàng đang sử dụng biến thể. " +
+                "Vui lòng yêu cầu khách hàng xóa khỏi giỏ hàng hoặc đặt trạng thái sản phẩm thành 'Ngừng bán'.");
+      }
+
+      long orderCount = donHangChiTietRepository.countByBienThe_Id(variantId);
+      if (orderCount > 0) {
+        throw new BadRequestException(
+            "Không thể xóa sản phẩm vì có " + orderCount + " đơn hàng đang liên quan đến biến thể. " +
+                "Vui lòng đặt trạng thái sản phẩm thành 'Ngừng bán' thay vì xóa.");
+      }
+    }
+
+    // 2. Xóa hình ảnh của từng biến thể (dùng native delete, không load entity)
+    for (Long variantId : variantIds) {
+      hinhAnhRepository.deleteByBienThe_Id(variantId);
     }
 
     // 3. Xóa tất cả biến thể của sản phẩm
@@ -188,8 +216,8 @@ public class SanPhamService {
     // 4. Xóa hình ảnh của sản phẩm
     hinhAnhRepository.deleteBySanPham_Id(id);
 
-    // 5. Cuối cùng xóa sản phẩm
-    sanPhamRepository.delete(sp);
+    // 5. Cuối cùng xóa sản phẩm (dùng JPQL DELETE để tránh load entity)
+    sanPhamRepository.deleteProductById(id);
   }
 
   private SanPhamResponse mapToResponse(SanPham sp) {
@@ -206,6 +234,18 @@ public class SanPhamService {
     res.setTrangThai(sp.getTrangThai());
     res.setTaoLuc(sp.getTaoLuc());
     res.setCapNhatLuc(sp.getCapNhatLuc());
+
+    // Tính tổng số lượng tồn kho từ các biến thể
+    try {
+      List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository.findBySanPham_Id(sp.getId());
+      int tongTonKho = variants.stream()
+          .mapToInt(bt -> bt.getSoLuongTon() != null ? bt.getSoLuongTon() : 0)
+          .sum();
+      res.setTonKho(tongTonKho);
+    } catch (Exception ignored) {
+      res.setTonKho(0);
+    }
+
     try {
       // set ảnh đại diện: ưu tiên laDaiDien=true, nếu không có lấy ảnh đầu tiên theo
       // thứ tự
@@ -304,32 +344,31 @@ public class SanPhamService {
     return res;
   }
 
+  /**
+   * Sinh slug unique với UUID ngắn để tránh trùng lặp hoàn toàn
+   */
   private String generateUniqueSlug(String base, Long currentId) {
-    String normalized = normalizeToSlug(base);
-    String candidate = normalized;
-    int suffix = 1;
-    boolean exists = currentId == null
-        ? sanPhamRepository.existsBySlug(candidate)
-        : sanPhamRepository.existsBySlugAndIdNot(candidate, currentId);
-    while (exists) {
-      candidate = normalized + "-" + (++suffix);
-      exists = currentId == null
-          ? sanPhamRepository.existsBySlug(candidate)
-          : sanPhamRepository.existsBySlugAndIdNot(candidate, currentId);
-    }
-    return candidate;
-  }
+    // Generate random part (10 ký tự từ UUID)
+    String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
-  private String normalizeToSlug(String input) {
-    if (!StringUtils.hasText(input))
-      return "san-pham";
-    String s = input.trim().toLowerCase();
-    // Replace Vietnamese accents and special chars
-    s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
-        .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-    s = s.replaceAll("[^a-z0-9\\s-]", "");
-    s = s.replaceAll("[\\s-]+", "-").replaceAll("^-+|-+$", "");
-    return s.isEmpty() ? "san-pham" : s;
+    // Slug format: slug-{random}
+    // VD: ao-thun-a1b2c3d4e5
+    String slug = "slug-" + randomPart;
+
+    // Đảm bảo unique (tuy UUID gần như không trùng, nhưng vẫn check)
+    boolean exists = currentId == null
+        ? sanPhamRepository.existsBySlug(slug)
+        : sanPhamRepository.existsBySlugAndIdNot(slug, currentId);
+
+    while (exists) {
+      randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
+      slug = "slug-" + randomPart;
+      exists = currentId == null
+          ? sanPhamRepository.existsBySlug(slug)
+          : sanPhamRepository.existsBySlugAndIdNot(slug, currentId);
+    }
+
+    return slug;
   }
 
 }

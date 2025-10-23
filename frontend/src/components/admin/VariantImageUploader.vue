@@ -1,15 +1,16 @@
 <template>
-  <div class="variant-image-uploader">
-    <div class="upload-area" @click="triggerFileInput">
+  <div class="variant-image-uploader" :class="{ 'disabled': disabled }">
+    <div class="upload-area" @click="disabled ? null : triggerFileInput()">
       <div v-if="!previewUrl && !imageUrl" class="upload-placeholder">
         <i class="bi bi-cloud-upload"></i>
-        <p>Click để upload ảnh</p>
+        <p v-if="!disabled">Click để upload ảnh</p>
+        <p v-else class="text-muted">Lưu sản phẩm trước</p>
         <span class="upload-hint">JPG, PNG (Max 2MB)</span>
       </div>
       
       <div v-else class="image-preview">
         <img :src="previewUrl || imageUrl" alt="Variant image" />
-        <div class="image-actions">
+        <div v-if="!disabled" class="image-actions">
           <button 
             type="button" 
             class="btn-change" 
@@ -41,6 +42,7 @@
       accept="image/jpeg,image/png,image/jpg"
       style="display: none"
       @change="handleFileChange"
+      :disabled="disabled"
     />
     
     <div v-if="error" class="error-message">
@@ -69,6 +71,10 @@ const props = defineProps({
   color: {
     type: String,
     required: true
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -80,12 +86,24 @@ const isUploading = ref(false)
 const error = ref('')
 
 const triggerFileInput = () => {
+  if (props.disabled) {
+    error.value = 'Vui lòng lưu sản phẩm trước khi upload ảnh'
+    setTimeout(() => {
+      error.value = ''
+    }, 3000)
+    return
+  }
   fileInput.value?.click()
 }
 
 const handleFileChange = async (event) => {
+  if (props.disabled) return
+  
   const file = event.target.files[0]
   if (!file) return
+  
+  // Reset error
+  error.value = ''
   
   // Validate file
   if (!file.type.match(/^image\/(jpeg|png|jpg)$/)) {
@@ -97,8 +115,6 @@ const handleFileChange = async (event) => {
     error.value = 'Kích thước file không được vượt quá 2MB'
     return
   }
-  
-  error.value = ''
   
   // Create preview
   const reader = new FileReader()
@@ -124,10 +140,13 @@ const uploadImage = async (file) => {
     
     if (response?.url) {
       emit('uploaded', response.url)
+      error.value = ''
+    } else {
+      throw new Error('Không nhận được URL ảnh từ server')
     }
   } catch (err) {
     console.error('Upload error:', err)
-    error.value = 'Lỗi khi upload ảnh: ' + (err.message || 'Unknown error')
+    error.value = 'Lỗi khi upload ảnh: ' + (err.response?.data?.message || err.message || 'Vui lòng thử lại')
     previewUrl.value = null
   } finally {
     isUploading.value = false
@@ -135,7 +154,10 @@ const uploadImage = async (file) => {
 }
 
 const removeImage = () => {
+  if (props.disabled) return
+  
   previewUrl.value = null
+  error.value = ''
   emit('removed')
   if (fileInput.value) {
     fileInput.value.value = ''
@@ -151,6 +173,17 @@ watch(() => props.imageUrl, (newVal) => {
 <style scoped>
 .variant-image-uploader {
   width: 100%;
+}
+
+.variant-image-uploader.disabled .upload-area {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #f1f5f9;
+}
+
+.variant-image-uploader.disabled .upload-area:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
 }
 
 .upload-area {
