@@ -157,6 +157,8 @@ class ApiService {
 
   // Chuẩn hoá phản hồi đăng nhập để FE hiểu đúng
   normalizeAuthResponse(be) {
+    console.log('Backend login response:', be)
+
     const accessToken =
       be?.accessToken ||
       be?.token ||
@@ -165,13 +167,34 @@ class ApiService {
       be?.data?.token ||
       be?.data?.jwt
 
-    const user = be?.user ||
-      be?.data?.user || {
-        id: be?.data?.id ?? be?.id ?? null,
-        name: be?.data?.name ?? be?.name ?? be?.username ?? null,
-        email: be?.data?.email ?? be?.email ?? null,
-        role: be?.data?.role ?? be?.role ?? 'user',
+    // Backend trả về user info trong be.data.user hoặc be.user
+    let user = be?.data?.user || be?.user
+
+    // Nếu có user, map các trường từ backend sang frontend
+    if (user) {
+      user = {
+        id: user.id,
+        name: user.hoTen || user.name || user.email?.split('@')[0] || 'User',
+        email: user.email,
+        phone: user.soDienThoai,
+        role: user.vaiTro || user.role, // Backend trả về vaiTro (ADM, STF, CUS)
+        vaiTroMa: user.vaiTro || user.vaiTroMa, // Lưu cả vaiTroMa
+        trangThai: user.trangThai,
+        kieu: user.kieu,
       }
+    } else {
+      // Fallback nếu không có user object
+      user = {
+        id: be?.data?.id ?? be?.id ?? null,
+        name: be?.data?.hoTen ?? be?.data?.name ?? be?.name ?? be?.username ?? null,
+        email: be?.data?.email ?? be?.email ?? null,
+        role: be?.data?.vaiTro ?? be?.data?.role ?? be?.role ?? 'user',
+        vaiTroMa: be?.data?.vaiTro ?? be?.data?.vaiTroMa ?? be?.vaiTroMa ?? null,
+      }
+    }
+
+    console.log('Normalized user:', user)
+    console.log('Normalized token:', accessToken)
 
     const success =
       be?.success ??
@@ -299,6 +322,18 @@ class ApiService {
     create: (data) => this.post('/phieu-giam-gia/quan-ly', data),
     update: (id, data) => this.put(`/phieu-giam-gia/quan-ly/${id}`, data),
     delete: (id) => this.delete(`/phieu-giam-gia/quan-ly/${id}`),
+  }
+
+  // Admin Users
+  adminUsers = {
+    getAll: (params = {}) => this.get('/nguoi-dung', { params }),
+    getById: (id) => this.get(`/nguoi-dung/${id}`),
+    update: (id, data) => this.put(`/nguoi-dung/${id}`, data),
+    softDelete: (id) => this.delete(`/nguoi-dung/${id}`),
+    // Future endpoints:
+    // create: (data) => this.post('/nguoi-dung', data),
+    // resetPassword: (id, data) => this.post(`/nguoi-dung/${id}/reset-mat-khau`, data),
+    // toggleStatus: (id, enabled) => this.put(`/nguoi-dung/${id}`, { trangThai: enabled }),
   }
 
   // Contact endpoints
