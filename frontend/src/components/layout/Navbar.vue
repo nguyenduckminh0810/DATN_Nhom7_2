@@ -23,17 +23,26 @@
           </div>
         </div>
       </router-link>
-      
+
       <!-- Mobile Toggle -->
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
-      
+
       <!-- Navigation Menu -->
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mx-auto">
           <li class="nav-item">
-            <router-link class="nav-link modern-nav-link" :class="{ active: $route.name === 'home' }" to="/">
+            <router-link
+              class="nav-link modern-nav-link"
+              :class="{ active: $route.name === 'home' }"
+              to="/"
+            >
               <span class="nav-text new-text">NEW</span>
             </router-link>
           </li>
@@ -62,7 +71,10 @@
               </li>
               <li class="dropdown-divider" v-if="childrenFor(parent.slug).length"></li>
               <li>
-                <router-link class="dropdown-item modern-dropdown-item" :to="`/category/${parent.slug}`">
+                <router-link
+                  class="dropdown-item modern-dropdown-item"
+                  :to="`/category/${parent.slug}`"
+                >
                   <i class="bi bi-grid-3x3-gap me-2"></i>Tất cả {{ parent.name }}
                 </router-link>
               </li>
@@ -85,28 +97,28 @@
             </router-link>
           </li>
         </ul>
-        
+
         <!-- Search Bar -->
         <div class="search-container">
           <div class="search-input-group">
-            <input 
-              type="text" 
-              class="form-control search-input" 
+            <input
+              type="text"
+              class="form-control search-input"
               placeholder="Tìm kiếm..."
               @keyup.enter="handleSearch"
               v-model="searchQuery"
-            >
+            />
             <button class="search-btn" @click="handleSearch">
               <i class="bi bi-search"></i>
             </button>
           </div>
         </div>
-        
+
         <!-- Right Menu -->
-        <ul class="navbar-nav">          
+        <ul class="navbar-nav">
           <!-- Cart -->
           <li class="nav-item">
-            <button 
+            <button
               class="nav-link modern-nav-link position-relative cart-trigger"
               @click="toggleMiniCart"
             >
@@ -116,19 +128,31 @@
               </span>
             </button>
           </li>
-          
+
           <!-- User Menu -->
           <li v-if="!isLoggedIn" class="nav-item">
             <button class="nav-link modern-nav-link login-btn" @click="openLoginPopup">
               <i class="bi bi-person"></i>
             </button>
           </li>
-          
+
           <li v-else class="nav-item dropdown dropdown-hover">
-            <a class="nav-link modern-nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+            <a
+              class="nav-link modern-nav-link dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="outside"
+            >
               <i class="bi bi-person-circle"></i>
             </a>
             <ul class="dropdown-menu dropdown-menu-end modern-dropdown">
+              <li v-if="isAdmin">
+                <router-link class="dropdown-item modern-dropdown-item admin-link" to="/admin">
+                  <i class="bi bi-speedometer2 me-2"></i>Trang quản trị
+                </router-link>
+              </li>
+              <li v-if="isAdmin"><hr class="dropdown-divider" /></li>
               <li>
                 <router-link class="dropdown-item modern-dropdown-item" to="/profile">
                   <i class="bi bi-person me-2"></i>Thông tin cá nhân
@@ -139,7 +163,7 @@
                   <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
                 </router-link>
               </li>
-              <li><hr class="dropdown-divider"></li>
+              <li><hr class="dropdown-divider" /></li>
               <li>
                 <button class="dropdown-item modern-dropdown-item" @click="handleLogout">
                   <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
@@ -154,26 +178,23 @@
 
   <!-- Search Modal -->
   <SearchModal />
-  
+
   <!-- Login Popup -->
-  <LoginPopup 
-    :isOpen="showLoginPopup" 
+  <LoginPopup
+    :isOpen="showLoginPopup"
     @close="closeLoginPopup"
     @switchToRegister="handleSwitchToRegister"
   />
-  
+
   <!-- Register Popup -->
-  <RegisterPopup 
-    :isOpen="showRegisterPopup" 
+  <RegisterPopup
+    :isOpen="showRegisterPopup"
     @close="closeRegisterPopup"
     @switchToLogin="handleSwitchToLogin"
   />
-  
+
   <!-- Mini Cart -->
-  <MiniCart 
-    :isOpen="showMiniCart" 
-    @close="closeMiniCart"
-  />
+  <MiniCart :isOpen="showMiniCart" @close="closeMiniCart" />
 </template>
 
 <script setup>
@@ -212,7 +233,7 @@ const normalize = (item) => ({
   name: item.ten || item.name || item.title || item.label || '',
   slug: item.slug || item.slugLoai || '',
   parentId: item.idCha ?? item.parentId ?? null,
-  status: (item.hoatDong === 1 || item.hoatDong === true) ? 'active' : 'inactive'
+  status: item.hoatDong === 1 || item.hoatDong === true ? 'active' : 'inactive',
 })
 
 async function loadCategories() {
@@ -224,7 +245,7 @@ async function loadCategories() {
     if (raw?.content && Array.isArray(raw.content)) raw = raw.content
     if (!Array.isArray(raw)) raw = []
     // map then filter only active
-    categories.value = raw.map(normalize).filter(c => c.status === 'active')
+    categories.value = raw.map(normalize).filter((c) => c.status === 'active')
   } catch (e) {
     console.warn('Could not load categories for navbar', e)
     categories.value = []
@@ -233,18 +254,27 @@ async function loadCategories() {
 
 // computed parent categories (top-level)
 const parentCategories = computed(() =>
-  categories.value
-    .filter(c => !c.parentId)
-    .sort((a,b) => a.name.localeCompare(b.name))
+  categories.value.filter((c) => !c.parentId).sort((a, b) => a.name.localeCompare(b.name)),
 )
 
 // get children by parent slug (fallback to slug-prefix if parent not found)
 function childrenFor(parentSlug) {
   if (!categories.value.length) return []
-  const parent = categories.value.find(c => c.slug === parentSlug)
-  if (parent) return categories.value.filter(c => c.parentId === parent.id).sort((a,b)=>a.name.localeCompare(b.name))
-  return categories.value.filter(c => c.slug && c.slug.startsWith(parentSlug + '-')).sort((a,b)=>a.name.localeCompare(b.name))
+  const parent = categories.value.find((c) => c.slug === parentSlug)
+  if (parent)
+    return categories.value
+      .filter((c) => c.parentId === parent.id)
+      .sort((a, b) => a.name.localeCompare(b.name))
+  return categories.value
+    .filter((c) => c.slug && c.slug.startsWith(parentSlug + '-'))
+    .sort((a, b) => a.name.localeCompare(b.name))
 }
+
+// Check if user is admin
+const isAdmin = computed(() => {
+  const role = userStore.userRole
+  return role === 'admin' || role === 'ADM'
+})
 
 // Login popup methods
 const openLoginPopup = () => {
@@ -308,7 +338,7 @@ const handleScroll = () => {
   const promoBar = document.querySelector('.top-bar')
   const navbar = document.querySelector('.modern-navbar')
   const mainContent = document.querySelector('.main-content')
-  
+
   if (scrollTop > lastScrollTop && scrollTop > 100) {
     // Scrolling down - hide promo bar
     if (isPromoBarVisible) {
@@ -326,7 +356,7 @@ const handleScroll = () => {
       isPromoBarVisible = true
     }
   }
-  
+
   lastScrollTop = scrollTop <= 0 ? 0 : scrollTop
 }
 
@@ -339,10 +369,10 @@ onMounted(() => {
     localStorage.removeItem('auro_show_register_popup')
     showRegisterPopup.value = true
   }
-  
+
   // Initialize dropdown hover behavior
   initializeDropdownHover()
-  
+
   // Add scroll listener
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
@@ -357,7 +387,7 @@ onUnmounted(() => {
 const initializeDropdownHover = () => {
   // Disable Bootstrap's default dropdown behavior for hover dropdowns
   const hoverDropdowns = document.querySelectorAll('.dropdown-hover')
-  hoverDropdowns.forEach(dropdown => {
+  hoverDropdowns.forEach((dropdown) => {
     const toggle = dropdown.querySelector('[data-bs-toggle="dropdown"]')
     if (toggle) {
       toggle.addEventListener('click', (e) => {
@@ -548,7 +578,7 @@ router-link:focus-visible {
   background: white;
   padding: 2px 4px;
   border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .modern-nav-link::before {
@@ -738,6 +768,20 @@ router-link:focus-visible {
   transform: translateX(4px);
 }
 
+.modern-dropdown-item.admin-link {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.modern-dropdown-item.admin-link:hover {
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  color: white;
+  transform: translateX(4px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 .modern-dropdown-item i {
   font-size: 16px;
   width: 20px;
@@ -785,7 +829,11 @@ router-link:focus-visible {
 }
 
 .brand-text {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -810,7 +858,7 @@ router-link:focus-visible {
   left: 50%;
   width: 0;
   height: 3px;
-  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(-50%);
   border-radius: 2px;
@@ -822,7 +870,7 @@ router-link:focus-visible {
 }
 
 .modern-nav-link:hover {
-  color: #B8860B !important;
+  color: #b8860b !important;
   background: rgba(184, 134, 11, 0.08);
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(184, 134, 11, 0.2);
@@ -839,13 +887,13 @@ router-link:focus-visible {
 }
 
 .search-input-group:hover {
-  border-color: #B8860B;
+  border-color: #b8860b;
   box-shadow: 0 4px 20px rgba(184, 134, 11, 0.15);
   transform: translateY(-1px);
 }
 
 .search-input-group:focus-within {
-  border-color: #B8860B;
+  border-color: #b8860b;
   box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.25);
   transform: translateY(-1px);
 }
@@ -865,7 +913,7 @@ router-link:focus-visible {
 }
 
 .search-btn {
-  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
   border: none;
   padding: 14px 20px;
   color: white;
@@ -874,7 +922,7 @@ router-link:focus-visible {
 }
 
 .search-btn:hover {
-  background: linear-gradient(135deg, #DAA520 0%, #FFD700 100%);
+  background: linear-gradient(135deg, #daa520 0%, #ffd700 100%);
   transform: scale(1.05);
 }
 
@@ -905,7 +953,7 @@ router-link:focus-visible {
 
 .modern-dropdown-item:hover {
   background: linear-gradient(135deg, rgba(184, 134, 11, 0.1) 0%, rgba(218, 165, 32, 0.1) 100%);
-  color: #B8860B;
+  color: #b8860b;
   transform: translateX(6px);
   box-shadow: 0 4px 12px rgba(184, 134, 11, 0.2);
 }
@@ -919,7 +967,7 @@ router-link:focus-visible {
 }
 
 .modern-dropdown-item:hover i {
-  color: #B8860B;
+  color: #b8860b;
 }
 
 .modern-cart-badge {
@@ -949,7 +997,7 @@ router-link:focus-visible {
 
 .cart-trigger:hover i {
   font-size: 1.5rem !important;
-  color: #B8860B;
+  color: #b8860b;
   transform: scale(1.1);
 }
 
@@ -963,7 +1011,7 @@ router-link:focus-visible {
 
 .login-btn:hover i {
   font-size: 1.5rem !important;
-  color: #B8860B !important;
+  color: #b8860b !important;
   transform: scale(1.1);
 }
 
@@ -976,8 +1024,7 @@ router-link:focus-visible {
 
 .modern-nav-link:hover .bi-person-circle {
   font-size: 1.5rem !important;
-  color: #B8860B !important;
+  color: #b8860b !important;
   transform: scale(1.1);
 }
-
 </style>

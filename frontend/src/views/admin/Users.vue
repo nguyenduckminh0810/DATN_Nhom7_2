@@ -320,7 +320,7 @@
                         <i class="bi bi-eye"></i>
                       </button>
                       <button
-                        v-if="isAdmin"
+                        v-if="isAdmin && user.role !== 'admin'"
                         class="btn btn-sm btn-outline-success"
                         @click="editUser(user)"
                         title="Chỉnh sửa"
@@ -328,7 +328,7 @@
                         <i class="bi bi-pencil"></i>
                       </button>
                       <button
-                        v-if="isAdmin"
+                        v-if="isAdmin && user.role !== 'admin'"
                         class="btn btn-sm btn-outline-danger"
                         @click="softDeleteUser(user)"
                         title="Xoá"
@@ -404,7 +404,7 @@
                       <i class="bi bi-eye"></i>
                     </button>
                     <button
-                      v-if="isAdmin"
+                      v-if="isAdmin && user.role !== 'admin'"
                       class="btn btn-sm btn-outline-success"
                       @click="editUser(user)"
                       title="Chỉnh sửa"
@@ -412,7 +412,7 @@
                       <i class="bi bi-pencil"></i>
                     </button>
                     <button
-                      v-if="isAdmin"
+                      v-if="isAdmin && user.role !== 'admin'"
                       class="btn btn-sm btn-outline-danger"
                       @click="softDeleteUser(user)"
                       title="Xoá"
@@ -492,7 +492,7 @@
                       <i class="bi bi-eye"></i>
                     </button>
                     <button
-                      v-if="isAdmin"
+                      v-if="isAdmin && user.role !== 'admin'"
                       class="btn btn-sm btn-outline-success"
                       @click="editUser(user)"
                       title="Chỉnh sửa"
@@ -500,7 +500,7 @@
                       <i class="bi bi-pencil"></i>
                     </button>
                     <button
-                      v-if="isAdmin"
+                      v-if="isAdmin && user.role !== 'admin'"
                       class="btn btn-sm btn-outline-danger"
                       @click="softDeleteUser(user)"
                       title="Xoá"
@@ -679,16 +679,6 @@
                               <td>Ngày tham gia:</td>
                               <td>{{ formatDateTime(selectedUser.createdAt) }}</td>
                             </tr>
-                            <tr>
-                              <td>Lần đăng nhập cuối:</td>
-                              <td>
-                                {{
-                                  selectedUser.lastLogin
-                                    ? formatDateTime(selectedUser.lastLogin)
-                                    : 'Chưa đăng nhập'
-                                }}
-                              </td>
-                            </tr>
                           </tbody>
                         </table>
                       </div>
@@ -764,7 +754,12 @@
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" @click="closeUserModal">Đóng</button>
-            <button type="button" class="btn btn-primary" @click="editUser(selectedUser)">
+            <button
+              v-if="selectedUser && selectedUser.role !== 'admin'"
+              type="button"
+              class="btn btn-primary"
+              @click="editUser(selectedUser)"
+            >
               <i class="bi bi-pencil me-1"></i>Chỉnh sửa
             </button>
           </div>
