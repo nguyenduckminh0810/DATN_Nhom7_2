@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "tai_khoan", uniqueConstraints = {
-    @UniqueConstraint(columnNames = "email"),
-    @UniqueConstraint(columnNames = "so_dien_thoai")
+        @UniqueConstraint(columnNames = "email"),
+        @UniqueConstraint(columnNames = "so_dien_thoai")
 })
 @Data
 @NoArgsConstructor
@@ -41,4 +41,7 @@ public class TaiKhoan {
 
     @Column(name = "cap_nhat_luc")
     private LocalDateTime capNhatLuc;
+
+    @Column(name = "lan_dang_nhap_cuoi")
+    private LocalDateTime lanDangNhapCuoi;
 }

@@ -1,4 +1,5 @@
 package com.auro.auro.dto.response;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,6 +20,7 @@ public class UserInfoResponse {
     private String vaiTro;
     private Boolean trangThai;
     private LocalDateTime taoLuc;
+    private LocalDateTime lanDangNhapCuoi;
 
     private String kieu;
 
