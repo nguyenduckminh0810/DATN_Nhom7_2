@@ -6,11 +6,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
+import org.springframework.data.domain.Sort;
 import com.auro.auro.dto.response.DonHangChiTietResponse;
 import com.auro.auro.dto.response.DonHangResponse;
 import com.auro.auro.model.DonHang;
@@ -189,4 +190,43 @@ public class DonHangService {
 
         return dto;
     }
+
+    // Tạo đơn từ giỏ
+    @Transactional
+    public DonHangResponse taoDonTuGioHang(TaoDonTuGioHangRequest request, Long khachHangId) {
+        throw new UnsupportedOperationException("Chức năng đang phát triển");
+    }
+
+    // Lấy đơn hàng của khách hàng
+    public Page<DonHangResponse> layDonHangCuaKhach(Long khachHangId, int trang, int kichThuoc) {
+        Pageable pageable = PageRequest.of(trang, kichThuoc, Sort.by("taoLuc").descending());
+        Page<DonHang> donHangs = donHangRepository.findByKhachHang_Id(khachHangId, pageable);
+        return donHangs.map(this::convertToDTO);
+    }
+    
+    // Hủy đơn hàng
+    @Transactional
+    public DonHangResponse huyDonHang(Long donHangId, Long khachHangId) {
+        DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        
+        if (!"Chờ xác nhận".equals(donHang.getTrangThai())) {
+            throw new RuntimeException("Không thể hủy đơn hàng này");
+        }
+        
+        donHang.setTrangThai("Đã hủy");
+        donHang.setCapNhatLuc(LocalDateTime.now());
+        DonHang savedDonHang = donHangRepository.save(donHang);
+        
+        return convertToDTO(savedDonHang);
+    }
+    
+    // Lấy chi tiết đơn hàng của khách hàng
+    public DonHangResponse layChiTietDonHangKhach(Long donHangId, Long khachHangId) {
+        DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        
+        return convertToDTO(donHang);
+    }
+    
 }
