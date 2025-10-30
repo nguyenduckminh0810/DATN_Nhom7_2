@@ -222,7 +222,6 @@
                       </div>
                       <div class="user-details">
                         <div class="user-name">{{ user.name }}</div>
-                        <div class="user-id">ID: {{ user.id }}</div>
                       </div>
                     </div>
                   </td>
@@ -1543,7 +1542,7 @@ onMounted(() => {
 }
 
 .search-input {
-  padding-left: 3.5rem;
+  padding-left: 2.75rem !important;
 }
 
 .users-table {
@@ -1971,7 +1970,7 @@ onMounted(() => {
 }
 
 .search-input {
-  padding-left: 3.5rem;
+  padding-left: 2.75rem !important;
 }
 
 .search-icon {
