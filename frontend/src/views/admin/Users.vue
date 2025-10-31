@@ -162,56 +162,6 @@
         </div>
       </div>
 
-      <!-- Filters and Search -->
-      <div class="filters-section">
-        <div class="row g-3">
-          <div class="col-md-3">
-            <div class="search-box">
-              <i class="bi bi-search search-icon"></i>
-              <input
-                type="text"
-                class="form-control search-input"
-                placeholder="Tìm kiếm người dùng..."
-                v-model="searchQuery"
-              />
-            </div>
-          </div>
-          <div class="col-md-2">
-            <select class="form-select" v-model="selectedRole">
-              <option value="">Tất cả vai trò</option>
-              <option value="customer">Khách hàng</option>
-              <option value="staff">Nhân viên</option>
-              <option value="admin">Quản trị viên</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <select class="form-select" v-model="selectedStatus">
-              <option value="">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Ngừng hoạt động</option>
-              <option value="banned">Bị cấm</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <select class="form-select" v-model="sortBy">
-              <option value="newest">Mới nhất</option>
-              <option value="oldest">Cũ nhất</option>
-              <option value="name-asc">Tên A-Z</option>
-              <option value="name-desc">Tên Z-A</option>
-              <option value="orders-high">Đơn hàng nhiều nhất</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <input type="date" class="form-control" v-model="selectedDate" />
-          </div>
-          <div class="col-md-1">
-            <button class="btn btn-outline-secondary w-100" @click="clearFilters">
-              <i class="bi bi-arrow-clockwise"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- Users Content -->
       <div class="users-content">
         <!-- Table View -->
@@ -272,7 +222,6 @@
                       </div>
                       <div class="user-details">
                         <div class="user-name">{{ user.name }}</div>
-                        <div class="user-id">ID: {{ user.id }}</div>
                       </div>
                     </div>
                   </td>
@@ -1593,7 +1542,7 @@ onMounted(() => {
 }
 
 .search-input {
-  padding-left: 2.5rem;
+  padding-left: 2.75rem !important;
 }
 
 .users-table {
@@ -2021,7 +1970,7 @@ onMounted(() => {
 }
 
 .search-input {
-  padding-left: 2.5rem;
+  padding-left: 2.75rem !important;
 }
 
 .search-icon {

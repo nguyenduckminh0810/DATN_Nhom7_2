@@ -156,6 +156,10 @@
               </button>
 
               <div v-if="showUserMenu" class="user-dropdown-menu">
+                <router-link to="/" class="dropdown-item">
+                  <i class="bi bi-house me-2"></i>Về trang chủ
+                </router-link>
+                <hr class="dropdown-divider" />
                 <a href="#" class="dropdown-item">
                   <i class="bi bi-person me-2"></i>Thông tin cá nhân
                 </a>
@@ -455,6 +459,23 @@ onUnmounted(() => {
   font-size: 0.75rem;
 }
 
+.nav-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 1rem 1.5rem;
+}
+
+.back-to-store {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.back-to-store:hover {
+  background-color: #e0f2fe;
+  color: #0284c7;
+  border-color: #0284c7;
+}
+
 .sidebar-footer {
   padding: 1rem;
   border-top: 1px solid #e2e8f0;
@@ -669,7 +690,8 @@ onUnmounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   min-width: 200px;
   z-index: 1000;
-  padding: 0.5rem 0;
+  padding: 0.5rem;
+  overflow: hidden;
 }
 
 .dropdown-item {
@@ -678,12 +700,32 @@ onUnmounted(() => {
   padding: 0.75rem 1rem;
   color: #6c757d;
   text-decoration: none;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .dropdown-item:hover {
   background-color: #f8f9fa;
   color: #2c3e50;
+}
+
+.dropdown-item:first-child {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border-radius: 6px;
+  margin: 0 0 0.25rem 0;
+  padding: 0.65rem 0.9rem;
+}
+
+.dropdown-item:first-child:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+  color: white;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.dropdown-item:first-child i {
+  color: white;
 }
 
 .dropdown-divider {
