@@ -84,12 +84,18 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useCart } from '@/composables/useCart'
 import { useVoucher } from '@/stores/voucher'
 
 const { items, formatPrice } = useCart()
 const { selectedVoucher, manualVoucherCode } = useVoucher()
+
+// Inject shipping info from parent
+const shippingInfo = inject('shippingInfo', { 
+  shippingFee: computed(() => 0), 
+  expectedDeliveryTime: computed(() => null) 
+})
 
 // Tính toán dựa trên real cart data
 const totalItemsCount = computed(() => {
@@ -106,7 +112,13 @@ const subtotal = computed(() => {
     .reduce((total, item) => total + (item.price * item.quantity), 0)
 })
 
+// Sử dụng shipping fee từ GHN API hoặc default
 const shippingFee = computed(() => {
+  // Nếu có phí ship từ GHN API thì dùng
+  if (shippingInfo.shippingFee.value > 0) {
+    return shippingInfo.shippingFee.value
+  }
+  // Nếu không thì dùng logic cũ
   return subtotal.value >= 500000 ? 0 : 30000
 })
 

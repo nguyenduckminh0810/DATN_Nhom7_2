@@ -9,6 +9,7 @@ const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
 const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
 const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
+const ShippingDemo = () => import(/* webpackChunkName: "demo" */ '../views/ShippingDemo.vue')
 
 // Admin routes - lazy loaded separately with admin chunk
 const AdminDashboard = () => import(/* webpackChunkName: "admin" */ '../views/admin/Dashboard.vue')
@@ -80,6 +81,12 @@ const router = createRouter({
       name: 'search',
       component: SearchResults,
       meta: { title: 'Tìm kiếm - AURO' },
+    },
+    {
+      path: '/shipping-demo',
+      name: 'shipping-demo',
+      component: ShippingDemo,
+      meta: { title: 'Demo GHN Shipping API - AURO' },
     },
     {
       path: '/admin',

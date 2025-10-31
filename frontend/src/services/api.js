@@ -341,6 +341,16 @@ class ApiService {
     sendMessage: (data) => this.post('/contact', data),
     getFaq: () => this.get('/contact/faq'),
   }
+
+  // Shipping endpoints (GHN)
+  shipping = {
+    getProvinces: () => this.get('/shipping/provinces'),
+    getDistricts: (provinceId) => this.get('/shipping/districts', { params: { provinceId } }),
+    getWards: (districtId) => this.get('/shipping/wards', { params: { districtId } }),
+    getServices: (toDistrictId) => this.get('/shipping/services', { params: { toDistrictId } }),
+    calculate: (data) => this.post('/shipping/calculate', data),
+    calculateFull: (data) => this.post('/shipping/calculate-full', data),
+  }
 }
 
 const apiService = new ApiService()
