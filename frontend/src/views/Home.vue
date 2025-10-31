@@ -1,6 +1,5 @@
 <template>
   <div class="home">
-    <UspBar />
     <section class="hero-carousel-section">
       <div class="custom-carousel">
         <div class="carousel-indicators">

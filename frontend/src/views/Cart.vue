@@ -61,8 +61,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, provide } from 'vue'
 import { useCart } from '@/composables/useCart'
+import { useShipping } from '@/composables/useShipping'
 import ShippingForm from '@/components/checkout/ShippingForm.vue'
 import PaymentMethods from '@/components/checkout/PaymentMethods.vue'
 import CartItems from '@/components/checkout/CartItems.vue'
@@ -71,6 +72,15 @@ import OrderSummary from '@/components/checkout/OrderSummary.vue'
 
 // Sử dụng cart store
 const { items, isEmpty } = useCart()
+
+// Sử dụng shipping composable
+const { shippingFee, expectedDeliveryTime } = useShipping()
+
+// Provide shipping info để OrderSummary có thể sử dụng
+provide('shippingInfo', {
+  shippingFee,
+  expectedDeliveryTime
+})
 </script>
 
 <style scoped>
