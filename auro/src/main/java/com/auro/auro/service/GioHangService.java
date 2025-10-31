@@ -87,4 +87,77 @@ public class GioHangService {
         return chiTietList.isEmpty();
     }
 
+    // lấy giỏ hàng của guest theo idPhien
+    @Transactional
+    public GioHang layGioHangTheoSession(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            throw new RuntimeException("Session ID không hợp lệ");
+        }
+        
+        Optional<GioHang> gioHangOpt = gioHangRepo.findFirstByIdPhien(sessionId);
+        
+        if (gioHangOpt.isPresent()) {
+            return gioHangOpt.get();
+        }
+        
+        // Nếu chưa có giỏ hàng thì tạo mới
+        GioHang gioHangMoi = new GioHang();
+        gioHangMoi.setIdPhien(sessionId);
+        gioHangMoi.setKhachHang(null);
+        gioHangMoi.setTaoLuc(java.time.LocalDateTime.now());
+        gioHangMoi.setCapNhatLuc(java.time.LocalDateTime.now());
+        
+        return gioHangRepo.save(gioHangMoi);
+    }
+
+    //lấy/tạo giỏ hàng cho cus và gst
+    @Transactional
+    public GioHang layHoacTaoGioHang(String sessionId, Long khachHangId) {
+        if (khachHangId != null) {
+            return layGioHangCuaKhach(khachHangId);
+        }
+        
+        if (sessionId != null && !sessionId.trim().isEmpty()) {
+            return layGioHangTheoSession(sessionId);
+        }
+        
+        throw new RuntimeException("Không thể xác định giỏ hàng - thiếu sessionId hoặc khachHangId");
+    }
+
+    // tính tình theo id giỏ hàng
+    public BigDecimal tinhTongTienTheoGioHang(Long gioHangId) {
+        List<GioHangChiTiet> chiTietList = layChiTietGioHang(gioHangId);
+        
+        return chiTietList.stream().map(item -> {
+            BigDecimal gia = item.getGiaTaiThoiDiem();
+            if (gia == null && item.getBienThe() != null) {
+                gia = item.getBienThe().getGia();
+                if (gia == null && item.getBienThe().getSanPham() != null) {
+                    gia = item.getBienThe().getSanPham().getGia();
+                }
+            }
+            return gia != null ? gia.multiply(BigDecimal.valueOf(item.getSoLuong())) : BigDecimal.ZERO;
+        })
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // xóa giỏ hàng gst theo idPhien
+    @Transactional
+    public void xoaGioHangTheoSession(String sessionId) {
+        if (sessionId == null || sessionId.trim().isEmpty()) {
+            return;
+        }
+        
+        Optional<GioHang> gioHangOpt = gioHangRepo.findFirstByIdPhien(sessionId);
+        
+        if (gioHangOpt.isPresent()) {
+            Long gioHangId = gioHangOpt.get().getId();
+            
+            // Xóa chi tiết trước
+            gioHangChiTietRepo.deleteByGioHang_Id(gioHangId);
+            
+            // Xóa giỏ hàng
+            gioHangRepo.delete(gioHangOpt.get());
+        }
+    }
 }

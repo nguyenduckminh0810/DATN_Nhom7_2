@@ -59,12 +59,15 @@ public class SecurityConfig {
                         // Guest endpoints - khách vãng lai
                         .requestMatchers(HttpMethod.POST, "/api/don-hang/khach").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/don-hang/theo-doi/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/khach-hang/don-hang/guest-checkout").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/khach-hang/don-hang/**").permitAll()
+                        .requestMatchers("/api/payment/**").permitAll()
 
                         // Customer endpoints - khách đã đăng ký
                         .requestMatchers("/api/auth/me").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers(HttpMethod.POST, "/api/don-hang").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers(HttpMethod.GET, "/api/don-hang/cua-toi").hasAnyRole("CUS", "STF", "ADM")
-                        .requestMatchers("/api/gio-hang/**").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers("/api/gio-hang/**").permitAll()
 
                         // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/phieu-giam-gia/co-san").permitAll()
