@@ -23,4 +23,7 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
 
     @Query("SELECT dh FROM DonHang dh LEFT JOIN FETCH dh.chiTietList")
     List<DonHang> findAllWithChiTiet();
+
+    Optional<DonHang> findByIdAndKhachHang_Id(Long id, Long khachHangId);
+
 }
