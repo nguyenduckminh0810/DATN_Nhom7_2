@@ -119,7 +119,7 @@
         <div class="col-md-3">
         <div class="stat-card shipping">
           <div class="stat-icon">
-            <i class="bi bi-bicycle"></i>  <!-- hoặc bi-box-seam -->
+            <i class="bi bi-bicycle"></i>
           </div>
           <div class="stat-content">
             <div class="stat-value">{{ orderStats.shipping }}</div>
@@ -358,29 +358,6 @@
                   >
                     <i class="bi bi-x"></i>
                   </button>
-                 <!-- Dropdown for Payment Status -->
-                  <div class="dropdown d-inline-block">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Cập nhật thanh toán">
-                      <i class="bi bi-credit-card"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a class="dropdown-item" href="#" @click="updatePaymentStatus(order, 'paid')">
-                          <i class="bi bi-check-circle text-success me-2"></i>Đã thanh toán
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="#" @click="updatePaymentStatus(order, 'failed')">
-                          <i class="bi bi-x-circle text-danger me-2"></i>Thanh toán thất bại
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" href="#" @click="updatePaymentStatus(order, 'pending')">
-                          <i class="bi bi-clock text-warning me-2"></i>Chờ thanh toán
-                        </a>
-                      </li>
-                    </ul>
-                  </div>
                   <button
                     v-if="['Chờ xác nhận', 'Đang xử lý'].includes(order.trangThai)"
                     class="btn btn-sm btn-outline-warning"
@@ -389,14 +366,6 @@
                   >
                     <i class="bi bi-pencil"></i>
                   </button>
-                  <button
-                    v-if="['Chờ xác nhận', 'Đang xử lý'].includes(order.trangThai)"
-                    class="btn btn-sm btn-outline-danger"
-                    @click="deleteOrder(order)"
-                    title="Xóa đơn hàng"
-                  >
-                    <i class="bi bi-trash"></i>
-                </button>
                 </div>
               </td>
             </tr>
@@ -522,32 +491,6 @@
           <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('Đã hủy')">
             <i class="bi bi-x me-1"></i>Hủy
           </button>
-          <!-- Bulk Payment Dropdown -->
-          <div class="dropdown d-inline-block">
-            <button class="btn btn-sm btn-outline-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              <i class="bi bi-credit-card me-1"></i>Thanh toán
-            </button>
-            <ul class="dropdown-menu">
-              <li>
-                <a class="dropdown-item" href="#" @click="bulkUpdatePayment('paid')">
-                  <i class="bi bi-check-circle text-success me-2"></i>Đã thanh toán
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="#" @click="bulkUpdatePayment('failed')">
-                  <i class="bi bi-x-circle text-danger me-2"></i>Thanh toán thất bại
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="#" @click="bulkUpdatePayment('pending')">
-                  <i class="bi bi-clock text-warning me-2"></i>Chờ thanh toán
-                </a>
-              </li>
-            </ul>
-          </div>
-          <button class="btn btn-sm btn-outline-danger" @click="bulkDeleteOrders">
-          <i class="bi bi-trash me-1"></i>Xóa
-        </button>
         </div>
       </div>
     </div>
@@ -677,29 +620,6 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeOrderModal">Đóng</button>
-          <!-- Payment Status Dropdown in Modal -->
-          <div class="dropdown">
-            <button class="btn btn-warning dropdown-toggle" type="button" data-bs-toggle="dropdown">
-              <i class="bi bi-credit-card me-1"></i>Cập nhật thanh toán
-            </button>
-            <ul class="dropdown-menu">
-              <li>
-                <a class="dropdown-item" href="#" @click="updatePaymentStatus(selectedOrder, 'paid')">
-                  <i class="bi bi-check-circle text-success me-2"></i>Đã thanh toán
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="#" @click="updatePaymentStatus(selectedOrder, 'failed')">
-                  <i class="bi bi-x-circle text-danger me-2"></i>Thanh toán thất bại
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="#" @click="updatePaymentStatus(selectedOrder, 'pending')">
-                  <i class="bi bi-clock text-warning me-2"></i>Chờ thanh toán
-                </a>
-              </li>
-            </ul>
-          </div>
           <button type="button" class="btn btn-primary" @click="printOrder(selectedOrder)">
             <i class="bi bi-printer me-1"></i>In đơn hàng
           </button>
@@ -886,12 +806,10 @@ const fetchOrders = async () => {
     });
 
     const data = response.data;
-    console.log('API Response:', data); // Debug
+    console.log('API Response:', data);
     
-    // Map dữ liệu từ backend sang frontend với payment status
     orders.value = (data.content || []).map(order => ({
       ...order,
-      // Thêm payment status mặc định (backend chưa có field này)
       paymentStatus: order.paymentStatus || 'pending',
       paymentMethod: order.paymentMethod || 'COD'
     }));
@@ -899,7 +817,7 @@ const fetchOrders = async () => {
     totalPages.value = data.totalPages || 1;
     totalItems.value = data.totalItems || orders.value.length;
     
-    console.log('Processed orders:', orders.value); // Debug
+    console.log('Processed orders:', orders.value);
     
   } catch (err) {
     console.error("Lỗi khi tải đơn hàng:", err);
@@ -914,7 +832,6 @@ const fetchOrders = async () => {
 
 // ======= COMPUTED =======
 
-// Thống kê trạng thái đơn hàng
 const orderStats = computed(() => ({
   pending: orders.value.filter((o) => o.trangThai === "Chờ xác nhận").length,
   processing: orders.value.filter((o) => o.trangThai === "Đang xử lý").length,
@@ -924,22 +841,18 @@ const orderStats = computed(() => ({
   cancelled: orders.value.filter((o) => o.trangThai === "Đã hủy").length,
 }));
 
-// Thống kê thanh toán
 const paymentStats = computed(() => ({
   pending: orders.value.filter((o) => o.paymentStatus === "pending").length,
   paid: orders.value.filter((o) => o.paymentStatus === "paid").length,
   failed: orders.value.filter((o) => o.paymentStatus === "failed").length,
 }));
 
-// Tổng số đơn hàng và đơn chờ xử lý
 const totalOrders = computed(() => orders.value.length);
 const pendingOrders = computed(() => orderStats.value.pending);
 
-// Lọc và sắp xếp
 const filteredOrders = computed(() => {
   let filtered = orders.value.slice();
 
-  // Tìm kiếm theo số đơn hoặc địa chỉ
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(
@@ -950,14 +863,12 @@ const filteredOrders = computed(() => {
     );
   }
 
-  // Lọc theo trạng thái
   if (selectedStatus.value) {
     filtered = filtered.filter(
       (o) => o.trangThai === selectedStatus.value
     );
   }
 
-  // Lọc theo thanh toán
   if (selectedPayment.value) {
     filtered = filtered.filter(
       (o) => o.paymentStatus === selectedPayment.value
@@ -981,7 +892,6 @@ const filteredOrders = computed(() => {
     });
   }
 
-  // Sắp xếp
   filtered.sort((a, b) => {
     switch (sortBy.value) {
       case "oldest":
@@ -1101,84 +1011,6 @@ const toggleSelectAll = () => {
   }
 };
 
-const updatePaymentStatus = async (order, newStatus) => {
-  const statusText = getPaymentText(newStatus);
-  if (confirm(`Cập nhật trạng thái thanh toán đơn hàng #${order.soDonHang} thành "${statusText}"?`)) {
-    try {
-      await axios.put(`/api/don-hang/${order.id}`, {
-        diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
-        ghiChu: order.ghiChu || '',
-        trangThai: order.trangThai,
-        paymentStatus: newStatus 
-      });
-      
-      // Refresh data
-      await fetchOrders();
-      
-      alert('Cập nhật thanh toán thành công!');
-    } catch (err) {
-      console.error('Lỗi:', err);
-      alert('Có lỗi khi cập nhật thanh toán');
-    }
-  }
-};
-
-const bulkUpdatePayment = async (status) => {
-  const statusText = getPaymentText(status);
-  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái thanh toán thành "${statusText}" cho ${selectedOrders.value.length} đơn hàng?`)) {
-    try {
-      loading.value = true;
-      
-      // Tạo promises để cập nhật tất cả đơn hàng
-      const updatePromises = selectedOrders.value.map(async (orderId) => {
-        const order = orders.value.find((o) => o.id === orderId);
-        if (order) {
-          const updates = {
-            diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot || '',
-            ghiChu: order.ghiChu || '',
-            trangThai: order.trangThai,
-            paymentStatus: status
-          };
-          
-          console.log(`Updating order ${orderId} with:`, updates);
-          await axios.put(`/api/don-hang/${orderId}`, updates);
-          
-          // Cập nhật local state
-          const index = orders.value.findIndex(o => o.id === orderId);
-          if (index !== -1) {
-            orders.value[index] = {
-              ...orders.value[index],
-              paymentStatus: status,
-              capNhatLuc: new Date().toISOString()
-            };
-          }
-          
-          return orderId;
-        }
-      });
-      
-      // Chờ tất cả requests hoàn thành
-      const updatedOrderIds = await Promise.all(updatePromises);
-      const successfulUpdates = updatedOrderIds.filter(id => id !== undefined);
-      
-      // Reset selection
-      selectedOrders.value = [];
-      selectAll.value = false;
-      
-      // Refresh data từ server để đảm bảo đồng bộ
-      await fetchOrders();
-      
-      alert(`Đã cập nhật trạng thái thanh toán thành "${statusText}" cho ${successfulUpdates.length} đơn hàng`);
-      
-    } catch (err) {
-      console.error('Lỗi khi cập nhật thanh toán hàng loạt:', err);
-      alert('Có lỗi khi cập nhật trạng thái thanh toán hàng loạt: ' + (err.response?.data?.message || err.message));
-    } finally {
-      loading.value = false;
-    }
-  }
-};
-
 const bulkUpdateStatus = async (status) => {
   if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`)) {
     try {
@@ -1216,7 +1048,6 @@ const bulkUpdateStatus = async (status) => {
   }
 };
 
-
 const getOrdersByStatus = (status) => {
   return filteredOrders.value.filter(order => order.trangThai === status);
 };
@@ -1241,68 +1072,6 @@ const updateOrderStatus = async (order, newStatus) => {
 
 const printOrder = (order) => {
   window.print();
-};
-
-const deleteOrder = async (order) => {
-  if (confirm(`Bạn có chắc chắn muốn xóa đơn hàng #${order.soDonHang}?`)) {
-    try {
-      await axios.delete(`/api/don-hang/${order.id}`);
-      // Remove the order from local state
-      await fetchOrders();
-      console.log(`Đã xóa đơn hàng #${order.soDonHang}`);
-    } catch (err) {
-      console.error("Lỗi khi xóa đơn hàng:", err);
-      alert("Có lỗi khi xóa đơn hàng");
-    }
-  }
-};
-
-const bulkDeleteOrders = async () => {
-  const count = selectedOrders.value.length;
-  if (!count) {
-    alert('Vui lòng chọn ít nhất một đơn hàng để xóa');
-    return;
-  }
-
-  if (confirm(`Bạn có chắc chắn muốn xóa ${count} đơn hàng? Hành động này không thể hoàn tác.`)) {
-    try {
-      loading.value = true;
-      
-      let successfulDeletes = 0;
-      let failedDeletes = 0;
-      
-      // Xóa tuần tự để dễ kiểm soát lỗi
-      for (const orderId of selectedOrders.value) {
-        try {
-          await axios.delete(`/api/don-hang/${orderId}`);
-          successfulDeletes++;
-        } catch (error) {
-          console.error(`Lỗi khi xóa đơn hàng ${orderId}:`, error);
-          failedDeletes++;
-        }
-      }
-      
-      // Refresh data
-      await fetchOrders();
-      
-      // Reset selection
-      selectedOrders.value = [];
-      selectAll.value = false;
-      
-      // Hiển thị kết quả
-      if (failedDeletes === 0) {
-        alert(`✅ Đã xóa thành công ${successfulDeletes} đơn hàng`);
-      } else {
-        alert(`⚠️ Đã xóa thành công ${successfulDeletes} đơn hàng, ${failedDeletes} đơn hàng xóa thất bại`);
-      }
-      
-    } catch (err) {
-      console.error("Lỗi không xác định khi xóa hàng loạt:", err);
-      alert("Có lỗi xảy ra khi xóa đơn hàng");
-    } finally {
-      loading.value = false;
-    }
-  }
 };
 
 const editOrder = (order) => {
