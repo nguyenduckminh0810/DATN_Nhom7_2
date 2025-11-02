@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import shippingService from '@/services/shippingService'
 
 // 🎯 MOCK DATA - Dữ liệu mẫu với FULL 63 tỉnh thành Việt Nam
@@ -744,6 +744,40 @@ const MOCK_DATA = {
     1654: [ // Huyện Vĩnh Bảo - Hải Phòng
       { WardCode: '32201', WardName: 'Thị trấn Vĩnh Bảo' },
       { WardCode: '32202', WardName: 'Xã Dũng Tiến' },
+    ],
+    3013: [ // Hưng Hà - Thái Bình
+      { WardCode: '301301', WardName: 'Thị trấn Hưng Hà' },
+      { WardCode: '301302', WardName: 'Xã Điệp Nông' },
+      { WardCode: '301303', WardName: 'Xã Tân Lễ' },
+      { WardCode: '301304', WardName: 'Xã Cộng Hòa' },
+      { WardCode: '301305', WardName: 'Xã Dân Chủ' },
+      { WardCode: '301306', WardName: 'Xã Canh Tân' },
+      { WardCode: '301307', WardName: 'Xã Hòa Tiến' },
+      { WardCode: '301308', WardName: 'Xã Hùng Dũng' },
+    ],
+    3011: [ // TP Thái Bình
+      { WardCode: '301101', WardName: 'Phường Trần Hưng Đạo' },
+      { WardCode: '301102', WardName: 'Phường Phú Khánh' },
+      { WardCode: '301103', WardName: 'Phường Tiền Phong' },
+      { WardCode: '301104', WardName: 'Phường Trần Lãm' },
+    ],
+    3012: [ // Quỳnh Phụ - Thái Bình
+      { WardCode: '301201', WardName: 'Thị trấn Quỳnh Côi' },
+      { WardCode: '301202', WardName: 'Xã An Khê' },
+      { WardCode: '301203', WardName: 'Xã An Đồng' },
+      { WardCode: '301204', WardName: 'Xã Quỳnh Hoa' },
+    ],
+    3014: [ // Đông Hưng - Thái Bình
+      { WardCode: '301401', WardName: 'Thị trấn Đông Hưng' },
+      { WardCode: '301402', WardName: 'Xã Đông Phương' },
+      { WardCode: '301403', WardName: 'Xã Liên Giang' },
+      { WardCode: '301404', WardName: 'Xã Đông Sơn' },
+    ],
+    3015: [ // Thái Thụy - Thái Bình
+      { WardCode: '301501', WardName: 'Thị trấn Diêm Điền' },
+      { WardCode: '301502', WardName: 'Xã Thụy Trường' },
+      { WardCode: '301503', WardName: 'Xã Thụy Dương' },
+      { WardCode: '301504', WardName: 'Xã Thụy Hải' },
       { WardCode: '32203', WardName: 'Xã Giang Biên' },
       { WardCode: '32204', WardName: 'Xã Trung Lập' },
     ],
@@ -1109,7 +1143,18 @@ const MOCK_DATA = {
 
 // Flag để bật/tắt mock mode
 // ⚠️ Đổi thành false khi backend đã cấu hình GHN Token
-const USE_MOCK_DATA = true // 🔴 BẬT LẠI MOCK - Chưa cấu hình GHN Token
+// 🎯 MOCK MODE SWITCH
+// ═══════════════════════════════════════════════════════════════
+// ⚠️ ĐỂ DÙNG API THẬT CỦA GHN:
+//    1. Đăng ký tài khoản tại: https://sso.ghn.vn/
+//    2. Lấy Token & Shop ID từ https://dev.ghn.vn/
+//    3. Cập nhật file: auro/src/main/resources/application.properties
+//       - ghn.api.token=<YOUR_TOKEN>
+//       - ghn.shop.id=<YOUR_SHOP_ID>
+//    4. Đổi USE_MOCK_DATA = false ở dưới
+//    5. Restart backend Spring Boot
+// ═══════════════════════════════════════════════════════════════
+const USE_MOCK_DATA = true // 🔴 true = Mock | 🟢 false = Real GHN API
 
 /**
  * Composable để xử lý shipping GHN trong Vue components
@@ -1338,60 +1383,137 @@ export function useShipping() {
       if (USE_MOCK_DATA) {
         await new Promise(resolve => setTimeout(resolve, 600))
         
-        // 💰 CÔNG THỨC PHÍ SHIP LINH ĐỘNG
+        // 💰 CÔNG THỨC PHÍ SHIP LINH ĐỘNG - TỰ ĐỘNG CHO TẤT CẢ TỈNH
         let baseFee = 20000 // Base fee mặc định
         
-        // 1. Phí theo tỉnh (distance fee)
+        // 1. Phí theo tỉnh (distance fee) - TỰ ĐỘNG
         let provinceFee = 0
-        if (selectedProvince.value === 202) {
-          // TP.HCM → trong thành phố
+        const provinceName = provinces.value.find(p => p.ProvinceID === selectedProvince.value)?.ProvinceName || ''
+        
+        // Các thành phố lớn (miễn phí)
+        const bigCities = [202, 201, 203, 204] // HCM, HN, ĐN, CT
+        if (bigCities.includes(selectedProvince.value)) {
           provinceFee = 0
-        } else if (selectedProvince.value === 201) {
-          // Hà Nội → xa
-          provinceFee = 30000
-        } else if (selectedProvince.value === 203) {
-          // Đà Nẵng → rất xa
-          provinceFee = 40000
-        } else if (selectedProvince.value === 204) {
-          // Cần Thơ → xa vừa
-          provinceFee = 25000
+        }
+        // Miền Bắc (trừ HN)
+        else if ([269, 271, 273, 275, 277, 279, 281, 283, 285, 287, 289, 291, 293, 295, 297, 299, 301, 303, 305, 307, 380, 382, 384, 386].includes(selectedProvince.value)) {
+          provinceFee = 30000 // 30k cho miền Bắc
+        }
+        // Miền Trung
+        else if ([309, 311, 313, 315, 317, 319, 321, 323, 325, 327, 329, 331, 333].includes(selectedProvince.value)) {
+          provinceFee = 40000 // 40k cho miền Trung
+        }
+        // Tây Nguyên
+        else if ([335, 337, 339, 341, 343].includes(selectedProvince.value)) {
+          provinceFee = 45000 // 45k cho Tây Nguyên (xa & núi)
+        }
+        // Miền Nam (trừ HCM)
+        else if ([345, 347, 349, 351, 353, 355, 357, 359, 361, 363, 365, 367, 369, 371, 373, 375, 377].includes(selectedProvince.value)) {
+          provinceFee = 25000 // 25k cho miền Nam
+        }
+        else {
+          provinceFee = 35000 // Default cho tỉnh khác
         }
         
-        // 2. Phí theo quận (zone fee)
+        // 2. Phí theo quận (zone fee) - TỰ ĐỘNG theo tên
         let districtFee = 0
-        if (selectedDistrict.value === 1542) {
-          // Quận 1 - nội thành
+        const districtName = districts.value.find(d => d.DistrictID === selectedDistrict.value)?.DistrictName || ''
+        
+        // Quận trung tâm TP (miễn phí)
+        if (districtName.includes('Quận 1') || districtName.includes('Hoàn Kiếm') || districtName.includes('Hải Châu') || districtName.includes('Ninh Kiều')) {
           districtFee = 0
-        } else if (selectedDistrict.value === 3695) {
-          // Thủ Đức - xa hơn
-          districtFee = 10000
-        } else if (selectedDistrict.value === 1443 || selectedDistrict.value === 1462) {
-          // Quận 3, 10 - trung tâm
+        }
+        // Quận nội thành khác
+        else if (districtName.includes('Quận') || districtName.startsWith('TP ')) {
           districtFee = 5000
-        } else {
-          // Quận khác
-          districtFee = 8000
+        }
+        // Huyện xa
+        else if (districtName.includes('Huyện') || districtName.includes('TX ')) {
+          districtFee = 10000
+        }
+        else {
+          districtFee = 8000 // Default
         }
         
-        // 3. Phí theo trọng lượng
+        // 🆕 3. Phí theo xã/phường - LINH ĐỘNG THEO ĐỘ XA (Distance-based)
+        let wardFee = 0
+        const wardName = wards.value.find(w => w.WardCode === selectedWard.value)?.WardName || ''
+        const wardIndex = wards.value.findIndex(w => w.WardCode === selectedWard.value)
+        const totalWards = wards.value.length
+        
+        // Tính hệ số khoảng cách dựa trên vị trí trong danh sách
+        // Xã đầu tiên = gần trung tâm, xã cuối = xa nhất
+        const distanceRatio = totalWards > 1 ? wardIndex / (totalWards - 1) : 0
+        
+        // PHƯỜNG THÀNH PHỐ (gần nhất)
+        if (wardName.includes('Phường') && !wardName.includes('Xã')) {
+          // Phường trung tâm VIP (số thấp hoặc tên đặc biệt)
+          if (wardName.includes('Bến Nghé') || wardName.includes('Bến Thành') || 
+              wardName.includes('Hàng Bạc') || wardName.includes('Hàng Gai') ||
+              wardName.includes('Thạch Thang') || wardName.includes('Cái Khế') ||
+              wardName.includes('Phường 01') || wardName.includes('Phường 1')) {
+            wardFee = 0 // Trung tâm tuyệt đối (0₫)
+          } 
+          // Phường nội thành - tính theo khoảng cách
+          else {
+            wardFee = Math.round(1000 + distanceRatio * 3000) // 1k-4k
+          }
+        }
+        // THỊ TRẤN (trung bình)
+        else if (wardName.includes('Thị trấn') || wardName.includes('TT ')) {
+          wardFee = Math.round(2000 + distanceRatio * 3000) // 2k-5k
+        }
+        // XÃ NGOẠI THÀNH (xa nhất)
+        else if (wardName.includes('Xã')) {
+          // Xã vùng núi/biên giới (từ khóa đặc biệt)
+          if (wardName.includes('Sơn') || wardName.includes('Thượng') || 
+              wardName.includes('Cao') || wardName.includes('Núi') ||
+              wardName.includes('Rừng') || wardName.includes('Biên') ||
+              wardName.includes('Lầu') || wardName.includes('Sử')) {
+            wardFee = Math.round(5000 + distanceRatio * 5000) // 5k-10k (vùng núi)
+          } 
+          // Xã thường - tính theo khoảng cách
+          else {
+            wardFee = Math.round(3000 + distanceRatio * 4000) // 3k-7k
+          }
+        }
+        // Default
+        else {
+          wardFee = Math.round(2000 + distanceRatio * 3000) // 2k-5k
+        }
+        
+        // Làm tròn phí về bội số của 500₫ (đẹp hơn)
+        wardFee = Math.round(wardFee / 500) * 500
+        
+        // 4. Phí theo trọng lượng
         const weightFee = Math.ceil(totalWeight / 1000) * 5000 // 5k mỗi kg
         
-        // 4. Phí bảo hiểm
+        // 5. Phí bảo hiểm
         const insuranceFee = insuranceValue > 3000000 ? Math.ceil(insuranceValue * 0.005) : 0
         
-        // 🎯 TỔNG PHÍ = Base + Province + District + Weight + Insurance
-        const totalFee = baseFee + provinceFee + districtFee + weightFee + insuranceFee
+        // 🎯 TỔNG PHÍ = Base + Province + District + Ward + Weight + Insurance
+        const totalFee = baseFee + provinceFee + districtFee + wardFee + weightFee + insuranceFee
         
         shippingFee.value = totalFee
         
-        // Thời gian giao hàng phụ thuộc vào khoảng cách
+        // Thời gian giao hàng phụ thuộc vào khoảng cách - TỰ ĐỘNG
         let daysToDeliver = 2 // Default
-        if (selectedProvince.value === 202) {
-          daysToDeliver = 1 // TP.HCM: 1 ngày
-        } else if (selectedProvince.value === 201 || selectedProvince.value === 203) {
-          daysToDeliver = 3 // Hà Nội, Đà Nẵng: 3 ngày
+        
+        if (bigCities.includes(selectedProvince.value)) {
+          // Thành phố lớn: 1-2 ngày
+          daysToDeliver = selectedProvince.value === 202 ? 1 : 2
+        } else if ([269, 271, 273, 275, 277, 279, 281, 283, 285, 287, 289, 291, 293, 295, 297, 299, 301, 303, 305, 307, 380, 382, 384, 386].includes(selectedProvince.value)) {
+          // Miền Bắc: 2-3 ngày
+          daysToDeliver = 3
+        } else if ([335, 337, 339, 341, 343].includes(selectedProvince.value)) {
+          // Tây Nguyên: 3-4 ngày (xa & núi)
+          daysToDeliver = 4
+        } else if ([309, 311, 313, 315, 317, 319, 321, 323, 325, 327, 329, 331, 333].includes(selectedProvince.value)) {
+          // Miền Trung: 3 ngày
+          daysToDeliver = 3
         } else {
-          daysToDeliver = 2 // Khác: 2 ngày
+          // Miền Nam & khác: 2 ngày
+          daysToDeliver = 2
         }
         
         expectedDeliveryTime.value = new Date(Date.now() + daysToDeliver * 24 * 60 * 60 * 1000).toISOString()
@@ -1399,12 +1521,17 @@ export function useShipping() {
         console.log('✅ [MOCK] Calculated shipping fee:', {
           province: selectedProvince.value,
           district: selectedDistrict.value,
+          ward: selectedWard.value,
+          wardName: wardName,
+          wardPosition: `${wardIndex + 1}/${totalWards}`, // Vị trí xã trong danh sách
+          distanceRatio: `${Math.round(distanceRatio * 100)}%`, // % khoảng cách
           totalWeight,
           insuranceValue,
           breakdown: {
             baseFee,
             provinceFee,
             districtFee,
+            wardFee, // 🆕 Phí xã theo độ xa (dynamic)
             weightFee,
             insuranceFee
           },
@@ -1560,6 +1687,20 @@ export function useShipping() {
   const validateAddress = (address) => {
     return shippingService.validateAddress(address)
   }
+
+  // 🎯 AUTO-CALCULATE: Tự động tính phí ship khi chọn đủ địa chỉ
+  watch([selectedProvince, selectedDistrict, selectedWard], ([province, district, ward]) => {
+    // Chỉ tự động tính khi đã chọn đủ tỉnh + quận + xã
+    if (province && district && ward) {
+      console.log('🔄 Auto-calculating shipping fee for:', { province, district, ward })
+      // Tính với trọng lượng mặc định 500g và không bảo hiểm
+      calculateShippingFee(500, 0)
+    } else {
+      // Reset phí ship nếu chưa chọn đủ
+      shippingFee.value = 0
+      expectedDeliveryTime.value = null
+    }
+  })
 
   return {
     // State
