@@ -164,6 +164,484 @@ const MOCK_DATA = {
       { DistrictID: 1571, DistrictName: 'Ninh Hòa', Code: '1571' },
       { DistrictID: 1572, DistrictName: 'Vạn Ninh', Code: '1572' },
     ],
+    // Phú Thọ (289) - MỚI THÊM
+    289: [
+      { DistrictID: 2891, DistrictName: 'TP Việt Trì', Code: '2891' },
+      { DistrictID: 2892, DistrictName: 'TX Phú Thọ', Code: '2892' },
+      { DistrictID: 2893, DistrictName: 'Đoan Hùng', Code: '2893' },
+      { DistrictID: 2894, DistrictName: 'Hạ Hoà', Code: '2894' },
+      { DistrictID: 2895, DistrictName: 'Thanh Ba', Code: '2895' },
+      { DistrictID: 2896, DistrictName: 'Phù Ninh', Code: '2896' },
+      { DistrictID: 2897, DistrictName: 'Yên Lập', Code: '2897' },
+      { DistrictID: 2898, DistrictName: 'Cẩm Khê', Code: '2898' },
+      { DistrictID: 2899, DistrictName: 'Tam Nông', Code: '2899' },
+      { DistrictID: 2890, DistrictName: 'Lâm Thao', Code: '2890' },
+    ],
+    // Hưng Yên (299) - MỚI THÊM
+    299: [
+      { DistrictID: 2991, DistrictName: 'TP Hưng Yên', Code: '2991' },
+      { DistrictID: 2992, DistrictName: 'Văn Lâm', Code: '2992' },
+      { DistrictID: 2993, DistrictName: 'Văn Giang', Code: '2993' },
+      { DistrictID: 2994, DistrictName: 'Yên Mỹ', Code: '2994' },
+      { DistrictID: 2995, DistrictName: 'Mỹ Hào', Code: '2995' },
+      { DistrictID: 2996, DistrictName: 'Ân Thi', Code: '2996' },
+      { DistrictID: 2997, DistrictName: 'Khoái Châu', Code: '2997' },
+      { DistrictID: 2998, DistrictName: 'Kim Động', Code: '2998' },
+      { DistrictID: 2999, DistrictName: 'Tiên Lữ', Code: '2999' },
+      { DistrictID: 2990, DistrictName: 'Phù Cừ', Code: '2990' },
+    ],
+    // Hà Nam (303)
+    303: [
+      { DistrictID: 3031, DistrictName: 'TP Phủ Lý', Code: '3031' },
+      { DistrictID: 3032, DistrictName: 'Duy Tiên', Code: '3032' },
+      { DistrictID: 3033, DistrictName: 'Kim Bảng', Code: '3033' },
+      { DistrictID: 3034, DistrictName: 'Lý Nhân', Code: '3034' },
+      { DistrictID: 3035, DistrictName: 'Thanh Liêm', Code: '3035' },
+      { DistrictID: 3036, DistrictName: 'Bình Lục', Code: '3036' },
+    ],
+    // Thái Bình (301)
+    301: [
+      { DistrictID: 3011, DistrictName: 'TP Thái Bình', Code: '3011' },
+      { DistrictID: 3012, DistrictName: 'Quỳnh Phụ', Code: '3012' },
+      { DistrictID: 3013, DistrictName: 'Hưng Hà', Code: '3013' },
+      { DistrictID: 3014, DistrictName: 'Đông Hưng', Code: '3014' },
+      { DistrictID: 3015, DistrictName: 'Thái Thụy', Code: '3015' },
+    ],
+    // Nam Định (305)
+    305: [
+      { DistrictID: 3051, DistrictName: 'TP Nam Định', Code: '3051' },
+      { DistrictID: 3052, DistrictName: 'Mỹ Lộc', Code: '3052' },
+      { DistrictID: 3053, DistrictName: 'Vụ Bản', Code: '3053' },
+      { DistrictID: 3054, DistrictName: 'Ý Yên', Code: '3054' },
+      { DistrictID: 3055, DistrictName: 'Nghĩa Hưng', Code: '3055' },
+    ],
+    // Ninh Bình (307)
+    307: [
+      { DistrictID: 3071, DistrictName: 'TP Ninh Bình', Code: '3071' },
+      { DistrictID: 3072, DistrictName: 'Tam Điệp', Code: '3072' },
+      { DistrictID: 3073, DistrictName: 'Nho Quan', Code: '3073' },
+      { DistrictID: 3074, DistrictName: 'Gia Viễn', Code: '3074' },
+      { DistrictID: 3075, DistrictName: 'Hoa Lư', Code: '3075' },
+    ],
+    // Thanh Hóa (309)
+    309: [
+      { DistrictID: 3091, DistrictName: 'TP Thanh Hóa', Code: '3091' },
+      { DistrictID: 3092, DistrictName: 'Bỉm Sơn', Code: '3092' },
+      { DistrictID: 3093, DistrictName: 'Sầm Sơn', Code: '3093' },
+      { DistrictID: 3094, DistrictName: 'Nghi Sơn', Code: '3094' },
+      { DistrictID: 3095, DistrictName: 'Quảng Xương', Code: '3095' },
+    ],
+    // Nghệ An (311)
+    311: [
+      { DistrictID: 3111, DistrictName: 'TP Vinh', Code: '3111' },
+      { DistrictID: 3112, DistrictName: 'Cửa Lò', Code: '3112' },
+      { DistrictID: 3113, DistrictName: 'Thái Hòa', Code: '3113' },
+      { DistrictID: 3114, DistrictName: 'Diễn Châu', Code: '3114' },
+      { DistrictID: 3115, DistrictName: 'Yên Thành', Code: '3115' },
+    ],
+    // Hà Tĩnh (313)
+    313: [
+      { DistrictID: 3131, DistrictName: 'TP Hà Tĩnh', Code: '3131' },
+      { DistrictID: 3132, DistrictName: 'Hồng Lĩnh', Code: '3132' },
+      { DistrictID: 3133, DistrictName: 'Hương Sơn', Code: '3133' },
+      { DistrictID: 3134, DistrictName: 'Đức Thọ', Code: '3134' },
+      { DistrictID: 3135, DistrictName: 'Kỳ Anh', Code: '3135' },
+    ],
+    // Điện Biên (271) - MỚI THÊM
+    271: [
+      { DistrictID: 2711, DistrictName: 'TP Điện Biên Phủ', Code: '2711' },
+      { DistrictID: 2712, DistrictName: 'TX Mường Lay', Code: '2712' },
+      { DistrictID: 2713, DistrictName: 'Mường Nhé', Code: '2713' },
+      { DistrictID: 2714, DistrictName: 'Mường Chà', Code: '2714' },
+      { DistrictID: 2715, DistrictName: 'Tủa Chùa', Code: '2715' },
+      { DistrictID: 2716, DistrictName: 'Tuần Giáo', Code: '2716' },
+      { DistrictID: 2717, DistrictName: 'Điện Biên', Code: '2717' },
+      { DistrictID: 2718, DistrictName: 'Điện Biên Đông', Code: '2718' },
+      { DistrictID: 2719, DistrictName: 'Mường Ảng', Code: '2719' },
+      { DistrictID: 2720, DistrictName: 'Nậm Pồ', Code: '2720' },
+    ],
+    // Lào Cai (269) - MỚI THÊM
+    269: [
+      { DistrictID: 2691, DistrictName: 'TP Lào Cai', Code: '2691' },
+      { DistrictID: 2692, DistrictName: 'Bát Xát', Code: '2692' },
+      { DistrictID: 2693, DistrictName: 'Mường Khương', Code: '2693' },
+      { DistrictID: 2694, DistrictName: 'Si Ma Cai', Code: '2694' },
+      { DistrictID: 2695, DistrictName: 'Bắc Hà', Code: '2695' },
+      { DistrictID: 2696, DistrictName: 'Bảo Thắng', Code: '2696' },
+      { DistrictID: 2697, DistrictName: 'Bảo Yên', Code: '2697' },
+      { DistrictID: 2698, DistrictName: 'Sa Pa', Code: '2698' },
+      { DistrictID: 2699, DistrictName: 'Văn Bàn', Code: '2699' },
+    ],
+    // Sơn La (275) - MỚI THÊM
+    275: [
+      { DistrictID: 2751, DistrictName: 'TP Sơn La', Code: '2751' },
+      { DistrictID: 2752, DistrictName: 'Quỳnh Nhai', Code: '2752' },
+      { DistrictID: 2753, DistrictName: 'Thuận Châu', Code: '2753' },
+      { DistrictID: 2754, DistrictName: 'Mường La', Code: '2754' },
+      { DistrictID: 2755, DistrictName: 'Bắc Yên', Code: '2755' },
+      { DistrictID: 2756, DistrictName: 'Phù Yên', Code: '2756' },
+      { DistrictID: 2757, DistrictName: 'Mộc Châu', Code: '2757' },
+      { DistrictID: 2758, DistrictName: 'Yên Châu', Code: '2758' },
+      { DistrictID: 2759, DistrictName: 'Mai Sơn', Code: '2759' },
+      { DistrictID: 2760, DistrictName: 'Sông Mã', Code: '2760' },
+      { DistrictID: 2761, DistrictName: 'Sốp Cộp', Code: '2761' },
+    ],
+    // Yên Bái (277) - MỚI THÊM
+    277: [
+      { DistrictID: 2771, DistrictName: 'TP Yên Bái', Code: '2771' },
+      { DistrictID: 2772, DistrictName: 'TX Nghĩa Lộ', Code: '2772' },
+      { DistrictID: 2773, DistrictName: 'Lục Yên', Code: '2773' },
+      { DistrictID: 2774, DistrictName: 'Văn Yên', Code: '2774' },
+      { DistrictID: 2775, DistrictName: 'Mù Cang Chải', Code: '2775' },
+      { DistrictID: 2776, DistrictName: 'Trấn Yên', Code: '2776' },
+      { DistrictID: 2777, DistrictName: 'Trạm Tấu', Code: '2777' },
+      { DistrictID: 2778, DistrictName: 'Văn Chấn', Code: '2778' },
+      { DistrictID: 2779, DistrictName: 'Yên Bình', Code: '2779' },
+    ],
+    // Tuyên Quang (386) - MỚI THÊM
+    386: [
+      { DistrictID: 3861, DistrictName: 'TP Tuyên Quang', Code: '3861' },
+      { DistrictID: 3862, DistrictName: 'Lâm Bình', Code: '3862' },
+      { DistrictID: 3863, DistrictName: 'Na Hang', Code: '3863' },
+      { DistrictID: 3864, DistrictName: 'Chiêm Hóa', Code: '3864' },
+      { DistrictID: 3865, DistrictName: 'Hàm Yên', Code: '3865' },
+      { DistrictID: 3866, DistrictName: 'Yên Sơn', Code: '3866' },
+      { DistrictID: 3867, DistrictName: 'Sơn Dương', Code: '3867' },
+    ],
+    // Lạng Sơn (283) - MỚI THÊM
+    283: [
+      { DistrictID: 2831, DistrictName: 'TP Lạng Sơn', Code: '2831' },
+      { DistrictID: 2832, DistrictName: 'Tràng Định', Code: '2832' },
+      { DistrictID: 2833, DistrictName: 'Bình Gia', Code: '2833' },
+      { DistrictID: 2834, DistrictName: 'Văn Lãng', Code: '2834' },
+      { DistrictID: 2835, DistrictName: 'Cao Lộc', Code: '2835' },
+      { DistrictID: 2836, DistrictName: 'Văn Quan', Code: '2836' },
+      { DistrictID: 2837, DistrictName: 'Bắc Sơn', Code: '2837' },
+      { DistrictID: 2838, DistrictName: 'Hữu Lũng', Code: '2838' },
+      { DistrictID: 2839, DistrictName: 'Chi Lăng', Code: '2839' },
+      { DistrictID: 2840, DistrictName: 'Lộc Bình', Code: '2840' },
+      { DistrictID: 2841, DistrictName: 'Đình Lập', Code: '2841' },
+    ],
+    // Cao Bằng (382) - MỚI THÊM
+    382: [
+      { DistrictID: 3821, DistrictName: 'TP Cao Bằng', Code: '3821' },
+      { DistrictID: 3822, DistrictName: 'Bảo Lâm', Code: '3822' },
+      { DistrictID: 3823, DistrictName: 'Bảo Lạc', Code: '3823' },
+      { DistrictID: 3824, DistrictName: 'Hà Quảng', Code: '3824' },
+      { DistrictID: 3825, DistrictName: 'Trùng Khánh', Code: '3825' },
+      { DistrictID: 3826, DistrictName: 'Hạ Lang', Code: '3826' },
+      { DistrictID: 3827, DistrictName: 'Quảng Hòa', Code: '3827' },
+      { DistrictID: 3828, DistrictName: 'Hoà An', Code: '3828' },
+      { DistrictID: 3829, DistrictName: 'Nguyên Bình', Code: '3829' },
+      { DistrictID: 3830, DistrictName: 'Thạch An', Code: '3830' },
+    ],
+    // Bắc Kạn (384) - MỚI THÊM
+    384: [
+      { DistrictID: 3841, DistrictName: 'TP Bắc Kạn', Code: '3841' },
+      { DistrictID: 3842, DistrictName: 'Pác Nặm', Code: '3842' },
+      { DistrictID: 3843, DistrictName: 'Ba Bể', Code: '3843' },
+      { DistrictID: 3844, DistrictName: 'Ngân Sơn', Code: '3844' },
+      { DistrictID: 3845, DistrictName: 'Bạch Thông', Code: '3845' },
+      { DistrictID: 3846, DistrictName: 'Chợ Đồn', Code: '3846' },
+      { DistrictID: 3847, DistrictName: 'Chợ Mới', Code: '3847' },
+      { DistrictID: 3848, DistrictName: 'Na Rì', Code: '3848' },
+    ],
+    // Lai Châu (273) - MỚI THÊM
+    273: [
+      { DistrictID: 2731, DistrictName: 'TP Lai Châu', Code: '2731' },
+      { DistrictID: 2732, DistrictName: 'Tam Đường', Code: '2732' },
+      { DistrictID: 2733, DistrictName: 'Mường Tè', Code: '2733' },
+      { DistrictID: 2734, DistrictName: 'Sìn Hồ', Code: '2734' },
+      { DistrictID: 2735, DistrictName: 'Phong Thổ', Code: '2735' },
+      { DistrictID: 2736, DistrictName: 'Than Uyên', Code: '2736' },
+      { DistrictID: 2737, DistrictName: 'Tân Uyên', Code: '2737' },
+      { DistrictID: 2738, DistrictName: 'Nậm Nhùn', Code: '2738' },
+    ],
+    // THÊM TẤT CẢ CÁC TỈNH CÒN LẠI
+    // Hà Giang (380)
+    380: [
+      { DistrictID: 3801, DistrictName: 'TP Hà Giang', Code: '3801' },
+      { DistrictID: 3802, DistrictName: 'Đồng Văn', Code: '3802' },
+      { DistrictID: 3803, DistrictName: 'Mèo Vạc', Code: '3803' },
+      { DistrictID: 3804, DistrictName: 'Yên Minh', Code: '3804' },
+      { DistrictID: 3805, DistrictName: 'Quản Bạ', Code: '3805' },
+    ],
+    // Thái Nguyên (281)
+    281: [
+      { DistrictID: 2811, DistrictName: 'TP Thái Nguyên', Code: '2811' },
+      { DistrictID: 2812, DistrictName: 'TP Sông Công', Code: '2812' },
+      { DistrictID: 2813, DistrictName: 'Phổ Yên', Code: '2813' },
+      { DistrictID: 2814, DistrictName: 'Đại Từ', Code: '2814' },
+      { DistrictID: 2815, DistrictName: 'Phú Lương', Code: '2815' },
+    ],
+    // Hoà Bình (279)
+    279: [
+      { DistrictID: 2791, DistrictName: 'TP Hòa Bình', Code: '2791' },
+      { DistrictID: 2792, DistrictName: 'Đà Bắc', Code: '2792' },
+      { DistrictID: 2793, DistrictName: 'Mai Châu', Code: '2793' },
+      { DistrictID: 2794, DistrictName: 'Lương Sơn', Code: '2794' },
+      { DistrictID: 2795, DistrictName: 'Kim Bôi', Code: '2795' },
+    ],
+    // Bắc Giang (287)
+    287: [
+      { DistrictID: 2871, DistrictName: 'TP Bắc Giang', Code: '2871' },
+      { DistrictID: 2872, DistrictName: 'Yên Thế', Code: '2872' },
+      { DistrictID: 2873, DistrictName: 'Lục Ngạn', Code: '2873' },
+      { DistrictID: 2874, DistrictName: 'Lục Nam', Code: '2874' },
+      { DistrictID: 2875, DistrictName: 'Sơn Động', Code: '2875' },
+    ],
+    // Vĩnh Phúc (291)
+    291: [
+      { DistrictID: 2911, DistrictName: 'TP Vĩnh Yên', Code: '2911' },
+      { DistrictID: 2912, DistrictName: 'TP Phúc Yên', Code: '2912' },
+      { DistrictID: 2913, DistrictName: 'Bình Xuyên', Code: '2913' },
+      { DistrictID: 2914, DistrictName: 'Tam Dương', Code: '2914' },
+      { DistrictID: 2915, DistrictName: 'Vĩnh Tường', Code: '2915' },
+    ],
+    // Bắc Ninh (293)
+    293: [
+      { DistrictID: 2931, DistrictName: 'TP Bắc Ninh', Code: '2931' },
+      { DistrictID: 2932, DistrictName: 'Từ Sơn', Code: '2932' },
+      { DistrictID: 2933, DistrictName: 'Thuận Thành', Code: '2933' },
+      { DistrictID: 2934, DistrictName: 'Gia Bình', Code: '2934' },
+      { DistrictID: 2935, DistrictName: 'Lương Tài', Code: '2935' },
+    ],
+    // Hải Dương (295)
+    295: [
+      { DistrictID: 2951, DistrictName: 'TP Hải Dương', Code: '2951' },
+      { DistrictID: 2952, DistrictName: 'Chí Linh', Code: '2952' },
+      { DistrictID: 2953, DistrictName: 'Nam Sách', Code: '2953' },
+      { DistrictID: 2954, DistrictName: 'Kinh Môn', Code: '2954' },
+      { DistrictID: 2955, DistrictName: 'Thanh Hà', Code: '2955' },
+    ],
+    // THÊM CÁC TỈNH MIỀN TRUNG VÀ NAM
+    // Quảng Bình (315)
+    315: [
+      { DistrictID: 3151, DistrictName: 'TP Đồng Hới', Code: '3151' },
+      { DistrictID: 3152, DistrictName: 'Bố Trạch', Code: '3152' },
+      { DistrictID: 3153, DistrictName: 'Quảng Trạch', Code: '3153' },
+      { DistrictID: 3154, DistrictName: 'Quảng Ninh', Code: '3154' },
+      { DistrictID: 3155, DistrictName: 'Lệ Thủy', Code: '3155' },
+    ],
+    // Quảng Trị (317)
+    317: [
+      { DistrictID: 3171, DistrictName: 'TP Đông Hà', Code: '3171' },
+      { DistrictID: 3172, DistrictName: 'Quảng Trị', Code: '3172' },
+      { DistrictID: 3173, DistrictName: 'Vĩnh Linh', Code: '3173' },
+      { DistrictID: 3174, DistrictName: 'Gio Linh', Code: '3174' },
+      { DistrictID: 3175, DistrictName: 'Hải Lăng', Code: '3175' },
+    ],
+    // Thừa Thiên Huế (319)
+    319: [
+      { DistrictID: 3191, DistrictName: 'TP Huế', Code: '3191' },
+      { DistrictID: 3192, DistrictName: 'Phong Điền', Code: '3192' },
+      { DistrictID: 3193, DistrictName: 'Quảng Điền', Code: '3193' },
+      { DistrictID: 3194, DistrictName: 'Phú Vang', Code: '3194' },
+      { DistrictID: 3195, DistrictName: 'Hương Thủy', Code: '3195' },
+    ],
+    // Quảng Nam (321)
+    321: [
+      { DistrictID: 3211, DistrictName: 'TP Tam Kỳ', Code: '3211' },
+      { DistrictID: 3212, DistrictName: 'TP Hội An', Code: '3212' },
+      { DistrictID: 3213, DistrictName: 'Điện Bàn', Code: '3213' },
+      { DistrictID: 3214, DistrictName: 'Đại Lộc', Code: '3214' },
+      { DistrictID: 3215, DistrictName: 'Duy Xuyên', Code: '3215' },
+    ],
+    // Quảng Ngãi (323)
+    323: [
+      { DistrictID: 3231, DistrictName: 'TP Quảng Ngãi', Code: '3231' },
+      { DistrictID: 3232, DistrictName: 'Bình Sơn', Code: '3232' },
+      { DistrictID: 3233, DistrictName: 'Sơn Tịnh', Code: '3233' },
+      { DistrictID: 3234, DistrictName: 'Tư Nghĩa', Code: '3234' },
+      { DistrictID: 3235, DistrictName: 'Nghĩa Hành', Code: '3235' },
+    ],
+    // Bình Định (325)
+    325: [
+      { DistrictID: 3251, DistrictName: 'TP Quy Nhơn', Code: '3251' },
+      { DistrictID: 3252, DistrictName: 'An Nhơn', Code: '3252' },
+      { DistrictID: 3253, DistrictName: 'Hoài Nhơn', Code: '3253' },
+      { DistrictID: 3254, DistrictName: 'Tuy Phước', Code: '3254' },
+      { DistrictID: 3255, DistrictName: 'Phù Cát', Code: '3255' },
+    ],
+    // Phú Yên (327)
+    327: [
+      { DistrictID: 3271, DistrictName: 'TP Tuy Hòa', Code: '3271' },
+      { DistrictID: 3272, DistrictName: 'Sông Cầu', Code: '3272' },
+      { DistrictID: 3273, DistrictName: 'Đồng Xuân', Code: '3273' },
+      { DistrictID: 3274, DistrictName: 'Tuy An', Code: '3274' },
+      { DistrictID: 3275, DistrictName: 'Sơn Hòa', Code: '3275' },
+    ],
+    // Các tỉnh Tây Nguyên
+    // Kon Tum (335)
+    335: [
+      { DistrictID: 3351, DistrictName: 'TP Kon Tum', Code: '3351' },
+      { DistrictID: 3352, DistrictName: 'Đăk Glei', Code: '3352' },
+      { DistrictID: 3353, DistrictName: 'Đăk Tô', Code: '3353' },
+      { DistrictID: 3354, DistrictName: 'Kon Plông', Code: '3354' },
+      { DistrictID: 3355, DistrictName: 'Kon Rẫy', Code: '3355' },
+    ],
+    // Gia Lai (337)
+    337: [
+      { DistrictID: 3371, DistrictName: 'TP Pleiku', Code: '3371' },
+      { DistrictID: 3372, DistrictName: 'An Khê', Code: '3372' },
+      { DistrictID: 3373, DistrictName: 'Ayun Pa', Code: '3373' },
+      { DistrictID: 3374, DistrictName: 'Chư Păh', Code: '3374' },
+      { DistrictID: 3375, DistrictName: 'Chư Prông', Code: '3375' },
+    ],
+    // Đắk Lắk (339)
+    339: [
+      { DistrictID: 3391, DistrictName: 'TP Buôn Ma Thuột', Code: '3391' },
+      { DistrictID: 3392, DistrictName: 'Buôn Hồ', Code: '3392' },
+      { DistrictID: 3393, DistrictName: 'Ea Kar', Code: '3393' },
+      { DistrictID: 3394, DistrictName: 'Krông Păk', Code: '3394' },
+      { DistrictID: 3395, DistrictName: 'Krông Búk', Code: '3395' },
+    ],
+    // Đắk Nông (341)
+    341: [
+      { DistrictID: 3411, DistrictName: 'TP Gia Nghĩa', Code: '3411' },
+      { DistrictID: 3412, DistrictName: 'Đăk Glong', Code: '3412' },
+      { DistrictID: 3413, DistrictName: 'Cư Jút', Code: '3413' },
+      { DistrictID: 3414, DistrictName: 'Đăk Mil', Code: '3414' },
+      { DistrictID: 3415, DistrictName: 'Krông Nô', Code: '3415' },
+    ],
+    // Lâm Đồng (343)
+    343: [
+      { DistrictID: 3431, DistrictName: 'TP Đà Lạt', Code: '3431' },
+      { DistrictID: 3432, DistrictName: 'TP Bảo Lộc', Code: '3432' },
+      { DistrictID: 3433, DistrictName: 'Đơn Dương', Code: '3433' },
+      { DistrictID: 3434, DistrictName: 'Đức Trọng', Code: '3434' },
+      { DistrictID: 3435, DistrictName: 'Lạc Dương', Code: '3435' },
+    ],
+    // Các tỉnh Đông Nam Bộ
+    // Bình Phước (345)
+    345: [
+      { DistrictID: 3451, DistrictName: 'TP Đồng Xoài', Code: '3451' },
+      { DistrictID: 3452, DistrictName: 'Bù Đăng', Code: '3452' },
+      { DistrictID: 3453, DistrictName: 'Chơn Thành', Code: '3453' },
+      { DistrictID: 3454, DistrictName: 'Bù Đốp', Code: '3454' },
+      { DistrictID: 3455, DistrictName: 'Phước Long', Code: '3455' },
+    ],
+    // Tây Ninh (347)
+    347: [
+      { DistrictID: 3471, DistrictName: 'TP Tây Ninh', Code: '3471' },
+      { DistrictID: 3472, DistrictName: 'Tân Biên', Code: '3472' },
+      { DistrictID: 3473, DistrictName: 'Tân Châu', Code: '3473' },
+      { DistrictID: 3474, DistrictName: 'Dương Minh Châu', Code: '3474' },
+      { DistrictID: 3475, DistrictName: 'Châu Thành', Code: '3475' },
+    ],
+    // Ninh Thuận (331)
+    331: [
+      { DistrictID: 3311, DistrictName: 'TP Phan Rang-Tháp Chàm', Code: '3311' },
+      { DistrictID: 3312, DistrictName: 'Ninh Sơn', Code: '3312' },
+      { DistrictID: 3313, DistrictName: 'Ninh Hải', Code: '3313' },
+      { DistrictID: 3314, DistrictName: 'Ninh Phước', Code: '3314' },
+      { DistrictID: 3315, DistrictName: 'Thuận Bắc', Code: '3315' },
+    ],
+    // Bình Thuận (333)
+    333: [
+      { DistrictID: 3331, DistrictName: 'TP Phan Thiết', Code: '3331' },
+      { DistrictID: 3332, DistrictName: 'La Gi', Code: '3332' },
+      { DistrictID: 3333, DistrictName: 'Tuy Phong', Code: '3333' },
+      { DistrictID: 3334, DistrictName: 'Bắc Bình', Code: '3334' },
+      { DistrictID: 3335, DistrictName: 'Hàm Thuận Bắc', Code: '3335' },
+    ],
+    // Các tỉnh ĐBSCL
+    // Long An (355)
+    355: [
+      { DistrictID: 3551, DistrictName: 'TP Tân An', Code: '3551' },
+      { DistrictID: 3552, DistrictName: 'Bến Lức', Code: '3552' },
+      { DistrictID: 3553, DistrictName: 'Cần Đước', Code: '3553' },
+      { DistrictID: 3554, DistrictName: 'Cần Giuộc', Code: '3554' },
+      { DistrictID: 3555, DistrictName: 'Châu Thành', Code: '3555' },
+    ],
+    // Tiền Giang (357)
+    357: [
+      { DistrictID: 3571, DistrictName: 'TP Mỹ Tho', Code: '3571' },
+      { DistrictID: 3572, DistrictName: 'Gò Công', Code: '3572' },
+      { DistrictID: 3573, DistrictName: 'Cai Lậy', Code: '3573' },
+      { DistrictID: 3574, DistrictName: 'Châu Thành', Code: '3574' },
+      { DistrictID: 3575, DistrictName: 'Cái Bè', Code: '3575' },
+    ],
+    // Bến Tre (359)
+    359: [
+      { DistrictID: 3591, DistrictName: 'TP Bến Tre', Code: '3591' },
+      { DistrictID: 3592, DistrictName: 'Châu Thành', Code: '3592' },
+      { DistrictID: 3593, DistrictName: 'Chợ Lách', Code: '3593' },
+      { DistrictID: 3594, DistrictName: 'Mỏ Cày Bắc', Code: '3594' },
+      { DistrictID: 3595, DistrictName: 'Giồng Trôm', Code: '3595' },
+    ],
+    // Trà Vinh (361)
+    361: [
+      { DistrictID: 3611, DistrictName: 'TP Trà Vinh', Code: '3611' },
+      { DistrictID: 3612, DistrictName: 'Càng Long', Code: '3612' },
+      { DistrictID: 3613, DistrictName: 'Cầu Kè', Code: '3613' },
+      { DistrictID: 3614, DistrictName: 'Tiểu Cần', Code: '3614' },
+      { DistrictID: 3615, DistrictName: 'Châu Thành', Code: '3615' },
+    ],
+    // Vĩnh Long (363)
+    363: [
+      { DistrictID: 3631, DistrictName: 'TP Vĩnh Long', Code: '3631' },
+      { DistrictID: 3632, DistrictName: 'Bình Minh', Code: '3632' },
+      { DistrictID: 3633, DistrictName: 'Long Hồ', Code: '3633' },
+      { DistrictID: 3634, DistrictName: 'Mang Thít', Code: '3634' },
+      { DistrictID: 3635, DistrictName: 'Tam Bình', Code: '3635' },
+    ],
+    // Đồng Tháp (365)
+    365: [
+      { DistrictID: 3651, DistrictName: 'TP Cao Lãnh', Code: '3651' },
+      { DistrictID: 3652, DistrictName: 'TP Sa Đéc', Code: '3652' },
+      { DistrictID: 3653, DistrictName: 'Hồng Ngự', Code: '3653' },
+      { DistrictID: 3654, DistrictName: 'Tân Hồng', Code: '3654' },
+      { DistrictID: 3655, DistrictName: 'Tam Nông', Code: '3655' },
+    ],
+    // An Giang (367)
+    367: [
+      { DistrictID: 3671, DistrictName: 'TP Long Xuyên', Code: '3671' },
+      { DistrictID: 3672, DistrictName: 'TP Châu Đốc', Code: '3672' },
+      { DistrictID: 3673, DistrictName: 'Châu Phú', Code: '3673' },
+      { DistrictID: 3674, DistrictName: 'Tịnh Biên', Code: '3674' },
+      { DistrictID: 3675, DistrictName: 'Tri Tôn', Code: '3675' },
+    ],
+    // Kiên Giang (369)
+    369: [
+      { DistrictID: 3691, DistrictName: 'TP Rạch Giá', Code: '3691' },
+      { DistrictID: 3692, DistrictName: 'TP Hà Tiên', Code: '3692' },
+      { DistrictID: 3693, DistrictName: 'Kiên Lương', Code: '3693' },
+      { DistrictID: 3694, DistrictName: 'Hòn Đất', Code: '3694' },
+      { DistrictID: 3695, DistrictName: 'Phú Quốc', Code: '3695' },
+    ],
+    // Hậu Giang (371)
+    371: [
+      { DistrictID: 3711, DistrictName: 'TP Vị Thanh', Code: '3711' },
+      { DistrictID: 3712, DistrictName: 'TX Ngã Bảy', Code: '3712' },
+      { DistrictID: 3713, DistrictName: 'Châu Thành', Code: '3713' },
+      { DistrictID: 3714, DistrictName: 'Châu Thành A', Code: '3714' },
+      { DistrictID: 3715, DistrictName: 'Long Mỹ', Code: '3715' },
+    ],
+    // Sóc Trăng (373)
+    373: [
+      { DistrictID: 3731, DistrictName: 'TP Sóc Trăng', Code: '3731' },
+      { DistrictID: 3732, DistrictName: 'Châu Thành', Code: '3732' },
+      { DistrictID: 3733, DistrictName: 'Kế Sách', Code: '3733' },
+      { DistrictID: 3734, DistrictName: 'Mỹ Tú', Code: '3734' },
+      { DistrictID: 3735, DistrictName: 'Cù Lao Dung', Code: '3735' },
+    ],
+    // Bạc Liêu (375)
+    375: [
+      { DistrictID: 3751, DistrictName: 'TP Bạc Liêu', Code: '3751' },
+      { DistrictID: 3752, DistrictName: 'Hòa Bình', Code: '3752' },
+      { DistrictID: 3753, DistrictName: 'Giá Rai', Code: '3753' },
+      { DistrictID: 3754, DistrictName: 'Đông Hải', Code: '3754' },
+      { DistrictID: 3755, DistrictName: 'Hồng Dân', Code: '3755' },
+    ],
+    // Cà Mau (377)
+    377: [
+      { DistrictID: 3771, DistrictName: 'TP Cà Mau', Code: '3771' },
+      { DistrictID: 3772, DistrictName: 'U Minh', Code: '3772' },
+      { DistrictID: 3773, DistrictName: 'Thới Bình', Code: '3773' },
+      { DistrictID: 3774, DistrictName: 'Trần Văn Thời', Code: '3774' },
+      { DistrictID: 3775, DistrictName: 'Cái Nước', Code: '3775' },
+    ],
   },
   wards: {
     1542: [ // Quận 1 - HCM
@@ -305,11 +783,333 @@ const MOCK_DATA = {
       { WardCode: '56103', WardName: 'Phường Phước Long' },
       { WardCode: '56104', WardName: 'Phường Phước Tiến' },
     ],
+    // TP Việt Trì - Phú Thọ - MỚI THÊM
+    2891: [
+      { WardCode: '289101', WardName: 'Phường Dữu Lâu' },
+      { WardCode: '289102', WardName: 'Phường Vân Cơ' },
+      { WardCode: '289103', WardName: 'Phường Nông Trang' },
+      { WardCode: '289104', WardName: 'Phường Tân Dân' },
+      { WardCode: '289105', WardName: 'Phường Gia Cẩm' },
+    ],
+    2892: [ // TX Phú Thọ - Phú Thọ
+      { WardCode: '289201', WardName: 'Phường Hùng Vương' },
+      { WardCode: '289202', WardName: 'Phường Thanh Miếu' },
+      { WardCode: '289203', WardName: 'Phường Trưng Vương' },
+      { WardCode: '289204', WardName: 'Phường Phong Châu' },
+    ],
+    2893: [ // Đoan Hùng - Phú Thọ
+      { WardCode: '289301', WardName: 'Thị trấn Đoan Hùng' },
+      { WardCode: '289302', WardName: 'Xã Hùng Xuyên' },
+      { WardCode: '289303', WardName: 'Xã Vân Du' },
+      { WardCode: '289304', WardName: 'Xã Phú Lâm' },
+    ],
+    // TP Hưng Yên - Hưng Yên - MỚI THÊM
+    2991: [
+      { WardCode: '299101', WardName: 'Phường Hiến Nam' },
+      { WardCode: '299102', WardName: 'Phường An Tảo' },
+      { WardCode: '299103', WardName: 'Phường Lê Lợi' },
+      { WardCode: '299104', WardName: 'Phường Minh Khai' },
+      { WardCode: '299105', WardName: 'Phường Quang Trung' },
+    ],
+    2992: [ // Văn Lâm - Hưng Yên
+      { WardCode: '299201', WardName: 'Thị trấn Như Quỳnh' },
+      { WardCode: '299202', WardName: 'Xã Lạc Đạo' },
+      { WardCode: '299203', WardName: 'Xã Chỉ Đạo' },
+      { WardCode: '299204', WardName: 'Xã Đại Đồng' },
+    ],
+    2993: [ // Văn Giang - Hưng Yên
+      { WardCode: '299301', WardName: 'Thị trấn Văn Giang' },
+      { WardCode: '299302', WardName: 'Xã Xuân Quan' },
+      { WardCode: '299303', WardName: 'Xã Cửu Cao' },
+      { WardCode: '299304', WardName: 'Xã Phụng Công' },
+    ],
+    2994: [ // Yên Mỹ - Hưng Yên
+      { WardCode: '299401', WardName: 'Thị trấn Yên Mỹ' },
+      { WardCode: '299402', WardName: 'Xã Giai Phạm' },
+      { WardCode: '299403', WardName: 'Xã Nghĩa Hiệp' },
+      { WardCode: '299404', WardName: 'Xã Đồng Than' },
+    ],
+    2995: [ // Mỹ Hào - Hưng Yên
+      { WardCode: '299501', WardName: 'Thị trấn Mỹ Hào' },
+      { WardCode: '299502', WardName: 'Xã Bần Yên Nhân' },
+      { WardCode: '299503', WardName: 'Xã Dương Quang' },
+      { WardCode: '299504', WardName: 'Xã Hòa Phong' },
+    ],
+    // TP Phủ Lý - Hà Nam
+    3031: [
+      { WardCode: '303101', WardName: 'Phường Quang Trung' },
+      { WardCode: '303102', WardName: 'Phường Lương Khánh Thiện' },
+      { WardCode: '303103', WardName: 'Phường Lê Hồng Phong' },
+      { WardCode: '303104', WardName: 'Phường Minh Khai' },
+      { WardCode: '303105', WardName: 'Phường Hai Bà Trưng' },
+    ],
+    3032: [ // Duy Tiên - Hà Nam
+      { WardCode: '303201', WardName: 'Thị trấn Đồng Văn' },
+      { WardCode: '303202', WardName: 'Xã Châu Giang' },
+      { WardCode: '303203', WardName: 'Xã Mộc Bắc' },
+      { WardCode: '303204', WardName: 'Xã Tiền Phong' },
+    ],
+    3033: [ // Kim Bảng - Hà Nam
+      { WardCode: '303301', WardName: 'Thị trấn Ba Sao' },
+      { WardCode: '303302', WardName: 'Xã Đồng Hóa' },
+      { WardCode: '303303', WardName: 'Xã Nguyễn Úy' },
+      { WardCode: '303304', WardName: 'Xã Khả Phong' },
+    ],
+    // TP Thái Bình - Thái Bình
+    3011: [
+      { WardCode: '301101', WardName: 'Phường Trần Hưng Đạo' },
+      { WardCode: '301102', WardName: 'Phường Trần Lãm' },
+      { WardCode: '301103', WardName: 'Phường Đề Thám' },
+      { WardCode: '301104', WardName: 'Phường Phú Khánh' },
+    ],
+    // TP Nam Định - Nam Định
+    3051: [
+      { WardCode: '305101', WardName: 'Phường Trần Đăng Ninh' },
+      { WardCode: '305102', WardName: 'Phường Lộc Hạ' },
+      { WardCode: '305103', WardName: 'Phường Lộc Vượng' },
+      { WardCode: '305104', WardName: 'Phường Cửa Nam' },
+    ],
+    // TP Ninh Bình - Ninh Bình
+    3071: [
+      { WardCode: '307101', WardName: 'Phường Đông Thành' },
+      { WardCode: '307102', WardName: 'Phường Tân Thành' },
+      { WardCode: '307103', WardName: 'Phường Nam Thành' },
+      { WardCode: '307104', WardName: 'Phường Bắc Thành' },
+    ],
+    // TP Thanh Hóa - Thanh Hóa
+    3091: [
+      { WardCode: '309101', WardName: 'Phường Điện Biên' },
+      { WardCode: '309102', WardName: 'Phường Lam Sơn' },
+      { WardCode: '309103', WardName: 'Phường Đông Hương' },
+      { WardCode: '309104', WardName: 'Phường Trường Thi' },
+    ],
+    // TP Vinh - Nghệ An
+    3111: [
+      { WardCode: '311101', WardName: 'Phường Hà Huy Tập' },
+      { WardCode: '311102', WardName: 'Phường Lê Lợi' },
+      { WardCode: '311103', WardName: 'Phường Quang Trung' },
+      { WardCode: '311104', WardName: 'Phường Đội Cung' },
+    ],
+    // TP Hà Tĩnh - Hà Tĩnh
+    3131: [
+      { WardCode: '313101', WardName: 'Phường Trần Phú' },
+      { WardCode: '313102', WardName: 'Phường Nam Hà' },
+      { WardCode: '313103', WardName: 'Phường Bắc Hà' },
+      { WardCode: '313104', WardName: 'Phường Nguyễn Du' },
+    ],
+    // TP Điện Biên Phủ - Điện Biên - MỚI THÊM
+    2711: [
+      { WardCode: '271101', WardName: 'Phường Noong Bua' },
+      { WardCode: '271102', WardName: 'Phường Him Lam' },
+      { WardCode: '271103', WardName: 'Phường Thanh Bình' },
+      { WardCode: '271104', WardName: 'Phường Tân Thanh' },
+      { WardCode: '271105', WardName: 'Phường Mường Thanh' },
+      { WardCode: '271106', WardName: 'Phường Nam Thanh' },
+      { WardCode: '271107', WardName: 'Phường Thanh Trường' },
+    ],
+    2712: [ // TX Mường Lay - Điện Biên
+      { WardCode: '271201', WardName: 'Phường Sông Đà' },
+      { WardCode: '271202', WardName: 'Phường Na Lay' },
+      { WardCode: '271203', WardName: 'Xã Lay Nưa' },
+    ],
+    2713: [ // Mường Nhé - Điện Biên
+      { WardCode: '271301', WardName: 'Thị trấn Mường Nhé' },
+      { WardCode: '271302', WardName: 'Xã Sín Thầu' },
+      { WardCode: '271303', WardName: 'Xã Ma Thì Hồ' },
+      { WardCode: '271304', WardName: 'Xã Nậm Vì' },
+    ],
+    2714: [ // Mường Chà - Điện Biên
+      { WardCode: '271401', WardName: 'Thị trấn Mường Chà' },
+      { WardCode: '271402', WardName: 'Xã Xá Tổng' },
+      { WardCode: '271403', WardName: 'Xã Mường Tùng' },
+      { WardCode: '271404', WardName: 'Xã Hừa Ngài' },
+    ],
+    2715: [ // Tủa Chùa - Điện Biên
+      { WardCode: '271501', WardName: 'Thị trấn Tủa Chùa' },
+      { WardCode: '271502', WardName: 'Xã Tủa Thàng' },
+      { WardCode: '271503', WardName: 'Xã Trung Thu' },
+      { WardCode: '271504', WardName: 'Xã Sinh Phình' },
+    ],
+    2716: [ // Tuần Giáo - Điện Biên
+      { WardCode: '271601', WardName: 'Thị trấn Tuần Giáo' },
+      { WardCode: '271602', WardName: 'Xã Phình Sáng' },
+      { WardCode: '271603', WardName: 'Xã Rạng Đông' },
+      { WardCode: '271604', WardName: 'Xã Mùn Chung' },
+    ],
+    // TP Lào Cai - Lào Cai - MỚI THÊM
+    2691: [
+      { WardCode: '269101', WardName: 'Phường Duyên Hải' },
+      { WardCode: '269102', WardName: 'Phường Lào Cai' },
+      { WardCode: '269103', WardName: 'Phường Cốc Lếu' },
+      { WardCode: '269104', WardName: 'Phường Kim Tân' },
+      { WardCode: '269105', WardName: 'Phường Bắc Lệnh' },
+      { WardCode: '269106', WardName: 'Phường Pom Hán' },
+      { WardCode: '269107', WardName: 'Phường Xuân Tăng' },
+    ],
+    2698: [ // Sa Pa - Lào Cai
+      { WardCode: '269801', WardName: 'TT Sa Pa' },
+      { WardCode: '269802', WardName: 'Xã Tả Phìn' },
+      { WardCode: '269803', WardName: 'Xã Lao Chải' },
+      { WardCode: '269804', WardName: 'Xã Tả Van' },
+      { WardCode: '269805', WardName: 'Xã Hầu Thào' },
+    ],
+    // TP Sơn La - Sơn La - MỚI THÊM
+    2751: [
+      { WardCode: '275101', WardName: 'Phường Chiềng Lề' },
+      { WardCode: '275102', WardName: 'Phường Tô Hiệu' },
+      { WardCode: '275103', WardName: 'Phường Quyết Thắng' },
+      { WardCode: '275104', WardName: 'Phường Quyết Tâm' },
+      { WardCode: '275105', WardName: 'Xã Chiềng Cọ' },
+      { WardCode: '275106', WardName: 'Xã Chiềng Đen' },
+    ],
+    2757: [ // Mộc Châu - Sơn La
+      { WardCode: '275701', WardName: 'TT Mộc Châu' },
+      { WardCode: '275702', WardName: 'Xã Chiềng Sơn' },
+      { WardCode: '275703', WardName: 'Xã Tân Hợp' },
+      { WardCode: '275704', WardName: 'Xã Phiêng Luông' },
+    ],
+    // TP Yên Bái - Yên Bái - MỚI THÊM
+    2771: [
+      { WardCode: '277101', WardName: 'Phường Yên Thịnh' },
+      { WardCode: '277102', WardName: 'Phường Yên Ninh' },
+      { WardCode: '277103', WardName: 'Phường Minh Tân' },
+      { WardCode: '277104', WardName: 'Phường Nguyễn Thái Học' },
+      { WardCode: '277105', WardName: 'Phường Đồng Tâm' },
+      { WardCode: '277106', WardName: 'Phường Nguyễn Phúc' },
+    ],
+    2775: [ // Mù Cang Chải - Yên Bái  
+      { WardCode: '277501', WardName: 'TT Mù Cang Chải' },
+      { WardCode: '277502', WardName: 'Xã Khao Mang' },
+      { WardCode: '277503', WardName: 'Xã Mồ Dề' },
+      { WardCode: '277504', WardName: 'Xã Chế Tạo' },
+    ],
+    // TP Tuyên Quang - Tuyên Quang - MỚI THÊM
+    3861: [
+      { WardCode: '386101', WardName: 'Phường Phan Thiết' },
+      { WardCode: '386102', WardName: 'Phường Minh Xuân' },
+      { WardCode: '386103', WardName: 'Phường Tân Quang' },
+      { WardCode: '386104', WardName: 'Phường Nông Tiến' },
+      { WardCode: '386105', WardName: 'Phường Ỷ La' },
+      { WardCode: '386106', WardName: 'Xã Tràng Đà' },
+    ],
+    // TP Lạng Sơn - Lạng Sơn - MỚI THÊM
+    2831: [
+      { WardCode: '283101', WardName: 'Phường Chi Lăng' },
+      { WardCode: '283102', WardName: 'Phường Hoàng Văn Thụ' },
+      { WardCode: '283103', WardName: 'Phường Tam Thanh' },
+      { WardCode: '283104', WardName: 'Phường Vĩnh Trại' },
+      { WardCode: '283105', WardName: 'Phường Đông Kinh' },
+      { WardCode: '283106', WardName: 'Xã Quảng Lạc' },
+    ],
+    // TP Cao Bằng - Cao Bằng - MỚI THÊM
+    3821: [
+      { WardCode: '382101', WardName: 'Phường Sông Hiến' },
+      { WardCode: '382102', WardName: 'Phường Sông Bằng' },
+      { WardCode: '382103', WardName: 'Phường Hợp Giang' },
+      { WardCode: '382104', WardName: 'Phường Tân Giang' },
+      { WardCode: '382105', WardName: 'Phường Ngọc Xuân' },
+      { WardCode: '382106', WardName: 'Xã Vĩnh Quang' },
+      { WardCode: '382107', WardName: 'Xã Hưng Đạo' },
+      { WardCode: '382108', WardName: 'Xã Chu Trinh' },
+    ],
+    3822: [ // Bảo Lâm - Cao Bằng
+      { WardCode: '382201', WardName: 'Thị trấn Pác Miầu' },
+      { WardCode: '382202', WardName: 'Xã Đức Hạnh' },
+      { WardCode: '382203', WardName: 'Xã Lý Bôn' },
+      { WardCode: '382204', WardName: 'Xã Nam Cao' },
+      { WardCode: '382205', WardName: 'Xã Vĩnh Quang' },
+    ],
+    3823: [ // Bảo Lạc - Cao Bằng
+      { WardCode: '382301', WardName: 'Thị trấn Bảo Lạc' },
+      { WardCode: '382302', WardName: 'Xã Cốc Pàng' },
+      { WardCode: '382303', WardName: 'Xã Thượng Hà' },
+      { WardCode: '382304', WardName: 'Xã Cô Ba' },
+      { WardCode: '382305', WardName: 'Xã Hưng Đạo' },
+    ],
+    3824: [ // Hà Quảng - Cao Bằng
+      { WardCode: '382401', WardName: 'Thị trấn Xuân Hòa' },
+      { WardCode: '382402', WardName: 'Xã Quý Quân' },
+      { WardCode: '382403', WardName: 'Xã Hạ Thành' },
+      { WardCode: '382404', WardName: 'Xã Tân Việt' },
+    ],
+    3825: [ // Trùng Khánh - Cao Bằng
+      { WardCode: '382501', WardName: 'Thị trấn Trùng Khánh' },
+      { WardCode: '382502', WardName: 'Xã Ngọc Khê' },
+      { WardCode: '382503', WardName: 'Xã Ngọc Côn' },
+      { WardCode: '382504', WardName: 'Xã Phong Nậm' },
+    ],
+    // TP Bắc Kạn - Bắc Kạn - MỚI THÊM
+    3841: [
+      { WardCode: '384101', WardName: 'Phường Nguyễn Thị Minh Khai' },
+      { WardCode: '384102', WardName: 'Phường Sông Cầu' },
+      { WardCode: '384103', WardName: 'Phường Đức Xuân' },
+      { WardCode: '384104', WardName: 'Phường Phùng Chí Kiên' },
+      { WardCode: '384105', WardName: 'Phường Huyền Tụng' },
+      { WardCode: '384106', WardName: 'Xã Dương Quang' },
+    ],
+    // TP Lai Châu - Lai Châu - MỚI THÊM
+    2731: [
+      { WardCode: '273101', WardName: 'Phường Quyết Thắng' },
+      { WardCode: '273102', WardName: 'Phường Quyết Tiến' },
+      { WardCode: '273103', WardName: 'Phường Đoàn Kết' },
+      { WardCode: '273104', WardName: 'Phường Tân Phong' },
+      { WardCode: '273105', WardName: 'Xã Sùng Phài' },
+    ],
+    2732: [ // Tam Đường - Lai Châu
+      { WardCode: '273201', WardName: 'Thị trấn Tam Đường' },
+      { WardCode: '273202', WardName: 'Xã Hồ Thầu' },
+      { WardCode: '273203', WardName: 'Xã Bình Lư' },
+      { WardCode: '273204', WardName: 'Xã Giang Ma' },
+      { WardCode: '273205', WardName: 'Xã Thèn Sin' },
+    ],
+    2733: [ // Mường Tè - Lai Châu
+      { WardCode: '273301', WardName: 'Thị trấn Mường Tè' },
+      { WardCode: '273302', WardName: 'Xã Mường Tè' },
+      { WardCode: '273303', WardName: 'Xã Thu Lũm' },
+      { WardCode: '273304', WardName: 'Xã Ka Lăng' },
+      { WardCode: '273305', WardName: 'Xã Tá Bạ' },
+    ],
+    2734: [ // Sìn Hồ - Lai Châu
+      { WardCode: '273401', WardName: 'Thị trấn Sìn Hồ' },
+      { WardCode: '273402', WardName: 'Xã Chăn Nưa' },
+      { WardCode: '273403', WardName: 'Xã Pa Tần' },
+      { WardCode: '273404', WardName: 'Xã Phìn Hồ' },
+      { WardCode: '273405', WardName: 'Xã Hồng Thu' },
+    ],
+    2735: [ // Phong Thổ - Lai Châu
+      { WardCode: '273501', WardName: 'Thị trấn Phong Thổ' },
+      { WardCode: '273502', WardName: 'Xã Sì Lở Lầu' },
+      { WardCode: '273503', WardName: 'Xã Mồ Sì San' },
+      { WardCode: '273504', WardName: 'Xã Pa Vây Sử' },
+      { WardCode: '273505', WardName: 'Xã Vàng Ma Chải' },
+    ],
+    2736: [ // Than Uyên - Lai Châu
+      { WardCode: '273601', WardName: 'Thị trấn Than Uyên' },
+      { WardCode: '273602', WardName: 'Xã Phúc Than' },
+      { WardCode: '273603', WardName: 'Xã Mường Than' },
+      { WardCode: '273604', WardName: 'Xã Tà Hừa' },
+      { WardCode: '273605', WardName: 'Xã Pha Mu' },
+    ],
+    2737: [ // Tân Uyên - Lai Châu
+      { WardCode: '273701', WardName: 'Thị trấn Tân Uyên' },
+      { WardCode: '273702', WardName: 'Xã Mường Khoa' },
+      { WardCode: '273703', WardName: 'Xã Phúc Khoa' },
+      { WardCode: '273704', WardName: 'Xã Thân Thuộc' },
+      { WardCode: '273705', WardName: 'Xã Hố Mít' },
+    ],
+    2738: [ // Nậm Nhùn - Lai Châu
+      { WardCode: '273801', WardName: 'Thị trấn Nậm Nhùn' },
+      { WardCode: '273802', WardName: 'Xã Hua Bun' },
+      { WardCode: '273803', WardName: 'Xã Mường Mô' },
+      { WardCode: '273804', WardName: 'Xã Nậm Ban' },
+      { WardCode: '273805', WardName: 'Xã Lê Lợi' },
+    ],
   }
 }
 
 // Flag để bật/tắt mock mode
-const USE_MOCK_DATA = true // ⚠️ BẬT LẠI - Backend chưa sẵn sàng
+// ⚠️ Đổi thành false khi backend đã cấu hình GHN Token
+const USE_MOCK_DATA = true // 🔴 BẬT LẠI MOCK - Chưa cấu hình GHN Token
 
 /**
  * Composable để xử lý shipping GHN trong Vue components
@@ -409,7 +1209,29 @@ export function useShipping() {
       if (USE_MOCK_DATA) {
         await new Promise(resolve => setTimeout(resolve, 400))
         districts.value = MOCK_DATA.districts[provinceId] || []
-        console.log('✅ [MOCK] Loaded districts for province', provinceId, ':', districts.value.length)
+        
+        // ⚠️ Cảnh báo nếu không có data cho tỉnh này
+        if (districts.value.length === 0) {
+          console.warn(`⚠️ [MOCK] Không có dữ liệu quận/huyện cho tỉnh ${provinceId}`)
+          
+          const provinceName = provinces.value.find(p => p.ProvinceID === provinceId)?.ProvinceName || 'này'
+          errors.districts = `
+📍 Tỉnh "${provinceName}" chưa có dữ liệu trong Mock Mode.
+
+✅ Các tỉnh có đầy đủ quận/huyện trong Mock:
+   • Miền Bắc: Hà Nội, Hải Phòng, Hưng Yên, Phú Thọ, Hà Nam, Thái Bình, Nam Định, Ninh Bình, Thanh Hóa, Nghệ An, Hà Tĩnh
+   • Tây Bắc: Điện Biên, Lào Cai, Lai Châu, Sơn La, Yên Bái
+   • Miền Trung: Đà Nẵng, Quảng Ninh, Khánh Hòa
+   • Miền Nam: TP.HCM, Cần Thơ, Bình Dương, Đồng Nai, Bà Rịa-Vũng Tàu
+
+🚀 Để có TẤT CẢ 63 tỉnh/thành với 100% quận/huyện/xã/phường:
+   1. Cấu hình GHN Token → Xem file CAU_HINH_GHN_TOKEN.md
+   2. Tắt Mock Mode → Đổi USE_MOCK_DATA = false
+   3. Hoặc chọn một trong các tỉnh có sẵn ở trên
+          `.trim()
+        } else {
+          console.log('✅ [MOCK] Loaded districts for province', provinceId, ':', districts.value.length)
+        }
         return
       }
 
