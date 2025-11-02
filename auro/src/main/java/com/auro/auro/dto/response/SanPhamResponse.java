@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -23,4 +24,18 @@ public class SanPhamResponse {
     private LocalDateTime capNhatLuc;
     private String anhDaiDien;
     private Integer tonKho;
+    private List<BienTheInfo> bienThes;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BienTheInfo {
+        private Long id;
+        private String mauSac;
+        private String colorHex;
+        private String kichThuoc;
+        private Integer tonKho;
+        private BigDecimal gia;
+        private String hinhAnh;
+    }
 }

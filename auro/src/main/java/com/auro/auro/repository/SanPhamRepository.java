@@ -15,6 +15,28 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
 
   Page<SanPham> findByDanhMuc_IdIn(List<Long> danhMucIds, Pageable pageable);
 
+  // Lấy sản phẩm bán chạy nhất dựa trên số lượng đã bán
+  @Query(value = """
+      WITH BestSelling AS (
+          SELECT
+              bt.id_san_pham,
+              COALESCE(SUM(dhct.so_luong), 0) as total_sold
+          FROM bien_the_san_pham bt
+          LEFT JOIN don_hang_chi_tiet dhct ON dhct.id_bien_the = bt.id
+          GROUP BY bt.id_san_pham
+      )
+      SELECT sp.*
+      FROM san_pham sp
+      LEFT JOIN BestSelling bs ON bs.id_san_pham = sp.id
+      WHERE sp.trang_thai = 'active'
+      ORDER BY COALESCE(bs.total_sold, 0) DESC
+      """, countQuery = """
+      SELECT COUNT(*)
+      FROM san_pham sp
+      WHERE sp.trang_thai = 'active'
+      """, nativeQuery = true)
+  Page<SanPham> findBestSellers(Pageable pageable);
+
   @Query(value = """
         SELECT sp
         FROM SanPham sp

@@ -256,6 +256,7 @@ class ApiService {
     search: (query, params = {}) =>
       this.get('/san-pham/search', { params: { q: query, ...params } }),
     getFeatured: () => this.get('/san-pham/featured'),
+    getBestSellers: (params = {}) => this.get('/san-pham/ban-chay', { params }),
     getRelated: (id) => this.get(`/san-pham/${id}/related`),
     getReviews: (id) => this.get(`/san-pham/${id}/reviews`),
     addReview: (id, data) => this.post(`/san-pham/${id}/reviews`, data),
