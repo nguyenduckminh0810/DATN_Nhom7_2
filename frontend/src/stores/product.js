@@ -308,6 +308,51 @@ export const useProductStore = defineStore('product', () => {
     }
   }
 
+  // Fetch best sellers
+  const fetchBestSellers = async (params = {}) => {
+    try {
+      setLoading(true)
+      clearError()
+
+      // Create cache key from parameters
+      const cacheKey = `bestsellers_${JSON.stringify(params)}`
+
+      // Try to get from cache first
+      const cached = apiCache.get(cacheKey)
+      if (cached) {
+        setLoading(false)
+        return { success: true, data: cached, fromCache: true }
+      }
+
+      const response = await apiService.products.getBestSellers(params)
+
+      if (response.success || response.content) {
+        // Handle Spring Boot Page response
+        const products = response.content || response.data?.products || []
+        const pagination = {
+          page: response.number || response.page || 0,
+          limit: response.size || response.limit || 10,
+          total: response.totalElements || response.total || 0,
+          totalPages: response.totalPages || response.totalPages || 0,
+        }
+
+        const data = { products, pagination }
+
+        // Cache the response
+        apiCache.set(cacheKey, data)
+
+        return { success: true, data }
+      } else {
+        setError(response.message || 'Không thể lấy sản phẩm bán chạy')
+        return { success: false, message: response.message }
+      }
+    } catch (err) {
+      return handleError(err, 'Best Sellers')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Get product by ID from current products
   const getProductById = (id) => {
     return products.value.find((product) => product.id === id)
@@ -374,6 +419,7 @@ export const useProductStore = defineStore('product', () => {
     addProductReview,
     fetchCategories,
     fetchCategoryById,
+    fetchBestSellers,
     getProductById,
     getCategoryById,
     getProductsByCategoryId,

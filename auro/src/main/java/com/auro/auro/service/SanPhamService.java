@@ -15,6 +15,7 @@ import com.auro.auro.repository.GioHangChiTietRepository;
 import com.auro.auro.repository.DonHangChiTietRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -235,13 +236,52 @@ public class SanPhamService {
     res.setTaoLuc(sp.getTaoLuc());
     res.setCapNhatLuc(sp.getCapNhatLuc());
 
-    // Tính tổng số lượng tồn kho từ các biến thể
+    // Load variants
     try {
       List<com.auro.auro.model.BienTheSanPham> variants = bienTheSanPhamRepository.findBySanPham_Id(sp.getId());
-      int tongTonKho = variants.stream()
-          .mapToInt(bt -> bt.getSoLuongTon() != null ? bt.getSoLuongTon() : 0)
-          .sum();
-      res.setTonKho(tongTonKho);
+      if (variants != null && !variants.isEmpty()) {
+        // Tính tổng số lượng tồn kho
+        int tongTonKho = variants.stream()
+            .mapToInt(bt -> bt.getSoLuongTon() != null ? bt.getSoLuongTon() : 0)
+            .sum();
+        res.setTonKho(tongTonKho);
+
+        // Map variants to response
+        List<SanPhamResponse.BienTheInfo> bienThes = variants.stream()
+            .map(bt -> {
+              SanPhamResponse.BienTheInfo info = new SanPhamResponse.BienTheInfo();
+              info.setId(bt.getId());
+
+              // Set màu sắc
+              if (bt.getMauSac() != null) {
+                info.setMauSac(bt.getMauSac().getTen());
+                info.setColorHex(bt.getMauSac().getMa());
+              }
+
+              // Set kích thước
+              if (bt.getKichCo() != null) {
+                info.setKichThuoc(bt.getKichCo().getTen());
+              }
+
+              info.setTonKho(bt.getSoLuongTon());
+              info.setGia(bt.getGia() != null ? bt.getGia() : sp.getGia());
+
+              // Load hình ảnh biến thể
+              try {
+                var btHinhAnhList = hinhAnhRepository.findByBienThe_IdOrderByThuTuAscIdAsc(bt.getId());
+                if (btHinhAnhList != null && !btHinhAnhList.isEmpty()) {
+                  info.setHinhAnh(btHinhAnhList.get(0).getUrl());
+                }
+              } catch (Exception ignored) {
+              }
+
+              return info;
+            })
+            .collect(Collectors.toList());
+        res.setBienThes(bienThes);
+      } else {
+        res.setTonKho(0);
+      }
     } catch (Exception ignored) {
       res.setTonKho(0);
     }
@@ -371,4 +411,22 @@ public class SanPhamService {
     return slug;
   }
 
+  // Lấy sản phẩm bán chạy nhất dựa trên số lượng đã bán
+
+  @Transactional(readOnly = true)
+  public Page<SanPhamResponse> getBestSellers(Pageable pageable) {
+    try {
+      Page<SanPham> page = sanPhamRepository.findBestSellers(pageable);
+      return page.map(this::mapToResponse);
+    } catch (Exception e) {
+      // Log lỗi chi tiết
+      System.err.println("Error fetching best sellers: " + e.getMessage());
+      e.printStackTrace();
+
+      // Fallback: trả về sản phẩm active thông thường
+      Page<SanPham> fallbackPage = sanPhamRepository.findAll(
+          PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()));
+      return fallbackPage.map(this::mapToResponse);
+    }
+  }
 }
