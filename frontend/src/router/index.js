@@ -10,6 +10,7 @@ const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vu
 const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
 const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
 const ShippingDemo = () => import(/* webpackChunkName: "demo" */ '../views/ShippingDemo.vue')
+const PaymentReturn = () => import(/* webpackChunkName: "payment" */ '../views/PaymentReturn.vue')
 
 // Admin routes - lazy loaded separately with admin chunk
 const AdminDashboard = () => import(/* webpackChunkName: "admin" */ '../views/admin/Dashboard.vue')
@@ -87,6 +88,12 @@ const router = createRouter({
       name: 'shipping-demo',
       component: ShippingDemo,
       meta: { title: 'Demo GHN Shipping API - AURO' },
+    },
+    {
+      path: '/payment/vnpay-return',
+      name: 'payment-return',
+      component: PaymentReturn,
+      meta: { title: 'Kết quả thanh toán - AURO' },
     },
     {
       path: '/admin',
