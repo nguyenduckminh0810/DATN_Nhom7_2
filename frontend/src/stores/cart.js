@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import cartService from '../services/cartService'
 
 export const useCartStore = defineStore('cart', () => {
   // State
   const items = ref(JSON.parse(localStorage.getItem('auro_cart')) || [])
+  const isLoading = ref(false)
 
   // Getters
   const itemCount = computed(() => {
@@ -131,12 +133,69 @@ export const useCartStore = defineStore('cart', () => {
     }).format(numPrice)
   }
 
-  // Initialize cart from storage
+  // Load cart from backend API
+  const loadCart = async () => {
+    try {
+      isLoading.value = true
+      console.log('🔄 Loading cart from backend...')
+      
+      const response = await cartService.getCart()
+      console.log('✅ Cart loaded from backend:', response)
+      
+      if (response && response.chiTietList) {
+        // Map backend response to cart items format
+        items.value = response.chiTietList.map(item => ({
+          id: item.id, // GioHangChiTiet ID
+          itemKey: item.id,
+          productId: item.productId || item.bienTheId,
+          bienTheId: item.bienTheId,
+          variantId: item.bienTheId,
+          name: item.tenSanPham || 'Sản phẩm',
+          price: parseFloat(item.donGia) || 0,
+          quantity: parseInt(item.soLuong) || 1,
+          image: item.image || '',
+          color: item.color || extractColorFromThuocTinh(item.thuocTinh),
+          size: item.size || extractSizeFromThuocTinh(item.thuocTinh),
+          thuocTinh: item.thuocTinh || '',
+          addedAt: new Date().toISOString()
+        }))
+        
+        console.log('✅ Cart items mapped:', items.value)
+        saveToStorage()
+      }
+      
+      return response
+    } catch (error) {
+      console.error('❌ Error loading cart from backend:', error)
+      // Fallback to localStorage if API fails
+      loadFromStorage()
+      throw error
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // Helper function to extract color from thuocTinh string
+  const extractColorFromThuocTinh = (thuocTinh) => {
+    if (!thuocTinh) return null
+    const match = thuocTinh.match(/Màu:\s*([^,]+)/)
+    return match ? match[1].trim() : null
+  }
+
+  // Helper function to extract size from thuocTinh string
+  const extractSizeFromThuocTinh = (thuocTinh) => {
+    if (!thuocTinh) return null
+    const match = thuocTinh.match(/Size:\s*([^,]+)/)
+    return match ? match[1].trim() : null
+  }
+
+  // Initialize cart from storage (fallback)
   loadFromStorage()
 
   return {
     // State
     items,
+    isLoading,
     
     // Getters
     itemCount,
@@ -150,6 +209,7 @@ export const useCartStore = defineStore('cart', () => {
     clearCart,
     saveToStorage,
     loadFromStorage,
+    loadCart,
     formatPrice
   }
 })

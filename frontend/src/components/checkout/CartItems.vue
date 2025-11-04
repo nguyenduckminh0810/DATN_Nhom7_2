@@ -66,9 +66,10 @@
               <!-- Product Image -->
               <div class="col-2">
                 <div class="cart-product-image">
-                  <img :src="item.image" 
+                  <img :src="item.image || 'https://via.placeholder.com/150'" 
                        :alt="item.name"
-                       class="img-fluid rounded">
+                       class="img-fluid rounded"
+                       @error="handleImageError">
                 </div>
               </div>
 
@@ -253,6 +254,10 @@ const getColorValue = (colorName) => {
     'Vàng': '#ffc107'
   }
   return colorMap[colorName] || colorName
+}
+
+const handleImageError = (event) => {
+  event.target.src = 'https://via.placeholder.com/150?text=No+Image'
 }
 
 

@@ -203,17 +203,32 @@ export const getAvailableColors = (variants) => {
  * @returns {string[]} Sorted array of sizes with stock
  */
 export const getAvailableSizes = (variants) => {
-  if (!variants || !Array.isArray(variants)) return []
+  console.log('🔧 getAvailableSizes called with variants:', variants)
+  
+  if (!variants || !Array.isArray(variants)) {
+    console.log('⚠️ Invalid variants input')
+    return []
+  }
   
   const sizes = new Set()
   
   variants.forEach(variant => {
+    console.log('🔍 Checking variant:', { 
+      size: variant.size, 
+      stock: variant.stock,
+      hasStock: variant.stock && variant.stock > 0 
+    })
+    
     if (variant.stock && variant.stock > 0) {
       sizes.add(variant.size)
+      console.log('✅ Added size:', variant.size)
     }
   })
   
-  return sortSizes(Array.from(sizes))
+  const result = sortSizes(Array.from(sizes))
+  console.log('🎯 Final sizes:', result)
+  
+  return result
 }
 
 /**

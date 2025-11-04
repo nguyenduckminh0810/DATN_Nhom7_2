@@ -134,6 +134,9 @@ const userStore = useUserStore()
 const { success, error: showError } = useToast()
 const { handleApiError } = useErrorHandler()
 
+// Import cart store for syncing after login
+import { useCartStore } from '@/stores/cart'
+
 // Form validation
 const {
   values,
@@ -187,6 +190,51 @@ const handleLogin = async () => {
 
       if (response.success) {
         success('Đăng nhập thành công!')
+        
+        console.log('✅ Login successful')
+        console.log('🔄 Syncing local cart with backend...')
+        
+        // Đồng bộ giỏ hàng local lên backend sau khi đăng nhập
+        try {
+          const cartStore = useCartStore()
+          const localItems = cartStore.items || []
+          
+          console.log('📦 Local cart items:', localItems.length)
+          
+          if (localItems.length > 0) {
+            // Import cartService
+            const cartService = (await import('@/services/cartService')).default
+            
+            // Thêm từng item vào backend cart
+            for (const item of localItems) {
+              try {
+                if (item.bienTheId || item.variantId) {
+                  await cartService.addToCart({
+                    bienTheId: item.bienTheId || item.variantId,
+                    soLuong: item.quantity || 1
+                  })
+                  console.log('✅ Synced item to backend:', item.name)
+                }
+              } catch (err) {
+                console.warn('⚠️ Failed to sync item (may already exist):', item.name, err.message)
+              }
+            }
+            
+            console.log('✅ Cart synced with backend')
+            
+            // Load lại cart từ backend để cập nhật IDs
+            await cartStore.loadCart()
+          } else {
+            console.log('ℹ️ No local cart items to sync')
+            
+            // Vẫn load cart từ backend (có thể đã có items từ session trước)
+            const cartStore = useCartStore()
+            await cartStore.loadCart()
+          }
+        } catch (syncError) {
+          console.error('❌ Error syncing cart:', syncError)
+          // Không throw error, tiếp tục xử lý
+        }
 
         // Handle redirect
         const redirectUrl = localStorage.getItem('auro_redirect')
@@ -196,7 +244,8 @@ const handleLogin = async () => {
           router.push(redirectUrl)
         } else {
           closePopup()
-          window.location.reload()
+          // Không reload trang nữa, chỉ cần đóng popup
+          // Cart đã được đồng bộ ở trên
         }
       } else {
         showError(response.message)

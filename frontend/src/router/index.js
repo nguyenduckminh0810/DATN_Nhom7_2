@@ -7,6 +7,8 @@ const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/P
 const Cart = () => import(/* webpackChunkName: "cart" */ '../views/Cart.vue')
 const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
+const OrderDetail = () => import(/* webpackChunkName: "orders" */ '../views/OrderDetail.vue')
+const OrderSuccess = () => import(/* webpackChunkName: "orders" */ '../views/OrderSuccess.vue')
 const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/SearchResults.vue')
 const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
 const ShippingDemo = () => import(/* webpackChunkName: "demo" */ '../views/ShippingDemo.vue')
@@ -76,6 +78,18 @@ const router = createRouter({
       name: 'orders',
       component: Orders,
       meta: { title: 'Đơn hàng của tôi - AURO', requiresAuth: true },
+    },
+    {
+      path: '/orders/:id',
+      name: 'order-detail',
+      component: OrderDetail,
+      meta: { title: 'Chi tiết đơn hàng - AURO', requiresAuth: true },
+    },
+    {
+      path: '/order-success',
+      name: 'order-success',
+      component: OrderSuccess,
+      meta: { title: 'Đặt hàng thành công - AURO' },
     },
     {
       path: '/search',

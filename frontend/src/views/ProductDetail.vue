@@ -124,7 +124,7 @@
                             :aria-pressed="selectedColor === color">
                       <i v-if="selectedColor === color" class="bi bi-check check-icon"></i>
                   </button>
-                    <span v-if="selectedColor" class="selected-color-name">{{ getColorName(selectedColor) }}</span>
+                    
                 </div>
               </div>
 
@@ -461,6 +461,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useProductStore } from '../stores/product'
 import { useViewedProductsStore } from '../stores/viewedProducts'
+import { useUserStore } from '../stores/user'
+import cartService from '../services/cartService'
 import ImageGallery from '../components/common/ImageGallery.vue'
 import LazyImage from '../components/common/LazyImage.vue'
 import { 
@@ -478,6 +480,7 @@ const router = useRouter()
 const cartStore = useCartStore()
 const productStore = useProductStore()
 const viewedProductsStore = useViewedProductsStore()
+const userStore = useUserStore()
 
 // Local state
 const isLoading = ref(true)
@@ -515,16 +518,22 @@ const fetchProductDetail = async (productId) => {
     // Map variants from detail response and collect variant images
     let variants = []
     if (productData.bienThes && productData.bienThes.length > 0) {
-      variants = productData.bienThes.map(v => ({
-        id: v.id,
-        color: v.colorHex || '#000000',
-        colorName: v.mauSac || 'Mặc định',
-        size: v.kichThuoc || 'M',
-        stock: v.tonKho || 0,
-        price: v.gia || productData.gia,
-        imageUrl: v.hinhAnh,
-        available: (v.tonKho || 0) > 0
-      }))
+      console.log('🔍 Raw bienThes from API:', productData.bienThes)
+      
+      variants = productData.bienThes.map(v => {
+        const mapped = {
+          id: v.id,
+          color: v.colorHex || '#000000',
+          colorName: v.mauSac || 'Mặc định',
+          size: v.kichThuoc || 'M',
+          stock: v.tonKho || 0,
+          price: v.gia || productData.gia,
+          imageUrl: v.hinhAnh,
+          available: (v.tonKho || 0) > 0
+        }
+        console.log('📦 Mapped variant:', mapped)
+        return mapped
+      })
       
       // Add variant images to product images if not already included
       variants.forEach(variant => {
@@ -559,9 +568,12 @@ const fetchProductDetail = async (productId) => {
     // Continue with variants processing
     if (variants.length > 0) {
       
-      // Extract unique colors and sizes from variants
-      const uniqueColors = [...new Set(product.value.variants.map(v => v.color))]
-      const uniqueSizes = [...new Set(product.value.variants.map(v => v.size))]
+      // Extract unique colors and sizes from variants WITH STOCK
+      const uniqueColors = [...new Set(product.value.variants.filter(v => v.stock > 0).map(v => v.color))]
+      const uniqueSizes = [...new Set(product.value.variants.filter(v => v.stock > 0).map(v => v.size))]
+      
+      console.log('🎯 Unique colors with stock:', uniqueColors)
+      console.log('🎯 Unique sizes with stock:', uniqueSizes)
       
       product.value.colors = uniqueColors.map(color => {
         const variant = product.value.variants.find(v => v.color === color)
@@ -770,8 +782,23 @@ const availableColors = computed(() => {
 })
 
 const availableSizes = computed(() => {
-  if (!product.value?.variants) return ['S', 'M', 'L', 'XL', '2XL']
-  return getAvailableSizes(product.value.variants)
+  console.log('🔧 availableSizes computed called')
+  
+  if (!product.value?.variants || product.value.variants.length === 0) {
+    console.log('⚠️ No variants found')
+    return []
+  }
+  
+  console.log('🔍 All product variants:', product.value.variants)
+  console.log('🔍 Variants with stock:', product.value.variants.filter(v => v.stock > 0))
+  console.log('🔍 product.value.sizes:', product.value.sizes)
+  
+  const sizes = getAvailableSizes(product.value.variants)
+  console.log('✅ Available sizes from getAvailableSizes():', sizes)
+  console.log('📦 Total variants:', product.value.variants.length)
+  
+  // Return sizes from variants, no fallback
+  return sizes
 })
 
 const isSizeAvailable = (size) => {
@@ -906,10 +933,113 @@ const handleAddToCart = () => {
   // Show success message
 }
 
-const handleBuyNow = () => {
-  if (!canAddToCart.value) return
-  handleAddToCart()
-  router.push('/cart')
+const handleBuyNow = async () => {
+  console.log('🛒 Buy Now clicked')
+  console.log('🎨 Selected color:', selectedColor.value)
+  console.log('📏 Selected size:', selectedSize.value)
+  console.log('📦 Product:', product.value)
+  console.log('🔢 Available variants:', product.value?.variants)
+  
+  if (!canAddToCart.value) {
+    console.log('❌ Cannot buy now - missing color or size')
+    if (window.$toast) {
+      window.$toast.error('Vui lòng chọn đầy đủ màu sắc và kích thước', 'Thiếu thông tin')
+    }
+    return
+  }
+  
+  try {
+    // Validate selections
+    if (!selectedColor.value || !selectedSize.value) {
+      if (window.$toast) {
+        window.$toast.error('Vui lòng chọn màu sắc và kích thước', 'Thiếu thông tin')
+      }
+      return
+    }
+    
+    // Get selected variant with more detailed logging
+    console.log('🔍 Looking for variant with:')
+    console.log('  - Color:', selectedColor.value)
+    console.log('  - Size:', selectedSize.value)
+    
+    const selectedVariant = product.value?.variants?.find(v => {
+      console.log(`  Checking variant: color=${v.color}, size=${v.size}, id=${v.id}`)
+      return v.color === selectedColor.value && v.size === selectedSize.value
+    })
+    
+    if (!selectedVariant || !selectedVariant.id) {
+      console.log('❌ No variant found!')
+      console.log('📦 All available variants:', product.value?.variants)
+      if (window.$toast) {
+        window.$toast.error('Không tìm thấy biến thể sản phẩm. Vui lòng chọn lại màu sắc và kích thước.', 'Lỗi')
+      }
+      return
+    }
+    
+    console.log('✅ Found variant:', selectedVariant)
+    
+    // Check stock
+    if (selectedVariant.stock <= 0) {
+      if (window.$toast) {
+        window.$toast.error('Sản phẩm đã hết hàng', 'Thông báo')
+      }
+      return
+    }
+    
+    console.log('🚀 Adding to cart via API (Buy Now)...')
+    console.log('📦 Variant ID:', selectedVariant.id)
+    console.log('📦 Quantity:', quantity.value)
+    
+    // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
+    const response = await cartService.addToCart({
+      bienTheId: selectedVariant.id,
+      soLuong: quantity.value
+    })
+    
+    console.log('✅ API Response:', response)
+    console.log('✅ Response type:', typeof response)
+    console.log('✅ Response keys:', Object.keys(response || {}))
+    
+    // Check nếu response là undefined hoặc null
+    if (!response) {
+      console.error('❌ Response is undefined/null')
+      if (window.$toast) {
+        window.$toast.error('Không nhận được phản hồi từ server', 'Lỗi')
+      }
+      return
+    }
+    
+    // Backend trả về { success: true, message: "..." }
+    if (response.success === false) {
+      const errorMsg = response.message || 'Không thể thêm vào giỏ hàng'
+      if (window.$toast) {
+        window.$toast.error(errorMsg, 'Lỗi')
+      }
+      return
+    }
+    
+    // Hiển thị thông báo thành công
+    if (window.$toast) {
+      window.$toast.success('Đã thêm vào giỏ hàng!', 'Thành công')
+    }
+    
+    console.log('✅ Buy Now successful, redirecting to cart...')
+    
+    // Chuyển ngay đến trang giỏ hàng (không cần đợi loadCart vì Cart.vue sẽ tự load)
+    await router.push('/cart')
+    
+  } catch (error) {
+    console.error('❌ Buy Now failed:', error)
+    console.error('Error response:', error.response)
+    
+    const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'Không thể mua ngay. Vui lòng thử lại.'
+    
+    if (window.$toast) {
+      window.$toast.error(errorMessage, 'Mua ngay thất bại')
+    }
+  }
 }
 
 const updateURL = () => {
@@ -1013,7 +1143,7 @@ const updateQuantity = (event) => {
   })
 }
 
-const addToCart = (productToAdd = product.value) => {
+const addToCart = async (productToAdd = product.value) => {
   if (!productToAdd) {
     console.error('Product data is null or undefined')
     return
@@ -1026,7 +1156,8 @@ const addToCart = (productToAdd = product.value) => {
     price: productToAdd.price,
     priceNow: productToAdd.priceNow,
     img: productToAdd.img,
-    image: productToAdd.image
+    image: productToAdd.image,
+    isAuthenticated: userStore.isAuthenticated
   })
   
   // Validate selections
@@ -1056,41 +1187,81 @@ const addToCart = (productToAdd = product.value) => {
     return
   }
   
-  // Ensure we have valid product data
-  const productId = productToAdd.id || 'unknown'
-  const productName = productToAdd.name || 'Sản phẩm không tên'
-  const productPrice = parseFloat(productToAdd.priceNow || productToAdd.price || 0)
-  const productImage = productToAdd.img || productToAdd.image || productToAdd.images?.[0] || ''
-  
-  const cartItem = {
-    id: productId,
-    name: productName,
-    price: productPrice,
-    image: productImage,
-    size: selectedSize.value,
-    color: selectedColor.value,
-    selectedColorName: getColorName(selectedColor.value),
-    quantity: quantity.value,
-    variantStock: currentVariantStock.value,
-    variantId: `${productId}_${selectedColor.value}_${selectedSize.value}`
-  }
-  
-  console.log('Cart item being added:', cartItem)
-  
-  cartStore.addItem(cartItem)
-  
-  // Show success toast
-  if (window.$toast) {
-    window.$toast.success(
-      `${productName} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
-      'Thêm vào giỏ hàng thành công'
+  try {
+    // Tìm bienTheId từ variants
+    const selectedVariant = product.value.variants?.find(v => 
+      v.color === selectedColor.value && v.size === selectedSize.value
     )
+    
+    if (!selectedVariant || !selectedVariant.id) {
+      console.error('Không tìm thấy variant ID:', { selectedColor: selectedColor.value, selectedSize: selectedSize.value })
+      if (window.$toast) {
+        window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
+      }
+      return
+    }
+    
+    // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
+    // Backend sẽ tự động:
+    // - Nếu đã đăng nhập: lưu theo khachHangId
+    // - Nếu chưa đăng nhập: lưu theo sessionId (guest cart)
+    const response = await cartService.addToCart({
+      bienTheId: selectedVariant.id,  // ID của biến thể sản phẩm
+      soLuong: quantity.value         // Số lượng
+    })
+    
+    console.log('✅ Added to cart via API:', response)
+    console.log('🔑 User authenticated:', userStore.isAuthenticated)
+    
+    // Lấy ID của GioHangChiTiet từ backend response
+    const cartItemId = response?.data?.id || response?.id
+    console.log('🆔 Cart item ID from backend:', cartItemId)
+    
+    // Cập nhật local cart store để đồng bộ UI
+    const productName = productToAdd.name || 'Sản phẩm không tên'
+    const productPrice = parseFloat(productToAdd.priceNow || productToAdd.price || 0)
+    const productImage = productToAdd.img || productToAdd.image || productToAdd.images?.[0] || ''
+    
+    const cartItem = {
+      id: cartItemId,  // ✅ Dùng ID từ backend (GioHangChiTiet.id)
+      productId: productToAdd.id,  // ID sản phẩm gốc
+      name: productName,
+      price: productPrice,
+      image: productImage,
+      size: selectedSize.value,
+      color: selectedColor.value,
+      selectedColorName: getColorName(selectedColor.value),
+      quantity: quantity.value,
+      variantStock: currentVariantStock.value,
+      variantId: selectedVariant.id,
+      bienTheId: selectedVariant.id
+    }
+    
+    // Cập nhật local store
+    cartStore.addItem(cartItem)
+    
+    // Show success toast
+    if (window.$toast) {
+      window.$toast.success(
+        `${productName} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
+        'Thêm vào giỏ hàng thành công'
+      )
+    }
+    
+    // Reset selections
+    selectedColor.value = ''
+    selectedSize.value = ''
+    quantity.value = 1
+    
+  } catch (error) {
+    console.error('❌ Error adding to cart:', error)
+    
+    const errorMessage = error.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+    
+    if (window.$toast) {
+      window.$toast.error(errorMessage, 'Lỗi')
+    }
   }
-  
-  // Reset selections
-  selectedColor.value = ''
-  selectedSize.value = ''
-  quantity.value = 1
 }
 
 const handleImageChange = (data) => {

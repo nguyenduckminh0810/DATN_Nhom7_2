@@ -140,11 +140,11 @@ const props = defineProps({
   },
   sizes: {
     type: Array,
-    default: () => ['S', 'M', 'L', 'XL', '2XL', '3XL']
+    default: () => []  // No default sizes - will be calculated from variants
   },
   availableSizes: {
     type: Array,
-    default: () => ['S', 'M', 'L', 'XL', '2XL', '3XL']
+    default: () => []  // No default sizes - will be calculated from variants
   },
   colorSizeMapping: {
     type: Object,

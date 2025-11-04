@@ -5,8 +5,10 @@ import { useCartStore } from './stores/cart'
 import { useUserStore } from './stores/user'
 import { useSEO } from './composables/useSEO'
 import { useToast } from './composables/useToast'
+import { validateToken, clearInvalidToken, checkAuthClearReason } from './utils/tokenValidator'
 import ClientLayout from './layouts/ClientLayout.vue'
 import Toast from './components/common/Toast.vue'
+import InvalidTokenBanner from './components/common/InvalidTokenBanner.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()
@@ -21,6 +23,24 @@ const isAdminRoute = computed(() => {
 
 // Initialize SEO for current route
 onMounted(() => {
+  // 🔒 Check if there was an auth clear reason
+  checkAuthClearReason()
+  
+  // 🔒 Validate token before loading anything
+  const token = localStorage.getItem('auro_token')
+  if (token) {
+    const validation = validateToken(token)
+    
+    if (!validation.valid) {
+      console.error('❌ Token validation failed:', validation.reason)
+      clearInvalidToken(validation.reason)
+      return // Stop initialization
+    }
+    
+    console.log('✅ Token is valid:', validation.authorities)
+  }
+  
+  // Continue normal initialization
   cartStore.loadFromStorage()
   userStore.loadUserFromStorage()
   initializeSEO()
@@ -47,6 +67,9 @@ const getToastIcon = (type) => {
 
 <template>
   <div id="app">
+    <!-- Invalid Token Warning Banner -->
+    <InvalidTokenBanner />
+    
     <!-- Chỉ hiển thị ClientLayout cho các route không phải admin -->
     <ClientLayout v-if="!isAdminRoute" />
     

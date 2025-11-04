@@ -223,10 +223,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useSearchStore } from '../../stores/search'
 
 const searchStore = useSearchStore()
+
+// Load sizes when component mounts
+onMounted(() => {
+  console.log('🔄 ProductFilters mounted, loading sizes...')
+  searchStore.loadAvailableSizes()
+})
 
 // Local state
 const priceRange = ref({ min: 0, max: 5000000 })

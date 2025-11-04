@@ -89,9 +89,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 
-const paymentMethod = ref('cod')
+// Inject selectedPaymentMethod từ parent Cart.vue
+const injectedPaymentMethod = inject('selectedPaymentMethod', null)
+
+// Nếu không có inject, tạo local ref (fallback)
+const paymentMethod = injectedPaymentMethod || ref(null)
 </script>
 
 <style scoped>

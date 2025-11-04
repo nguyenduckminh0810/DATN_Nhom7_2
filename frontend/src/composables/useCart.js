@@ -1,11 +1,14 @@
 import { computed } from 'vue'
 import { useCartStore } from '../stores/cart'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
+import cartService from '../services/cartService'
 import authUtils from '../utils/auth'
 
 export function useCart() {
   const cartStore = useCartStore()
   const router = useRouter()
+  const userStore = useUserStore()
 
   // Computed properties
   const items = computed(() => cartStore.items)
@@ -63,6 +66,88 @@ export function useCart() {
       currency: 'VND',
       minimumFractionDigits: 0
     }).format(numPrice)
+  }
+
+  /**
+   * Load giỏ hàng từ API (cho cả user đã đăng nhập và guest)
+   */
+  const loadCartFromAPI = async () => {
+    try {
+      console.log('🔄 Loading cart from API...')
+      const response = await cartService.getCart()
+      console.log('✅ Cart API response:', response)
+      console.log('🔑 User status:', userStore.isAuthenticated ? 'Logged in' : 'Guest')
+      
+      // Sử dụng method loadCart từ store để cập nhật trực tiếp
+      if (cartStore.loadCart) {
+        await cartStore.loadCart()
+      } else {
+        // Fallback: Cập nhật thủ công nếu method không có
+        if (response && response.chiTietList && Array.isArray(response.chiTietList)) {
+          console.log('📦 Updating cart with', response.chiTietList.length, 'items')
+          
+          // Map từ backend format sang cart store format
+          const mappedItems = response.chiTietList.map(item => {
+            const thuocTinhParsed = parseThuocTinh(item.thuocTinh || '')
+            
+            // Fallback image nếu backend không trả về
+            const fallbackImage = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop'
+            
+            return {
+              id: item.id, // GioHangChiTiet ID
+              itemKey: item.id,
+              bienTheId: item.bienTheId,
+              variantId: item.bienTheId,
+              productId: item.productId || item.bienTheId,
+              name: item.tenSanPham || 'Sản phẩm',
+              price: parseFloat(item.donGia) || 0,
+              quantity: parseInt(item.soLuong) || 1,
+              image: item.image || fallbackImage,
+              color: thuocTinhParsed.color || '',
+              size: thuocTinhParsed.size || '',
+              thuocTinh: item.thuocTinh || '',
+              stock: item.tonKho || 99,
+              addedAt: new Date().toISOString()
+            }
+          })
+          
+          // Cập nhật trực tiếp vào store items
+          cartStore.items = mappedItems
+          cartStore.saveToStorage()
+          
+          console.log('✅ Cart updated with', mappedItems.length, 'items')
+        } else {
+          console.log('ℹ️ Cart is empty or no data from API')
+          cartStore.items = []
+          cartStore.saveToStorage()
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading cart from API:', error)
+      // Nếu lỗi, giữ nguyên local cart (không clear)
+    }
+  }
+
+  /**
+   * Parse chuỗi thuộc tính "Màu: Trắng, Size: M" thành object
+   */
+  const parseThuocTinh = (thuocTinh) => {
+    const result = {}
+    
+    if (!thuocTinh) return result
+    
+    const parts = thuocTinh.split(',')
+    parts.forEach(part => {
+      const [key, value] = part.split(':').map(s => s.trim())
+      
+      if (key === 'Màu') {
+        result.color = value
+      } else if (key === 'Size') {
+        result.size = value
+      }
+    })
+    
+    return result
   }
 
   // Business logic methods
@@ -262,6 +347,9 @@ export function useCart() {
     removeItem,
     updateQuantity,
     clearCart,
+
+    // API operations
+    loadCartFromAPI,
 
     // Business logic
     addToCartWithValidation,

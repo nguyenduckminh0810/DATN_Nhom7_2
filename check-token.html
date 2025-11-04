@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔒 Token Checker & Cleaner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .status-box {
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+        
+        .status-box.valid {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .status-box.invalid {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .status-box.no-token {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        .status-title {
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .status-details {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .token-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .alert.show {
+            display: block;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>🔒</span>
+            Token Checker & Cleaner
+        </h1>
+        <p class="subtitle">Kiểm tra và xóa token không hợp lệ</p>
+        
+        <div id="alert" class="alert alert-success">
+            <strong>✅ Success!</strong> Token đã được xóa. Đang chuyển hướng...
+        </div>
+        
+        <div id="status" class="status-box">
+            <div class="status-title">⏳ Đang kiểm tra...</div>
+            <div class="status-details">Vui lòng đợi...</div>
+        </div>
+        
+        <div id="tokenInfo" class="token-info" style="display:none;"></div>
+        
+        <div class="buttons">
+            <button id="clearBtn" class="btn btn-danger" style="display:none;">
+                <span>🗑️</span>
+                <span>Xóa Token & Reload</span>
+            </button>
+            <button id="goHomeBtn" class="btn btn-primary">
+                <span>🏠</span>
+                <span>Về Trang Chủ</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function checkToken() {
+            const statusBox = document.getElementById('status');
+            const tokenInfo = document.getElementById('tokenInfo');
+            const clearBtn = document.getElementById('clearBtn');
+            
+            const token = localStorage.getItem('auro_token');
+            
+            if (!token) {
+                statusBox.className = 'status-box no-token';
+                statusBox.innerHTML = `
+                    <div class="status-title">⚠️ Không có token</div>
+                    <div class="status-details">
+                        Không tìm thấy token trong localStorage.<br>
+                        Bạn có thể đăng nhập để tạo token mới.
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const payload = JSON.parse(window.atob(base64));
+                
+                // Show token info
+                tokenInfo.style.display = 'block';
+                tokenInfo.innerHTML = `
+                    <strong>Token Payload:</strong><br>
+                    Subject: ${payload.sub}<br>
+                    Issued: ${new Date(payload.iat * 1000).toLocaleString()}<br>
+                    Expires: ${new Date(payload.exp * 1000).toLocaleString()}<br>
+                    Authorities: ${JSON.stringify(payload.authorities, null, 2)}
+                `;
+                
+                // Validate
+                if (!payload.authorities || !Array.isArray(payload.authorities) || payload.authorities.length === 0) {
+                    showInvalid('Không có authorities hoặc authorities rỗng');
+                    clearBtn.style.display = 'block';
+                    return;
+                }
+                
+                const hasValidRole = payload.authorities.some(auth => 
+                    auth && auth.authority && auth.authority.startsWith('ROLE_')
+                );
+                
+                if (!hasValidRole) {
+                    showInvalid('Authorities không có ROLE_* prefix');
+                    clearBtn.style.display = 'block';
+                    return;
+                }
+                
+                // Check if it's a supported role
+                const supportedRoles = ['ROLE_CUS', 'ROLE_STF', 'ROLE_ADM', 'ROLE_GST'];
+                const userRoles = payload.authorities.map(a => a.authority);
+                const hasSupportedRole = userRoles.some(role => supportedRoles.includes(role));
+                
+                if (!hasSupportedRole) {
+                    showInvalid(`Role không được hỗ trợ. Cần: ${supportedRoles.join(', ')}`);
+                    clearBtn.style.display = 'block';
+                    return;
+                }
+                
+                showValid(payload.authorities);
+                
+            } catch (error) {
+                showInvalid('Lỗi decode token: ' + error.message);
+                clearBtn.style.display = 'block';
+            }
+        }
+        
+        function showValid(authorities) {
+            const statusBox = document.getElementById('status');
+            statusBox.className = 'status-box valid';
+            statusBox.innerHTML = `
+                <div class="status-title">✅ Token hợp lệ!</div>
+                <div class="status-details">
+                    Token có authorities đúng format:<br>
+                    ${authorities.map(a => `• ${a.authority}`).join('<br>')}
+                    <br><br>
+                    Bạn có thể checkout bình thường!
+                </div>
+            `;
+        }
+        
+        function showInvalid(reason) {
+            const statusBox = document.getElementById('status');
+            statusBox.className = 'status-box invalid';
+            statusBox.innerHTML = `
+                <div class="status-title">❌ Token không hợp lệ!</div>
+                <div class="status-details">
+                    Lý do: ${reason}<br><br>
+                    Token này sẽ gây lỗi 403 khi checkout.<br>
+                    Vui lòng xóa và đăng nhập lại.
+                </div>
+            `;
+        }
+        
+        document.getElementById('clearBtn').addEventListener('click', function() {
+            localStorage.clear();
+            document.getElementById('alert').classList.add('show');
+            
+            setTimeout(() => {
+                window.location.href = 'http://localhost:5173/';
+            }, 2000);
+        });
+        
+        document.getElementById('goHomeBtn').addEventListener('click', function() {
+            window.location.href = 'http://localhost:5173/';
+        });
+        
+        // Auto check on load
+        checkToken();
+    </script>
+</body>
+</html>

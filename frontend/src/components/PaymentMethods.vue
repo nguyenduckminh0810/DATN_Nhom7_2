@@ -89,9 +89,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, inject, watch } from 'vue'
 
-const paymentMethod = ref('cod')
+// Inject selectedPaymentMethod từ Cart.vue parent
+const injectedPaymentMethod = inject('selectedPaymentMethod', null)
+
+// Sử dụng injected value hoặc tạo local ref nếu không có
+const paymentMethod = injectedPaymentMethod || ref('cod')
+
+// Nếu có injected value, set default là 'cod'
+if (injectedPaymentMethod && !injectedPaymentMethod.value) {
+  injectedPaymentMethod.value = 'cod'
+}
+
+// Watch để sync với parent nếu cần
+watch(paymentMethod, (newValue) => {
+  console.log('💳 Payment method changed to:', newValue)
+  if (injectedPaymentMethod && injectedPaymentMethod !== paymentMethod) {
+    injectedPaymentMethod.value = newValue
+  }
+})
 </script>
 
 <style scoped>
