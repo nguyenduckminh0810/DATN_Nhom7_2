@@ -6,6 +6,7 @@ class ApiService {
     this.client = axios.create({
       baseURL: this.baseURL,
       timeout: 10000,
+      withCredentials: true, // ✅ Quan trọng: Gửi cookie session
       headers: {
         'Content-Type': 'application/json',
       },
@@ -23,12 +24,29 @@ class ApiService {
         const isPublicGet = method === 'get' && publicGetPrefixes.some((p) => url.startsWith(p))
 
         const token = localStorage.getItem('auro_token')
+        
+        // Luôn gửi token nếu có (trừ public GET endpoints)
         if (token && !isPublicGet) {
           config.headers.Authorization = `Bearer ${token}`
+          console.log('🔑 Token added to request:', config.url)
+          
+          // Decode JWT to check authorities
+          try {
+            const base64Url = token.split('.')[1]
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+            const payload = JSON.parse(window.atob(base64))
+            console.log('🔓 JWT Payload:', payload)
+            console.log('👮 Authorities in token:', payload.authorities)
+          } catch (e) {
+            console.warn('⚠️ Failed to decode JWT:', e)
+          }
         } else {
           // ensure we don't accidentally send a stale header
           if (config.headers && 'Authorization' in config.headers) {
             delete config.headers.Authorization
+          }
+          if (!isPublicGet) {
+            console.log('⚠️ No token available for request:', config.url)
           }
         }
         return config

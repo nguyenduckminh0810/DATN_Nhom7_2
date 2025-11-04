@@ -219,9 +219,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, inject } from 'vue'
 import { useShipping } from '@/composables/useShipping'
 import { useCart } from '@/composables/useCart'
+import { useUserStore } from '@/stores/user'
+
+// Get user store
+const userStore = useUserStore()
 
 // Initialize shipping composable
 const {
@@ -247,8 +251,11 @@ const cart = useCart()
 const items = computed(() => cart?.items?.value || [])
 const total = computed(() => cart?.total?.value || 0)
 
-// Shipping info form data
-const shippingInfo = ref({
+// Shipping info form data - Inject từ parent Cart.vue
+const shippingFormData = inject('shippingFormData', null)
+
+// Nếu không có inject (fallback), tạo local ref
+const shippingInfo = shippingFormData || ref({
   fullName: '',
   email: '',
   phone: '',
@@ -373,12 +380,20 @@ const formatWeight = (grams) => {
   return `${grams}g`
 }
 
-// Calculate total weight from cart items
+// Calculate total weight from cart items - ONLY selected items
 const totalWeight = computed(() => {
   if (!items.value || items.value.length === 0) {
     return 500 // Default 500g if cart is empty
   }
-  return items.value.reduce((sum, item) => {
+  
+  // Chỉ tính trọng lượng của sản phẩm được chọn (selected !== false)
+  const selectedItems = items.value.filter(item => item.selected !== false)
+  
+  if (selectedItems.length === 0) {
+    return 500 // Default 500g if no items selected
+  }
+  
+  return selectedItems.reduce((sum, item) => {
     const weight = item?.weight || 500 // Default 500g if not specified
     const quantity = item?.quantity || 1
     return sum + (weight * quantity)
@@ -388,17 +403,35 @@ const totalWeight = computed(() => {
 const onProvinceChange = async () => {
   if (selectedProvince.value) {
     await loadDistricts(selectedProvince.value)
+    
+    // Update shippingInfo với tên tỉnh/thành
+    const province = provinces.value.find(p => p.ProvinceID === selectedProvince.value)
+    if (province && shippingInfo.value) {
+      shippingInfo.value.province = province.ProvinceName
+    }
   }
 }
 
 const onDistrictChange = async () => {
   if (selectedDistrict.value) {
     await loadWards(selectedDistrict.value)
+    
+    // Update shippingInfo với tên quận/huyện
+    const district = districts.value.find(d => d.DistrictID === selectedDistrict.value)
+    if (district && shippingInfo.value) {
+      shippingInfo.value.district = district.DistrictName
+    }
   }
 }
 
 const onWardChange = async () => {
   if (selectedWard.value && selectedDistrict.value) {
+    // Update shippingInfo với tên phường/xã
+    const ward = wards.value.find(w => w.WardCode === selectedWard.value)
+    if (ward && shippingInfo.value) {
+      shippingInfo.value.ward = ward.WardName
+    }
+    
     // Auto calculate shipping fee when address is complete
     try {
       await calculateShippingFee({
@@ -429,6 +462,31 @@ const formatDate = (dateString) => {
 onMounted(async () => {
   try {
     await loadProvinces()
+    
+    // Auto-fill user information if authenticated
+    if (userStore.isAuthenticated) {
+      console.log('🔑 User authenticated, auto-filling shipping info...')
+      
+      // Only fill if fields are empty (don't overwrite existing data)
+      if (!shippingInfo.value.fullName && userStore.userName) {
+        shippingInfo.value.fullName = userStore.userName
+      }
+      if (!shippingInfo.value.email && userStore.userEmail) {
+        shippingInfo.value.email = userStore.userEmail
+      }
+      if (!shippingInfo.value.phone && userStore.userPhone) {
+        shippingInfo.value.phone = userStore.userPhone
+      }
+      
+      console.log('✅ Auto-filled shipping info:', {
+        fullName: shippingInfo.value.fullName,
+        email: shippingInfo.value.email,
+        phone: shippingInfo.value.phone
+      })
+    } else {
+      console.log('ℹ️ User not authenticated, skipping auto-fill')
+    }
+    
     console.log('✅ ShippingForm mounted successfully')
   } catch (error) {
     console.error('❌ Error loading provinces on mount:', error)

@@ -16,19 +16,19 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
 
     boolean existsBySoDienThoai(String soDienThoai);
 
-// Tìm kiếm bằng email 
-@Query("SELECT t FROM TaiKhoan t WHERE t.email = :login AND t.trangThai = true")
-Optional<TaiKhoan> findByEmailAndTrangThaiTrue(@Param("login") String login);
+    // Tìm kiếm bằng email
+    @Query("SELECT t FROM TaiKhoan t JOIN FETCH t.vaiTro WHERE t.email = :login AND t.trangThai = true")
+    Optional<TaiKhoan> findByEmailAndTrangThaiTrue(@Param("login") String login);
 
-// Tìm kiếm bằng số điện thoại 
-@Query("SELECT t FROM TaiKhoan t WHERE t.soDienThoai = :login AND t.trangThai = true")
-Optional<TaiKhoan> findBySoDienThoaiAndTrangThaiTrue(@Param("login") String login);
+    // Tìm kiếm bằng số điện thoại
+    @Query("SELECT t FROM TaiKhoan t JOIN FETCH t.vaiTro WHERE t.soDienThoai = :login AND t.trangThai = true")
+    Optional<TaiKhoan> findBySoDienThoaiAndTrangThaiTrue(@Param("login") String login);
 
-default Optional<TaiKhoan> findByEmailOrSoDienThoaiAndTrangThaiTrue(String login) {
-    Optional<TaiKhoan> byEmail = findByEmailAndTrangThaiTrue(login);
-    if (byEmail.isPresent()) {
-        return byEmail;
+    default Optional<TaiKhoan> findByEmailOrSoDienThoaiAndTrangThaiTrue(String login) {
+        Optional<TaiKhoan> byEmail = findByEmailAndTrangThaiTrue(login);
+        if (byEmail.isPresent()) {
+            return byEmail;
+        }
+        return findBySoDienThoaiAndTrangThaiTrue(login);
     }
-    return findBySoDienThoaiAndTrangThaiTrue(login);
-}
 }

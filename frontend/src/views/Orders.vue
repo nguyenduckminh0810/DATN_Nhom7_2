@@ -36,23 +36,26 @@
           <!-- Navigation Menu -->
           <div class="card mt-3">
             <div class="list-group list-group-flush">
-              <a href="#" class="list-group-item list-group-item-action">
+              <router-link to="/profile" class="list-group-item list-group-item-action">
                 <i class="bi bi-person me-2"></i>Thông tin cá nhân
-              </a>
+              </router-link>
               <router-link to="/orders" class="list-group-item list-group-item-action active">
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action">
+              <router-link to="/wishlist" class="list-group-item list-group-item-action">
                 <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
-              </a>
-              <a href="#" class="list-group-item list-group-item-action">
+              </router-link>
+              <router-link to="/profile/addresses" class="list-group-item list-group-item-action">
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
-              </a>
+              </router-link>
               <a href="#" class="list-group-item list-group-item-action">
                 <i class="bi bi-credit-card me-2"></i>Phương thức thanh toán
               </a>
               <a href="#" class="list-group-item list-group-item-action">
                 <i class="bi bi-bell me-2"></i>Thông báo
+              </a>
+              <a href="#" class="list-group-item list-group-item-action text-danger" @click.prevent="logout">
+                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
               </a>
             </div>
           </div>
@@ -110,8 +113,24 @@
             </div>
           </div>
 
+          <!-- Loading State -->
+          <div v-if="loading" class="text-center py-5">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-3 text-muted">Đang tải đơn hàng...</p>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="error" class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+            <button class="btn btn-sm btn-outline-danger ms-3" @click="fetchOrders">
+              <i class="bi bi-arrow-clockwise me-1"></i>Thử lại
+            </button>
+          </div>
+
           <!-- Orders List -->
-          <div v-if="filteredOrders.length > 0">
+          <div v-else-if="filteredOrders.length > 0">
             <div v-for="order in filteredOrders" :key="order.id" class="card mb-3">
               <div class="card-body">
                 <!-- Order Header -->
@@ -227,82 +246,25 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
+import orderService from '@/services/orderService'
+
+const router = useRouter()
+const userStore = useUserStore()
 
 // Reactive data
 const activeTab = ref('all')
-const user = ref({
-  id: 1,
-  name: 'Nguyễn Văn A',
-  email: 'user@example.com',
-  avatar: null
-})
+const orders = ref([])
+const loading = ref(false)
+const error = ref(null)
 
-// Mock orders data
-const orders = ref([
-  {
-    id: 1,
-    orderNumber: 'ORD001',
-    orderDate: '2024-01-15',
-    status: 'delivered',
-    subtotal: 900000,
-    shippingFee: 0,
-    discount: 100000,
-    total: 800000,
-    items: [
-      {
-        id: 1,
-        name: 'Áo sơ mi nam cao cấp',
-        image: 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Áo',
-        price: 450000,
-        quantity: 2,
-        selectedSize: 'L',
-        selectedColor: 'Trắng'
-      }
-    ]
-  },
-  {
-    id: 2,
-    orderNumber: 'ORD002',
-    orderDate: '2024-01-20',
-    status: 'shipped',
-    subtotal: 650000,
-    shippingFee: 30000,
-    discount: 0,
-    total: 680000,
-    items: [
-      {
-        id: 2,
-        name: 'Quần âu nam',
-        image: 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Quần',
-        price: 650000,
-        quantity: 1,
-        selectedSize: 'M',
-        selectedColor: 'Đen'
-      }
-    ]
-  },
-  {
-    id: 3,
-    orderNumber: 'ORD003',
-    orderDate: '2024-01-25',
-    status: 'pending',
-    subtotal: 850000,
-    shippingFee: 0,
-    discount: 0,
-    total: 850000,
-    items: [
-      {
-        id: 3,
-        name: 'Áo khoác nam',
-        image: 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Áo+khoác',
-        price: 850000,
-        quantity: 1,
-        selectedSize: 'XL',
-        selectedColor: 'Xám'
-      }
-    ]
-  }
-])
+const user = computed(() => ({
+  id: userStore.user?.id || null,
+  name: userStore.user?.name || userStore.user?.hoTen || 'Người dùng',
+  email: userStore.user?.email || '',
+  avatar: userStore.user?.avatar || null
+}))
 
 // Computed
 const filteredOrders = computed(() => {
@@ -351,36 +313,160 @@ const formatDate = (dateString) => {
 }
 
 const viewOrderDetail = (order) => {
-  // TODO: Implement order detail modal or page
-  alert(`Xem chi tiết đơn hàng #${order.orderNumber}`)
+  router.push(`/orders/${order.id}`)
 }
 
-const cancelOrder = (order) => {
-  if (confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${order.orderNumber}?`)) {
-    order.status = 'cancelled'
-    alert('Đơn hàng đã được hủy')
+const cancelOrder = async (order) => {
+  if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${order.orderNumber}?`)) {
+    return
+  }
+  
+  try {
+    loading.value = true
+    await orderService.cancelOrder(order.id)
+    alert('Đơn hàng đã được hủy thành công!')
+    // Reload orders
+    await fetchOrders()
+  } catch (err) {
+    console.error('Error canceling order:', err)
+    alert('Lỗi khi hủy đơn hàng: ' + (err.response?.data?.message || err.message))
+  } finally {
+    loading.value = false
   }
 }
 
-const reorder = (order) => {
-  // TODO: Implement reorder functionality
-  alert(`Mua lại đơn hàng #${order.orderNumber}`)
+const reorder = async (order) => {
+  try {
+    loading.value = true
+    // Import cartService if not already
+    const { default: cartService } = await import('@/services/cartService')
+    
+    // Add items back to cart
+    for (const item of order.items) {
+      await cartService.addToCart({
+        sanPhamId: item.sanPhamId,
+        soLuong: item.quantity,
+        mauSacId: item.mauSacId,
+        kichCoId: item.kichCoId
+      })
+    }
+    alert('Đã thêm sản phẩm vào giỏ hàng!')
+    router.push('/cart')
+  } catch (err) {
+    console.error('Error reordering:', err)
+    alert('Lỗi khi đặt lại đơn hàng: ' + (err.response?.data?.message || err.message))
+  } finally {
+    loading.value = false
+  }
 }
 
 const rateOrder = (order) => {
-  // TODO: Implement rating functionality
+  // TODO: Implement rating modal/page
   alert(`Đánh giá đơn hàng #${order.orderNumber}`)
 }
 
-// Lifecycle
-onMounted(() => {
-  // Load user data
-  const storedUser = localStorage.getItem('auro_user')
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
+const logout = () => {
+  if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+    userStore.logout()
+    router.push('/login')
   }
-  
-  // TODO: Load orders from API
+}
+
+// Fetch orders from API
+const fetchOrders = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    console.log('🔄 Fetching orders...')
+    const response = await orderService.getMyOrders()
+    console.log('📦 Full API response:', response)
+    console.log('📦 Response.data:', response.data)
+    console.log('📦 Response.data type:', typeof response.data)
+    console.log('📦 Response.data.content:', response.data?.content)
+    
+    // Backend returns paginated data
+    const orderData = response.data?.content || response.data || []
+    console.log('📋 Order data array:', orderData)
+    console.log('📋 Order data length:', orderData.length)
+    console.log('📋 Is array?:', Array.isArray(orderData))
+    
+    // Map backend data to frontend structure
+    orders.value = orderData.map(order => ({
+      id: order.id,
+      orderNumber: order.soDonHang || `ORD${order.id}`,
+      orderDate: order.taoLuc || order.createdAt,
+      status: mapBackendStatus(order.trangThai),
+      subtotal: order.tamTinh || 0,
+      shippingFee: 0, // Backend không có field phiShip riêng
+      discount: 0, // Backend không có field giảm giá riêng
+      total: order.tongThanhToan || 0,
+      paymentStatus: order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+      items: order.chiTietList?.map(item => ({
+        id: item.id,
+        name: item.tenSanPham || 'Sản phẩm',
+        image: 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
+        price: item.donGia || 0,
+        quantity: item.soLuong || 1,
+        subtotal: item.thanhTien || 0,
+        selectedSize: '', // Backend không có thông tin này
+        selectedColor: '' // Backend không có thông tin này
+      })) || []
+    }))
+    
+    console.log('✅ Mapped orders:', orders.value)
+    
+    // Debug: Check if user actually has no orders
+    if (orders.value.length === 0) {
+      console.log('⚠️ No orders found for this user')
+      console.log('💡 Possible reasons:')
+      console.log('   1. No orders placed yet')
+      console.log('   2. Orders were placed as GUEST (different khachHangId)')
+      console.log('   3. User account not linked to KhachHang properly')
+      console.log('')
+      console.log('🔍 If you just placed an order via guest-checkout:')
+      console.log('   - The order was created with a new GUEST KhachHang record')
+      console.log('   - It won\'t show here because it\'s not linked to your logged-in account')
+      console.log('   - Need to use authenticated checkout endpoint instead')
+    }
+  } catch (err) {
+    console.error('❌ Error fetching orders:', err)
+    console.error('Error details:', {
+      message: err.message,
+      response: err.response,
+      status: err.status,
+      type: err.type
+    })
+    
+    // Show more detailed error message
+    if (err.status === 500) {
+      error.value = 'Lỗi server. Vui lòng kiểm tra: \n1. Bạn đã đăng nhập chưa? \n2. Tài khoản có liên kết với khách hàng không?'
+    } else {
+      error.value = err.message || 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.'
+    }
+    orders.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+// Map backend status to frontend status
+const mapBackendStatus = (backendStatus) => {
+  const statusMap = {
+    'CHO_XAC_NHAN': 'pending',
+    'DANG_XU_LY': 'processing',
+    'DANG_GIAO': 'shipped',
+    'DA_GIAO': 'delivered',
+    'HOAN_THANH': 'delivered',
+    'DA_HUY': 'cancelled'
+  }
+  return statusMap[backendStatus] || 'pending'
+}
+
+// Lifecycle
+onMounted(async () => {
+  await fetchOrders()
 })
 </script>
 

@@ -61,9 +61,10 @@
 </template>
 
 <script setup>
-import { computed, provide } from 'vue'
+import { computed, provide, ref, onMounted } from 'vue'
 import { useCart } from '@/composables/useCart'
 import { useShipping } from '@/composables/useShipping'
+import { useUserStore } from '@/stores/user'
 import ShippingForm from '@/components/checkout/ShippingForm.vue'
 import PaymentMethods from '@/components/checkout/PaymentMethods.vue'
 import CartItems from '@/components/checkout/CartItems.vue'
@@ -71,15 +72,54 @@ import VoucherSection from '@/components/checkout/VoucherSection.vue'
 import OrderSummary from '@/components/checkout/OrderSummary.vue'
 
 // Sử dụng cart store
-const { items, isEmpty } = useCart()
+const { items, isEmpty, loadCartFromAPI } = useCart()
+const userStore = useUserStore()
 
 // Sử dụng shipping composable
 const { shippingFee, expectedDeliveryTime } = useShipping()
+
+// Thông tin form giao hàng - để OrderSummary có thể truy cập
+const shippingFormData = ref({
+  fullName: '',
+  email: '',
+  phone: '',
+  address: '',
+  notes: ''
+})
+
+// Phương thức thanh toán được chọn
+const selectedPaymentMethod = ref(null)
 
 // Provide shipping info để OrderSummary có thể sử dụng
 provide('shippingInfo', {
   shippingFee,
   expectedDeliveryTime
+})
+
+// Provide form data để OrderSummary có thể validate và submit
+provide('shippingFormData', shippingFormData)
+provide('selectedPaymentMethod', selectedPaymentMethod)
+
+// Load giỏ hàng từ API khi component mount (cho cả user và guest)
+onMounted(async () => {
+  console.log('🛒 Cart.vue mounted - Loading cart from API...')
+  
+  // Đảm bảo user state được load trước (nếu chưa load)
+  if (!userStore.user) {
+    console.log('⏳ User not loaded yet, loading from storage...')
+    userStore.loadUserFromStorage()
+  }
+  
+  console.log('👤 User authenticated:', userStore.isAuthenticated)
+  console.log('👤 User role:', userStore.userRole)
+  console.log('👤 User object:', userStore.user)
+  
+  // Load giỏ hàng từ API (backend sẽ tự xử lý user/guest)
+  await loadCartFromAPI()
+  
+  console.log('📦 Cart items after load:', items.value)
+  console.log('📦 Cart is empty:', isEmpty.value)
+  console.log('📦 Number of items:', items.value?.length || 0)
 })
 </script>
 

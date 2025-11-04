@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Token & Login</title>
+</head>
+<body>
+    <h1>Clear Token & Force Re-login</h1>
+    <button onclick="clearAndReload()">Clear Token & Reload</button>
+    
+    <script>
+        function clearAndReload() {
+            // Clear all auth data
+            localStorage.removeItem('auro_token');
+            localStorage.removeItem('auro_user');
+            localStorage.removeItem('auro_cart_v1');
+            
+            console.log('✅ Cleared all auth data');
+            
+            // Reload page
+            window.location.href = 'http://localhost:5173/';
+        }
+        
+        // Auto-clear on page load
+        clearAndReload();
+    </script>
+</body>
+</html>

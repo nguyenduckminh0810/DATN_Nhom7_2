@@ -98,6 +98,7 @@
                 :promotionalBadge="product.promotionalBadge"
                 :colorOptions="product.colorOptions || product.mauSac"
                 :sizes="product.sizes || product.kichCo"
+                :availableSizes="product.availableSizes || []"
                 :stock="product.stock || product.tonKho"
               />
             </div>
@@ -250,11 +251,28 @@ const fetchAllProducts = async () => {
 // Nếu muốn áp bộ lọc FE trên trang hiện tại, giữ lại; nếu không thì return products.value
 const filteredProducts = computed(() => {
   try {
+    // Get base products list
+    let productList = products.value
+    
     // Áp bộ lọc trong trang hiện tại (nếu cần)
     if (searchStore?.applyFilters) {
-      return searchStore.applyFilters(products.value)
+      productList = searchStore.applyFilters(productList)
     }
-    return products.value
+    
+    // Map each product to include availableSizes from bienThes
+    return productList.map(product => {
+      // Extract available sizes from bienThes (variants with stock > 0)
+      const availableSizes = product.bienThes
+        ? [...new Set(product.bienThes
+            .filter(bt => bt.tonKho > 0)
+            .map(bt => bt.kichThuoc))]
+        : []
+      
+      return {
+        ...product,
+        availableSizes
+      }
+    })
   } catch {
     return products.value
   }

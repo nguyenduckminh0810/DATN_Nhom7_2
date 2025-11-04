@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/danh-muc").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/danh-muc/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hinh-anh/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/kich-co/**").permitAll()
                         // Static uploaded files
                         .requestMatchers("/files/**").permitAll()
 

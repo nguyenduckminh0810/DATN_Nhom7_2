@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import apiService from '../services/api'
 import { handleApiError, handleAuthError } from '../utils/errorHandler'
+import { validateToken } from '../utils/tokenValidator'
 
 export const useUserStore = defineStore('user', () => {
   // State
@@ -32,6 +33,7 @@ export const useUserStore = defineStore('user', () => {
   const isAdmin = computed(() => userRole.value === 'admin')
   const userName = computed(() => user.value?.name || user.value?.hoTen || '')
   const userEmail = computed(() => user.value?.email || '')
+  const userPhone = computed(() => user.value?.soDienThoai || user.value?.phone || user.value?.dienThoai || '')
   const userAvatar = computed(() => user.value?.avatar || null)
 
   // Actions
@@ -271,12 +273,32 @@ export const useUserStore = defineStore('user', () => {
       const storedUser = localStorage.getItem('auro_user')
       const storedToken = localStorage.getItem('auro_token')
 
+      console.log('🔍 Loading from localStorage...')
+      console.log('📦 Stored user:', storedUser)
+      console.log('🔑 Stored token:', storedToken ? '***exists***' : 'null')
+
       if (storedUser && storedToken) {
+        // 🔒 Validate token using utility
+        const validation = validateToken(storedToken)
+        
+        if (!validation.valid) {
+          console.warn('⚠️ Invalid token detected:', validation.reason)
+          console.warn('🔄 Token will be cleared on next page load')
+          localStorage.removeItem('auro_token')
+          localStorage.removeItem('auro_user')
+          return false
+        }
+        
+        console.log('✅ Token is valid with authorities:', validation.authorities)
+        
         user.value = JSON.parse(storedUser)
+        console.log('✅ User loaded:', user.value)
         return true
+      } else {
+        console.log('❌ No stored user or token found')
       }
     } catch (err) {
-      console.error('Error loading user from storage:', err)
+      console.error('❌ Error loading user from storage:', err)
       localStorage.removeItem('auro_user')
       localStorage.removeItem('auro_token')
     }
@@ -309,6 +331,7 @@ export const useUserStore = defineStore('user', () => {
     isAdmin,
     userName,
     userEmail,
+    userPhone,
     userAvatar,
 
     // Actions

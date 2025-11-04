@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import api from '../services/api'
 
 export const useSearchStore = defineStore('search', () => {
   // Search State
@@ -23,10 +24,8 @@ export const useSearchStore = defineStore('search', () => {
   const isFilterActive = ref(false)
 
   // Available filter options
-  const availableSizes = ref([
-    'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL',
-    '28', '29', '30', '31', '32', '33', '34', '35', '36', '37', '38', '39', '40'
-  ])
+  const availableSizes = ref([])
+  const isLoadingSizes = ref(false)
 
   const availableColors = ref([
     { name: 'Đen', value: 'black', hex: '#000000' },
@@ -185,6 +184,43 @@ export const useSearchStore = defineStore('search', () => {
   })
 
   // Actions
+  /**
+   * Load available sizes from database
+   */
+  const loadAvailableSizes = async () => {
+    if (isLoadingSizes.value) return // Prevent duplicate calls
+    
+    try {
+      isLoadingSizes.value = true
+      console.log('🔍 Loading sizes from database...')
+      
+      // api.get() already returns response.data, so we get the data directly
+      // Note: api.js baseURL is already '/api', so we just need '/kich-co/ten'
+      const data = await api.get('/kich-co/ten')
+      
+      console.log('🔍 Received data from API:', data)
+      
+      if (data && Array.isArray(data)) {
+        availableSizes.value = data
+        console.log('✅ Loaded sizes from DB:', availableSizes.value)
+      } else if (Array.isArray(data.data)) {
+        // Fallback if API returns nested data
+        availableSizes.value = data.data
+        console.log('✅ Loaded sizes from DB (nested):', availableSizes.value)
+      } else {
+        console.warn('⚠️ Invalid size data, using fallback. Received:', data)
+        availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
+      }
+    } catch (error) {
+      console.error('❌ Error loading sizes:', error)
+      console.error('❌ Error details:', error.message, error.status, error.type)
+      // Fallback to default sizes
+      availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
+    } finally {
+      isLoadingSizes.value = false
+    }
+  }
+
   const searchProducts = async (query) => {
     if (!query.trim()) {
       searchResults.value = []
@@ -496,6 +532,7 @@ export const useSearchStore = defineStore('search', () => {
   // Initialize
   loadSearchHistory()
   loadFilters()
+  loadAvailableSizes() // Load sizes from database
   
   // Clear old filter data if needed (for migration)
   const clearOldFilterData = () => {
@@ -531,6 +568,7 @@ export const useSearchStore = defineStore('search', () => {
     activeFilters,
     isFilterActive,
     availableSizes,
+    isLoadingSizes,
     availableColors,
     availableMaterials,
     priceRanges,
@@ -545,6 +583,7 @@ export const useSearchStore = defineStore('search', () => {
     activeFiltersCount,
 
     // Search Actions
+    loadAvailableSizes,
     searchProducts,
     addToSearchHistory,
     loadSearchHistory,

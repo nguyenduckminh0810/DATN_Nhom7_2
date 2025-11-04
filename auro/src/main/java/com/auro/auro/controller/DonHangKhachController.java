@@ -19,6 +19,7 @@ import com.auro.auro.model.KhachHang;
 import com.auro.auro.model.TaiKhoan;
 import com.auro.auro.repository.KhachHangRepository;
 import com.auro.auro.security.CustomUserDetails;
+
 @RestController
 @RequestMapping("/api/khach-hang/don-hang")
 public class DonHangKhachController {
@@ -30,88 +31,140 @@ public class DonHangKhachController {
     private KhachHangRepository khachHangRepository;
 
     // tạo đơn hàng từ giỏ hàng
-    @PreAuthorize("hasRole('CUS')")
+    @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @PostMapping("/tao-tu-gio-hang")
-    public ResponseEntity<DonHangResponse> taoDonTuGioHang( @RequestBody TaoDonTuGioHangRequest request, Authentication auth) {
-        try{
+    public ResponseEntity<DonHangResponse> taoDonTuGioHang(@RequestBody TaoDonTuGioHangRequest request,
+            Authentication auth) {
+        try {
+            System.out.println("=== DEBUG ENDPOINT tao-tu-gio-hang ===");
+            System.out.println("Authentication: " + auth);
+            System.out.println("Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
+            System.out.println("Principal: " + (auth != null ? auth.getPrincipal() : "null"));
+
             Long khachHangId = layKhachHangIdTuAuth(auth);
+            System.out.println("KhachHangId: " + khachHangId);
+            System.out.println("Request data: " + request);
+
+            if (khachHangId == null) {
+                throw new RuntimeException("Không thể xác định khách hàng");
+            }
+
             DonHangResponse dh = donHangService.taoDonTuGioHang(request, khachHangId);
             return ResponseEntity.ok(dh);
-        }catch(Exception e) {
+        } catch (Exception e) {
+            System.out.println("ERROR in taoDonTuGioHang: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
 
     // lấy đơn hàng của khách
-    @PreAuthorize("hasRole('CUS')")
+    @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @GetMapping("/don-hang-cua-toi")
-    public ResponseEntity <Page<DonHangResponse>> layDonHangCuaToi(@RequestParam(defaultValue = "0") int trang, @RequestParam(defaultValue = "10") int kichThuoc, Authentication auth) {
-        try{
+    public ResponseEntity<Page<DonHangResponse>> layDonHangCuaToi(@RequestParam(defaultValue = "0") int trang,
+            @RequestParam(defaultValue = "10") int kichThuoc, Authentication auth) {
+        try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
             Page<DonHangResponse> dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc);
             return ResponseEntity.ok(dhs);
-        }catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     // Hủy đơn hàng
-    @PreAuthorize("hasRole('CUS')")
+    @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @PutMapping("/{donHangId}/huy")
     public ResponseEntity<DonHangResponse> huyDonHang(@PathVariable Long donHangId, Authentication auth) {
-        try{
+        try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
-            DonHangResponse dh = donHangService.huyDonHang(donHangId,khachHangId);
+            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId);
             return ResponseEntity.ok(dh);
-        }catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     // Lấy chi tiết đơn hàng
-    @PreAuthorize("hasRole('CUS')")
+    @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @GetMapping("/{donHangId}")
     public ResponseEntity<DonHangResponse> layChiTietDonHang(@PathVariable Long donHangId, Authentication auth) {
-        try{
+        try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
             DonHangResponse dh = donHangService.layChiTietDonHangKhach(donHangId, khachHangId);
             return ResponseEntity.ok(dh);
-        }catch(Exception e) {
+        } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
 
     }
 
     @PostMapping("/guest-checkout")
-public ResponseEntity<?> guestCheckout(@RequestBody GuestCheckoutRequest request, HttpServletRequest httpRequest) {
-    try {
-        String sessionId = httpRequest.getSession().getId();
-        donHangService.taoDonHangGuest(sessionId, request);
-        Map<String, Object> result = new HashMap<>();
-        result.put("success", true);
-        result.put("message", "Đặt hàng thành công! Kiểm tra email xác nhận (nếu có).");
-        return ResponseEntity.ok(result);
-    } catch (Exception e) {
-        Map<String, Object> error = new HashMap<>();
-        error.put("success", false);
-        error.put("message", "Lỗi: " + e.getMessage());
-        return ResponseEntity.badRequest().body(error);
-    }
-}
+    public ResponseEntity<?> guestCheckout(@RequestBody GuestCheckoutRequest request,
+            HttpServletRequest httpRequest,
+            Authentication auth) {
+        try {
+            String sessionId = httpRequest.getSession().getId();
+            Long khachHangId = layKhachHangIdTuAuth(auth);
 
-private Long layKhachHangIdTuAuth(Authentication auth) {
-    if (auth == null || auth.getPrincipal() == null) {
-        return null;
+            System.out.println("=== Guest Checkout ===");
+            System.out.println("Session ID: " + sessionId);
+            System.out.println("Authenticated khachHangId: " + khachHangId);
+
+            donHangService.taoDonHangGuest(sessionId, request, khachHangId);
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Đặt hàng thành công! Kiểm tra email xác nhận (nếu có).");
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Lỗi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
-    try {
-        CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-        TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-        KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-        return (khachHang != null) ? khachHang.getId() : null;
-    } catch (Exception e) {
-        return null;
+
+    private Long layKhachHangIdTuAuth(Authentication auth) {
+        if (auth == null || auth.getPrincipal() == null) {
+            return null;
+        }
+        try {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            TaiKhoan taiKhoan = userDetails.getTaiKhoan();
+
+            System.out.println("=== layKhachHangIdTuAuth ===");
+            System.out.println("TaiKhoan ID: " + taiKhoan.getId());
+            System.out.println("VaiTro: " + taiKhoan.getVaiTro().getMa());
+
+            // Nếu là admin hoặc staff, tạo/tìm KhachHang record
+            String roleMa = taiKhoan.getVaiTro().getMa();
+            if ("ADM".equals(roleMa) || "STF".equals(roleMa)) {
+                System.out.println("Admin/Staff detected - finding or creating KhachHang record");
+
+                // Tìm KhachHang theo tài khoản
+                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
+
+                if (khachHang == null) {
+                    // Tạo KhachHang mới cho admin/staff
+                    khachHang = new KhachHang();
+                    khachHang.setTaiKhoan(taiKhoan);
+                    khachHang.setHoTen(taiKhoan.getEmail() != null ? taiKhoan.getEmail() : "Admin/Staff");
+                    khachHang.setKieu("ONLINE");
+                    khachHang = khachHangRepository.save(khachHang);
+                    System.out.println("Created new KhachHang for Admin/Staff with ID: " + khachHang.getId());
+                }
+
+                return khachHang.getId();
+            }
+
+            // Nếu là customer, tìm KhachHang bình thường
+            KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
+            return (khachHang != null) ? khachHang.getId() : null;
+        } catch (Exception e) {
+            System.out.println("ERROR in layKhachHangIdTuAuth: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
     }
-}
-    
 
 }

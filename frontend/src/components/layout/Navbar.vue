@@ -121,11 +121,15 @@
             <button
               class="nav-link modern-nav-link position-relative cart-trigger"
               @click="toggleMiniCart"
-            >
-              <i class="bi bi-cart3"></i>
-              <span v-if="cartStore.itemCount > 0" class="badge modern-cart-badge">
+            ><span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
+              <i class="bi bi-cart3">
+                <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
+                {{ cartStore.itemCount }}
+              </span>
+              </i>
+              
             </button>
           </li>
 
@@ -302,13 +306,18 @@ const handleSwitchToLogin = () => {
 const handleLogout = async () => {
   try {
     await userStore.logout()
+    
+    // Xóa giỏ hàng khi đăng xuất
+    cartStore.clearCart()
+    console.log('🗑️ Cart cleared on logout')
+    
     success('Đăng xuất thành công!')
     setTimeout(() => {
       router.push('/')
     }, 500)
   } catch (err) {
     error('Có lỗi khi đăng xuất. Vui lòng thử lại.')
-    console.error('Logout error:', error)
+    console.error('Logout error:', err)
   }
 }
 

@@ -357,72 +357,7 @@ const handleCheckout = async () => {
       }
     }
 
-    // Reload cart từ backend để đảm bảo sync
-    console.log('🔄 Reloading cart from backend to ensure sync...')
-    try {
-      const backendCart = await cartService.getCart()
-      console.log('📦 Backend cart:', backendCart)
-      
-      if (!backendCart || !backendCart.chiTietList || backendCart.chiTietList.length === 0) {
-        if (window.$toast) {
-          window.$toast.error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.')
-        }
-        isProcessing.value = false
-        return
-      }
-      
-      console.log('✅ Backend cart has', backendCart.chiTietList.length, 'items')
-      
-      // GIẢI PHÁP: Nếu user đã đăng nhập, xóa items khỏi user cart
-      // và thêm lại vào session cart để guest-checkout có thể lấy được
-      if (token && isAuthenticated.value && backendCart.chiTietList.length > 0) {
-        console.log('🔄 User authenticated - transferring items from USER cart to SESSION cart...')
-        
-        // Lưu lại thông tin items
-        const itemsToTransfer = backendCart.chiTietList.map(item => ({
-          bienTheId: item.bienTheId,
-          soLuong: item.soLuong
-        }))
-        
-        console.log('📦 Items to transfer:', itemsToTransfer)
-        
-        // Bước 1: Xóa tất cả items khỏi user cart
-        try {
-          await cartService.clearCart()
-          console.log('✅ Cleared user cart')
-        } catch (err) {
-          console.error('❌ Failed to clear user cart:', err)
-        }
-        
-        // Bước 2: Đăng xuất tạm thời để API add to cart lưu vào session cart
-        const tempToken = localStorage.getItem('auro_token')
-        localStorage.removeItem('auro_token')
-        console.log('🔓 Temporarily removed token to use session cart')
-        
-        // Bước 3: Thêm lại items vào session cart (không có token = session cart)
-        for (const item of itemsToTransfer) {
-          try {
-            await cartService.addToCart(item)
-            console.log('✅ Added to session cart:', item.bienTheId)
-          } catch (err) {
-            console.error('❌ Failed to add to session cart:', item.bienTheId, err)
-          }
-        }
-        
-        console.log('✅ Items transferred to session cart')
-        console.log('🔑 Token will be restored after checkout')
-        
-        // Lưu token để restore sau
-        window._tempAuthToken = tempToken
-      }
-    } catch (error) {
-      console.error('❌ Failed to load backend cart:', error)
-      if (window.$toast) {
-        window.$toast.error('Không thể tải giỏ hàng. Vui lòng thử lại.')
-      }
-      isProcessing.value = false
-      return
-    }
+    console.log('✅ Cart synced with backend')
 
     let response
 
@@ -488,13 +423,6 @@ const handleCheckout = async () => {
 
     console.log('✅ Order created:', response)
 
-    // Restore token nếu có (đã tạm xóa để chuyển sang session cart)
-    if (window._tempAuthToken) {
-      localStorage.setItem('auro_token', window._tempAuthToken)
-      delete window._tempAuthToken
-      console.log('🔑 Token restored')
-    }
-
     // Xóa giỏ hàng sau khi đặt hàng thành công
     await clearCart()
 
@@ -531,13 +459,6 @@ const handleCheckout = async () => {
       data: error.data,
       response: error.response
     })
-    
-    // Restore token nếu có (đã tạm xóa để chuyển sang session cart)
-    if (window._tempAuthToken) {
-      localStorage.setItem('auro_token', window._tempAuthToken)
-      delete window._tempAuthToken
-      console.log('🔑 Token restored after error')
-    }
     
     let errorMessage = 'Có lỗi xảy ra khi đặt hàng'
     
