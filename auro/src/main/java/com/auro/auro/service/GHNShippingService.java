@@ -22,26 +22,26 @@ public class GHNShippingService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${ghn.from.district.id:1542}")
-    private Integer fromDistrictId;
-
-    @Value("${ghn.from.ward.code:21211}")
-    private String fromWardCode;
+    // From district for available-services API (required by GHN)
+    private final Integer fromDistrictId;
 
     // Constructor injection
     public GHNShippingService(
             @Value("${ghn.api.url:https://dev-online-gateway.ghn.vn/shiip/public-api}") String ghnApiUrl,
             @Value("${ghn.api.token}") String ghnToken,
             @Value("${ghn.shop.id}") Integer shopId,
+            @Value("${ghn.from.district.id:3695}") Integer fromDistrictId,
             RestTemplate restTemplate) {
         this.ghnApiUrl = ghnApiUrl;
         this.ghnToken = ghnToken;
         this.shopId = shopId;
+        this.fromDistrictId = fromDistrictId;
         this.restTemplate = restTemplate;
 
         log.info("🚀 GHNShippingService initialized");
         log.info("🌐 GHN API URL: {}", ghnApiUrl);
         log.info("🏪 GHN Shop ID: {}", shopId);
+        log.info("📍 From District ID: {} (for available-services API)", fromDistrictId);
         log.info("🔑 GHN Token: {}... (length: {})",
                 ghnToken != null ? ghnToken.substring(0, Math.min(10, ghnToken.length())) : "NULL",
                 ghnToken != null ? ghnToken.length() : 0);
@@ -61,15 +61,20 @@ public class GHNShippingService {
             headers.set("ShopId", shopId.toString());
 
             // Thiết lập giá trị mặc định nếu không có
-            if (request.getFromDistrictId() == null) {
-                request.setFromDistrictId(fromDistrictId);
-            }
-            if (request.getFromWardCode() == null) {
-                request.setFromWardCode(fromWardCode);
-            }
+            // KHÔNG set from_district_id và from_ward_code - để GHN tự lấy từ ShopId
+            // if (request.getFromDistrictId() == null) {
+            // request.setFromDistrictId(fromDistrictId);
+            // }
+            // if (request.getFromWardCode() == null) {
+            // request.setFromWardCode(fromWardCode);
+            // }
+
+            // Service ID BẮT BUỘC phải có và phải lấy từ API available-services
             if (request.getServiceId() == null) {
-                request.setServiceId(53320); // Mã dịch vụ GHN Express
+                throw new RuntimeException(
+                        "service_id is required. Please call /shipping/services first to get available service_id");
             }
+
             if (request.getWeight() == null) {
                 request.setWeight(200); // Mặc định 200g
             }
@@ -85,8 +90,16 @@ public class GHNShippingService {
 
             HttpEntity<GHNShippingFeeRequest> entity = new HttpEntity<>(request, headers);
 
-            log.info("Calling GHN API: {}", url);
-            log.info("Request body: {}", request);
+            log.info("🔍 Calling GHN API: {}", url);
+            log.info("📤 Request headers: Token={}, ShopId={}",
+                    ghnToken != null ? ghnToken.substring(0, 10) + "..." : "null",
+                    shopId);
+            log.info("📦 Request body: fromDistrictId={}, toDistrictId={}, toWardCode={}, weight={}, serviceId={}",
+                    request.getFromDistrictId(),
+                    request.getToDistrictId(),
+                    request.getToWardCode(),
+                    request.getWeight(),
+                    request.getServiceId());
 
             ResponseEntity<GHNShippingFeeResponse> response = restTemplate.exchange(
                     url,
@@ -236,9 +249,12 @@ public class GHNShippingService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("Token", ghnToken);
 
+            // GHN yêu cầu from_district bắt buộc cho API available-services
             String requestBody = String.format(
                     "{\"shop_id\": %d, \"from_district\": %d, \"to_district\": %d}",
                     shopId, fromDistrictId, toDistrictId);
+
+            log.info("📤 Request body for available-services: {}", requestBody);
 
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 

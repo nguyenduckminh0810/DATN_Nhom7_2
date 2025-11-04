@@ -110,6 +110,8 @@ const shippingService = {
   async calculateShippingFee(data) {
     try {
       console.log('🌐 [ShippingService] Calculating shipping fee:', data)
+      console.log('🔍 [ShippingService] toDistrictId type:', typeof data.toDistrictId, 'value:', data.toDistrictId)
+      console.log('🔍 [ShippingService] toWardCode type:', typeof data.toWardCode, 'value:', data.toWardCode)
       const response = await api.shipping.calculate(data)
       console.log('📦 [ShippingService] Calculate response:', response)
       

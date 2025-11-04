@@ -91,6 +91,12 @@ public class ShippingController {
     public ResponseEntity<ShippingResponse<Map<String, Object>>> calculateShippingFee(
             @RequestBody ShippingCalculateRequest request) {
         try {
+            log.info("📥 Received request: {}", request);
+            log.info("🔍 toDistrictId: {} (type: {})", request.getToDistrictId(),
+                    request.getToDistrictId() != null ? request.getToDistrictId().getClass().getSimpleName() : "null");
+            log.info("🔍 toWardCode: {} (type: {})", request.getToWardCode(),
+                    request.getToWardCode() != null ? request.getToWardCode().getClass().getSimpleName() : "null");
+
             // Tạo GHNShippingFeeRequest từ ShippingCalculateRequest
             GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
             ghnRequest.setToDistrictId(request.getToDistrictId());

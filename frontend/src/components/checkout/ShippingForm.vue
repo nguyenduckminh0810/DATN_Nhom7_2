@@ -142,7 +142,7 @@
         <!-- Notes -->
         <div class="form-group">
           <label class="form-label">Ghi chú</label>
-          <textarea class="form-control" 
+          <textarea class="form-control"   
                     rows="3" 
                     v-model="shippingInfo.notes"
                     placeholder="Ghi chú (tùy chọn)"></textarea>
@@ -162,8 +162,13 @@ import { useUserStore } from '@/stores/user'
 // Get user store
 const userStore = useUserStore()
 
-// Initialize shipping composable
+// Try to get shipping instance from parent Cart.vue
+const injectedShipping = inject('shipping', null)
+
+// Initialize shipping composable - SỬ DỤNG INSTANCE TỪ CART.VUE NẾU CÓ
 console.log('🚀 ShippingForm component initializing...')
+const shipping = injectedShipping || useShipping()
+
 const {
   provinces,
   districts,
@@ -179,8 +184,9 @@ const {
   loadProvinces,
   loadDistricts,
   loadWards,
+  loadServices,
   calculateShippingFee,
-} = useShipping()
+} = shipping
 
 console.log('✅ useShipping initialized. Provinces:', provinces.value.length)
 
@@ -244,8 +250,18 @@ const onProvinceChange = async () => {
 }
 
 const onDistrictChange = async () => {
+  console.log('🔔 onDistrictChange called, selectedDistrict:', selectedDistrict.value)
   if (selectedDistrict.value) {
     await loadWards(selectedDistrict.value)
+    
+    // Load available services cho district này
+    console.log('📞 Calling loadServices with districtId:', selectedDistrict.value)
+    try {
+      await loadServices(selectedDistrict.value)
+      console.log('✅ loadServices completed')
+    } catch (error) {
+      console.error('❌ loadServices failed:', error)
+    }
     
     // Update shippingInfo với tên quận/huyện
     const district = districts.value.find(d => d.DistrictID === selectedDistrict.value)
@@ -263,14 +279,33 @@ const onWardChange = async () => {
       shippingInfo.value.ward = ward.WardName
     }
     
+    // LOG THÔNG TIN TRƯỚC KHI TÍNH PHÍ
+    console.log('=== onWardChange - CALCULATING SHIPPING FEE ===')
+    console.log('🛒 Cart items:', items.value.length)
+    console.log('✅ Selected items:', items.value.filter(item => item.selected !== false).length)
+    console.log('⚖️ Total weight:', totalWeight.value, 'grams')
+    console.log('💰 Total value:', total.value, '₫')
+    console.log('📦 Items detail:', items.value.map(item => ({
+      name: item.productName,
+      selected: item.selected,
+      weight: item.weight || 500,
+      quantity: item.quantity
+    })))
+    
     // Auto calculate shipping fee when address is complete
     try {
-      await calculateShippingFee({
+      const result = await calculateShippingFee({
         totalWeight: totalWeight.value,
         insuranceValue: total.value,
       })
+      
+      if (!result.success) {
+        console.warn('⚠️ Cannot calculate shipping fee:', result.error)
+        // Error message đã được set trong errors.calculating
+      }
     } catch (error) {
-      console.error('Error calculating shipping fee:', error)
+      console.error('❌ Error calculating shipping fee:', error)
+      // Error message đã được set trong errors.calculating
     }
   }
 }
