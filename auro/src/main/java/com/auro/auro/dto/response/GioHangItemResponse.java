@@ -12,6 +12,7 @@ public class GioHangItemResponse {
     private BigDecimal thanhTien;
     private String image; // Ảnh sản phẩm
     private Integer tonKho; // Tồn kho của biến thể
+    private Integer trongLuong; // Trọng lượng sản phẩm (gram) - ước tính cho shipping
 
     public Long getId() {
         return id;
@@ -83,5 +84,13 @@ public class GioHangItemResponse {
 
     public void setTonKho(Integer tonKho) {
         this.tonKho = tonKho;
+    }
+
+    public Integer getTrongLuong() {
+        return trongLuong;
+    }
+
+    public void setTrongLuong(Integer trongLuong) {
+        this.trongLuong = trongLuong;
     }
 }

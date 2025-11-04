@@ -75,8 +75,10 @@ import OrderSummary from '@/components/checkout/OrderSummary.vue'
 const { items, isEmpty, loadCartFromAPI } = useCart()
 const userStore = useUserStore()
 
-// Sử dụng shipping composable
-const { shippingFee, expectedDeliveryTime } = useShipping()
+console.log('🛒 Cart.vue - isEmpty:', isEmpty.value, 'items:', items.value.length)
+
+// Sử dụng shipping composable - TẠO MỘT INSTANCE DUY NHẤT
+const shipping = useShipping()
 
 // Thông tin form giao hàng - để OrderSummary có thể truy cập
 const shippingFormData = ref({
@@ -90,10 +92,13 @@ const shippingFormData = ref({
 // Phương thức thanh toán được chọn
 const selectedPaymentMethod = ref(null)
 
-// Provide shipping info để OrderSummary có thể sử dụng
+// Provide toàn bộ shipping instance để tất cả components dùng chung
+provide('shipping', shipping)
+
+// Provide shipping info để OrderSummary có thể sử dụng (backward compatibility)
 provide('shippingInfo', {
-  shippingFee,
-  expectedDeliveryTime
+  shippingFee: shipping.shippingFee,
+  expectedDeliveryTime: shipping.expectedDeliveryTime
 })
 
 // Provide form data để OrderSummary có thể validate và submit

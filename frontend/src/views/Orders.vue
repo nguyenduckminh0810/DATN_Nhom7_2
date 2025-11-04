@@ -379,14 +379,27 @@ const fetchOrders = async () => {
     error.value = null
     
     console.log('🔄 Fetching orders...')
+    console.log('🔑 Current user:', userStore.user)
+    console.log('🔑 Token exists:', !!localStorage.getItem('auro_token'))
+    
     const response = await orderService.getMyOrders()
     console.log('📦 Full API response:', response)
+    console.log('📦 Response type:', typeof response)
+    console.log('📦 Response keys:', response ? Object.keys(response) : 'null')
     console.log('📦 Response.data:', response.data)
     console.log('📦 Response.data type:', typeof response.data)
     console.log('📦 Response.data.content:', response.data?.content)
+    console.log('📦 Response.data.totalElements:', response.data?.totalElements)
     
     // Backend returns paginated data
-    const orderData = response.data?.content || response.data || []
+    let orderData = response.data?.content || response.data || []
+    
+    // Check if response is the paginated object itself
+    if (response.content && Array.isArray(response.content)) {
+      console.log('⚠️ Response is paginated object itself, using response.content')
+      orderData = response.content
+    }
+    
     console.log('📋 Order data array:', orderData)
     console.log('📋 Order data length:', orderData.length)
     console.log('📋 Is array?:', Array.isArray(orderData))
@@ -398,15 +411,15 @@ const fetchOrders = async () => {
       orderDate: order.taoLuc || order.createdAt,
       status: mapBackendStatus(order.trangThai),
       subtotal: order.tamTinh || 0,
-      shippingFee: 0, // Backend không có field phiShip riêng
-      discount: 0, // Backend không có field giảm giá riêng
+      shippingFee: order.phiVanChuyen || 0,
+      discount: order.giamGiaTong || 0,
       total: order.tongThanhToan || 0,
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
       items: order.chiTietList?.map(item => ({
         id: item.id,
         name: item.tenSanPham || 'Sản phẩm',
-        image: 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
+        image: item.hinhAnh || 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
         price: item.donGia || 0,
         quantity: item.soLuong || 1,
         subtotal: item.thanhTien || 0,
@@ -416,6 +429,11 @@ const fetchOrders = async () => {
     }))
     
     console.log('✅ Mapped orders:', orders.value)
+    console.log('📊 First order details:', orders.value[0])
+    if (orders.value.length > 0) {
+      console.log('💰 Shipping fee:', orders.value[0].shippingFee)
+      console.log('🖼️ First item image:', orders.value[0].items[0]?.image)
+    }
     
     // Debug: Check if user actually has no orders
     if (orders.value.length === 0) {

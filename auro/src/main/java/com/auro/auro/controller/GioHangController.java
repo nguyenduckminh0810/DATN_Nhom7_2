@@ -88,6 +88,36 @@ public class GioHangController {
                     dto.setTonKho(item.getBienThe().getSoLuongTon());
                 }
 
+                // Ước tính trọng lượng sản phẩm (gram) dựa trên danh mục
+                Integer trongLuong = 500; // Mặc định 500g
+                if (item.getBienThe() != null && item.getBienThe().getSanPham() != null
+                        && item.getBienThe().getSanPham().getDanhMuc() != null) {
+                    String tenDanhMuc = item.getBienThe().getSanPham().getDanhMuc().getTen().toLowerCase();
+
+                    // Ước tính dựa trên loại sản phẩm
+                    if (tenDanhMuc.contains("áo thun") || tenDanhMuc.contains("t-shirt")) {
+                        trongLuong = 200; // Áo thun nhẹ: 200g
+                    } else if (tenDanhMuc.contains("áo sơ mi") || tenDanhMuc.contains("shirt")) {
+                        trongLuong = 250; // Áo sơ mi: 250g
+                    } else if (tenDanhMuc.contains("áo khoác") || tenDanhMuc.contains("jacket")) {
+                        trongLuong = 600; // Áo khoác: 600g
+                    } else if (tenDanhMuc.contains("hoodie") || tenDanhMuc.contains("sweater")) {
+                        trongLuong = 500; // Hoodie: 500g
+                    } else if (tenDanhMuc.contains("quần jean") || tenDanhMuc.contains("jeans")) {
+                        trongLuong = 600; // Quần jean: 600g
+                    } else if (tenDanhMuc.contains("quần") || tenDanhMuc.contains("pants")) {
+                        trongLuong = 400; // Quần thường: 400g
+                    } else if (tenDanhMuc.contains("váy") || tenDanhMuc.contains("dress")) {
+                        trongLuong = 300; // Váy: 300g
+                    } else if (tenDanhMuc.contains("phụ kiện")) {
+                        trongLuong = 100; // Phụ kiện nhỏ: 100g
+                    }
+
+                    System.out.println("🎯 [WEIGHT] Product: " + tenSP + " | Category: " + tenDanhMuc
+                            + " | Estimated weight: " + trongLuong + "g");
+                }
+                dto.setTrongLuong(trongLuong);
+
                 StringBuilder tt = new StringBuilder();
                 if (item.getBienThe() != null && item.getBienThe().getMauSac() != null) {
                     tt.append("Màu: ").append(item.getBienThe().getMauSac().getTen());

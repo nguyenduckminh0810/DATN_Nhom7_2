@@ -1,4 +1,4 @@
-package com.auro.dto;
+package com.auro.auro.dto.response;
 
 import lombok.Data;
 

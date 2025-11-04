@@ -17,6 +17,14 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
 
     Page<DonHang> findByKhachHang_Id(Long idKhachHang, Pageable pageable);
 
+    @Query("SELECT DISTINCT dh FROM DonHang dh " +
+            "LEFT JOIN FETCH dh.chiTietList ct " +
+            "LEFT JOIN FETCH ct.bienThe bt " +
+            "LEFT JOIN FETCH bt.sanPham sp " +
+            "WHERE dh.khachHang.id = :khachHangId " +
+            "ORDER BY dh.taoLuc DESC")
+    List<DonHang> findByKhachHang_IdWithDetails(Long khachHangId);
+
     Page<DonHang> findByTrangThai(String trangThai, Pageable pageable);
 
     Page<DonHang> findByDatLucBetween(LocalDateTime from, LocalDateTime to, Pageable pageable);

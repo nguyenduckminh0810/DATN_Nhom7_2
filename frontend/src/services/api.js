@@ -20,13 +20,18 @@ class ApiService {
       (config) => {
         const method = (config.method || 'get').toLowerCase()
         const url = config.url || ''
-        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh']
+        
+        // Public endpoints không cần JWT token
+        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping']
+        const publicPrefixes = ['/shipping'] // Public cho tất cả methods (GET, POST, etc.)
+        
         const isPublicGet = method === 'get' && publicGetPrefixes.some((p) => url.startsWith(p))
+        const isPublicEndpoint = publicPrefixes.some((p) => url.startsWith(p))
 
         const token = localStorage.getItem('auro_token')
         
-        // Luôn gửi token nếu có (trừ public GET endpoints)
-        if (token && !isPublicGet) {
+        // Luôn gửi token nếu có (trừ public endpoints)
+        if (token && !isPublicGet && !isPublicEndpoint) {
           config.headers.Authorization = `Bearer ${token}`
           console.log('🔑 Token added to request:', config.url)
           
@@ -45,7 +50,7 @@ class ApiService {
           if (config.headers && 'Authorization' in config.headers) {
             delete config.headers.Authorization
           }
-          if (!isPublicGet) {
+          if (!isPublicGet && !isPublicEndpoint) {
             console.log('⚠️ No token available for request:', config.url)
           }
         }

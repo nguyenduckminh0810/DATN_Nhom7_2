@@ -137,14 +137,10 @@ const subtotal = computed(() => {
     .reduce((total, item) => total + (item.price * item.quantity), 0)
 })
 
-// Sử dụng shipping fee từ GHN API hoặc default
+// Sử dụng shipping fee từ GHN API
 const shippingFee = computed(() => {
-  // Nếu có phí ship từ GHN API thì dùng
-  if (shippingInfo.shippingFee.value > 0) {
-    return shippingInfo.shippingFee.value
-  }
-  // Nếu không thì dùng logic cũ
-  return subtotal.value >= 500000 ? 0 : 30000
+  // Luôn dùng phí ship từ GHN API (mặc định 0 nếu chưa tính)
+  return shippingInfo.shippingFee.value || 0
 })
 
 // Tính toán giảm giá dựa trên voucher

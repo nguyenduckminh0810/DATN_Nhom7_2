@@ -199,10 +199,10 @@ import { useCart } from '@/composables/useCart'
 
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
 
-// Ensure all items have selected property
+// Ensure all items have selected property - MẶC ĐỊNH LÀ TRUE (đã chọn)
 items.value.forEach(item => {
   if (item.selected === undefined) {
-    item.selected = false
+    item.selected = true  // Mặc định tất cả sản phẩm được chọn
   }
 })
 

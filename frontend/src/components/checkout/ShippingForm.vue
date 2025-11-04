@@ -102,7 +102,7 @@
             </div>
           </div>
 
-          <!-- Shipping Fee Display - Shopee GHN Style -->
+          <!-- Shipping Fee Display - Simple GHN Style -->
           <div v-if="shippingFee > 0" class="shipping-fee-card mt-3">
             <!-- Main Fee Display -->
             <div class="fee-header">
@@ -111,77 +111,6 @@
                 <span>Phí vận chuyển</span>
               </div>
               <div class="fee-main-amount">{{ formattedShippingFee }}</div>
-            </div>
-
-            <!-- Fee Breakdown - Collapsible -->
-            <div class="fee-breakdown">
-              <button 
-                type="button"
-                class="breakdown-toggle"
-                @click="showBreakdown = !showBreakdown"
-              >
-                <span>{{ showBreakdown ? 'Ẩn' : 'Xem' }} chi tiết phí</span>
-                <i class="bi" :class="showBreakdown ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
-              </button>
-
-              <transition name="slide-fade">
-                <div v-if="showBreakdown" class="breakdown-details">
-                  <div class="breakdown-item">
-                    <span class="item-label">
-                      <i class="bi bi-box-seam"></i>
-                      Phí cơ bản
-                    </span>
-                    <span class="item-value">20,000₫</span>
-                  </div>
-                  
-                  <div class="breakdown-item" v-if="provinceFeeAmount > 0">
-                    <span class="item-label">
-                      <i class="bi bi-geo-alt"></i>
-                      Phí khoảng cách ({{ currentProvinceName }})
-                    </span>
-                    <span class="item-value">{{ formatMoney(provinceFeeAmount) }}</span>
-                  </div>
-                  
-                  <div class="breakdown-item" v-if="districtFeeAmount > 0">
-                    <span class="item-label">
-                      <i class="bi bi-building"></i>
-                      Phí quận/huyện
-                    </span>
-                    <span class="item-value">{{ formatMoney(districtFeeAmount) }}</span>
-                  </div>
-                  
-                  <div class="breakdown-item" v-if="wardFeeAmount > 0">
-                    <span class="item-label">
-                      <i class="bi bi-pin-map"></i>
-                      Phí xã/phường ({{ wardPositionText }})
-                    </span>
-                    <span class="item-value">{{ formatMoney(wardFeeAmount) }}</span>
-                  </div>
-                  
-                  <div class="breakdown-item">
-                    <span class="item-label">
-                      <i class="bi bi-boxes"></i>
-                      Phí trọng lượng ({{ formatWeight(totalWeight) }})
-                    </span>
-                    <span class="item-value">{{ formatMoney(weightFeeAmount) }}</span>
-                  </div>
-                  
-                  <div class="breakdown-item" v-if="insuranceFeeAmount > 0">
-                    <span class="item-label">
-                      <i class="bi bi-shield-check"></i>
-                      Phí bảo hiểm
-                    </span>
-                    <span class="item-value">{{ formatMoney(insuranceFeeAmount) }}</span>
-                  </div>
-                  
-                  <div class="breakdown-divider"></div>
-                  
-                  <div class="breakdown-item breakdown-total">
-                    <span class="item-label">Tổng cộng</span>
-                    <span class="item-value total">{{ formattedShippingFee }}</span>
-                  </div>
-                </div>
-              </transition>
             </div>
 
             <!-- Delivery Time -->
@@ -195,6 +124,12 @@
               <i class="bi bi-lightning-charge-fill"></i>
               <span>Giao hàng nhanh bởi GHN</span>
             </div>
+            
+            <!-- Shipping Info Note -->
+            <div class="shipping-info-note">
+              <i class="bi bi-info-circle"></i>
+              <span>Phí vận chuyển được tính dựa trên địa chỉ giao hàng và trọng lượng đơn hàng ({{ formatWeight(totalWeight) }})</span>
+            </div>
           </div>
 
           <!-- Error Display -->
@@ -207,7 +142,7 @@
         <!-- Notes -->
         <div class="form-group">
           <label class="form-label">Ghi chú</label>
-          <textarea class="form-control" 
+          <textarea class="form-control"   
                     rows="3" 
                     v-model="shippingInfo.notes"
                     placeholder="Ghi chú (tùy chọn)"></textarea>
@@ -227,7 +162,13 @@ import { useUserStore } from '@/stores/user'
 // Get user store
 const userStore = useUserStore()
 
-// Initialize shipping composable
+// Try to get shipping instance from parent Cart.vue
+const injectedShipping = inject('shipping', null)
+
+// Initialize shipping composable - SỬ DỤNG INSTANCE TỪ CART.VUE NẾU CÓ
+console.log('🚀 ShippingForm component initializing...')
+const shipping = injectedShipping || useShipping()
+
 const {
   provinces,
   districts,
@@ -243,8 +184,11 @@ const {
   loadProvinces,
   loadDistricts,
   loadWards,
+  loadServices,
   calculateShippingFee,
-} = useShipping()
+} = shipping
+
+console.log('✅ useShipping initialized. Provinces:', provinces.value.length)
 
 // Initialize cart composable with fallback
 const cart = useCart()
@@ -263,122 +207,7 @@ const shippingInfo = shippingFormData || ref({
   notes: ''
 })
 
-// UI state
-const showBreakdown = ref(false)
-
-// Fee breakdown amounts (mock calculation)
-const provinceFeeAmount = computed(() => {
-  if (!selectedProvince.value) return 0
-  
-  const bigCities = [202, 201, 203, 204]
-  if (bigCities.includes(selectedProvince.value)) return 0
-  
-  if ([269, 271, 273, 275, 277, 279, 281, 283, 285, 287, 289, 291, 293, 295, 297, 299, 301, 303, 305, 307, 380, 382, 384, 386].includes(selectedProvince.value)) {
-    return 30000
-  }
-  if ([309, 311, 313, 315, 317, 319, 321, 323, 325, 327, 329, 331, 333].includes(selectedProvince.value)) {
-    return 40000
-  }
-  if ([335, 337, 339, 341, 343].includes(selectedProvince.value)) {
-    return 45000
-  }
-  if ([345, 347, 349, 351, 353, 355, 357, 359, 361, 363, 365, 367, 369, 371, 373, 375, 377].includes(selectedProvince.value)) {
-    return 25000
-  }
-  return 35000
-})
-
-const districtFeeAmount = computed(() => {
-  if (!selectedDistrict.value) return 0
-  
-  const districtName = districts.value.find(d => d.DistrictID === selectedDistrict.value)?.DistrictName || ''
-  
-  if (districtName.includes('Quận 1') || districtName.includes('Hoàn Kiếm') || 
-      districtName.includes('Hải Châu') || districtName.includes('Ninh Kiều')) {
-    return 0
-  }
-  if (districtName.includes('Quận') || districtName.startsWith('TP ')) {
-    return 5000
-  }
-  if (districtName.includes('Huyện') || districtName.includes('TX ')) {
-    return 10000
-  }
-  return 8000
-})
-
-const wardFeeAmount = computed(() => {
-  if (!selectedWard.value || wards.value.length === 0) return 0
-  
-  const wardIndex = wards.value.findIndex(w => w.WardCode === selectedWard.value)
-  const totalWards = wards.value.length
-  const wardName = wards.value[wardIndex]?.WardName || ''
-  const distanceRatio = totalWards > 1 ? wardIndex / (totalWards - 1) : 0
-  
-  let fee = 0
-  
-  if (wardName.includes('Phường') && !wardName.includes('Xã')) {
-    if (wardName.includes('Bến Nghé') || wardName.includes('Bến Thành') || 
-        wardName.includes('Hàng Bạc') || wardName.includes('Hàng Gai')) {
-      fee = 0
-    } else {
-      fee = Math.round(1000 + distanceRatio * 3000)
-    }
-  } else if (wardName.includes('Thị trấn')) {
-    fee = Math.round(2000 + distanceRatio * 3000)
-  } else if (wardName.includes('Xã')) {
-    if (wardName.includes('Sơn') || wardName.includes('Thượng') || 
-        wardName.includes('Cao') || wardName.includes('Núi')) {
-      fee = Math.round(5000 + distanceRatio * 5000)
-    } else {
-      fee = Math.round(3000 + distanceRatio * 4000)
-    }
-  } else {
-    fee = Math.round(2000 + distanceRatio * 3000)
-  }
-  
-  return Math.round(fee / 500) * 500
-})
-
-const weightFeeAmount = computed(() => {
-  return Math.ceil(totalWeight.value / 1000) * 5000
-})
-
-const insuranceFeeAmount = computed(() => {
-  return total.value > 3000000 ? Math.ceil(total.value * 0.005) : 0
-})
-
-const currentProvinceName = computed(() => {
-  return provinces.value.find(p => p.ProvinceID === selectedProvince.value)?.ProvinceName || ''
-})
-
-const wardPositionText = computed(() => {
-  if (!selectedWard.value || wards.value.length === 0) return ''
-  
-  const wardIndex = wards.value.findIndex(w => w.WardCode === selectedWard.value)
-  const totalWards = wards.value.length
-  const distanceRatio = totalWards > 1 ? wardIndex / (totalWards - 1) : 0
-  const distancePercent = Math.round(distanceRatio * 100)
-  
-  if (distancePercent === 0) return 'Gần nhất'
-  if (distancePercent < 30) return 'Gần'
-  if (distancePercent < 70) return 'Trung bình'
-  if (distancePercent < 100) return 'Xa'
-  return 'Xa nhất'
-})
-
-const formatMoney = (amount) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(amount)
-}
-
-const formatWeight = (grams) => {
-  if (grams >= 1000) {
-    return `${(grams / 1000).toFixed(1)}kg`
-  }
-  return `${grams}g`
-}
+// UI state (removed showBreakdown as no longer needed)
 
 // Calculate total weight from cart items - ONLY selected items
 const totalWeight = computed(() => {
@@ -400,6 +229,14 @@ const totalWeight = computed(() => {
   }, 0)
 })
 
+// Format weight helper
+const formatWeight = (grams) => {
+  if (grams >= 1000) {
+    return `${(grams / 1000).toFixed(1)}kg`
+  }
+  return `${grams}g`
+}
+
 const onProvinceChange = async () => {
   if (selectedProvince.value) {
     await loadDistricts(selectedProvince.value)
@@ -413,8 +250,18 @@ const onProvinceChange = async () => {
 }
 
 const onDistrictChange = async () => {
+  console.log('🔔 onDistrictChange called, selectedDistrict:', selectedDistrict.value)
   if (selectedDistrict.value) {
     await loadWards(selectedDistrict.value)
+    
+    // Load available services cho district này
+    console.log('📞 Calling loadServices with districtId:', selectedDistrict.value)
+    try {
+      await loadServices(selectedDistrict.value)
+      console.log('✅ loadServices completed')
+    } catch (error) {
+      console.error('❌ loadServices failed:', error)
+    }
     
     // Update shippingInfo với tên quận/huyện
     const district = districts.value.find(d => d.DistrictID === selectedDistrict.value)
@@ -432,14 +279,33 @@ const onWardChange = async () => {
       shippingInfo.value.ward = ward.WardName
     }
     
+    // LOG THÔNG TIN TRƯỚC KHI TÍNH PHÍ
+    console.log('=== onWardChange - CALCULATING SHIPPING FEE ===')
+    console.log('🛒 Cart items:', items.value.length)
+    console.log('✅ Selected items:', items.value.filter(item => item.selected !== false).length)
+    console.log('⚖️ Total weight:', totalWeight.value, 'grams')
+    console.log('💰 Total value:', total.value, '₫')
+    console.log('📦 Items detail:', items.value.map(item => ({
+      name: item.productName,
+      selected: item.selected,
+      weight: item.weight || 500,
+      quantity: item.quantity
+    })))
+    
     // Auto calculate shipping fee when address is complete
     try {
-      await calculateShippingFee({
+      const result = await calculateShippingFee({
         totalWeight: totalWeight.value,
         insuranceValue: total.value,
       })
+      
+      if (!result.success) {
+        console.warn('⚠️ Cannot calculate shipping fee:', result.error)
+        // Error message đã được set trong errors.calculating
+      }
     } catch (error) {
-      console.error('Error calculating shipping fee:', error)
+      console.error('❌ Error calculating shipping fee:', error)
+      // Error message đã được set trong errors.calculating
     }
   }
 }
@@ -800,6 +666,25 @@ select:focus {
 .shipping-badge i {
   font-size: 1rem;
   animation: pulse 2s infinite;
+}
+
+.shipping-info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: #f0f7ff;
+  border-top: 1px solid #d1e7ff;
+  font-size: 0.85rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.shipping-info-note i {
+  color: #2196f3;
+  font-size: 0.95rem;
+  margin-top: 0.15rem;
+  flex-shrink: 0;
 }
 
 @keyframes pulse {
