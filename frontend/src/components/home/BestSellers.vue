@@ -10,39 +10,56 @@
     
     <!-- Full-width products carousel -->
     <div class="products-carousel-container">
-      <button class="section-nav-btn prev" @click="scrollProducts('prev')">
+      <button 
+        class="section-nav-btn prev" 
+        @click="scrollProducts('prev')"
+        :disabled="products.length <= 5"
+      >
         ‹
       </button>
       
-        <div class="section-list products-grid" ref="productsGrid" @scroll="handleScroll">
-          <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
-            <div class="skeleton-image"></div>
-            <div class="skeleton-content">
-              <div class="skeleton-title"></div>
-              <div class="skeleton-price"></div>
-            </div>
+      <div class="section-list products-grid" :class="{ 'centered': products.length <= 5 }" ref="productsGrid">
+        <!-- Skeleton Loading -->
+        <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
+          <div class="skeleton-image"></div>
+          <div class="skeleton-content">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-price"></div>
           </div>
-          
-          <ProductCard
-            v-else
-            v-for="(product, index) in displayProducts"
-            :key="`${product.id}-${index}`"
-            :id="product.id"
-            :name="product.name"
-            :img="product.image"
-            :hover-img="product.hoverImage"
-            :price-now="product.price"
-            :price-old="product.originalPrice"
-            :discount="product.discount"
-            :promotional-badge="product.promotionalBadge"
-            :color-options="product.colorOptions"
-            :sizes="product.sizes"
-            :available-sizes="product.availableSizes"
-            :color-size-mapping="product.colorSizeMapping"
-          />
         </div>
+        
+        <!-- Error State -->
+        <div v-else-if="error" class="error-state">
+          <p>{{ error }}</p>
+          <button @click="fetchBestSellers" class="btn-retry">Thử lại</button>
+        </div>
+        
+        <!-- Product Cards -->
+        <ProductCard
+          v-else
+          v-for="(product, index) in displayProducts"
+          :key="`${product.id}-${index}`"
+          :id="product.id"
+          :name="product.ten"
+          :img="getProductImage(product)"
+          :hover-img="getProductHoverImage(product)"
+          :price-now="product.gia"
+          :price-old="calculateOriginalPrice(product)"
+          :discount="calculateDiscount(product)"
+          :promotional-badge="getPromotionalBadge(product)"
+          :color-options="getColorOptions(product)"
+          :sizes="getSizes(product)"
+          :available-sizes="getAvailableSizes(product)"
+          :color-size-mapping="getColorSizeMapping(product)"
+          :stock="product.tonKho || 0"
+        />
+      </div>
       
-      <button class="section-nav-btn next" @click="scrollProducts('next')">
+      <button 
+        class="section-nav-btn next" 
+        @click="scrollProducts('next')"
+        :disabled="products.length <= 5"
+      >
         ›
       </button>
     </div>
@@ -50,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useProductStore } from '../../stores/product'
 import ProductCard from '../product/ProductCard.vue'
 
@@ -61,186 +78,38 @@ const loading = ref(true)
 const error = ref(null)
 const productsGrid = ref(null)
 const currentIndex = ref(0)
-const showButtons = ref(false)
 
+// Fetch best sellers from API
 const fetchBestSellers = async () => {
   try {
     loading.value = true
     error.value = null
     
-    // Fetch best sellers from API - can use getFeatured or getAll with sort
-    const result = await productStore.fetchProducts({ sort: 'bestseller', limit: 10 })
+    const result = await productStore.fetchBestSellers({ 
+      page: 0, 
+      size: 10 
+    })
     
     if (result.success && result.data?.products) {
       products.value = result.data.products
     } else {
-      // Fallback mock data for development when API is not ready
-      console.warn('API not available, using mock data for BestSellers')
-      products.value = [
-        {
-          id: 1,
-          name: 'Áo thun nam cao cấp',
-          image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&h=600&fit=crop',
-          price: 299000,
-          originalPrice: 399000,
-          discount: 25,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#dc3545', '#007bff', '#28a745'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-          colorSizeMapping: {
-            '#dc3545': ['S', 'M', 'L'],
-            '#007bff': ['M', 'L', 'XL', '2XL'],
-            '#28a745': ['L', 'XL', '2XL', '3XL']
-          }
-        },
-        {
-          id: 2,
-          name: 'Quần short nữ thể thao',
-          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-          price: 199000,
-          originalPrice: 299000,
-          discount: 33,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#ff69b4', '#007bff', '#000000'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL'],
-          colorSizeMapping: {
-            '#ff69b4': ['S', 'M', 'L'],
-            '#007bff': ['M', 'L', 'XL'],
-            '#000000': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 3,
-          name: 'Áo khoác nam dài tay',
-          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-          price: 599000,
-          originalPrice: 799000,
-          discount: 25,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-          colorOptions: ['#000000', '#808080', '#8b4513'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#000000': ['L', 'XL', '2XL'],
-            '#808080': ['XL', '2XL', '3XL'],
-            '#8b4513': ['2XL', '3XL']
-          }
-        },
-        {
-          id: 4,
-          name: 'Váy nữ công sở',
-          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          price: 399000,
-          originalPrice: 499000,
-          discount: 20,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#000000', '#ffffff', '#ff69b4'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-          colorSizeMapping: {
-            '#000000': ['S', 'M', 'L'],
-            '#ffffff': ['M', 'L', 'XL'],
-            '#ff69b4': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 5,
-          name: 'Áo sơ mi nam trắng',
-          image: 'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1621184455862-c163dfb30e0f?w=500&h=600&fit=crop',
-          price: 249000,
-          originalPrice: 349000,
-          discount: 29,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#ffffff', '#000000', '#007bff'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#ffffff': ['S', 'M', 'L', 'XL'],
-            '#000000': ['M', 'L', 'XL', '2XL'],
-            '#007bff': ['L', 'XL', '2XL', '3XL']
-          }
-        }
-      ]
+      error.value = result.message || 'Không thể tải sản phẩm bán chạy'
     }
   } catch (err) {
-    // Fallback mock data for development
-    console.warn('API error, using mock data for BestSellers:', err.message)
-    products.value = [
-      {
-        id: 1,
-        name: 'Áo thun nam cao cấp',
-        image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=500&h=600&fit=crop',
-        price: 299000,
-        originalPrice: 399000,
-        discount: 25,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-        colorOptions: ['#dc3545', '#007bff', '#28a745'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-        colorSizeMapping: {
-          '#dc3545': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL', '2XL'],
-          '#28a745': ['L', 'XL', '2XL', '3XL']
-        }
-      },
-      {
-        id: 2,
-        name: 'Quần short nữ thể thao',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 199000,
-        originalPrice: 299000,
-        discount: 33,
-        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-        colorOptions: ['#ff69b4', '#007bff', '#000000'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL'],
-          '#000000': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 3,
-        name: 'Áo khoác nam dài tay',
-        image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-        price: 599000,
-        originalPrice: 799000,
-        discount: 25,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-        colorOptions: ['#000000', '#808080', '#8b4513'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['L', 'XL', '2XL', '3XL'],
-        colorSizeMapping: {
-          '#000000': ['L', 'XL', '2XL'],
-          '#808080': ['XL', '2XL', '3XL'],
-          '#8b4513': ['2XL', '3XL']
-        }
-      }
-    ]
+    console.error('Error fetching best sellers:', err)
+    error.value = 'Đã có lỗi xảy ra khi tải dữ liệu'
   } finally {
     loading.value = false
   }
 }
 
+// Navigation functions
 const scrollProducts = (direction) => {
-  // For fixed layout, we need to cycle through products
-  // This will be handled by changing the displayed products
+  if (products.value.length <= 5) return
+  
   if (direction === 'next') {
-    // Move to next set of products
     currentIndex.value = (currentIndex.value + 1) % products.value.length
   } else {
-    // Move to previous set of products
     currentIndex.value = (currentIndex.value - 1 + products.value.length) % products.value.length
   }
 }
@@ -249,48 +118,113 @@ const scrollProducts = (direction) => {
 const displayProducts = computed(() => {
   if (products.value.length === 0) return []
   
+  const displayCount = Math.min(5, products.value.length)
   const result = []
-  for (let i = 0; i < 5; i++) {
+  
+  for (let i = 0; i < displayCount; i++) {
     const index = (currentIndex.value + i) % products.value.length
     result.push(products.value[index])
   }
+  
   return result
 })
 
-const handleScroll = () => {
-  // Disable scroll handling for fixed layout
-  // Cards are displayed in fixed positions with space-between
-  return
+// Helper functions to map backend data to component props
+const getProductImage = (product) => {
+  // Backend trả về anhDaiDien từ bảng hinh_anh
+  return product.anhDaiDien || 'https://via.placeholder.com/400x600?text=No+Image'
+}
+
+const getProductHoverImage = (product) => {
+  // Có thể thêm logic để lấy ảnh hover từ biến thể hoặc hình ảnh thứ 2
+  return null // Tạm thời không có hover image
+}
+
+const calculateOriginalPrice = (product) => {
+  // Tính giá gốc nếu có giảm giá
+  // Backend có thể cần thêm field giaGoc hoặc tính toán dựa trên promotion
+  return null // Tạm thời không có giá gốc
+}
+
+const calculateDiscount = (product) => {
+  // Tính % giảm giá
+  // Backend có thể cần thêm logic này
+  return null // Tạm thời không có discount
+}
+
+const getPromotionalBadge = (product) => {
+  // Lấy promotional badge từ backend (nếu có)
+  return null // Tạm thời không có badge
+}
+
+const getColorOptions = (product) => {
+  // Lấy màu sắc từ biến thể
+  if (!product.bienThes || product.bienThes.length === 0) return []
+  
+  const colors = new Set()
+  product.bienThes.forEach(bt => {
+    if (bt.colorHex) {
+      colors.add(bt.colorHex)
+    }
+  })
+  return Array.from(colors)
+}
+
+const getSizes = (product) => {
+  // Lấy tất cả sizes từ biến thể
+  if (!product.bienThes || product.bienThes.length === 0) {
+    return ['S', 'M', 'L', 'XL', '2XL', '3XL']
+  }
+  
+  const sizes = new Set()
+  product.bienThes.forEach(bt => {
+    if (bt.kichThuoc) {
+      sizes.add(bt.kichThuoc)
+    }
+  })
+  return Array.from(sizes)
+}
+
+const getAvailableSizes = (product) => {
+  // Lấy sizes có sẵn (còn tồn kho > 0)
+  if (!product.bienThes || product.bienThes.length === 0) {
+    return ['S', 'M', 'L', 'XL', '2XL', '3XL']
+  }
+  
+  const sizes = new Set()
+  product.bienThes.forEach(bt => {
+    if (bt.kichThuoc && bt.tonKho && bt.tonKho > 0) {
+      sizes.add(bt.kichThuoc)
+    }
+  })
+  return Array.from(sizes)
+}
+
+const getColorSizeMapping = (product) => {
+  // Mapping màu với size
+  if (!product.bienThes || product.bienThes.length === 0) return {}
+  
+  const mapping = {}
+  product.bienThes.forEach(bt => {
+    if (bt.colorHex && bt.kichThuoc) {
+      if (!mapping[bt.colorHex]) {
+        mapping[bt.colorHex] = []
+      }
+      if (!mapping[bt.colorHex].includes(bt.kichThuoc)) {
+        mapping[bt.colorHex].push(bt.kichThuoc)
+      }
+    }
+  })
+  return mapping
 }
 
 onMounted(() => {
   fetchBestSellers()
 })
-
-// Initialize infinite loop scroll position
-const startAutoScroll = () => {
-  if (productsGrid.value && products.value.length > 0) {
-    // Set initial scroll position to middle section for infinite loop
-    const container = productsGrid.value
-    const cardWidth = container.offsetWidth / 5
-    container.scrollLeft = products.value.length * cardWidth
-  }
-}
-
-// Watch for products to be loaded
-watch(products, () => {
-  if (products.value.length > 0) {
-    nextTick(() => {
-      startAutoScroll()
-    })
-  }
-})
 </script>
 
 <style scoped>
-/* BestSellers specific styles - only content styling */
-
-/* Ensure ProductCard buttons are clickable */
+/* Giữ nguyên CSS từ file gốc */
 .best-sellers-section {
   pointer-events: auto;
 }
@@ -298,6 +232,7 @@ watch(products, () => {
 .best-sellers-section * {
   pointer-events: auto;
 }
+
 .section-header {
   position: relative;
   display: flex;
@@ -346,10 +281,9 @@ watch(products, () => {
   scroll-behavior: smooth;
   width: 100%;
   padding: 0 20px;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   min-height: 500px;
-  /* Ensure ProductCard buttons are clickable */
   pointer-events: auto;
 }
 
@@ -357,99 +291,118 @@ watch(products, () => {
   pointer-events: auto;
 }
 
-/* Ensure ProductCard buttons are specifically clickable */
-.section-list .product-card .btn-add-to-cart,
-.section-list .product-card .btn-detail {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-  z-index: 10 !important;
-  position: relative !important;
+.section-nav-btn {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
 }
 
-/* ProductCard button styling */
-.section-list .product-card .btn-add-to-cart {
-  background: #007bff !important;
-  color: white !important;
+.section-nav-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.9);
+  transform: scale(1.1);
 }
 
-.section-list .product-card .btn-add-to-cart:hover {
-  background: #0056b3 !important;
+.section-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
-.section-list::-webkit-scrollbar {
-  display: none;
+.section-nav-btn.prev {
+  left: -25px;
 }
 
-/* ProductCard sizing for 5 cards layout */
-.section-list .product-card {
-  flex: 1;
-  max-width: calc((100vw - 40px - 80px) / 5); /* 40px padding + 80px gaps (4 gaps x 20px) */
-  min-width: calc((100vw - 40px - 80px) / 5);
+.section-nav-btn.next {
+  right: -25px;
 }
 
-/* Responsive breakpoints */
-@media (max-width: 1400px) {
-  .section-list .product-card {
-    flex: 1;
-    max-width: calc((100vw - 40px - 60px) / 4);
-    min-width: calc((100vw - 40px - 60px) / 4);
-  }
+.section-list :deep(.product-card) {
+  flex-shrink: 0 !important;
+  width: calc((100vw - 40px - 80px) / 5) !important;
+  max-width: calc((100vw - 40px - 80px) / 5) !important;
+  min-width: calc((100vw - 40px - 80px) / 5) !important;
 }
 
-@media (max-width: 1024px) {
-  .section-list .product-card {
-    flex: 1;
-    max-width: calc((100vw - 40px - 40px) / 3);
-    min-width: calc((100vw - 40px - 40px) / 3);
-  }
+.section-list.centered {
+  justify-content: center;
 }
 
-@media (max-width: 768px) {
-  .section-list .product-card {
-    flex: 1;
-    max-width: calc((100vw - 40px - 20px) / 2);
-    min-width: calc((100vw - 40px - 20px) / 2);
-  }
+/* Error State */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
+  width: 100%;
 }
 
-/* Responsive breakpoints - only for skeleton loading */
+.error-state p {
+  color: #dc3545;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
 
-/* Skeleton loading styles */
-.skeleton {
+.btn-retry {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-retry:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* Skeleton Styles */
+.section-list :deep(.skeleton) {
   background: #f8f9fa;
   border-radius: 24px;
   overflow: hidden;
-  width: 500px;
-  height: 650px; /* Giảm từ 700px để phù hợp với layout mới */
+  width: calc((100vw - 40px - 80px) / 5) !important;
+  height: 650px;
+  flex-shrink: 0;
 }
 
 .skeleton-image {
   width: 100%;
-  height: 580px; /* Tăng từ 550px để phù hợp với ảnh lớn hơn */
+  height: 580px;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
 
 .skeleton-content {
-  padding: 1rem; /* Giảm padding để phù hợp với product-info-section */
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem; /* Giảm gap như product-info-section */
-  border-top: 1px solid #f0f0f0; /* Đường phân cách */
+  gap: 0.5rem;
+  border-top: 1px solid #f0f0f0;
 }
 
 .skeleton-title {
-  height: 1.5rem; /* Giảm từ 2rem */
+  height: 1.5rem;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
-  margin-bottom: 0; /* Bỏ margin vì đã có gap */
 }
 
 .skeleton-price {
-  height: 1.25rem; /* Giảm từ 1.5rem */
+  height: 1.25rem;
   width: 60%;
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 200% 100%;
@@ -466,27 +419,44 @@ watch(products, () => {
   }
 }
 
-/* Mobile responsive adjustments */
+/* Responsive */
+@media (max-width: 1400px) {
+  .section-list :deep(.product-card),
+  .section-list :deep(.skeleton) {
+    width: calc((100vw - 40px - 60px) / 4) !important;
+    max-width: calc((100vw - 40px - 60px) / 4) !important;
+    min-width: calc((100vw - 40px - 60px) / 4) !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .section-list :deep(.product-card),
+  .section-list :deep(.skeleton) {
+    width: calc((100vw - 40px - 40px) / 3) !important;
+    max-width: calc((100vw - 40px - 40px) / 3) !important;
+    min-width: calc((100vw - 40px - 40px) / 3) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-list :deep(.product-card),
+  .section-list :deep(.skeleton) {
+    width: calc((100vw - 40px - 20px) / 2) !important;
+    max-width: calc((100vw - 40px - 20px) / 2) !important;
+    min-width: calc((100vw - 40px - 20px) / 2) !important;
+  }
+}
+
 @media (max-width: 576px) {
   .section-header {
     flex-direction: column;
     gap: 1rem;
-    text-align: center;
     margin-bottom: 2rem;
   }
   
   .btn-view-all {
     position: static;
     margin-top: 1rem;
-    align-self: center;
-  }
-  
-  .section-title {
-    font-size: 1.75rem;
-  }
-  
-  .best-sellers-section {
-    padding: 2rem 0;
   }
 }
 </style>

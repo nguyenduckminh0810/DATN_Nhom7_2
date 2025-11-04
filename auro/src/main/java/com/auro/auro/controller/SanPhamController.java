@@ -5,7 +5,6 @@ import com.auro.auro.dto.response.SanPhamResponse;
 import com.auro.auro.dto.response.SanPhamDetailResponse;
 import com.auro.auro.service.SanPhamService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Pageable;
 
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -92,5 +91,16 @@ public class SanPhamController {
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         sanPhamService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // Lấy sản phẩm bán chạy
+
+    @GetMapping("/ban-chay")
+    public ResponseEntity<Page<SanPhamResponse>> getBestSellers(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Page<SanPhamResponse> p = sanPhamService.getBestSellers(
+                PageRequest.of(page, size));
+        return ResponseEntity.ok(p);
     }
 }
