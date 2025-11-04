@@ -1,33 +1,36 @@
-import apiService from './api'
+import api from './api'
 
 /**
  * Service xử lý các API liên quan đến vận chuyển GHN (Giao Hàng Nhanh)
+ * Format giống cartService.js
  */
-class ShippingService {
+const shippingService = {
   /**
    * Lấy danh sách tỉnh/thành phố
-   * @returns {Promise<Array>} Danh sách tỉnh/thành phố
-   * @example
-   * const provinces = await shippingService.getProvinces()
-   * // [{ ProvinceID: 202, ProvinceName: "Hồ Chí Minh", Code: "SGN" }, ...]
    */
   async getProvinces() {
     try {
-      const response = await apiService.get('/shipping/provinces')
-      return response.data || []
+      console.log('🌐 [ShippingService] Fetching provinces from backend...')
+      const response = await api.shipping.getProvinces()
+      console.log('📦 [ShippingService] Backend response:', response)
+      
+      // api.shipping.getProvinces() trả về response.data rồi
+      // Backend format: { success, message, data }
+      if (response && response.success && response.data) {
+        console.log('✅ [ShippingService] Provinces:', response.data.length, 'items')
+        return response.data
+      } else {
+        console.warn('⚠️ [ShippingService] Unexpected response:', response)
+        return []
+      }
     } catch (error) {
-      console.error('Error fetching provinces:', error)
+      console.error('❌ [ShippingService] Error fetching provinces:', error)
       throw new Error(error.message || 'Không thể tải danh sách tỉnh/thành phố')
     }
-  }
+  },
 
   /**
    * Lấy danh sách quận/huyện theo tỉnh
-   * @param {number} provinceId - ID của tỉnh/thành phố
-   * @returns {Promise<Array>} Danh sách quận/huyện
-   * @example
-   * const districts = await shippingService.getDistricts(202)
-   * // [{ DistrictID: 1542, DistrictName: "Quận 1", ProvinceID: 202 }, ...]
    */
   async getDistricts(provinceId) {
     if (!provinceId) {
@@ -35,23 +38,24 @@ class ShippingService {
     }
 
     try {
-      const response = await apiService.get('/shipping/districts', {
-        params: { provinceId },
-      })
-      return response.data || []
+      console.log('🌐 [ShippingService] Fetching districts for province:', provinceId)
+      const response = await api.shipping.getDistricts(provinceId)
+      console.log('📦 [ShippingService] Districts response:', response)
+      
+      if (response && response.success && response.data) {
+        console.log('✅ [ShippingService] Districts:', response.data.length, 'items')
+        return response.data
+      } else {
+        return []
+      }
     } catch (error) {
-      console.error('Error fetching districts:', error)
+      console.error('❌ [ShippingService] Error fetching districts:', error)
       throw new Error(error.message || 'Không thể tải danh sách quận/huyện')
     }
-  }
+  },
 
   /**
    * Lấy danh sách phường/xã theo quận/huyện
-   * @param {number} districtId - ID của quận/huyện
-   * @returns {Promise<Array>} Danh sách phường/xã
-   * @example
-   * const wards = await shippingService.getWards(1542)
-   * // [{ WardCode: "21211", WardName: "Phường Bến Nghé", DistrictID: 1542 }, ...]
    */
   async getWards(districtId) {
     if (!districtId) {
@@ -59,23 +63,24 @@ class ShippingService {
     }
 
     try {
-      const response = await apiService.get('/shipping/wards', {
-        params: { districtId },
-      })
-      return response.data || []
+      console.log('🌐 [ShippingService] Fetching wards for district:', districtId)
+      const response = await api.shipping.getWards(districtId)
+      console.log('📦 [ShippingService] Wards response:', response)
+      
+      if (response && response.success && response.data) {
+        console.log('✅ [ShippingService] Wards:', response.data.length, 'items')
+        return response.data
+      } else {
+        return []
+      }
     } catch (error) {
-      console.error('Error fetching wards:', error)
+      console.error('❌ [ShippingService] Error fetching wards:', error)
       throw new Error(error.message || 'Không thể tải danh sách phường/xã')
     }
-  }
+  },
 
   /**
    * Lấy danh sách dịch vụ vận chuyển khả dụng
-   * @param {number} toDistrictId - ID quận/huyện đích
-   * @returns {Promise<Array>} Danh sách dịch vụ
-   * @example
-   * const services = await shippingService.getServices(1542)
-   * // [{ service_id: 53320, short_name: "Express", service_type_id: 2 }, ...]
    */
   async getServices(toDistrictId) {
     if (!toDistrictId) {
@@ -83,232 +88,161 @@ class ShippingService {
     }
 
     try {
-      const response = await apiService.get('/shipping/services', {
-        params: { toDistrictId },
-      })
-      return response.data || []
+      console.log('🌐 [ShippingService] Fetching services for district:', toDistrictId)
+      const response = await api.shipping.getServices(toDistrictId)
+      console.log('📦 [ShippingService] Services response:', response)
+      
+      if (response && response.success && response.data) {
+        console.log('✅ [ShippingService] Services:', response.data.length, 'items')
+        return response.data
+      } else {
+        return []
+      }
     } catch (error) {
-      console.error('Error fetching services:', error)
-      throw new Error(error.message || 'Không thể tải danh sách dịch vụ vận chuyển')
+      console.error('❌ [ShippingService] Error fetching services:', error)
+      throw new Error(error.message || 'Không thể tải danh sách dịch vụ')
     }
-  }
+  },
 
   /**
-   * Tính phí vận chuyển đơn giản
-   * @param {Object} data - Thông tin tính phí
-   * @param {number} data.toDistrictId - ID quận/huyện đích
-   * @param {string} data.toWardCode - Mã phường/xã đích
-   * @param {number} data.totalWeight - Tổng khối lượng (gram)
-   * @param {number} data.insuranceValue - Giá trị bảo hiểm (VNĐ)
-   * @param {number} data.serviceId - Mã dịch vụ (53320: Express, 53321: Standard)
-   * @returns {Promise<Object>} Thông tin phí vận chuyển
-   * @example
-   * const fee = await shippingService.calculateShippingFee({
-   *   toDistrictId: 1542,
-   *   toWardCode: "21211",
-   *   totalWeight: 500,
-   *   insuranceValue: 500000,
-   *   serviceId: 53320
-   * })
-   * // { success: true, shippingFee: 25000, serviceFee: 25000, ... }
+   * Tính phí vận chuyển
    */
   async calculateShippingFee(data) {
-    const { toDistrictId, toWardCode, totalWeight, insuranceValue, serviceId } = data
-
-    // Validation
-    if (!toDistrictId) throw new Error('To District ID is required')
-    if (!toWardCode) throw new Error('To Ward Code is required')
-    if (!totalWeight || totalWeight <= 0) throw new Error('Total Weight must be greater than 0')
-    if (insuranceValue === undefined || insuranceValue < 0) {
-      throw new Error('Insurance Value is required')
-    }
-    if (!serviceId) throw new Error('Service ID is required')
-
     try {
-      const response = await apiService.post('/shipping/calculate', {
-        toDistrictId,
-        toWardCode,
-        totalWeight,
-        insuranceValue,
-        serviceId,
-      })
-
-      return response
+      console.log('🌐 [ShippingService] Calculating shipping fee:', data)
+      const response = await api.shipping.calculate(data)
+      console.log('📦 [ShippingService] Calculate response:', response)
+      
+      if (response && response.success && response.data) {
+        console.log('✅ [ShippingService] Fee calculated:', response.data)
+        return response.data
+      } else {
+        throw new Error(response?.message || 'Không thể tính phí vận chuyển')
+      }
     } catch (error) {
-      console.error('Error calculating shipping fee:', error)
+      console.error('❌ [ShippingService] Error calculating fee:', error)
       throw new Error(error.message || 'Không thể tính phí vận chuyển')
     }
-  }
+  },
 
   /**
-   * Tính phí vận chuyển chi tiết (có kích thước hàng)
-   * @param {Object} data - Thông tin tính phí chi tiết
-   * @param {number} data.fromDistrictId - ID quận/huyện gửi
-   * @param {string} data.fromWardCode - Mã phường/xã gửi
-   * @param {number} data.toDistrictId - ID quận/huyện đích
-   * @param {string} data.toWardCode - Mã phường/xã đích
-   * @param {number} data.weight - Khối lượng (gram)
-   * @param {number} data.length - Chiều dài (cm)
-   * @param {number} data.width - Chiều rộng (cm)
-   * @param {number} data.height - Chiều cao (cm)
-   * @param {number} data.insuranceValue - Giá trị bảo hiểm (VNĐ)
-   * @param {number} data.serviceId - Mã dịch vụ
-   * @param {number} [data.serviceTypeId] - Loại dịch vụ (optional)
-   * @returns {Promise<Object>} Thông tin phí vận chuyển chi tiết
+   * Tính phí vận chuyển (full response)
    */
   async calculateShippingFeeFull(data) {
-    const {
-      fromDistrictId,
-      fromWardCode,
-      toDistrictId,
-      toWardCode,
-      weight,
-      length,
-      width,
-      height,
-      insuranceValue,
-      serviceId,
-      serviceTypeId,
-    } = data
-
-    // Validation
-    if (!fromDistrictId) throw new Error('From District ID is required')
-    if (!fromWardCode) throw new Error('From Ward Code is required')
-    if (!toDistrictId) throw new Error('To District ID is required')
-    if (!toWardCode) throw new Error('To Ward Code is required')
-    if (!weight || weight <= 0) throw new Error('Weight must be greater than 0')
-    if (!length || length <= 0) throw new Error('Length must be greater than 0')
-    if (!width || width <= 0) throw new Error('Width must be greater than 0')
-    if (!height || height <= 0) throw new Error('Height must be greater than 0')
-    if (insuranceValue === undefined || insuranceValue < 0) {
-      throw new Error('Insurance Value is required')
-    }
-    if (!serviceId) throw new Error('Service ID is required')
-
     try {
-      const response = await apiService.post('/shipping/calculate-full', {
-        fromDistrictId,
-        fromWardCode,
-        toDistrictId,
-        toWardCode,
-        weight,
-        length,
-        width,
-        height,
-        insuranceValue,
-        serviceId,
-        serviceTypeId,
-      })
-
-      return response
+      console.log('🌐 [ShippingService] Calculating full shipping fee:', data)
+      const response = await api.shipping.calculateFull(data)
+      console.log('📦 [ShippingService] Full calculate response:', response)
+      
+      if (response && response.success && response.data) {
+        return response.data
+      } else {
+        throw new Error(response?.message || 'Không thể tính phí vận chuyển')
+      }
     } catch (error) {
-      console.error('Error calculating full shipping fee:', error)
-      throw new Error(error.message || 'Không thể tính phí vận chuyển chi tiết')
+      console.error('❌ [ShippingService] Error calculating full fee:', error)
+      throw new Error(error.message || 'Không thể tính phí vận chuyển')
     }
-  }
+  },
 
   /**
-   * Tìm địa chỉ theo từ khóa (helper function để search)
-   * @param {string} query - Từ khóa tìm kiếm
-   * @param {Array} items - Danh sách items cần search
-   * @param {string} searchField - Trường cần search
-   * @returns {Array} Kết quả tìm kiếm
+   * Tìm kiếm địa chỉ
    */
   searchAddress(query, items, searchField = 'name') {
-    if (!query || !items || items.length === 0) return items
+    if (!query || !items || items.length === 0) {
+      return items || []
+    }
 
-    const normalized = query.toLowerCase().trim()
+    const searchTerm = query.toLowerCase().trim()
     return items.filter((item) => {
       const value = item[searchField]
-      return value && value.toLowerCase().includes(normalized)
+      return value && value.toLowerCase().includes(searchTerm)
     })
-  }
+  },
 
   /**
-   * Format số tiền VNĐ
-   * @param {number} amount - Số tiền
-   * @returns {string} Số tiền đã format
+   * Format tiền tệ
    */
   formatCurrency(amount) {
-    if (!amount || isNaN(amount)) return '0₫'
+    if (!amount) return '0đ'
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
     }).format(amount)
-  }
+  },
 
   /**
-   * Format khối lượng (gram -> kg)
-   * @param {number} grams - Khối lượng gram
-   * @returns {string} Khối lượng đã format
+   * Format trọng lượng
    */
   formatWeight(grams) {
-    if (!grams || isNaN(grams)) return '0g'
+    if (!grams) return '0g'
     if (grams >= 1000) {
-      return `${(grams / 1000).toFixed(2)}kg`
+      return `${(grams / 1000).toFixed(1)}kg`
     }
     return `${grams}g`
-  }
+  },
 
   /**
-   * Lấy tên dịch vụ theo service ID
-   * @param {number} serviceId - ID dịch vụ
-   * @returns {string} Tên dịch vụ
+   * Get service name
    */
   getServiceName(serviceId) {
     const services = {
-      53320: 'Giao hàng nhanh (Express)',
-      53321: 'Giao hàng tiêu chuẩn (Standard)',
+      53320: 'Express - Giao nhanh 1-2 ngày',
+      53321: 'Standard - Giao tiêu chuẩn 3-5 ngày',
     }
-    return services[serviceId] || 'Dịch vụ vận chuyển'
-  }
+    return services[serviceId] || `Dịch vụ ${serviceId}`
+  },
 
   /**
-   * Validate địa chỉ giao hàng
-   * @param {Object} address - Địa chỉ cần validate
-   * @returns {Object} { valid: boolean, errors: Array }
+   * Validate thông tin địa chỉ
    */
   validateAddress(address) {
     const errors = []
 
+    if (!address.fullName || address.fullName.trim().length === 0) {
+      errors.push('Vui lòng nhập họ tên')
+    }
+
+    if (!address.phone || !/^[0-9]{10,11}$/.test(address.phone)) {
+      errors.push('Số điện thoại không hợp lệ')
+    }
+
+    if (!address.address || address.address.trim().length === 0) {
+      errors.push('Vui lòng nhập địa chỉ cụ thể')
+    }
+
     if (!address.provinceId) {
-      errors.push('Vui lòng chọn Tỉnh/Thành phố')
+      errors.push('Vui lòng chọn tỉnh/thành phố')
     }
 
     if (!address.districtId) {
-      errors.push('Vui lòng chọn Quận/Huyện')
+      errors.push('Vui lòng chọn quận/huyện')
     }
 
     if (!address.wardCode) {
-      errors.push('Vui lòng chọn Phường/Xã')
-    }
-
-    if (!address.street || address.street.trim().length < 5) {
-      errors.push('Vui lòng nhập địa chỉ chi tiết (tối thiểu 5 ký tự)')
+      errors.push('Vui lòng chọn phường/xã')
     }
 
     return {
-      valid: errors.length === 0,
+      isValid: errors.length === 0,
       errors,
     }
-  }
+  },
 
   /**
-   * Cache service IDs
+   * Service IDs
    */
-  SERVICE_IDS = {
-    EXPRESS: 53320, // Giao nhanh 2-3 ngày
-    STANDARD: 53321, // Giao tiêu chuẩn 3-5 ngày
-  }
+  SERVICE_IDS: {
+    EXPRESS: 53320,
+    STANDARD: 53321,
+  },
 
   /**
    * Get default service ID
    */
   getDefaultServiceId() {
     return this.SERVICE_IDS.EXPRESS
-  }
+  },
 }
 
-// Export singleton instance
-const shippingService = new ShippingService()
 export default shippingService

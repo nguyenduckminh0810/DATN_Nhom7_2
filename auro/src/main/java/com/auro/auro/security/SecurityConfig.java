@@ -54,6 +54,9 @@ public class SecurityConfig {
                         // Static uploaded files
                         .requestMatchers("/files/**").permitAll()
 
+                        // Shipping API - GHN (public access)
+                        .requestMatchers("/api/shipping/**").permitAll()
+
                         // API TEST (DÙNG XONG NHỚ XÓA)
                         .requestMatchers("/api/test/**").permitAll()
 

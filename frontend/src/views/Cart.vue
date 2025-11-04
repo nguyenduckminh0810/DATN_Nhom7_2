@@ -75,6 +75,8 @@ import OrderSummary from '@/components/checkout/OrderSummary.vue'
 const { items, isEmpty, loadCartFromAPI } = useCart()
 const userStore = useUserStore()
 
+console.log('🛒 Cart.vue - isEmpty:', isEmpty.value, 'items:', items.value.length)
+
 // Sử dụng shipping composable
 const { shippingFee, expectedDeliveryTime } = useShipping()
 

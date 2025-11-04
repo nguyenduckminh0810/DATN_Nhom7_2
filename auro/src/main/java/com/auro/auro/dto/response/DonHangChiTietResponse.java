@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public class DonHangChiTietResponse {
     private Long id;
     private String tenSanPham;
+    private String hinhAnh;
     private BigDecimal donGia;
     private Integer soLuong;
     private BigDecimal thanhTien;
@@ -24,6 +25,14 @@ public class DonHangChiTietResponse {
 
     public void setTenSanPham(String tenSanPham) {
         this.tenSanPham = tenSanPham;
+    }
+
+    public String getHinhAnh() {
+        return hinhAnh;
+    }
+
+    public void setHinhAnh(String hinhAnh) {
+        this.hinhAnh = hinhAnh;
     }
 
     public BigDecimal getDonGia() {

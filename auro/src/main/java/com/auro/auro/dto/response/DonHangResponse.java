@@ -8,6 +8,8 @@ public class DonHangResponse {
     private Long id;
     private String soDonHang;
     private BigDecimal tamTinh;
+    private BigDecimal phiVanChuyen;
+    private BigDecimal giamGiaTong;
     private BigDecimal tongThanhToan;
     private String trangThai;
     private String diaChiGiaoSnapshot;
@@ -44,6 +46,22 @@ public class DonHangResponse {
 
     public void setTamTinh(BigDecimal tamTinh) {
         this.tamTinh = tamTinh;
+    }
+
+    public BigDecimal getPhiVanChuyen() {
+        return phiVanChuyen;
+    }
+
+    public void setPhiVanChuyen(BigDecimal phiVanChuyen) {
+        this.phiVanChuyen = phiVanChuyen;
+    }
+
+    public BigDecimal getGiamGiaTong() {
+        return giamGiaTong;
+    }
+
+    public void setGiamGiaTong(BigDecimal giamGiaTong) {
+        this.giamGiaTong = giamGiaTong;
     }
 
     public BigDecimal getTongThanhToan() {

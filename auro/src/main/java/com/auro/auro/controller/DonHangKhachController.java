@@ -65,9 +65,17 @@ public class DonHangKhachController {
             @RequestParam(defaultValue = "10") int kichThuoc, Authentication auth) {
         try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
+            System.out.println("=== layDonHangCuaToi ===");
+            System.out.println("KhachHang ID: " + khachHangId);
+            System.out.println("Page: " + trang + ", Size: " + kichThuoc);
+
             Page<DonHangResponse> dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc);
+            System.out.println("Found orders: " + dhs.getTotalElements());
+
             return ResponseEntity.ok(dhs);
         } catch (Exception e) {
+            System.out.println("ERROR in layDonHangCuaToi: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }

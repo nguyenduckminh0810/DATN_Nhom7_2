@@ -2,35 +2,50 @@ package com.auro.auro.service;
 
 import com.auro.auro.dto.request.GHNShippingFeeRequest;
 import com.auro.auro.dto.response.GHNShippingFeeResponse;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-// DISABLED TEMPORARILY - Uncomment after GHN config
-// import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-// @Service  // DISABLED - Enable after configuring GHN token and shop ID
-@RequiredArgsConstructor
+import java.util.*;
+
+@Service
 @Slf4j
 public class GHNShippingService {
 
+    private final String ghnApiUrl;
+    private final String ghnToken;
+    private final Integer shopId;
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${ghn.api.url:https://dev-online-gateway.ghn.vn/shiip/public-api}")
-    private String ghnApiUrl;
-
-    @Value("${ghn.api.token}")
-    private String ghnToken;
-
-    @Value("${ghn.shop.id}")
-    private Integer shopId;
-
-    @Value("${ghn.from.district.id:1542}") // Quận 1, TP.HCM (mặc định)
+    @Value("${ghn.from.district.id:1542}")
     private Integer fromDistrictId;
 
-    @Value("${ghn.from.ward.code:21211}") // Phường Bến Nghé (mặc định)
+    @Value("${ghn.from.ward.code:21211}")
     private String fromWardCode;
+
+    // Constructor injection
+    public GHNShippingService(
+            @Value("${ghn.api.url:https://dev-online-gateway.ghn.vn/shiip/public-api}") String ghnApiUrl,
+            @Value("${ghn.api.token}") String ghnToken,
+            @Value("${ghn.shop.id}") Integer shopId,
+            RestTemplate restTemplate) {
+        this.ghnApiUrl = ghnApiUrl;
+        this.ghnToken = ghnToken;
+        this.shopId = shopId;
+        this.restTemplate = restTemplate;
+
+        log.info("🚀 GHNShippingService initialized");
+        log.info("🌐 GHN API URL: {}", ghnApiUrl);
+        log.info("🏪 GHN Shop ID: {}", shopId);
+        log.info("🔑 GHN Token: {}... (length: {})",
+                ghnToken != null ? ghnToken.substring(0, Math.min(10, ghnToken.length())) : "NULL",
+                ghnToken != null ? ghnToken.length() : 0);
+    }
 
     /**
      * Tính phí vận chuyển GHN
@@ -97,9 +112,123 @@ public class GHNShippingService {
     }
 
     /**
-     * Lấy danh sách dịch vụ vận chuyển khả dụng
+     * Lấy danh sách tỉnh/thành phố
      */
-    public Object getAvailableServices(Integer toDistrictId) {
+    public List<Map<String, Object>> getProvinces() {
+        try {
+            String url = ghnApiUrl + "/master-data/province";
+            log.info("🌐 Calling GHN API: {}", url);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Token", ghnToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, String.class);
+
+            log.info("✅ GHN API Response Status: {}", response.getStatusCode());
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.get("data");
+
+            List<Map<String, Object>> provinces = new ArrayList<>();
+            if (data != null && data.isArray()) {
+                for (JsonNode node : data) {
+                    Map<String, Object> province = new HashMap<>();
+                    province.put("ProvinceID", node.get("ProvinceID").asInt());
+                    province.put("ProvinceName", node.get("ProvinceName").asText());
+                    province.put("Code", node.has("Code") ? node.get("Code").asText() : "");
+                    provinces.add(province);
+                }
+            }
+
+            log.info("✅ Loaded {} provinces from GHN", provinces.size());
+            return provinces;
+
+        } catch (Exception e) {
+            log.error("❌ Error loading provinces from GHN: {}", e.getMessage(), e);
+            throw new RuntimeException("Không thể lấy danh sách tỉnh/thành phố");
+        }
+    }
+
+    /**
+     * Lấy danh sách quận/huyện theo tỉnh
+     */
+    public List<Map<String, Object>> getDistricts(Integer provinceId) {
+        try {
+            String url = ghnApiUrl + "/master-data/district";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Token", ghnToken);
+
+            String requestBody = String.format("{\"province_id\": %d}", provinceId);
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.get("data");
+
+            List<Map<String, Object>> districts = new ArrayList<>();
+            if (data != null && data.isArray()) {
+                for (JsonNode node : data) {
+                    Map<String, Object> district = new HashMap<>();
+                    district.put("DistrictID", node.get("DistrictID").asInt());
+                    district.put("DistrictName", node.get("DistrictName").asText());
+                    district.put("Code", node.has("Code") ? node.get("Code").asText() : "");
+                    districts.add(district);
+                }
+            }
+
+            return districts;
+
+        } catch (Exception e) {
+            log.error("Error getting districts", e);
+            throw new RuntimeException("Không thể lấy danh sách quận/huyện");
+        }
+    }
+
+    /**
+     * Lấy danh sách phường/xã theo quận
+     */
+    public List<Map<String, Object>> getWards(Integer districtId) {
+        try {
+            String url = ghnApiUrl + "/master-data/ward?district_id=" + districtId;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Token", ghnToken);
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, String.class);
+
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.get("data");
+
+            List<Map<String, Object>> wards = new ArrayList<>();
+            if (data != null && data.isArray()) {
+                for (JsonNode node : data) {
+                    Map<String, Object> ward = new HashMap<>();
+                    ward.put("WardCode", node.get("WardCode").asText());
+                    ward.put("WardName", node.get("WardName").asText());
+                    wards.add(ward);
+                }
+            }
+
+            return wards;
+
+        } catch (Exception e) {
+            log.error("Error getting wards", e);
+            throw new RuntimeException("Không thể lấy danh sách phường/xã");
+        }
+    }
+
+    /**
+     * Lấy danh sách dịch vụ vận chuyển
+     */
+    public List<Map<String, Object>> getServices(Integer toDistrictId) {
         try {
             String url = ghnApiUrl + "/v2/shipping-order/available-services";
 
@@ -113,95 +242,28 @@ public class GHNShippingService {
 
             HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
-            ResponseEntity<Object> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    entity,
-                    Object.class);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, String.class);
 
-            return response.getBody();
+            JsonNode root = objectMapper.readTree(response.getBody());
+            JsonNode data = root.get("data");
 
-        } catch (Exception e) {
-            log.error("Error getting available services", e);
-            throw new RuntimeException("Không thể lấy danh sách dịch vụ: " + e.getMessage());
-        }
-    }
+            List<Map<String, Object>> services = new ArrayList<>();
+            if (data != null && data.isArray()) {
+                for (JsonNode node : data) {
+                    Map<String, Object> service = new HashMap<>();
+                    service.put("service_id", node.get("service_id").asInt());
+                    service.put("short_name", node.get("short_name").asText());
+                    service.put("service_type_id", node.get("service_type_id").asInt());
+                    services.add(service);
+                }
+            }
 
-    /**
-     * Lấy danh sách tỉnh/thành phố
-     */
-    public Object getProvinces() {
-        try {
-            String url = ghnApiUrl + "/master-data/province";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Token", ghnToken);
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Object> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    entity,
-                    Object.class);
-
-            return response.getBody();
+            return services;
 
         } catch (Exception e) {
-            log.error("Error getting provinces", e);
-            throw new RuntimeException("Không thể lấy danh sách tỉnh/thành phố");
-        }
-    }
-
-    /**
-     * Lấy danh sách quận/huyện theo tỉnh
-     */
-    public Object getDistricts(Integer provinceId) {
-        try {
-            String url = ghnApiUrl + "/master-data/district?province_id=" + provinceId;
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Token", ghnToken);
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Object> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    entity,
-                    Object.class);
-
-            return response.getBody();
-
-        } catch (Exception e) {
-            log.error("Error getting districts", e);
-            throw new RuntimeException("Không thể lấy danh sách quận/huyện");
-        }
-    }
-
-    /**
-     * Lấy danh sách phường/xã theo quận
-     */
-    public Object getWards(Integer districtId) {
-        try {
-            String url = ghnApiUrl + "/master-data/ward?district_id=" + districtId;
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("Token", ghnToken);
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-
-            ResponseEntity<Object> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    entity,
-                    Object.class);
-
-            return response.getBody();
-
-        } catch (Exception e) {
-            log.error("Error getting wards", e);
-            throw new RuntimeException("Không thể lấy danh sách phường/xã");
+            log.error("Error getting services", e);
+            throw new RuntimeException("Không thể lấy danh sách dịch vụ");
         }
     }
 }

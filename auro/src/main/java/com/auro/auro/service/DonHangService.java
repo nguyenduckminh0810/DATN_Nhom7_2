@@ -42,6 +42,7 @@ public class DonHangService {
     private final VoucherRepository voucherRepository;
     private final BienTheSanPhamRepository bienTheSanPhamRepository;
     private final EmailService emailService;
+    private final com.auro.auro.repository.HinhAnhRepository hinhAnhRepository;
 
     // Tạo mới đơn hàng
     @Transactional
@@ -177,6 +178,8 @@ public class DonHangService {
         dto.setId(dh.getId());
         dto.setSoDonHang(dh.getSoDonHang());
         dto.setTamTinh(dh.getTamTinh());
+        dto.setPhiVanChuyen(dh.getPhiVanChuyen());
+        dto.setGiamGiaTong(dh.getGiamGiaTong());
         dto.setTongThanhToan(dh.getTongThanhToan());
         dto.setTrangThai(dh.getTrangThai());
         dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
@@ -196,6 +199,21 @@ public class DonHangService {
                 ctDTO.setDonGia(ct.getDonGia());
                 ctDTO.setSoLuong(ct.getSoLuong());
                 ctDTO.setThanhTien(ct.getThanhTien());
+
+                // Lấy hình ảnh từ bienThe đã eager loaded
+                try {
+                    if (ct.getBienThe() != null && ct.getBienThe().getSanPham() != null) {
+                        Long sanPhamId = ct.getBienThe().getSanPham().getId();
+                        // Query hình ảnh từ repository
+                        List<HinhAnh> hinhAnhs = hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(sanPhamId);
+                        if (hinhAnhs != null && !hinhAnhs.isEmpty()) {
+                            ctDTO.setHinhAnh(hinhAnhs.get(0).getUrl());
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Cannot load image: " + e.getMessage());
+                }
+
                 return ctDTO;
             }).collect(Collectors.toList());
 
@@ -393,12 +411,27 @@ public class DonHangService {
 
     // Lấy đơn hàng của khách
     public Page<DonHangResponse> layDonHangCuaKhach(Long khachHangId, int trang, int kichThuoc) {
-        Pageable pageable = PageRequest.of(trang, kichThuoc, Sort.by("taoLuc").descending());
-        Page<DonHang> donHangs = donHangRepository.findByKhachHang_Id(khachHangId, pageable);
-        return donHangs.map(this::convertToDTO);
-    }
+        // Lấy tất cả đơn hàng với details (eager loaded)
+        List<DonHang> allOrders = donHangRepository.findByKhachHang_IdWithDetails(khachHangId);
 
-    // Hủy đơn hàng
+        // Manual pagination
+        int start = trang * kichThuoc;
+        int end = Math.min(start + kichThuoc, allOrders.size());
+        List<DonHang> paginatedOrders = allOrders.subList(start, end);
+
+        // Convert to DTO
+        List<DonHangResponse> responses = paginatedOrders.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        // Create Page object
+        Pageable pageable = PageRequest.of(trang, kichThuoc);
+        return new org.springframework.data.domain.PageImpl<>(
+                responses,
+                pageable,
+                allOrders.size());
+    } // Hủy đơn hàng
+
     @Transactional
     public DonHangResponse huyDonHang(Long donHangId, Long khachHangId) {
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
@@ -488,7 +521,7 @@ public class DonHangService {
         // tạo đơn hàng guest
         DonHang donHang = new DonHang();
         donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        donHang.setKhachHang(guest);
+        donHang.setKhachHang(khachHang);
         donHang.setTrangThai("Chờ xác nhận");
         donHang.setTamTinh(tamTinh);
         donHang.setGiamGiaTong(giamGiaTong);

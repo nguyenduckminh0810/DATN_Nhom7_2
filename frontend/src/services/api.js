@@ -20,7 +20,7 @@ class ApiService {
       (config) => {
         const method = (config.method || 'get').toLowerCase()
         const url = config.url || ''
-        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh']
+        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping']
         const isPublicGet = method === 'get' && publicGetPrefixes.some((p) => url.startsWith(p))
 
         const token = localStorage.getItem('auro_token')
