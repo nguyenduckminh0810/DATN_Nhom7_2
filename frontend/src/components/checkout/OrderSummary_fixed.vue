@@ -103,7 +103,10 @@ const router = useRouter()
 // Computed để check authentication - phải dùng computed để reactive
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
-// Inject shipping info from parent
+// Inject shipping composable từ parent (chứa toàn bộ state GHN)
+const shipping = inject('shipping', null)
+
+// Inject shipping info from parent (backward compatibility)
 const shippingInfo = inject('shippingInfo', { 
   shippingFee: computed(() => 0), 
   expectedDeliveryTime: computed(() => null) 
@@ -363,12 +366,10 @@ const handleCheckout = async () => {
 
     // Xác định đã đăng nhập hay chưa dựa vào token
     if (token && isAuthenticated.value) {
-      console.log('👤 User is authenticated - using guest checkout format')
-      console.warn('⚠️ Note: Backend /tao-tu-gio-hang endpoint requires diaChiId which frontend doesn\'t collect')
-      console.warn('⚠️ Using guest-checkout endpoint instead for both authenticated and guest users')
+      console.log('👤 User is authenticated - using guest checkout endpoint with token')
       
       // Sử dụng guest checkout format cho cả user đã đăng nhập
-      // Backend sẽ tự động map user từ token nếu có
+      // Backend sẽ tự động map user từ token (auth parameter trong controller)
       const orderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -379,10 +380,19 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null
+        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        // Thêm thông tin GHN để tính phí ship (nếu có)
+        districtId: shipping?.selectedDistrict?.value || null,
+        wardCode: shipping?.selectedWard?.value || null,
+        serviceId: shipping?.selectedService?.value || null
       }
       
-      console.log('📤 Sending order as authenticated user (via guest-checkout endpoint):', orderData)
+      console.log('📤 Sending order as authenticated user (with token):', orderData)
+      console.log('🚚 GHN shipping info:', {
+        districtId: orderData.districtId,
+        wardCode: orderData.wardCode,
+        serviceId: orderData.serviceId
+      })
       
       try {
         response = await orderService.guestCheckout(orderData)
@@ -409,10 +419,19 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null
+        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        // Thêm thông tin GHN để tính phí ship (nếu có)
+        districtId: shipping?.selectedDistrict?.value || null,
+        wardCode: shipping?.selectedWard?.value || null,
+        serviceId: shipping?.selectedService?.value || null
       }
       
       console.log('📤 Sending guest order:', guestOrderData)
+      console.log('🚚 GHN shipping info:', {
+        districtId: guestOrderData.districtId,
+        wardCode: guestOrderData.wardCode,
+        serviceId: guestOrderData.serviceId
+      })
       
       response = await orderService.guestCheckout(guestOrderData)
       

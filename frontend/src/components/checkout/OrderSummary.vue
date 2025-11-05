@@ -103,7 +103,10 @@ const router = useRouter()
 // Computed để check authentication - phải dùng computed để reactive
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
-// Inject shipping info from parent
+// Inject shipping composable từ parent (chứa toàn bộ state GHN)
+const shipping = inject('shipping', null)
+
+// Inject shipping info from parent (backward compatibility)
 const shippingInfo = inject('shippingInfo', { 
   shippingFee: computed(() => 0), 
   expectedDeliveryTime: computed(() => null) 
@@ -369,48 +372,10 @@ const handleCheckout = async () => {
       
       console.log('✅ Backend cart has', backendCart.chiTietList.length, 'items')
       
-      // GIẢI PHÁP: Nếu user đã đăng nhập, xóa items khỏi user cart
-      // và thêm lại vào session cart để guest-checkout có thể lấy được
-      if (token && isAuthenticated.value && backendCart.chiTietList.length > 0) {
-        console.log('🔄 User authenticated - transferring items from USER cart to SESSION cart...')
-        
-        // Lưu lại thông tin items
-        const itemsToTransfer = backendCart.chiTietList.map(item => ({
-          bienTheId: item.bienTheId,
-          soLuong: item.soLuong
-        }))
-        
-        console.log('📦 Items to transfer:', itemsToTransfer)
-        
-        // Bước 1: Xóa tất cả items khỏi user cart
-        try {
-          await cartService.clearCart()
-          console.log('✅ Cleared user cart')
-        } catch (err) {
-          console.error('❌ Failed to clear user cart:', err)
-        }
-        
-        // Bước 2: Đăng xuất tạm thời để API add to cart lưu vào session cart
-        const tempToken = localStorage.getItem('auro_token')
-        localStorage.removeItem('auro_token')
-        console.log('🔓 Temporarily removed token to use session cart')
-        
-        // Bước 3: Thêm lại items vào session cart (không có token = session cart)
-        for (const item of itemsToTransfer) {
-          try {
-            await cartService.addToCart(item)
-            console.log('✅ Added to session cart:', item.bienTheId)
-          } catch (err) {
-            console.error('❌ Failed to add to session cart:', item.bienTheId, err)
-          }
-        }
-        
-        console.log('✅ Items transferred to session cart')
-        console.log('🔑 Token will be restored after checkout')
-        
-        // Lưu token để restore sau
-        window._tempAuthToken = tempToken
-      }
+      // NOTE: Không cần transfer items cho authenticated users
+      // Backend guest-checkout endpoint sẽ tự động nhận diện user từ token
+      // và lưu đơn hàng với khachHangId tương ứng
+      console.log('✅ Ready to checkout with current cart state')
     } catch (error) {
       console.error('❌ Failed to load backend cart:', error)
       if (window.$toast) {
@@ -424,12 +389,10 @@ const handleCheckout = async () => {
 
     // Xác định đã đăng nhập hay chưa dựa vào token
     if (token && isAuthenticated.value) {
-      console.log('👤 User is authenticated - using guest checkout format')
-      console.warn('⚠️ Note: Backend /tao-tu-gio-hang endpoint requires diaChiId which frontend doesn\'t collect')
-      console.warn('⚠️ Using guest-checkout endpoint instead for both authenticated and guest users')
+      console.log('👤 User is authenticated - using guest checkout endpoint with token')
       
       // Sử dụng guest checkout format cho cả user đã đăng nhập
-      // Backend sẽ tự động map user từ token nếu có
+      // Backend sẽ tự động map user từ token (auth parameter trong controller)
       const orderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -440,10 +403,19 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null
+        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        // Thêm thông tin GHN để tính phí ship (nếu có)
+        districtId: shipping?.selectedDistrict?.value || null,
+        wardCode: shipping?.selectedWard?.value || null,
+        serviceId: shipping?.selectedService?.value || null
       }
       
-      console.log('📤 Sending order as authenticated user (via guest-checkout endpoint):', orderData)
+      console.log('📤 Sending order as authenticated user (with token):', orderData)
+      console.log('🚚 GHN shipping info:', {
+        districtId: orderData.districtId,
+        wardCode: orderData.wardCode,
+        serviceId: orderData.serviceId
+      })
       
       try {
         response = await orderService.guestCheckout(orderData)
@@ -470,10 +442,19 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null
+        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        // Thêm thông tin GHN để tính phí ship (nếu có)
+        districtId: shipping?.selectedDistrict?.value || null,
+        wardCode: shipping?.selectedWard?.value || null,
+        serviceId: shipping?.selectedService?.value || null
       }
       
       console.log('📤 Sending guest order:', guestOrderData)
+      console.log('🚚 GHN shipping info:', {
+        districtId: guestOrderData.districtId,
+        wardCode: guestOrderData.wardCode,
+        serviceId: guestOrderData.serviceId
+      })
       
       response = await orderService.guestCheckout(guestOrderData)
       
@@ -483,13 +464,6 @@ const handleCheckout = async () => {
     }
 
     console.log('✅ Order created:', response)
-
-    // Restore token nếu có (đã tạm xóa để chuyển sang session cart)
-    if (window._tempAuthToken) {
-      localStorage.setItem('auro_token', window._tempAuthToken)
-      delete window._tempAuthToken
-      console.log('🔑 Token restored')
-    }
 
     // Xóa giỏ hàng sau khi đặt hàng thành công
     await clearCart()
