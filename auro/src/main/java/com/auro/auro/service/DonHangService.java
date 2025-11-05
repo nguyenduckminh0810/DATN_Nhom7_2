@@ -9,6 +9,8 @@ import java.util.stream.Collectors;
 
 import com.auro.auro.dto.request.GuestCheckoutRequest;
 import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
+import com.auro.auro.dto.request.GHNShippingFeeRequest;
+import com.auro.auro.dto.response.GHNShippingFeeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,6 @@ import com.auro.auro.repository.DiaChiRepository;
 import com.auro.auro.repository.VoucherRepository;
 import com.auro.auro.repository.BienTheSanPhamRepository;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class DonHangService {
     private final BienTheSanPhamRepository bienTheSanPhamRepository;
     private final EmailService emailService;
     private final com.auro.auro.repository.HinhAnhRepository hinhAnhRepository;
+    private final GHNShippingService ghnShippingService;
 
     // Tạo mới đơn hàng
     @Transactional
@@ -458,8 +460,34 @@ public class DonHangService {
 
     @Transactional
     public void taoDonHangGuest(String sessionId, GuestCheckoutRequest request, Long authenticatedKhachHangId) {
-        // 1) Lấy giỏ hàng theo idPhien
-        GioHang gioHang = gioHangService.layGioHangTheoSession(sessionId);
+        // Xác định KhachHang trước để biết lấy giỏ hàng từ đâu
+        KhachHang khachHang;
+        GioHang gioHang;
+
+        // Nếu user đã login, dùng KhachHang của họ và lấy giỏ hàng theo khachHangId
+        if (authenticatedKhachHangId != null) {
+            System.out.println("User authenticated - using existing KhachHang ID: " + authenticatedKhachHangId);
+            khachHang = khachHangRepository.findById(authenticatedKhachHangId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+
+            // Lấy giỏ hàng theo khachHangId cho user đã đăng nhập
+            gioHang = gioHangService.layGioHangCuaKhach(authenticatedKhachHangId);
+        } else {
+            // Tạo KhachHang GUEST mới và lấy giỏ hàng theo sessionId
+            System.out.println("Guest user - creating new GUEST KhachHang");
+            khachHang = new KhachHang();
+            khachHang.setTaiKhoan(null);
+            khachHang.setHoTen(request.getHoTen());
+            khachHang.setEmail(request.getEmail());
+            khachHang.setSoDienThoai(request.getSoDienThoai());
+            khachHang.setKieu("GUEST");
+            khachHang = khachHangRepository.save(khachHang);
+
+            // Lấy giỏ hàng theo sessionId cho guest
+            gioHang = gioHangService.layGioHangTheoSession(sessionId);
+        }
+
+        // Lấy chi tiết giỏ hàng
         List<GioHangChiTiet> gioHangItems = gioHangService.layChiTietGioHang(gioHang.getId());
         if (gioHangItems == null || gioHangItems.isEmpty()) {
             throw new RuntimeException("Giỏ hàng trống");
@@ -487,27 +515,50 @@ public class DonHangService {
             tamTinh = tamTinh.add(gia.multiply(BigDecimal.valueOf(item.getSoLuong())));
         }
 
-        BigDecimal phiVanChuyen = BigDecimal.valueOf(30000);
-        BigDecimal giamGiaTong = BigDecimal.ZERO;
+        // Tính phí vận chuyển từ GHN API
+        BigDecimal phiVanChuyen;
+        try {
+            if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
+                log.info("🚚 Calculating shipping fee from GHN API...");
+                log.info("📍 To: districtId={}, wardCode={}, serviceId={}",
+                        request.getDistrictId(), request.getWardCode(), request.getServiceId());
 
-        KhachHang khachHang;
+                // Tạo request để gọi GHN API
+                GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
+                ghnRequest.setToDistrictId(request.getDistrictId());
+                ghnRequest.setToWardCode(request.getWardCode());
+                ghnRequest.setServiceId(request.getServiceId());
 
-        // Nếu user đã login, dùng KhachHang của họ
-        if (authenticatedKhachHangId != null) {
-            System.out.println("User authenticated - using existing KhachHang ID: " + authenticatedKhachHangId);
-            khachHang = khachHangRepository.findById(authenticatedKhachHangId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
-        } else {
-            // Tạo KhachHang GUEST mới
-            System.out.println("Guest user - creating new GUEST KhachHang");
-            khachHang = new KhachHang();
-            khachHang.setTaiKhoan(null);
-            khachHang.setHoTen(request.getHoTen());
-            khachHang.setEmail(request.getEmail());
-            khachHang.setSoDienThoai(request.getSoDienThoai());
-            khachHang.setKieu("GUEST");
-            khachHang = khachHangRepository.save(khachHang);
+                // Tính tổng khối lượng và số lượng sản phẩm
+                int totalWeight = 0;
+                for (GioHangChiTiet item : gioHangItems) {
+                    totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
+                }
+                ghnRequest.setWeight(totalWeight);
+                ghnRequest.setInsuranceValue(tamTinh.intValue());
+
+                // Gọi GHN API
+                GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
+
+                if (ghnResponse != null && ghnResponse.getData() != null) {
+                    Integer totalFee = ghnResponse.getData().getTotal();
+                    phiVanChuyen = BigDecimal.valueOf(totalFee);
+                    log.info("✅ Shipping fee from GHN: {} đ", phiVanChuyen);
+                } else {
+                    log.warn("⚠️ GHN API returned null, using default shipping fee");
+                    phiVanChuyen = BigDecimal.valueOf(30000);
+                }
+            } else {
+                log.warn("⚠️ Missing GHN info (districtId, wardCode, or serviceId), using default shipping fee");
+                phiVanChuyen = BigDecimal.valueOf(30000);
+            }
+        } catch (Exception e) {
+            log.error("❌ Error calculating shipping fee from GHN: {}", e.getMessage());
+            log.warn("⚠️ Using default shipping fee due to error");
+            phiVanChuyen = BigDecimal.valueOf(30000);
         }
+
+        BigDecimal giamGiaTong = BigDecimal.ZERO;
 
         String diaChiSnapshot = String.format(
                 "%s - %s - %s, %s, %s, %s",
@@ -585,8 +636,14 @@ public class DonHangService {
             bienTheSanPhamRepository.save(bienThe);
         }
 
-        // xóa giỏ hàng gst
-        gioHangService.xoaGioHangTheoSession(sessionId);
+        // Xóa giỏ hàng sau khi tạo đơn thành công
+        if (authenticatedKhachHangId != null) {
+            // Xóa giỏ hàng của user đã đăng nhập theo khachHangId
+            gioHangService.xoaGioHang(authenticatedKhachHangId);
+        } else {
+            // Xóa giỏ hàng guest theo sessionId
+            gioHangService.xoaGioHangTheoSession(sessionId);
+        }
 
         try {
             emailService.guiEmailXacNhanDonHang(savedDonHang);
