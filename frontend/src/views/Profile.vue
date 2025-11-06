@@ -7,9 +7,7 @@
           <li class="breadcrumb-item">
             <router-link to="/">Trang chủ</router-link>
           </li>
-          <li class="breadcrumb-item active" aria-current="page">
-            Thông tin cá nhân
-          </li>
+          <li class="breadcrumb-item active" aria-current="page">Thông tin cá nhân</li>
         </ol>
       </nav>
 
@@ -25,8 +23,15 @@
           <div class="card">
             <div class="card-body text-center">
               <div class="profile-avatar mb-3">
-                <img :src="user.avatar || 'https://via.placeholder.com/100x100/6c757d/ffffff?text=Avatar'" 
-                     alt="Avatar" class="rounded-circle" width="100" height="100">
+                <img
+                  :src="
+                    user.avatar || 'https://via.placeholder.com/100x100/6c757d/ffffff?text=Avatar'
+                  "
+                  alt="Avatar"
+                  class="rounded-circle"
+                  width="100"
+                  height="100"
+                />
               </div>
               <h5 class="mb-1">{{ user.name }}</h5>
               <p class="text-muted small mb-3">{{ user.email }}</p>
@@ -39,22 +44,22 @@
           <!-- Navigation Menu -->
           <div class="card mt-3">
             <div class="list-group list-group-flush">
-              <router-link to="/profile" class="list-group-item list-group-item-action active">
+              <router-link to="/profile" class="list-group-item list-group-item-action active py-3">
                 <i class="bi bi-person me-2"></i>Thông tin cá nhân
               </router-link>
-              <router-link to="/orders" class="list-group-item list-group-item-action">
+              <router-link to="/orders" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action">
+              <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
               </a>
-              <a href="#" class="list-group-item list-group-item-action">
+              <router-link to="/addresses" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
-              </a>
-              <a href="#" class="list-group-item list-group-item-action">
+              </router-link>
+              <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-credit-card me-2"></i>Phương thức thanh toán
               </a>
-              <a href="#" class="list-group-item list-group-item-action">
+              <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bell me-2"></i>Thông báo
               </a>
             </div>
@@ -65,9 +70,7 @@
         <div class="col-lg-9">
           <div class="card">
             <div class="card-header">
-              <h5 class="mb-0">
-                <i class="bi bi-person me-2"></i>Thông tin cá nhân
-              </h5>
+              <h5 class="mb-0"><i class="bi bi-person me-2"></i>Thông tin cá nhân</h5>
             </div>
             <div class="card-body">
               <form @submit.prevent="handleUpdateProfile">
@@ -75,36 +78,25 @@
                   <!-- Full Name -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Họ và tên *</label>
-                    <input v-model="form.fullName" 
-                           type="text" 
-                           class="form-control" 
-                           required>
+                    <input v-model="form.fullName" type="text" class="form-control" required />
                   </div>
 
                   <!-- Email -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Email *</label>
-                    <input v-model="form.email" 
-                           type="email" 
-                           class="form-control" 
-                           required>
+                    <input v-model="form.email" type="email" class="form-control" required />
                   </div>
 
                   <!-- Phone -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Số điện thoại *</label>
-                    <input v-model="form.phone" 
-                           type="tel" 
-                           class="form-control" 
-                           required>
+                    <input v-model="form.phone" type="tel" class="form-control" required />
                   </div>
 
                   <!-- Date of Birth -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Ngày sinh</label>
-                    <input v-model="form.dateOfBirth" 
-                           type="date" 
-                           class="form-control">
+                    <input v-model="form.dateOfBirth" type="date" class="form-control" />
                   </div>
 
                   <!-- Gender -->
@@ -122,10 +114,12 @@
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Nhận thông báo</label>
                     <div class="form-check">
-                      <input v-model="form.subscribeNewsletter" 
-                             class="form-check-input" 
-                             type="checkbox" 
-                             id="newsletter">
+                      <input
+                        v-model="form.subscribeNewsletter"
+                        class="form-check-input"
+                        type="checkbox"
+                        id="newsletter"
+                      />
                       <label class="form-check-label" for="newsletter">
                         Nhận thông tin khuyến mãi và sản phẩm mới
                       </label>
@@ -135,16 +129,12 @@
 
                 <!-- Submit Button -->
                 <div class="d-flex gap-3">
-                  <button type="submit" 
-                          class="btn btn-warning"
-                          :disabled="isSubmitting">
+                  <button type="submit" class="btn btn-warning" :disabled="isSubmitting">
                     <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
                     <i v-else class="bi bi-check-circle me-2"></i>
                     {{ isSubmitting ? 'Đang cập nhật...' : 'Cập nhật thông tin' }}
                   </button>
-                  <button type="button" 
-                          class="btn btn-outline-secondary"
-                          @click="resetForm">
+                  <button type="button" class="btn btn-outline-secondary" @click="resetForm">
                     <i class="bi bi-arrow-clockwise me-2"></i>Đặt lại
                   </button>
                 </div>
@@ -155,9 +145,7 @@
           <!-- Change Password -->
           <div class="card mt-4">
             <div class="card-header">
-              <h5 class="mb-0">
-                <i class="bi bi-lock me-2"></i>Đổi mật khẩu
-              </h5>
+              <h5 class="mb-0"><i class="bi bi-lock me-2"></i>Đổi mật khẩu</h5>
             </div>
             <div class="card-body">
               <form @submit.prevent="handleChangePassword">
@@ -166,13 +154,17 @@
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Mật khẩu hiện tại *</label>
                     <div class="input-group">
-                      <input :type="showCurrentPassword ? 'text' : 'password'" 
-                             v-model="passwordForm.currentPassword" 
-                             class="form-control" 
-                             required>
-                      <button class="btn btn-outline-secondary" 
-                              type="button" 
-                              @click="showCurrentPassword = !showCurrentPassword">
+                      <input
+                        :type="showCurrentPassword ? 'text' : 'password'"
+                        v-model="passwordForm.currentPassword"
+                        class="form-control"
+                        required
+                      />
+                      <button
+                        class="btn btn-outline-secondary"
+                        type="button"
+                        @click="showCurrentPassword = !showCurrentPassword"
+                      >
                         <i :class="showCurrentPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                       </button>
                     </div>
@@ -182,13 +174,17 @@
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Mật khẩu mới *</label>
                     <div class="input-group">
-                      <input :type="showNewPassword ? 'text' : 'password'" 
-                             v-model="passwordForm.newPassword" 
-                             class="form-control" 
-                             required>
-                      <button class="btn btn-outline-secondary" 
-                              type="button" 
-                              @click="showNewPassword = !showNewPassword">
+                      <input
+                        :type="showNewPassword ? 'text' : 'password'"
+                        v-model="passwordForm.newPassword"
+                        class="form-control"
+                        required
+                      />
+                      <button
+                        class="btn btn-outline-secondary"
+                        type="button"
+                        @click="showNewPassword = !showNewPassword"
+                      >
                         <i :class="showNewPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                       </button>
                     </div>
@@ -198,13 +194,17 @@
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Xác nhận mật khẩu mới *</label>
                     <div class="input-group">
-                      <input :type="showConfirmPassword ? 'text' : 'password'" 
-                             v-model="passwordForm.confirmPassword" 
-                             class="form-control" 
-                             required>
-                      <button class="btn btn-outline-secondary" 
-                              type="button" 
-                              @click="showConfirmPassword = !showConfirmPassword">
+                      <input
+                        :type="showConfirmPassword ? 'text' : 'password'"
+                        v-model="passwordForm.confirmPassword"
+                        class="form-control"
+                        required
+                      />
+                      <button
+                        class="btn btn-outline-secondary"
+                        type="button"
+                        @click="showConfirmPassword = !showConfirmPassword"
+                      >
                         <i :class="showConfirmPassword ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
                       </button>
                     </div>
@@ -212,10 +212,11 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" 
-                        class="btn btn-warning"
-                        :disabled="isChangingPassword">
-                  <span v-if="isChangingPassword" class="spinner-border spinner-border-sm me-2"></span>
+                <button type="submit" class="btn btn-warning" :disabled="isChangingPassword">
+                  <span
+                    v-if="isChangingPassword"
+                    class="spinner-border spinner-border-sm me-2"
+                  ></span>
                   <i v-else class="bi bi-key me-2"></i>
                   {{ isChangingPassword ? 'Đang đổi mật khẩu...' : 'Đổi mật khẩu' }}
                 </button>
@@ -246,7 +247,7 @@ const user = ref({
   name: 'Nguyễn Văn A',
   email: 'user@example.com',
   phone: '0123456789',
-  avatar: null
+  avatar: null,
 })
 
 const form = ref({
@@ -255,13 +256,13 @@ const form = ref({
   phone: '',
   dateOfBirth: '',
   gender: '',
-  subscribeNewsletter: false
+  subscribeNewsletter: false,
 })
 
 const passwordForm = ref({
   currentPassword: '',
   newPassword: '',
-  confirmPassword: ''
+  confirmPassword: '',
 })
 
 // Methods
@@ -275,18 +276,18 @@ const loadUserData = () => {
       phone: user.value.phone || '',
       dateOfBirth: user.value.dateOfBirth || '',
       gender: user.value.gender || '',
-      subscribeNewsletter: user.value.subscribeNewsletter || false
+      subscribeNewsletter: user.value.subscribeNewsletter || false,
     }
   }
 }
 
 const handleUpdateProfile = async () => {
   isSubmitting.value = true
-  
+
   try {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
     // Update user data
     const updatedUser = {
       ...user.value,
@@ -295,15 +296,14 @@ const handleUpdateProfile = async () => {
       phone: form.value.phone,
       dateOfBirth: form.value.dateOfBirth,
       gender: form.value.gender,
-      subscribeNewsletter: form.value.subscribeNewsletter
+      subscribeNewsletter: form.value.subscribeNewsletter,
     }
-    
+
     // Update localStorage
     localStorage.setItem('auro_user', JSON.stringify(updatedUser))
     user.value = updatedUser
-    
+
     alert('Cập nhật thông tin thành công!')
-    
   } catch (error) {
     console.error('Update profile error:', error)
     alert('Có lỗi xảy ra khi cập nhật thông tin')
@@ -325,20 +325,19 @@ const handleChangePassword = async () => {
   }
 
   isChangingPassword.value = true
-  
+
   try {
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
     // Clear password form
     passwordForm.value = {
       currentPassword: '',
       newPassword: '',
-      confirmPassword: ''
+      confirmPassword: '',
     }
-    
+
     alert('Đổi mật khẩu thành công!')
-    
   } catch (error) {
     console.error('Change password error:', error)
     alert('Có lỗi xảy ra khi đổi mật khẩu')
@@ -360,12 +359,14 @@ onMounted(() => {
 <style scoped>
 .profile-avatar img {
   object-fit: cover;
+  border: 2px solid #ffc107;
 }
 
 .list-group-item-action.active {
   background-color: #ffc107;
   border-color: #ffc107;
-  color: #212529;
+  color: #000;
+  font-weight: 500;
 }
 
 .list-group-item-action:hover {

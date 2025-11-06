@@ -7,9 +7,7 @@
           <li class="breadcrumb-item">
             <router-link to="/">Trang chủ</router-link>
           </li>
-          <li class="breadcrumb-item active" aria-current="page">
-            Đơn hàng của tôi
-          </li>
+          <li class="breadcrumb-item active" aria-current="page">Đơn hàng của tôi</li>
         </ol>
       </nav>
 
@@ -25,8 +23,15 @@
           <div class="card">
             <div class="card-body text-center">
               <div class="profile-avatar mb-3">
-                <img :src="user.avatar || 'https://via.placeholder.com/100x100/6c757d/ffffff?text=Avatar'" 
-                     alt="Avatar" class="rounded-circle" width="100" height="100">
+                <img
+                  :src="
+                    user.avatar || 'https://via.placeholder.com/100x100/6c757d/ffffff?text=Avatar'
+                  "
+                  alt="Avatar"
+                  class="rounded-circle"
+                  width="100"
+                  height="100"
+                />
               </div>
               <h5 class="mb-1">{{ user.name }}</h5>
               <p class="text-muted small mb-3">{{ user.email }}</p>
@@ -36,25 +41,32 @@
           <!-- Navigation Menu -->
           <div class="card mt-3">
             <div class="list-group list-group-flush">
-              <router-link to="/profile" class="list-group-item list-group-item-action">
+              <router-link to="/profile" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-person me-2"></i>Thông tin cá nhân
               </router-link>
-              <router-link to="/orders" class="list-group-item list-group-item-action active">
+              <router-link to="/orders" class="list-group-item list-group-item-action active py-3">
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
-              <router-link to="/wishlist" class="list-group-item list-group-item-action">
+              <router-link to="/wishlist" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
               </router-link>
-              <router-link to="/profile/addresses" class="list-group-item list-group-item-action">
+              <router-link
+                to="/profile/addresses"
+                class="list-group-item list-group-item-action py-3"
+              >
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action">
+              <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-credit-card me-2"></i>Phương thức thanh toán
               </a>
-              <a href="#" class="list-group-item list-group-item-action">
+              <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bell me-2"></i>Thông báo
               </a>
-              <a href="#" class="list-group-item list-group-item-action text-danger" @click.prevent="logout">
+              <a
+                href="#"
+                class="list-group-item list-group-item-action text-danger py-3"
+                @click.prevent="logout"
+              >
                 <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
               </a>
             </div>
@@ -68,44 +80,56 @@
             <div class="card-body">
               <ul class="nav nav-pills nav-fill" role="tablist">
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" 
-                          :class="{ active: activeTab === 'all' }"
-                          @click="activeTab = 'all'">
+                  <button
+                    class="nav-link"
+                    :class="{ active: activeTab === 'all' }"
+                    @click="activeTab = 'all'"
+                  >
                     Tất cả ({{ orders.length }})
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" 
-                          :class="{ active: activeTab === 'pending' }"
-                          @click="activeTab = 'pending'">
+                  <button
+                    class="nav-link"
+                    :class="{ active: activeTab === 'pending' }"
+                    @click="activeTab = 'pending'"
+                  >
                     Chờ xử lý ({{ getOrdersByStatus('pending').length }})
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" 
-                          :class="{ active: activeTab === 'processing' }"
-                          @click="activeTab = 'processing'">
+                  <button
+                    class="nav-link"
+                    :class="{ active: activeTab === 'processing' }"
+                    @click="activeTab = 'processing'"
+                  >
                     Đang xử lý ({{ getOrdersByStatus('processing').length }})
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" 
-                          :class="{ active: activeTab === 'shipped' }"
-                          @click="activeTab = 'shipped'">
+                  <button
+                    class="nav-link"
+                    :class="{ active: activeTab === 'shipped' }"
+                    @click="activeTab = 'shipped'"
+                  >
                     Đang giao ({{ getOrdersByStatus('shipped').length }})
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" 
-                          :class="{ active: activeTab === 'delivered' }"
-                          @click="activeTab = 'delivered'">
+                  <button
+                    class="nav-link"
+                    :class="{ active: activeTab === 'delivered' }"
+                    @click="activeTab = 'delivered'"
+                  >
                     Đã giao ({{ getOrdersByStatus('delivered').length }})
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" 
-                          :class="{ active: activeTab === 'cancelled' }"
-                          @click="activeTab = 'cancelled'">
+                  <button
+                    class="nav-link"
+                    :class="{ active: activeTab === 'cancelled' }"
+                    @click="activeTab = 'cancelled'"
+                  >
                     Đã hủy ({{ getOrdersByStatus('cancelled').length }})
                   </button>
                 </li>
@@ -150,13 +174,19 @@
                 <div class="row">
                   <div class="col-md-8">
                     <div class="order-items">
-                      <div v-for="item in order.items" :key="item.id" class="order-item d-flex align-items-center mb-2">
-                        <img :src="item.image" 
-                             alt="Product" 
-                             class="me-3" 
-                             width="60" 
-                             height="60" 
-                             style="object-fit: cover;">
+                      <div
+                        v-for="item in order.items"
+                        :key="item.id"
+                        class="order-item d-flex align-items-center mb-2"
+                      >
+                        <img
+                          :src="item.image"
+                          alt="Product"
+                          class="me-3"
+                          width="60"
+                          height="60"
+                          style="object-fit: cover"
+                        />
                         <div class="flex-grow-1">
                           <h6 class="mb-1 small">{{ item.name }}</h6>
                           <small class="text-muted">
@@ -167,12 +197,14 @@
                         </div>
                         <div class="text-end">
                           <small class="text-muted">x{{ item.quantity }}</small>
-                          <div class="small fw-bold">{{ formatPrice(item.price * item.quantity) }}</div>
+                          <div class="small fw-bold">
+                            {{ formatPrice(item.price * item.quantity) }}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <!-- Order Summary -->
                   <div class="col-md-4">
                     <div class="order-summary">
@@ -184,11 +216,14 @@
                         <small>Phí vận chuyển:</small>
                         <small>{{ formatPrice(order.shippingFee) }}</small>
                       </div>
-                      <div v-if="order.discount > 0" class="d-flex justify-content-between mb-1 text-success">
+                      <div
+                        v-if="order.discount > 0"
+                        class="d-flex justify-content-between mb-1 text-success"
+                      >
                         <small>Giảm giá:</small>
                         <small>-{{ formatPrice(order.discount) }}</small>
                       </div>
-                      <hr class="my-2">
+                      <hr class="my-2" />
                       <div class="d-flex justify-content-between">
                         <strong>Tổng cộng:</strong>
                         <strong class="text-warning">{{ formatPrice(order.total) }}</strong>
@@ -201,25 +236,34 @@
                 <div class="row mt-3">
                   <div class="col-12">
                     <div class="d-flex gap-2 flex-wrap">
-                      <button class="btn btn-outline-primary btn-sm" @click="viewOrderDetail(order)">
+                      <button
+                        class="btn btn-outline-primary btn-sm"
+                        @click="viewOrderDetail(order)"
+                      >
                         <i class="bi bi-eye me-1"></i>Xem chi tiết
                       </button>
-                      
-                      <button v-if="order.status === 'pending'" 
-                              class="btn btn-outline-danger btn-sm" 
-                              @click="cancelOrder(order)">
+
+                      <button
+                        v-if="order.status === 'pending'"
+                        class="btn btn-outline-danger btn-sm"
+                        @click="cancelOrder(order)"
+                      >
                         <i class="bi bi-x-circle me-1"></i>Hủy đơn hàng
                       </button>
-                      
-                      <button v-if="order.status === 'delivered'" 
-                              class="btn btn-outline-success btn-sm" 
-                              @click="reorder(order)">
+
+                      <button
+                        v-if="order.status === 'delivered'"
+                        class="btn btn-outline-success btn-sm"
+                        @click="reorder(order)"
+                      >
                         <i class="bi bi-arrow-repeat me-1"></i>Mua lại
                       </button>
-                      
-                      <button v-if="order.status === 'delivered'" 
-                              class="btn btn-outline-warning btn-sm" 
-                              @click="rateOrder(order)">
+
+                      <button
+                        v-if="order.status === 'delivered'"
+                        class="btn btn-outline-warning btn-sm"
+                        @click="rateOrder(order)"
+                      >
                         <i class="bi bi-star me-1"></i>Đánh giá
                       </button>
                     </div>
@@ -263,7 +307,7 @@ const user = computed(() => ({
   id: userStore.user?.id || null,
   name: userStore.user?.name || userStore.user?.hoTen || 'Người dùng',
   email: userStore.user?.email || '',
-  avatar: userStore.user?.avatar || null
+  avatar: userStore.user?.avatar || null,
 }))
 
 // Computed
@@ -276,7 +320,7 @@ const filteredOrders = computed(() => {
 
 // Methods
 const getOrdersByStatus = (status) => {
-  return orders.value.filter(order => order.status === status)
+  return orders.value.filter((order) => order.status === status)
 }
 
 const getStatusClass = (status) => {
@@ -285,7 +329,7 @@ const getStatusClass = (status) => {
     processing: 'bg-info',
     shipped: 'bg-primary',
     delivered: 'bg-success',
-    cancelled: 'bg-danger'
+    cancelled: 'bg-danger',
   }
   return statusClasses[status] || 'bg-secondary'
 }
@@ -296,7 +340,7 @@ const getStatusText = (status) => {
     processing: 'Đang xử lý',
     shipped: 'Đang giao',
     delivered: 'Đã giao',
-    cancelled: 'Đã hủy'
+    cancelled: 'Đã hủy',
   }
   return statusTexts[status] || 'Không xác định'
 }
@@ -304,7 +348,7 @@ const getStatusText = (status) => {
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(price)
 }
 
@@ -320,7 +364,7 @@ const cancelOrder = async (order) => {
   if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${order.orderNumber}?`)) {
     return
   }
-  
+
   try {
     loading.value = true
     await orderService.cancelOrder(order.id)
@@ -340,14 +384,14 @@ const reorder = async (order) => {
     loading.value = true
     // Import cartService if not already
     const { default: cartService } = await import('@/services/cartService')
-    
+
     // Add items back to cart
     for (const item of order.items) {
       await cartService.addToCart({
         sanPhamId: item.sanPhamId,
         soLuong: item.quantity,
         mauSacId: item.mauSacId,
-        kichCoId: item.kichCoId
+        kichCoId: item.kichCoId,
       })
     }
     alert('Đã thêm sản phẩm vào giỏ hàng!')
@@ -377,11 +421,11 @@ const fetchOrders = async () => {
   try {
     loading.value = true
     error.value = null
-    
+
     console.log('🔄 Fetching orders...')
     console.log('🔑 Current user:', userStore.user)
     console.log('🔑 Token exists:', !!localStorage.getItem('auro_token'))
-    
+
     const response = await orderService.getMyOrders()
     console.log('📦 Full API response:', response)
     console.log('📦 Response type:', typeof response)
@@ -390,22 +434,22 @@ const fetchOrders = async () => {
     console.log('📦 Response.data type:', typeof response.data)
     console.log('📦 Response.data.content:', response.data?.content)
     console.log('📦 Response.data.totalElements:', response.data?.totalElements)
-    
+
     // Backend returns paginated data
     let orderData = response.data?.content || response.data || []
-    
+
     // Check if response is the paginated object itself
     if (response.content && Array.isArray(response.content)) {
       console.log('⚠️ Response is paginated object itself, using response.content')
       orderData = response.content
     }
-    
+
     console.log('📋 Order data array:', orderData)
     console.log('📋 Order data length:', orderData.length)
     console.log('📋 Is array?:', Array.isArray(orderData))
-    
+
     // Map backend data to frontend structure
-    orders.value = orderData.map(order => ({
+    orders.value = orderData.map((order) => ({
       id: order.id,
       orderNumber: order.soDonHang || `ORD${order.id}`,
       orderDate: order.taoLuc || order.createdAt,
@@ -416,25 +460,26 @@ const fetchOrders = async () => {
       total: order.tongThanhToan || 0,
       paymentStatus: order.paymentStatus,
       paymentMethod: order.paymentMethod,
-      items: order.chiTietList?.map(item => ({
-        id: item.id,
-        name: item.tenSanPham || 'Sản phẩm',
-        image: item.hinhAnh || 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
-        price: item.donGia || 0,
-        quantity: item.soLuong || 1,
-        subtotal: item.thanhTien || 0,
-        selectedSize: '', // Backend không có thông tin này
-        selectedColor: '' // Backend không có thông tin này
-      })) || []
+      items:
+        order.chiTietList?.map((item) => ({
+          id: item.id,
+          name: item.tenSanPham || 'Sản phẩm',
+          image: item.hinhAnh || 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
+          price: item.donGia || 0,
+          quantity: item.soLuong || 1,
+          subtotal: item.thanhTien || 0,
+          selectedSize: '', // Backend không có thông tin này
+          selectedColor: '', // Backend không có thông tin này
+        })) || [],
     }))
-    
+
     console.log('✅ Mapped orders:', orders.value)
     console.log('📊 First order details:', orders.value[0])
     if (orders.value.length > 0) {
       console.log('💰 Shipping fee:', orders.value[0].shippingFee)
       console.log('🖼️ First item image:', orders.value[0].items[0]?.image)
     }
-    
+
     // Debug: Check if user actually has no orders
     if (orders.value.length === 0) {
       console.log('⚠️ No orders found for this user')
@@ -445,7 +490,7 @@ const fetchOrders = async () => {
       console.log('')
       console.log('🔍 If you just placed an order via guest-checkout:')
       console.log('   - The order was created with a new GUEST KhachHang record')
-      console.log('   - It won\'t show here because it\'s not linked to your logged-in account')
+      console.log("   - It won't show here because it's not linked to your logged-in account")
       console.log('   - Need to use authenticated checkout endpoint instead')
     }
   } catch (err) {
@@ -454,12 +499,13 @@ const fetchOrders = async () => {
       message: err.message,
       response: err.response,
       status: err.status,
-      type: err.type
+      type: err.type,
     })
-    
+
     // Show more detailed error message
     if (err.status === 500) {
-      error.value = 'Lỗi server. Vui lòng kiểm tra: \n1. Bạn đã đăng nhập chưa? \n2. Tài khoản có liên kết với khách hàng không?'
+      error.value =
+        'Lỗi server. Vui lòng kiểm tra: \n1. Bạn đã đăng nhập chưa? \n2. Tài khoản có liên kết với khách hàng không?'
     } else {
       error.value = err.message || 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.'
     }
@@ -472,12 +518,12 @@ const fetchOrders = async () => {
 // Map backend status to frontend status
 const mapBackendStatus = (backendStatus) => {
   const statusMap = {
-    'CHO_XAC_NHAN': 'pending',
-    'DANG_XU_LY': 'processing',
-    'DANG_GIAO': 'shipped',
-    'DA_GIAO': 'delivered',
-    'HOAN_THANH': 'delivered',
-    'DA_HUY': 'cancelled'
+    CHO_XAC_NHAN: 'pending',
+    DANG_XU_LY: 'processing',
+    DANG_GIAO: 'shipped',
+    DA_GIAO: 'delivered',
+    HOAN_THANH: 'delivered',
+    DA_HUY: 'cancelled',
   }
   return statusMap[backendStatus] || 'pending'
 }
@@ -491,12 +537,14 @@ onMounted(async () => {
 <style scoped>
 .profile-avatar img {
   object-fit: cover;
+  border: 2px solid #ffc107;
 }
 
 .list-group-item-action.active {
   background-color: #ffc107;
   border-color: #ffc107;
-  color: #212529;
+  color: #000;
+  font-weight: 500;
 }
 
 .list-group-item-action:hover {
