@@ -32,12 +32,10 @@ onMounted(() => {
     const validation = validateToken(token)
     
     if (!validation.valid) {
-      console.error('❌ Token validation failed:', validation.reason)
       clearInvalidToken(validation.reason)
       return // Stop initialization
     }
-    
-    console.log('✅ Token is valid:', validation.authorities)
+
   }
   
   // Continue normal initialization

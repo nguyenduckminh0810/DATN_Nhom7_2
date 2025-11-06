@@ -10,21 +10,17 @@ const shippingService = {
    */
   async getProvinces() {
     try {
-      console.log('🌐 [ShippingService] Fetching provinces from backend...')
       const response = await api.shipping.getProvinces()
-      console.log('📦 [ShippingService] Backend response:', response)
       
       // api.shipping.getProvinces() trả về response.data rồi
       // Backend format: { success, message, data }
       if (response && response.success && response.data) {
-        console.log('✅ [ShippingService] Provinces:', response.data.length, 'items')
         return response.data
       } else {
         console.warn('⚠️ [ShippingService] Unexpected response:', response)
         return []
       }
     } catch (error) {
-      console.error('❌ [ShippingService] Error fetching provinces:', error)
       throw new Error(error.message || 'Không thể tải danh sách tỉnh/thành phố')
     }
   },
@@ -38,18 +34,14 @@ const shippingService = {
     }
 
     try {
-      console.log('🌐 [ShippingService] Fetching districts for province:', provinceId)
       const response = await api.shipping.getDistricts(provinceId)
-      console.log('📦 [ShippingService] Districts response:', response)
       
       if (response && response.success && response.data) {
-        console.log('✅ [ShippingService] Districts:', response.data.length, 'items')
         return response.data
       } else {
         return []
       }
     } catch (error) {
-      console.error('❌ [ShippingService] Error fetching districts:', error)
       throw new Error(error.message || 'Không thể tải danh sách quận/huyện')
     }
   },
@@ -63,18 +55,14 @@ const shippingService = {
     }
 
     try {
-      console.log('🌐 [ShippingService] Fetching wards for district:', districtId)
       const response = await api.shipping.getWards(districtId)
-      console.log('📦 [ShippingService] Wards response:', response)
       
       if (response && response.success && response.data) {
-        console.log('✅ [ShippingService] Wards:', response.data.length, 'items')
         return response.data
       } else {
         return []
       }
     } catch (error) {
-      console.error('❌ [ShippingService] Error fetching wards:', error)
       throw new Error(error.message || 'Không thể tải danh sách phường/xã')
     }
   },
@@ -88,18 +76,14 @@ const shippingService = {
     }
 
     try {
-      console.log('🌐 [ShippingService] Fetching services for district:', toDistrictId)
       const response = await api.shipping.getServices(toDistrictId)
-      console.log('📦 [ShippingService] Services response:', response)
       
       if (response && response.success && response.data) {
-        console.log('✅ [ShippingService] Services:', response.data.length, 'items')
         return response.data
       } else {
         return []
       }
     } catch (error) {
-      console.error('❌ [ShippingService] Error fetching services:', error)
       throw new Error(error.message || 'Không thể tải danh sách dịch vụ')
     }
   },
@@ -109,20 +93,14 @@ const shippingService = {
    */
   async calculateShippingFee(data) {
     try {
-      console.log('🌐 [ShippingService] Calculating shipping fee:', data)
-      console.log('🔍 [ShippingService] toDistrictId type:', typeof data.toDistrictId, 'value:', data.toDistrictId)
-      console.log('🔍 [ShippingService] toWardCode type:', typeof data.toWardCode, 'value:', data.toWardCode)
       const response = await api.shipping.calculate(data)
-      console.log('📦 [ShippingService] Calculate response:', response)
       
       if (response && response.success && response.data) {
-        console.log('✅ [ShippingService] Fee calculated:', response.data)
         return response.data
       } else {
         throw new Error(response?.message || 'Không thể tính phí vận chuyển')
       }
     } catch (error) {
-      console.error('❌ [ShippingService] Error calculating fee:', error)
       throw new Error(error.message || 'Không thể tính phí vận chuyển')
     }
   },
@@ -132,9 +110,7 @@ const shippingService = {
    */
   async calculateShippingFeeFull(data) {
     try {
-      console.log('🌐 [ShippingService] Calculating full shipping fee:', data)
       const response = await api.shipping.calculateFull(data)
-      console.log('📦 [ShippingService] Full calculate response:', response)
       
       if (response && response.success && response.data) {
         return response.data
@@ -142,7 +118,6 @@ const shippingService = {
         throw new Error(response?.message || 'Không thể tính phí vận chuyển')
       }
     } catch (error) {
-      console.error('❌ [ShippingService] Error calculating full fee:', error)
       throw new Error(error.message || 'Không thể tính phí vận chuyển')
     }
   },

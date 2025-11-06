@@ -29,9 +29,6 @@ app.use(pinia)
 // Load user from localStorage after Pinia is initialized
 const userStore = useUserStore()
 userStore.loadUserFromStorage()
-console.log('🔐 Loaded user from storage:', userStore.user)
-console.log('✅ User authenticated:', userStore.isAuthenticated)
-console.log('👤 User role:', userStore.userRole)
 
 // Setup router
 app.use(router)

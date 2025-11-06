@@ -192,28 +192,20 @@ export const useSearchStore = defineStore('search', () => {
     
     try {
       isLoadingSizes.value = true
-      console.log('🔍 Loading sizes from database...')
-      
       // api.get() already returns response.data, so we get the data directly
       // Note: api.js baseURL is already '/api', so we just need '/kich-co/ten'
       const data = await api.get('/kich-co/ten')
       
-      console.log('🔍 Received data from API:', data)
-      
       if (data && Array.isArray(data)) {
         availableSizes.value = data
-        console.log('✅ Loaded sizes from DB:', availableSizes.value)
       } else if (Array.isArray(data.data)) {
         // Fallback if API returns nested data
         availableSizes.value = data.data
-        console.log('✅ Loaded sizes from DB (nested):', availableSizes.value)
       } else {
-        console.warn('⚠️ Invalid size data, using fallback. Received:', data)
         availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
       }
     } catch (error) {
-      console.error('❌ Error loading sizes:', error)
-      console.error('❌ Error details:', error.message, error.status, error.type)
+      
       // Fallback to default sizes
       availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
     } finally {
