@@ -14,7 +14,7 @@ export function validateToken(token) {
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
     const payload = JSON.parse(window.atob(base64))
 
-    console.log('🔍 Validating token payload:', payload)
+    
 
     // Check if authorities exist
     if (!payload.authorities) {
@@ -46,7 +46,7 @@ export function validateToken(token) {
       // Check if it's one of the supported roles
       const supportedRoles = ['ROLE_CUS', 'ROLE_STF', 'ROLE_ADM', 'ROLE_GST']
       if (!supportedRoles.includes(auth.authority)) {
-        console.warn('⚠️ Unknown role:', auth.authority)
+        
       }
 
       return true
@@ -68,7 +68,7 @@ export function validateToken(token) {
     }
 
   } catch (error) {
-    console.error('❌ Token validation error:', error)
+    
     return { valid: false, reason: 'Token decode error: ' + error.message }
   }
 }
@@ -77,7 +77,7 @@ export function validateToken(token) {
  * Force clear invalid token and reload page
  */
 export function clearInvalidToken(reason) {
-  console.warn('⚠️ CLEARING INVALID TOKEN:', reason)
+  
   
   // Show user-friendly message
   const message = `Token không hợp lệ (${reason}). Vui lòng đăng nhập lại.`

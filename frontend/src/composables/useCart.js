@@ -73,10 +73,7 @@ export function useCart() {
    */
   const loadCartFromAPI = async () => {
     try {
-      console.log('🔄 Loading cart from API...')
       const response = await cartService.getCart()
-      console.log('✅ Cart API response:', response)
-      console.log('🔑 User status:', userStore.isAuthenticated ? 'Logged in' : 'Guest')
       
       // Sử dụng method loadCart từ store để cập nhật trực tiếp
       if (cartStore.loadCart) {
@@ -84,7 +81,6 @@ export function useCart() {
       } else {
         // Fallback: Cập nhật thủ công nếu method không có
         if (response && response.chiTietList && Array.isArray(response.chiTietList)) {
-          console.log('📦 Updating cart with', response.chiTietList.length, 'items')
           
           // Map từ backend format sang cart store format
           const mappedItems = response.chiTietList.map(item => {
@@ -114,16 +110,15 @@ export function useCart() {
           // Cập nhật trực tiếp vào store items
           cartStore.items = mappedItems
           cartStore.saveToStorage()
-          
-          console.log('✅ Cart updated with', mappedItems.length, 'items')
         } else {
-          console.log('ℹ️ Cart is empty or no data from API')
-          cartStore.items = []
-          cartStore.saveToStorage()
+          // Đừng xóa giỏ cục bộ nếu API rỗng; giữ nguyên localStorage để có thể sync ngược
+          if (cartStore.loadFromStorage) {
+            cartStore.loadFromStorage()
+          }
         }
       }
     } catch (error) {
-      console.error('❌ Error loading cart from API:', error)
+      
       // Nếu lỗi, giữ nguyên local cart (không clear)
     }
   }

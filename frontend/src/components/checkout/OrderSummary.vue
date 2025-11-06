@@ -94,6 +94,7 @@ import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import orderService from '@/services/orderService'
 import cartService from '@/services/cartService'
+import paymentService from '@/services/paymentService'
 
 const { items, formatPrice, clearCart } = useCart()
 const { selectedVoucher, manualVoucherCode } = useVoucher()
@@ -148,24 +149,16 @@ const shippingFee = computed(() => {
 
 // Tính toán giảm giá dựa trên voucher
 const discountAmount = computed(() => {
-  console.log('=== DISCOUNT CALCULATION DEBUG ===')
-  console.log('selectedVoucher.value:', selectedVoucher.value)
-  console.log('manualVoucherCode.value:', manualVoucherCode.value)
-  console.log('subtotal.value:', subtotal.value)
-  
   if (!selectedVoucher.value && !manualVoucherCode.value) {
-    console.log('No voucher selected, returning 0')
     return 0
   }
   
   // Nếu có voucher được chọn từ list
   if (selectedVoucher.value) {
     const { loai, giaTri, donToiThieu } = selectedVoucher.value
-    console.log('Voucher data:', { loai, giaTri, donToiThieu })
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
     if (subtotal.value < (donToiThieu || 0)) {
-      console.log('Subtotal too low, returning 0')
       return 0
     }
     
@@ -178,18 +171,15 @@ const discountAmount = computed(() => {
       discount = Math.min(30000, subtotal.value)
     }
     
-    console.log('Calculated discount:', discount)
     return discount
   }
   
   // Nếu có voucher manual và đã được validate
   if (manualVoucherCode.value && manualVoucherCode.value.trim() && selectedVoucher.value) {
     const { loai, giaTri, donToiThieu } = selectedVoucher.value
-    console.log('Manual voucher data:', { loai, giaTri, donToiThieu })
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
     if (subtotal.value < (donToiThieu || 0)) {
-      console.log('Manual voucher: Subtotal too low, returning 0')
       return 0
     }
     
@@ -202,11 +192,9 @@ const discountAmount = computed(() => {
       discount = Math.min(30000, subtotal.value) // Giả sử phí ship là 30k
     }
     
-    console.log('Manual voucher calculated discount:', discount)
     return discount
   }
   
-  console.log('No valid voucher found, returning 0')
   return 0
 })
 
@@ -216,78 +204,121 @@ const finalTotal = computed(() => {
 
 // Validate form data trước khi đặt hàng
 const validateCheckoutData = () => {
-  console.log('🔍 Validating checkout data...')
-  console.log('shippingFormData:', shippingFormData)
-  console.log('selectedPaymentMethod:', selectedPaymentMethod)
-  
   if (!shippingFormData || !shippingFormData.value) {
     if (window.$toast) {
       window.$toast.error('Không tìm thấy thông tin giao hàng')
+    } else {
+      alert('Không tìm thấy thông tin giao hàng')
     }
     return false
   }
 
   const formData = shippingFormData.value
-  console.log('Form data:', formData)
 
+  // Validate Họ tên
   if (!formData.fullName || !formData.fullName.trim()) {
     if (window.$toast) {
       window.$toast.error('Vui lòng nhập họ tên')
+    } else {
+      alert('Vui lòng nhập họ tên')
     }
     return false
   }
 
+  // Validate Số điện thoại
   if (!formData.phone || !formData.phone.trim()) {
     if (window.$toast) {
       window.$toast.error('Vui lòng nhập số điện thoại')
+    } else {
+      alert('Vui lòng nhập số điện thoại')
+    }
+    return false
+  }
+  
+  // Validate format số điện thoại (chỉ chứa số, ít nhất 10 chữ số)
+  const phoneRegex = /^[0-9]{10,11}$/
+  const cleanPhone = formData.phone.trim().replace(/\s+/g, '')
+  if (!phoneRegex.test(cleanPhone)) {
+    if (window.$toast) {
+      window.$toast.error('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số')
+    } else {
+      alert('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số')
     }
     return false
   }
 
+  // Validate Địa chỉ
   if (!formData.address || !formData.address.trim()) {
     if (window.$toast) {
       window.$toast.error('Vui lòng nhập địa chỉ giao hàng')
+    } else {
+      alert('Vui lòng nhập địa chỉ giao hàng')
     }
     return false
   }
 
+  // Validate Email
   if (!formData.email || !formData.email.trim()) {
     if (window.$toast) {
       window.$toast.error('Vui lòng nhập email')
+    } else {
+      alert('Vui lòng nhập email')
+    }
+    return false
+  }
+  
+  // Validate format email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(formData.email.trim())) {
+    if (window.$toast) {
+      window.$toast.error('Email không hợp lệ. Vui lòng kiểm tra lại định dạng email')
+    } else {
+      alert('Email không hợp lệ. Vui lòng kiểm tra lại định dạng email')
     }
     return false
   }
 
+  // Validate Phương thức thanh toán
   if (!selectedPaymentMethod || !selectedPaymentMethod.value) {
     if (window.$toast) {
       window.$toast.error('Vui lòng chọn phương thức thanh toán')
+    } else {
+      alert('Vui lòng chọn phương thức thanh toán')
     }
     return false
   }
 
-  console.log('✅ Validation passed')
   return true
+}
+
+// Helper function: Extract số ID từ bienTheId/variantId (có thể là string composite hoặc số)
+const extractBienTheId = (value) => {
+  if (!value) return null
+  // Nếu đã là số → trả về
+  if (typeof value === 'number') return value
+  // Nếu là string → thử parse
+  const str = String(value).trim()
+  // Nếu có format composite như "1-#808080-M", lấy phần đầu (số)
+  const match = str.match(/^(\d+)/)
+  if (match) {
+    const num = parseInt(match[1], 10)
+    return isNaN(num) ? null : num
+  }
+  // Nếu string là số thuần → parse
+  const num = parseInt(str, 10)
+  return isNaN(num) ? null : num
 }
 
 // Xử lý đặt hàng
 const handleCheckout = async () => {
-  console.log('🛒 Starting checkout...')
-  console.log('🔐 userStore.isAuthenticated:', userStore.isAuthenticated)
-  console.log('🔐 userStore.user:', userStore.user)
-  console.log('🔐 isAuthenticated computed:', isAuthenticated.value)
-  
   const token = localStorage.getItem('auro_token')
-  console.log('🔑 Token exists:', !!token)
-  console.log('🔑 Token value:', token ? token.substring(0, 20) + '...' : 'null')
   
   if (isProcessing.value) {
-    console.log('⚠️ Already processing')
     return
   }
 
   // Validate dữ liệu
   if (!validateCheckoutData()) {
-    console.log('❌ Validation failed')
     return
   }
 
@@ -297,8 +328,6 @@ const handleCheckout = async () => {
     // Lấy các sản phẩm đã chọn
     const selectedItems = items.value.filter(item => item.selected !== false)
 
-    console.log('📦 Selected items:', selectedItems)
-    console.log('📦 All items:', items.value)
 
     if (selectedItems.length === 0) {
       if (window.$toast) {
@@ -319,16 +348,12 @@ const handleCheckout = async () => {
       const unselectedItems = items.value.filter(item => item.selected === false)
       
       if (unselectedItems.length > 0) {
-        console.log('🗑️ Removing unselected items from backend cart:', unselectedItems)
-        
         // Xóa từng item không được chọn khỏi backend cart
         for (const item of unselectedItems) {
           if (item.id) {
             try {
               await cartService.removeFromCart(item.id)
-              console.log('✅ Removed item from backend:', item.id)
             } catch (err) {
-              console.warn('⚠️ Failed to remove item from backend (may not exist):', item.id, err.message)
               // Không throw error, tiếp tục xử lý
             }
           }
@@ -336,46 +361,52 @@ const handleCheckout = async () => {
       }
       
       // Đảm bảo các sản phẩm được chọn có trong backend cart
-      console.log('✅ Ensuring selected items are in backend cart...')
       for (const item of selectedItems) {
         // Nếu item chưa có ID từ backend (local item), thêm vào backend
         if (!item.id && (item.bienTheId || item.variantId)) {
           try {
-            const addResponse = await cartService.addToCart({
-              bienTheId: item.bienTheId || item.variantId,
-              soLuong: item.quantity
-            })
-            console.log('✅ Added item to backend cart:', item.bienTheId, addResponse)
+            const bienTheIdNum = extractBienTheId(item.bienTheId || item.variantId)
+            if (bienTheIdNum) {
+              await cartService.addToCart({
+                bienTheId: bienTheIdNum,
+                soLuong: item.quantity
+              })
+            }
           } catch (err) {
-            console.warn('⚠️ Failed to add item to backend (may already exist):', item.bienTheId, err.message)
             // Không throw error, có thể item đã có trong backend
           }
-        } else {
-          console.log('ℹ️ Item already in backend:', item.id || item.bienTheId)
         }
       }
     }
 
-    // Reload cart từ backend để đảm bảo sync
-    console.log('🔄 Reloading cart from backend to ensure sync...')
     try {
       const backendCart = await cartService.getCart()
-      console.log('📦 Backend cart:', backendCart)
       
       if (!backendCart || !backendCart.chiTietList || backendCart.chiTietList.length === 0) {
-        if (window.$toast) {
-          window.$toast.error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.')
+        try {
+          for (const item of selectedItems) {
+            const variantId = item.bienTheId || item.variantId
+            const bienTheIdNum = extractBienTheId(variantId)
+            if (bienTheIdNum) {
+              await cartService.addToCart({ bienTheId: bienTheIdNum, soLuong: item.quantity || 1 })
+            }
+          }
+          const reloaded = await cartService.getCart()
+          if (!reloaded || !reloaded.chiTietList || reloaded.chiTietList.length === 0) {
+            if (window.$toast) {
+              window.$toast.error('Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt hàng.')
+            }
+            isProcessing.value = false
+            return
+          }
+        } catch (_) {
+          if (window.$toast) {
+            window.$toast.error('Không thể đồng bộ giỏ hàng. Vui lòng thử lại.')
+          }
+          isProcessing.value = false
+          return
         }
-        isProcessing.value = false
-        return
       }
-      
-      console.log('✅ Backend cart has', backendCart.chiTietList.length, 'items')
-      
-      // NOTE: Không cần transfer items cho authenticated users
-      // Backend guest-checkout endpoint sẽ tự động nhận diện user từ token
-      // và lưu đơn hàng với khachHangId tương ứng
-      console.log('✅ Ready to checkout with current cart state')
     } catch (error) {
       console.error('❌ Failed to load backend cart:', error)
       if (window.$toast) {
@@ -389,8 +420,6 @@ const handleCheckout = async () => {
 
     // Xác định đã đăng nhập hay chưa dựa vào token
     if (token && isAuthenticated.value) {
-      console.log('👤 User is authenticated - using guest checkout endpoint with token')
-      
       // Sử dụng guest checkout format cho cả user đã đăng nhập
       // Backend sẽ tự động map user từ token (auth parameter trong controller)
       const orderData = {
@@ -410,16 +439,8 @@ const handleCheckout = async () => {
         serviceId: shipping?.selectedService?.value || null
       }
       
-      console.log('📤 Sending order as authenticated user (with token):', orderData)
-      console.log('🚚 GHN shipping info:', {
-        districtId: orderData.districtId,
-        wardCode: orderData.wardCode,
-        serviceId: orderData.serviceId
-      })
-      
       try {
         response = await orderService.guestCheckout(orderData)
-        console.log('✅ Order created:', response)
         
         if (window.$toast) {
           window.$toast.success('Đặt hàng thành công!', 'Cảm ơn bạn đã mua hàng')
@@ -430,8 +451,6 @@ const handleCheckout = async () => {
       }
     } else {
       // Guest checkout (không có token)
-      console.log('👻 Guest checkout (no authentication)')
-      
       const guestOrderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -449,13 +468,6 @@ const handleCheckout = async () => {
         serviceId: shipping?.selectedService?.value || null
       }
       
-      console.log('📤 Sending guest order:', guestOrderData)
-      console.log('🚚 GHN shipping info:', {
-        districtId: guestOrderData.districtId,
-        wardCode: guestOrderData.wardCode,
-        serviceId: guestOrderData.serviceId
-      })
-      
       response = await orderService.guestCheckout(guestOrderData)
       
       if (window.$toast) {
@@ -463,35 +475,78 @@ const handleCheckout = async () => {
       }
     }
 
-    console.log('✅ Order created:', response)
 
-    // Xóa giỏ hàng sau khi đặt hàng thành công
-    await clearCart()
 
-    // Chuyển đến trang xác nhận đơn hàng
-    // Guest checkout có thể không trả về response.id, chỉ có success: true
-    if (response && (response.id || response.success)) {
-      // Nếu có ID đơn hàng và user đã đăng nhập, chuyển đến trang chi tiết đơn hàng
-      if (response.id && token && isAuthenticated.value) {
-        router.push({ 
-          name: 'order-detail', 
-          params: { id: response.id },
-          query: { new: 'true' } // Đánh dấu là đơn hàng mới
-        })
-      } else {
-        // Guest hoặc không có ID, chuyển đến trang danh sách đơn hàng (hoặc trang xác nhận)
-        router.push({ 
-          name: 'order-success',
-          query: { 
-            orderId: response.id || 'pending',
-            email: shippingFormData.value.email 
-          }
-        })
+// Lấy id đơn và tổng thanh toán
+let donHangId =
+  response?.id ||
+  response?.data?.id ||
+  response?.donHangId ||
+  response?.data?.donHangId ||
+  null
+
+let tongThanhToan =
+  response?.tongThanhToan ||
+  response?.data?.tongThanhToan ||
+  response?.tongTien ||
+  response?.data?.tongTien ||
+  0
+
+// Fallback: nếu chưa có id từ response và user đang đăng nhập → lấy đơn mới nhất
+if (!donHangId && token && isAuthenticated.value) {
+  try {
+    const myOrders = await orderService.getMyOrders({ page: 0, size: 1 })
+    const newest = myOrders?.content?.[0]
+    if (newest?.id) {
+      donHangId = newest.id
+      if (!tongThanhToan) {
+        tongThanhToan =
+          newest?.tongThanhToan ||
+          newest?.tongTien ||
+          Number(finalTotal.value || 0)
       }
-    } else {
-      // Fallback: về trang chủ với thông báo
-      router.push('/')
     }
+  } catch (e) {
+    console.warn('Không lấy được đơn mới nhất:', e)
+  }
+}
+
+// Nếu vẫn chưa có tổng tiền → dùng tổng từ UI
+if (!tongThanhToan) {
+  tongThanhToan = Number(finalTotal.value || 0)
+}
+
+// Nếu chọn thanh toán onl -> tạo URL thanh toán và redirect
+if ((selectedPaymentMethod.value || '').toString().toUpperCase() === 'VNPAY') {
+  try {
+    const pay = await paymentService.taoUrlThanhToan({
+      donHangId,
+      soTien: Number(tongThanhToan || 0),
+      moTa: `Thanh toán đơn hàng #${donHangId}`
+    })
+
+    if (pay.success && pay.paymentUrl) {
+      // Không xóa giỏ trước khi thanh toán xong
+      window.location.href = pay.paymentUrl
+      return
+    } else {
+      if (window.$toast) {
+        window.$toast.error(pay.message || 'Không thể tạo URL thanh toán VNPay')
+      }
+      return
+    }
+  } catch (e) {
+    console.error('Lỗi tạo URL VNPay:', e)
+    if (window.$toast) {
+      window.$toast.error('Không thể tạo URL thanh toán VNPay')
+    }
+    return
+  }
+}
+
+// Nếu không phải thanh toán onl -> xóa giỏ và điều hướng OrderSuccess
+await clearCart()
+ router.push({ name: 'order-success', query: { orderId: donHangId } })
 
   } catch (error) {
     console.error('❌ Checkout error:', error)
@@ -506,7 +561,6 @@ const handleCheckout = async () => {
     if (window._tempAuthToken) {
       localStorage.setItem('auro_token', window._tempAuthToken)
       delete window._tempAuthToken
-      console.log('🔑 Token restored after error')
     }
     
     let errorMessage = 'Có lỗi xảy ra khi đặt hàng'

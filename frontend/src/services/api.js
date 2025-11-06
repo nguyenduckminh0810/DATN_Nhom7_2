@@ -33,26 +33,13 @@ class ApiService {
         // Luôn gửi token nếu có (trừ public endpoints)
         if (token && !isPublicGet && !isPublicEndpoint) {
           config.headers.Authorization = `Bearer ${token}`
-          console.log('🔑 Token added to request:', config.url)
           
-          // Decode JWT to check authorities
-          try {
-            const base64Url = token.split('.')[1]
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-            const payload = JSON.parse(window.atob(base64))
-            console.log('🔓 JWT Payload:', payload)
-            console.log('👮 Authorities in token:', payload.authorities)
-          } catch (e) {
-            console.warn('⚠️ Failed to decode JWT:', e)
-          }
         } else {
           // ensure we don't accidentally send a stale header
           if (config.headers && 'Authorization' in config.headers) {
             delete config.headers.Authorization
           }
-          if (!isPublicGet && !isPublicEndpoint) {
-            console.log('⚠️ No token available for request:', config.url)
-          }
+          
         }
         return config
       },
@@ -180,7 +167,7 @@ class ApiService {
 
   // Chuẩn hoá phản hồi đăng nhập để FE hiểu đúng
   normalizeAuthResponse(be) {
-    console.log('Backend login response:', be)
+    
 
     const accessToken =
       be?.accessToken ||
@@ -216,8 +203,7 @@ class ApiService {
       }
     }
 
-    console.log('Normalized user:', user)
-    console.log('Normalized token:', accessToken)
+    
 
     const success =
       be?.success ??

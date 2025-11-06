@@ -137,13 +137,10 @@ export const useCartStore = defineStore('cart', () => {
   const loadCart = async () => {
     try {
       isLoading.value = true
-      console.log('🔄 Loading cart from backend...')
-      
       const response = await cartService.getCart()
-      console.log('✅ Cart loaded from backend:', response)
       
-      if (response && response.chiTietList) {
-        // Map backend response to cart items format
+      if (response && Array.isArray(response.chiTietList) && response.chiTietList.length > 0) {
+        // Map backend response to cart items format (only when backend has items)
         items.value = response.chiTietList.map(item => ({
           id: item.id, // GioHangChiTiet ID
           itemKey: item.id,
@@ -160,8 +157,10 @@ export const useCartStore = defineStore('cart', () => {
           addedAt: new Date().toISOString()
         }))
         
-        console.log('✅ Cart items mapped:', items.value)
         saveToStorage()
+      } else {
+        // Backend giỏ rỗng → giữ giỏ cục bộ (đừng ghi đè thành rỗng)
+        loadFromStorage()
       }
       
       return response

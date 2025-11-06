@@ -107,13 +107,9 @@
           >
             <i class="bi bi-trash me-1" ></i>Xóa tất cả
           </button>
-          <router-link 
-            to="/cart" 
-            class="btn btn-primary btn-checkout"
-            @click="closeMiniCart"
-          >
-            Thanh toán
-          </router-link>
+          <router-link to="/cart" class="btn btn-primary btn-checkout" @click="closeMiniCart">
+  Thanh toán
+</router-link>
         </div>
       </div>
     </div>
