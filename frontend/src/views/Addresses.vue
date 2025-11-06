@@ -202,34 +202,65 @@
 
               <div class="mb-3">
                 <label class="form-label">Tỉnh/Thành phố *</label>
-                <input
-                  v-model.trim="addressForm.tinhThanh"
-                  type="text"
-                  class="form-control"
-                  list="provinceList"
-                  autocomplete="address-level1"
-                  placeholder="Nhập tên tỉnh/thành phố..."
-                  @input="filterProvinces"
+                <select
+                  v-model="selectedProvinceId"
+                  class="form-select"
+                  @change="onProvinceChange"
+                  :disabled="loadingGHN.provinces"
                   required
-                />
-                <datalist id="provinceList">
-                  <option v-for="province in filteredProvinces" :key="province" :value="province">
-                    {{ province }}
+                >
+                  <option :value="null">Chọn tỉnh/thành phố</option>
+                  <option
+                    v-for="province in ghnProvinces"
+                    :key="province.ProvinceID"
+                    :value="province.ProvinceID"
+                  >
+                    {{ province.ProvinceName }}
                   </option>
-                </datalist>
+                </select>
+                <small v-if="loadingGHN.provinces" class="text-muted">Đang tải...</small>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Quận/Huyện *</label>
+                <select
+                  v-model="selectedDistrictId"
+                  class="form-select"
+                  @change="onDistrictChange"
+                  :disabled="loadingGHN.districts || !selectedProvinceId"
+                  required
+                >
+                  <option :value="null">Chọn quận/huyện</option>
+                  <option
+                    v-for="district in ghnDistricts"
+                    :key="district.DistrictID"
+                    :value="district.DistrictID"
+                  >
+                    {{ district.DistrictName }}
+                  </option>
+                </select>
+                <small v-if="loadingGHN.districts" class="text-muted">Đang tải...</small>
               </div>
 
               <div class="mb-3">
                 <label class="form-label">Phường/Xã *</label>
-                <input
-                  v-model.trim="addressForm.phuongXa"
-                  type="text"
-                  class="form-control"
-                  autocomplete="address-level3"
-                  placeholder="Nhập phường/xã..."
-                  maxlength="100"
+                <select
+                  v-model="selectedWardCode"
+                  class="form-select"
+                  @change="onWardChange"
+                  :disabled="loadingGHN.wards || !selectedDistrictId"
                   required
-                />
+                >
+                  <option :value="null">Chọn phường/xã</option>
+                  <option
+                    v-for="ward in ghnWards"
+                    :key="ward.WardCode"
+                    :value="ward.WardCode"
+                  >
+                    {{ ward.WardName }}
+                  </option>
+                </select>
+                <small v-if="loadingGHN.wards" class="text-muted">Đang tải...</small>
               </div>
 
               <div class="mb-3">
@@ -282,6 +313,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import addressService from '@/services/addressService'
+import shippingService from '@/services/shippingService'
 import provinces from '@/data/provinces'
 import { Modal } from 'bootstrap'
 import { useToast } from '@/composables/useToast'
@@ -305,7 +337,22 @@ const addressForm = ref({
   macDinh: false,
 })
 
-// Provinces filter for autocomplete
+// GHN API dropdowns
+const ghnProvinces = ref([])
+const ghnDistricts = ref([])
+const ghnWards = ref([])
+
+const selectedProvinceId = ref(null)
+const selectedDistrictId = ref(null)
+const selectedWardCode = ref(null)
+
+const loadingGHN = ref({
+  provinces: false,
+  districts: false,
+  wards: false,
+})
+
+// Provinces filter for autocomplete (legacy)
 const provinceSearchText = ref('')
 const filteredProvinces = computed(() => {
   if (!provinceSearchText.value) {
@@ -377,8 +424,107 @@ const loadAddresses = async () => {
   }
 }
 
+// Load GHN provinces
+const loadGHNProvinces = async () => {
+  loadingGHN.value.provinces = true
+  try {
+    ghnProvinces.value = await shippingService.getProvinces()
+    console.log('✅ Loaded GHN provinces:', ghnProvinces.value.length)
+  } catch (err) {
+    console.error('Error loading GHN provinces:', err)
+    error('Không thể tải danh sách tỉnh/thành phố')
+  } finally {
+    loadingGHN.value.provinces = false
+  }
+}
+
+// Load GHN districts
+const loadGHNDistricts = async (provinceId) => {
+  if (!provinceId) {
+    ghnDistricts.value = []
+    ghnWards.value = []
+    selectedDistrictId.value = null
+    selectedWardCode.value = null
+    return
+  }
+
+  loadingGHN.value.districts = true
+  try {
+    ghnDistricts.value = await shippingService.getDistricts(provinceId)
+    console.log('✅ Loaded GHN districts:', ghnDistricts.value.length)
+  } catch (err) {
+    console.error('Error loading GHN districts:', err)
+    error('Không thể tải danh sách quận/huyện')
+  } finally {
+    loadingGHN.value.districts = false
+  }
+}
+
+// Load GHN wards
+const loadGHNWards = async (districtId) => {
+  if (!districtId) {
+    ghnWards.value = []
+    selectedWardCode.value = null
+    return
+  }
+
+  loadingGHN.value.wards = true
+  try {
+    ghnWards.value = await shippingService.getWards(districtId)
+    console.log('✅ Loaded GHN wards:', ghnWards.value.length)
+  } catch (err) {
+    console.error('Error loading GHN wards:', err)
+    error('Không thể tải danh sách phường/xã')
+  } finally {
+    loadingGHN.value.wards = false
+  }
+}
+
+// Handle province change
+const onProvinceChange = async () => {
+  // Update addressForm with selected province name
+  const province = ghnProvinces.value.find((p) => p.ProvinceID === selectedProvinceId.value)
+  if (province) {
+    addressForm.value.tinhThanh = province.ProvinceName
+  }
+
+  // Reset lower levels
+  selectedDistrictId.value = null
+  selectedWardCode.value = null
+  addressForm.value.quanHuyen = 'N/A'
+  addressForm.value.phuongXa = ''
+
+  // Load districts
+  await loadGHNDistricts(selectedProvinceId.value)
+}
+
+// Handle district change
+const onDistrictChange = async () => {
+  // Update addressForm with selected district name
+  const district = ghnDistricts.value.find((d) => d.DistrictID === selectedDistrictId.value)
+  if (district) {
+    addressForm.value.quanHuyen = district.DistrictName
+  }
+
+  // Reset ward
+  selectedWardCode.value = null
+  addressForm.value.phuongXa = ''
+
+  // Load wards
+  await loadGHNWards(selectedDistrictId.value)
+}
+
+// Handle ward change
+const onWardChange = () => {
+  // Update addressForm with selected ward name
+  const ward = ghnWards.value.find((w) => w.WardCode === selectedWardCode.value)
+  if (ward) {
+    addressForm.value.phuongXa = ward.WardName
+  }
+}
+
 // Show address form
-const showAddressForm = (address = null) => {
+const showAddressForm = async (address = null) => {
   console.log('showAddressForm called with:', address) // Debug log
 
   if (address) {
@@ -394,6 +540,24 @@ const showAddressForm = (address = null) => {
       tinhThanh: address.tinhThanh,
       macDinh: address.macDinh,
     })
+
+    // Try to find and select in GHN dropdowns
+    const province = addressService.findProvinceInGHN(address.tinhThanh, ghnProvinces.value)
+    if (province) {
+      selectedProvinceId.value = province.ProvinceID
+      await loadGHNDistricts(province.ProvinceID)
+
+      const district = addressService.findDistrictInGHN(address.quanHuyen, ghnDistricts.value)
+      if (district) {
+        selectedDistrictId.value = district.DistrictID
+        await loadGHNWards(district.DistrictID)
+
+        const ward = addressService.findWardInGHN(address.phuongXa, ghnWards.value)
+        if (ward) {
+          selectedWardCode.value = ward.WardCode
+        }
+      }
+    }
   } else {
     isEditMode.value = false
     editingAddressId.value = null
@@ -407,6 +571,13 @@ const showAddressForm = (address = null) => {
       tinhThanh: '',
       macDinh: false,
     })
+
+    // Reset GHN dropdowns
+    selectedProvinceId.value = null
+    selectedDistrictId.value = null
+    selectedWardCode.value = null
+    ghnDistricts.value = []
+    ghnWards.value = []
   }
   provinceSearchText.value = ''
 
@@ -547,9 +718,12 @@ const deleteAddress = async (id) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadUserData()
   loadAddresses()
+
+  // Load GHN provinces
+  await loadGHNProvinces()
 
   // Khởi tạo modal
   const modalElement = document.getElementById('addressModal')
@@ -571,6 +745,13 @@ onMounted(() => {
         macDinh: false,
       })
       provinceSearchText.value = ''
+      
+      // Reset GHN dropdowns
+      selectedProvinceId.value = null
+      selectedDistrictId.value = null
+      selectedWardCode.value = null
+      ghnDistricts.value = []
+      ghnWards.value = []
     })
   } else {
     console.error('Modal element not found!') // Debug log
