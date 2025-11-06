@@ -296,11 +296,25 @@ const loadSavedAddresses = async () => {
   try {
     const response = await addressService.getAllAddresses()
     if (response.success && response.data) {
-      savedAddresses.value = response.data || []
+      // Sắp xếp địa chỉ: mặc định lên đầu
+      savedAddresses.value = (response.data || []).sort((a, b) => {
+        if (a.macDinh && !b.macDinh) return -1
+        if (!a.macDinh && b.macDinh) return 1
+        return 0
+      })
+
+      // Format địa chỉ đầy đủ cho mỗi địa chỉ
+      savedAddresses.value = savedAddresses.value.map(addr => ({
+        ...addr,
+        diaChiDayDu: addressService.formatFullAddress(addr)
+      }))
+
+      console.log('✅ Loaded saved addresses:', savedAddresses.value.length)
 
       // Auto-select default address if exists
       const defaultAddress = savedAddresses.value.find((addr) => addr.macDinh)
       if (defaultAddress) {
+        console.log('🎯 Auto-selecting default address:', defaultAddress.hoTen)
         await selectAddress(defaultAddress)
       }
     } else {
@@ -317,42 +331,93 @@ const loadSavedAddresses = async () => {
 
 // Select a saved address
 const selectAddress = async (address) => {
+  console.log('📍 Selecting address:', address.hoTen)
   selectedAddressId.value = address.id
 
   // Fill shipping info with selected address
   shippingInfo.value.fullName = address.hoTen
   shippingInfo.value.phone = address.soDienThoai
   shippingInfo.value.address = address.diaChi1
+  
+  // Fill email from user if available
+  if (!shippingInfo.value.email && userStore.userEmail) {
+    shippingInfo.value.email = userStore.userEmail
+  }
 
-  // Find and set province
-  const province = provinces.value.find((p) => p.ProvinceName === address.tinhThanh)
+  console.log('🔍 Looking for province:', address.tinhThanh)
+  
+  // Find and set province using helper
+  const province = addressService.findProvinceInGHN(address.tinhThanh, provinces.value)
+  
   if (province) {
+    console.log('✅ Found province:', province.ProvinceName)
     selectedProvince.value = province.ProvinceID
+    
+    // Update shippingInfo with province name
+    shippingInfo.value.province = province.ProvinceName
+    shippingInfo.value.provinceId = province.ProvinceID
+    
     await loadDistricts(province.ProvinceID)
 
-    // Find and set district
-    const district = districts.value.find((d) => d.DistrictName === address.quanHuyen)
+    console.log('🔍 Looking for district:', address.quanHuyen)
+    
+    // Find and set district using helper
+    const district = addressService.findDistrictInGHN(address.quanHuyen, districts.value)
+    
     if (district) {
+      console.log('✅ Found district:', district.DistrictName)
       selectedDistrict.value = district.DistrictID
+      
+      // Update shippingInfo with district name
+      shippingInfo.value.district = district.DistrictName
+      shippingInfo.value.districtId = district.DistrictID
+      
       await loadWards(district.DistrictID)
       await loadServices(district.DistrictID)
 
-      // Find and set ward
-      const ward = wards.value.find((w) => w.WardName === address.phuongXa)
+      console.log('🔍 Looking for ward:', address.phuongXa)
+      
+      // Find and set ward using helper
+      const ward = addressService.findWardInGHN(address.phuongXa, wards.value)
+      
       if (ward) {
+        console.log('✅ Found ward:', ward.WardName)
         selectedWard.value = ward.WardCode
+        
+        // Update shippingInfo with ward name
+        shippingInfo.value.ward = ward.WardName
+        shippingInfo.value.wardCode = ward.WardCode
 
         // Auto calculate shipping fee
+        console.log('💰 Auto-calculating shipping fee...')
+        console.log('⚖️ Total weight:', totalWeight.value)
+        console.log('💵 Total value:', total.value)
+        
         try {
-          await calculateShippingFee({
+          const result = await calculateShippingFee({
             totalWeight: totalWeight.value,
             insuranceValue: total.value,
           })
+          
+          if (result && result.success) {
+            console.log('✅ Shipping fee calculated:', result.shippingFee)
+          } else {
+            console.warn('⚠️ Failed to calculate shipping fee:', result?.error)
+          }
         } catch (error) {
-          console.error('Error calculating shipping fee:', error)
+          console.error('❌ Error calculating shipping fee:', error)
         }
+      } else {
+        console.warn('⚠️ Ward not found:', address.phuongXa)
+        console.warn('Available wards:', wards.value.map(w => w.WardName))
       }
+    } else {
+      console.warn('⚠️ District not found:', address.quanHuyen)
+      console.warn('Available districts:', districts.value.map(d => d.DistrictName))
     }
+  } else {
+    console.warn('⚠️ Province not found:', address.tinhThanh)
+    console.warn('Available provinces:', provinces.value.slice(0, 5).map(p => p.ProvinceName))
   }
 }
 
@@ -406,10 +471,11 @@ const onProvinceChange = async () => {
   if (selectedProvince.value) {
     await loadDistricts(selectedProvince.value)
 
-    // Update shippingInfo với tên tỉnh/thành
+    // Update shippingInfo với tên tỉnh/thành và ID
     const province = provinces.value.find((p) => p.ProvinceID === selectedProvince.value)
     if (province && shippingInfo.value) {
       shippingInfo.value.province = province.ProvinceName
+      shippingInfo.value.provinceId = province.ProvinceID
     }
   }
 }
@@ -428,20 +494,22 @@ const onDistrictChange = async () => {
       console.error('❌ loadServices failed:', error)
     }
 
-    // Update shippingInfo với tên quận/huyện
+    // Update shippingInfo với tên quận/huyện và ID
     const district = districts.value.find((d) => d.DistrictID === selectedDistrict.value)
     if (district && shippingInfo.value) {
       shippingInfo.value.district = district.DistrictName
+      shippingInfo.value.districtId = district.DistrictID
     }
   }
 }
 
 const onWardChange = async () => {
   if (selectedWard.value && selectedDistrict.value) {
-    // Update shippingInfo với tên phường/xã
+    // Update shippingInfo với tên phường/xã và WardCode
     const ward = wards.value.find((w) => w.WardCode === selectedWard.value)
     if (ward && shippingInfo.value) {
       shippingInfo.value.ward = ward.WardName
+      shippingInfo.value.wardCode = ward.WardCode
     }
 
     // LOG THÔNG TIN TRƯỚC KHI TÍNH PHÍ

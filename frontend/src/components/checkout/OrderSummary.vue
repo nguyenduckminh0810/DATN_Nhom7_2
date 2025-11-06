@@ -235,14 +235,21 @@ const validateCheckoutData = () => {
     return false
   }
   
-  // Validate format số điện thoại (chỉ chứa số, ít nhất 10 chữ số)
-  const phoneRegex = /^[0-9]{10,11}$/
-  const cleanPhone = formData.phone.trim().replace(/\s+/g, '')
+  // Validate format số điện thoại (hỗ trợ: 0xxxxxxxxx, +84xxxxxxxxx, 84xxxxxxxxx)
+  // Loại bỏ khoảng trắng, dấu gạch ngang, dấu chấm
+  const cleanPhone = formData.phone.trim().replace(/[\s\-\.]/g, '')
+  
+  // Regex hỗ trợ nhiều format:
+  // - 0xxxxxxxxx (10-11 số)
+  // - +84xxxxxxxxx (9-10 số sau +84)
+  // - 84xxxxxxxxx (9-10 số sau 84)
+  const phoneRegex = /^(\+?84|0)[0-9]{9,10}$/
+  
   if (!phoneRegex.test(cleanPhone)) {
     if (window.$toast) {
-      window.$toast.error('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số')
+      window.$toast.error('Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam hợp lệ')
     } else {
-      alert('Số điện thoại không hợp lệ. Vui lòng nhập 10-11 chữ số')
+      alert('Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại Việt Nam hợp lệ')
     }
     return false
   }
@@ -253,6 +260,16 @@ const validateCheckoutData = () => {
       window.$toast.error('Vui lòng nhập địa chỉ giao hàng')
     } else {
       alert('Vui lòng nhập địa chỉ giao hàng')
+    }
+    return false
+  }
+
+  // Validate Province/District/Ward (cần thiết cho GHN API)
+  if (!formData.province || !formData.district || !formData.ward) {
+    if (window.$toast) {
+      window.$toast.error('Vui lòng chọn đầy đủ Tỉnh/Quận/Phường')
+    } else {
+      alert('Vui lòng chọn đầy đủ Tỉnh/Quận/Phường')
     }
     return false
   }
