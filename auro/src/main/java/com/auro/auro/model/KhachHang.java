@@ -15,7 +15,7 @@ public class KhachHang {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_tai_khoan")
+    @JoinColumn(name = "id_tai_khoan") // Revert back to original
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private TaiKhoan taiKhoan;

@@ -6,6 +6,7 @@ const Category = () => import(/* webpackChunkName: "category" */ '../views/Categ
 const ProductDetail = () => import(/* webpackChunkName: "product" */ '../views/ProductDetail.vue')
 const Cart = () => import(/* webpackChunkName: "cart" */ '../views/Cart.vue')
 const Profile = () => import(/* webpackChunkName: "profile" */ '../views/Profile.vue')
+const Addresses = () => import(/* webpackChunkName: "profile" */ '../views/Addresses.vue')
 const Orders = () => import(/* webpackChunkName: "orders" */ '../views/Orders.vue')
 const OrderDetail = () => import(/* webpackChunkName: "orders" */ '../views/OrderDetail.vue')
 const OrderSuccess = () => import(/* webpackChunkName: "orders" */ '../views/OrderSuccess.vue')
@@ -72,6 +73,12 @@ const router = createRouter({
       name: 'profile',
       component: Profile,
       meta: { title: 'Thông tin cá nhân - AURO', requiresAuth: true },
+    },
+    {
+      path: '/addresses',
+      name: 'addresses',
+      component: Addresses,
+      meta: { title: 'Địa chỉ giao hàng - AURO', requiresAuth: true },
     },
     {
       path: '/orders',
