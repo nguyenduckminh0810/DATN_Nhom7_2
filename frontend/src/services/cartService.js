@@ -11,11 +11,7 @@ const cartService = {
    */
   async getCart() {
     try {
-      console.log('🔵 CartService.getCart called')
       const response = await api.get('/gio-hang')
-      console.log('🔵 CartService.getCart response:', response)
-      console.log('🔵 Response type:', typeof response)
-      console.log('🔵 Response keys:', Object.keys(response || {}))
       return response // ✅ api.get() đã return response.data rồi
     } catch (error) {
       console.error('🔴 Error fetching cart:', error)
@@ -30,16 +26,10 @@ const cartService = {
    */
   async addToCart(payload) {
     try {
-      console.log('🔵 CartService.addToCart called with:', payload)
       const response = await api.post('/gio-hang/them', payload)
-      console.log('🔵 CartService.addToCart response:', response)
-      console.log('🔵 Response type:', typeof response)
-      console.log('🔵 Response keys:', Object.keys(response || {}))
       return response // ✅ api.post() đã return response.data rồi, không cần .data nữa
     } catch (error) {
       console.error('🔴 CartService.addToCart error:', error)
-      console.error('🔴 Error response:', error.response)
-      console.error('🔴 Error response data:', error.response?.data)
       throw error
     }
   },
@@ -108,7 +98,6 @@ const cartService = {
       })
 
       await Promise.all(addPromises)
-      console.log('✅ Local cart synced to database')
     } catch (error) {
       console.error('❌ Error syncing local cart:', error)
       throw error

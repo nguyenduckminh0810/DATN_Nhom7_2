@@ -459,7 +459,7 @@ public class DonHangService {
     }
 
     @Transactional
-    public void taoDonHangGuest(String sessionId, GuestCheckoutRequest request, Long authenticatedKhachHangId) {
+    public DonHangResponse taoDonHangGuest(String sessionId, GuestCheckoutRequest request, Long authenticatedKhachHangId) {
         // Xác định KhachHang trước để biết lấy giỏ hàng từ đâu
         KhachHang khachHang;
         GioHang gioHang;
@@ -650,6 +650,8 @@ public class DonHangService {
         } catch (Exception e) {
             log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}", savedDonHang.getSoDonHang(), e.getMessage());
         }
+
+        return convertToDTO(savedDonHang);
 
     }
 

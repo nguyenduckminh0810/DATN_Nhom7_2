@@ -64,6 +64,7 @@
 import { computed, provide, ref, onMounted } from 'vue'
 import { useCart } from '@/composables/useCart'
 import { useShipping } from '@/composables/useShipping'
+import cartService from '@/services/cartService'
 import { useUserStore } from '@/stores/user'
 import ShippingForm from '@/components/checkout/ShippingForm.vue'
 import PaymentMethods from '@/components/checkout/PaymentMethods.vue'
@@ -74,8 +75,6 @@ import OrderSummary from '@/components/checkout/OrderSummary.vue'
 // Sử dụng cart store
 const { items, isEmpty, loadCartFromAPI } = useCart()
 const userStore = useUserStore()
-
-console.log('🛒 Cart.vue - isEmpty:', isEmpty.value, 'items:', items.value.length)
 
 // Sử dụng shipping composable - TẠO MỘT INSTANCE DUY NHẤT
 const shipping = useShipping()
@@ -107,24 +106,34 @@ provide('selectedPaymentMethod', selectedPaymentMethod)
 
 // Load giỏ hàng từ API khi component mount (cho cả user và guest)
 onMounted(async () => {
-  console.log('🛒 Cart.vue mounted - Loading cart from API...')
   
   // Đảm bảo user state được load trước (nếu chưa load)
   if (!userStore.user) {
-    console.log('⏳ User not loaded yet, loading from storage...')
     userStore.loadUserFromStorage()
   }
-  
-  console.log('👤 User authenticated:', userStore.isAuthenticated)
-  console.log('👤 User role:', userStore.userRole)
-  console.log('👤 User object:', userStore.user)
   
   // Load giỏ hàng từ API (backend sẽ tự xử lý user/guest)
   await loadCartFromAPI()
   
-  console.log('📦 Cart items after load:', items.value)
-  console.log('📦 Cart is empty:', isEmpty.value)
-  console.log('📦 Number of items:', items.value?.length || 0)
+  
+
+  // Nếu backend trả rỗng nhưng localStorage còn item → đồng bộ lên backend rồi load lại
+  try {
+    const localItems = JSON.parse(localStorage.getItem('auro_cart_v1') || '[]')
+    if ((isEmpty.value || (items.value?.length || 0) === 0) && Array.isArray(localItems) && localItems.length > 0) {
+      
+      await cartService.syncLocalCart(
+        localItems.map(i => ({
+          bienTheId: i.variantId || i.bienTheId || i.id,
+          soLuong: i.quantity || 1,
+        }))
+      )
+      await loadCartFromAPI()
+      
+    }
+  } catch (e) {
+    
+  }
 })
 </script>
 

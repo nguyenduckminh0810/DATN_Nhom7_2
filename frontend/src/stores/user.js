@@ -17,8 +17,6 @@ export const useUserStore = defineStore('user', () => {
 
     // Backend trả về vaiTro với các giá trị: ADM, STF, CUS, GST
     const role = user.value.vaiTroMa || user.value.role || user.value.vaiTro || 'guest'
-    console.log('User object:', user.value)
-    console.log('Role from backend:', role)
 
     // Map các giá trị từ backend sang frontend
     const roleMap = {
@@ -102,7 +100,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       await apiService.auth.logout()
     } catch (err) {
-      console.error('Logout error:', err)
+      
     } finally {
       setUser(null)
       setToken(null)
@@ -119,7 +117,7 @@ export const useUserStore = defineStore('user', () => {
       }
       return false
     } catch (err) {
-      console.error('Token refresh error:', err)
+      
       logout()
       return false
     }
@@ -273,32 +271,24 @@ export const useUserStore = defineStore('user', () => {
       const storedUser = localStorage.getItem('auro_user')
       const storedToken = localStorage.getItem('auro_token')
 
-      console.log('🔍 Loading from localStorage...')
-      console.log('📦 Stored user:', storedUser)
-      console.log('🔑 Stored token:', storedToken ? '***exists***' : 'null')
-
       if (storedUser && storedToken) {
         // 🔒 Validate token using utility
         const validation = validateToken(storedToken)
         
         if (!validation.valid) {
-          console.warn('⚠️ Invalid token detected:', validation.reason)
-          console.warn('🔄 Token will be cleared on next page load')
+      
           localStorage.removeItem('auro_token')
           localStorage.removeItem('auro_user')
           return false
         }
         
-        console.log('✅ Token is valid with authorities:', validation.authorities)
-        
         user.value = JSON.parse(storedUser)
-        console.log('✅ User loaded:', user.value)
         return true
       } else {
-        console.log('❌ No stored user or token found')
+        
       }
     } catch (err) {
-      console.error('❌ Error loading user from storage:', err)
+      
       localStorage.removeItem('auro_user')
       localStorage.removeItem('auro_token')
     }

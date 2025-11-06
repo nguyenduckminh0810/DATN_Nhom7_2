@@ -119,10 +119,15 @@ public class DonHangKhachController {
             System.out.println("Session ID: " + sessionId);
             System.out.println("Authenticated khachHangId: " + khachHangId);
 
-            donHangService.taoDonHangGuest(sessionId, request, khachHangId);
+            // Tạo đơn và nhận lại thông tin để FE có id/tổng tiền cho VNPay
+            com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request, khachHangId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "Đặt hàng thành công! Kiểm tra email xác nhận (nếu có).");
+            if (dh != null) {
+                result.put("donHangId", dh.getId());
+                result.put("tongThanhToan", dh.getTongThanhToan());
+            }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             Map<String, Object> error = new HashMap<>();

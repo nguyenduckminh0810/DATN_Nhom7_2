@@ -111,14 +111,22 @@ onMounted(async () => {
 
     // Call backend để xử lý callback
     const response = await apiService.get('/payment/vnpay-return', { params })
-    
-    console.log('✅ Payment result:', response)
-    
-    paymentResult.value = response
-    
-    if (!response.success) {
-      errorMessage.value = response.message || getErrorMessage(params.vnp_ResponseCode)
-    }
+
+console.log('✅ Payment result:', response)
+
+paymentResult.value = response
+
+if (response?.success) {
+  const oid = response?.donHangId || params.vnp_TxnRef || params.orderId || null
+  // Điều hướng tới trang thành công
+  router.replace({ name: 'order-success', query: { orderId: oid } })
+  return
+} else {
+  errorMessage.value = response?.message || getErrorMessage(params.vnp_ResponseCode)
+  // Điều hướng quay lại Checkout khi thất bại
+  router.replace({ name: 'cart', query: { error: 'payment_failed' } })
+  return
+}
 
   } catch (error) {
     console.error('❌ Error processing payment callback:', error)
