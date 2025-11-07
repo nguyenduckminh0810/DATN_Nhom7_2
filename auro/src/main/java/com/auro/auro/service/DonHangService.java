@@ -93,6 +93,9 @@ public class DonHangService {
     public DonHangResponse updateDonHang(Long id, Map<String, Object> updates) {
         DonHang donHang = getDonHangById(id);
 
+        // Lưu trạng thái cũ để so sánh
+        String trangThaiCu = donHang.getTrangThai();
+
         // Cập nhật các field
         if (updates.containsKey("diaChiGiao")) {
             donHang.setDiaChiGiao((String) updates.get("diaChiGiao"));
@@ -109,6 +112,34 @@ public class DonHangService {
         }
         if (updates.containsKey("paymentMethod")) {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
+        }
+
+        // ✅ TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
+        String trangThaiMoi = donHang.getTrangThai();
+        if (!"Đang giao".equals(trangThaiCu) && "Đang giao".equals(trangThaiMoi)) {
+            List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
+
+            for (DonHangChiTiet chiTiet : chiTietList) {
+                BienTheSanPham bienThe = chiTiet.getBienThe();
+                int soLuongDat = chiTiet.getSoLuong();
+                int tonHienTai = bienThe.getSoLuongTon();
+
+                // Kiểm tra tồn kho trước khi trừ
+                if (tonHienTai < soLuongDat) {
+                    throw new RuntimeException(
+                            String.format("Không đủ hàng trong kho! Sản phẩm: %s, Màu: %s, Size: %s. " +
+                                    "Tồn kho: %d, Yêu cầu: %d",
+                                    bienThe.getSanPham().getTen(),
+                                    bienThe.getMauSac() != null ? bienThe.getMauSac().getTen() : "N/A",
+                                    bienThe.getKichCo() != null ? bienThe.getKichCo().getTen() : "N/A",
+                                    tonHienTai,
+                                    soLuongDat));
+                }
+
+                // Trừ tồn kho
+                bienThe.setSoLuongTon(tonHienTai - soLuongDat);
+                bienTheSanPhamRepository.save(bienThe);
+            }
         }
 
         donHang.setCapNhatLuc(LocalDateTime.now());
@@ -396,9 +427,10 @@ public class DonHangService {
 
             donHangChiTietRepository.save(chiTiet);
 
-            // trừ số lượng sp
-            bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
-            bienTheSanPhamRepository.save(bienThe);
+            // ❌ KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
+            // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+            // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
+            // bienTheSanPhamRepository.save(bienThe);
         }
         // Xóa giỏ hàng
         gioHangService.xoaGioHang(khachHangId);
@@ -459,7 +491,8 @@ public class DonHangService {
     }
 
     @Transactional
-    public DonHangResponse taoDonHangGuest(String sessionId, GuestCheckoutRequest request, Long authenticatedKhachHangId) {
+    public DonHangResponse taoDonHangGuest(String sessionId, GuestCheckoutRequest request,
+            Long authenticatedKhachHangId) {
         // Xác định KhachHang trước để biết lấy giỏ hàng từ đâu
         KhachHang khachHang;
         GioHang gioHang;
@@ -632,8 +665,10 @@ public class DonHangService {
             ct.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));
             donHangChiTietRepository.save(ct);
 
-            bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
-            bienTheSanPhamRepository.save(bienThe);
+            // ❌ KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
+            // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+            // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
+            // bienTheSanPhamRepository.save(bienThe);
         }
 
         // Xóa giỏ hàng sau khi tạo đơn thành công

@@ -199,6 +199,23 @@ import { useCart } from '@/composables/useCart'
 
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
 
+// 🔍 DEBUG: Log items from cart
+console.log('🛒 [CART ITEMS] Total items:', items.value?.length || 0)
+if (items.value && items.value.length > 0) {
+  items.value.forEach((item, index) => {
+    console.log(`📦 [CART ITEM ${index + 1}]:`, {
+      id: item.id,
+      itemKey: item.itemKey,
+      name: item.name,
+      color: item.color,
+      size: item.size,
+      quantity: item.quantity,
+      bienTheId: item.bienTheId,
+      variantId: item.variantId
+    })
+  })
+}
+
 // Ensure all items have selected property - MẶC ĐỊNH LÀ TRUE (đã chọn)
 items.value.forEach(item => {
   if (item.selected === undefined) {
@@ -206,26 +223,23 @@ items.value.forEach(item => {
   }
 })
 
-const increaseQuantity = (itemKey) => {
+const increaseQuantity = async (itemKey) => {
   const item = items.value.find(item => item.itemKey === itemKey)
   if (item) {
-    updateQuantity(itemKey, item.quantity + 1)
+    await updateQuantity(itemKey, item.quantity + 1)
   }
 }
 
-const decreaseQuantity = (itemKey) => {
+const decreaseQuantity = async (itemKey) => {
   const item = items.value.find(item => item.itemKey === itemKey)
   if (item && item.quantity > 1) {
-    updateQuantity(itemKey, item.quantity - 1)
+    await updateQuantity(itemKey, item.quantity - 1)
   }
 }
 
-const clearAllItems = () => {
+const clearAllItems = async () => {
   if (window.confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?')) {
-    clearCart()
-    if (window.$toast) {
-      window.$toast.success('Đã xóa tất cả sản phẩm khỏi giỏ hàng')
-    }
+    await clearCart()
   }
 }
 

@@ -117,7 +117,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useCartStore } from '../../stores/cart'
 
 const props = defineProps({
@@ -133,6 +133,19 @@ const cartStore = useCartStore()
 
 // Computed
 const items = computed(() => cartStore.items)
+
+// ✅ Watch isOpen để reload cart khi mở mini cart
+watch(() => props.isOpen, async (newVal) => {
+  if (newVal) {
+    console.log('🔄 [MINI CART] Opening, reloading cart from backend...')
+    try {
+      await cartStore.loadCart()
+      console.log('✅ [MINI CART] Cart reloaded successfully')
+    } catch (error) {
+      console.error('❌ [MINI CART] Error reloading cart:', error)
+    }
+  }
+})
 
 // Methods
 
@@ -152,23 +165,32 @@ const getColorName = (color) => {
   return colorNames[color] || color
 }
 
-const updateItemQuantity = (itemKey, newQuantity) => {
-  cartStore.updateQuantity(itemKey, newQuantity)
+const updateItemQuantity = async (itemKey, newQuantity) => {
+  try {
+    await cartStore.updateQuantity(itemKey, newQuantity)
+  } catch (error) {
+    console.error('Error updating quantity:', error)
+  }
 }
 
-const removeItem = (itemKey) => {
-  cartStore.removeItem(itemKey)
+const removeItem = async (itemKey) => {
+  try {
+    await cartStore.removeItem(itemKey)
+  } catch (error) {
+    console.error('Error removing item:', error)
+  }
 }
 
 const closeMiniCart = () => {
   emit('close')
 }
 
-const clearAllItems = () => {
+const clearAllItems = async () => {
   if (confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm trong giỏ hàng?')) {
-    cartStore.clearCart()
-    if (window.$toast) {
-      window.$toast.success('Đã xóa tất cả sản phẩm khỏi giỏ hàng')
+    try {
+      await cartStore.clearCart()
+    } catch (error) {
+      console.error('Error clearing cart:', error)
     }
   }
 }
