@@ -78,6 +78,27 @@
           <!-- Filter Tabs -->
           <div class="card mb-4">
             <div class="card-body">
+              <div class="orders-search mb-3">
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    class="form-control"
+                    placeholder="Tìm theo mã đơn, trạng thái hoặc sản phẩm"
+                    aria-label="Tìm kiếm đơn hàng"
+                  />
+                  <button
+                    v-if="searchQuery"
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    @click="searchQuery = ''"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              </div>
+
               <ul class="nav nav-pills nav-fill" role="tablist">
                 <li class="nav-item" role="presentation">
                   <button
@@ -302,6 +323,7 @@ const activeTab = ref('all')
 const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
+const searchQuery = ref('')
 
 const user = computed(() => ({
   id: userStore.user?.id || null,
@@ -312,10 +334,26 @@ const user = computed(() => ({
 
 // Computed
 const filteredOrders = computed(() => {
-  if (activeTab.value === 'all') {
-    return orders.value
+  const baseOrders =
+    activeTab.value === 'all' ? orders.value : getOrdersByStatus(activeTab.value)
+
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) {
+    return baseOrders
   }
-  return getOrdersByStatus(activeTab.value)
+
+  return baseOrders.filter((order) => {
+    const searchableFields = [
+      order.orderNumber,
+      order.status ? getStatusText(order.status) : '',
+      order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : '',
+      order.items?.map((item) => item.name || '').join(' ') || '',
+    ]
+
+    return searchableFields.some((field) =>
+      (field || '').toString().toLowerCase().includes(query),
+    )
+  })
 })
 
 // Methods
@@ -587,5 +625,19 @@ onMounted(async () => {
 
 .btn-sm {
   font-size: 0.8rem;
+}
+
+.orders-search .form-control {
+  min-width: 220px;
+}
+
+@media (max-width: 576px) {
+  .orders-search .input-group {
+    flex-wrap: nowrap;
+  }
+
+  .orders-search .form-control {
+    min-width: 0;
+  }
 }
 </style>
