@@ -49,12 +49,13 @@
               <label class="form-label">Trạng thái</label>
               <select class="form-select" v-model="selectedStatus">
                 <option value="">Tất cả trạng thái</option>
-                <option value="Chờ xác nhận">Chờ xử lý</option>
-                <option value="Đang xử lý">Đang xử lý</option>
-                <option value="Đang giao">Đang giao</option>
-                <option value="Đã giao">Đã giao</option>
-                <option value="Hoàn tất">Hoàn thành</option>
-                <option value="Đã hủy">Đã hủy</option>
+                <option
+                  v-for="status in adminStatuses"
+                  :key="status.code"
+                  :value="status.code"
+                >
+                  {{ status.label }}
+                </option>
               </select>
             </div>
             <div class="col-md-2">
@@ -133,7 +134,7 @@
               <i class="bi bi-truck"></i>
             </div>
             <div class="stat-content">
-              <div class="stat-value">{{ orderStats.shipped }}</div>
+              <div class="stat-value">{{ orderStats.delivered }}</div>
               <div class="stat-label">Đã giao</div>
             </div>
           </div>
@@ -145,7 +146,7 @@
               <i class="bi bi-check-circle"></i>
             </div>
             <div class="stat-content">
-              <div class="stat-value">{{ orderStats.delivered }}</div>
+              <div class="stat-value">{{ orderStats.completed }}</div>
               <div class="stat-label">Hoàn thành</div>
             </div>
           </div>
@@ -294,8 +295,8 @@
               </td>
               <td>
                 <div class="status-info">
-                  <span :class="['status-badge', getStatusClass(order.trangThai)]">
-                    {{ getStatusText(order.trangThai) }}
+                  <span :class="['status-badge', order.statusClass]">
+                    {{ order.statusLabel }}
                   </span>
                 </div>
               </td>
@@ -319,47 +320,47 @@
                     <i class="bi bi-eye"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Chờ xác nhận'"
+                    v-if="order.statusCode === STATUS_CODES.PENDING"
                     class="btn btn-sm btn-outline-success" 
-                    @click="quickUpdateStatus(order, 'Đang xử lý')"
+                    @click="quickUpdateStatus(order, STATUS_CODES.PROCESSING)"
                     title="Xử lý đơn hàng"
                   >
                     <i class="bi bi-play"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Đang xử lý'"
+                    v-if="order.statusCode === STATUS_CODES.PROCESSING"
                     class="btn btn-sm btn-outline-info" 
-                    @click="quickUpdateStatus(order, 'Đang giao')"
+                    @click="quickUpdateStatus(order, STATUS_CODES.SHIPPING)"
                     title="Bắt đầu giao hàng"
                   >
                     <i class="bi bi-bicycle"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Đang giao'"
+                    v-if="order.statusCode === STATUS_CODES.SHIPPING"
                     class="btn btn-sm btn-outline-success" 
-                    @click="quickUpdateStatus(order, 'Đã giao')"
+                    @click="quickUpdateStatus(order, STATUS_CODES.DELIVERED)"
                     title="Xác nhận đã giao"
                   >
                     <i class="bi bi-check-circle"></i>
                   </button>
                   <button 
-                    v-if="order.trangThai === 'Đã giao'"
+                    v-if="order.statusCode === STATUS_CODES.DELIVERED"
                     class="btn btn-sm btn-outline-success" 
-                    @click="quickUpdateStatus(order, 'Hoàn tất')"
+                    @click="quickUpdateStatus(order, STATUS_CODES.COMPLETED)"
                     title="Hoàn thành"
                   >
                     <i class="bi bi-check"></i>
                   </button>
                   <button 
-                    v-if="['Chờ xác nhận', 'Đang xử lý'].includes(order.trangThai)"
+                    v-if="[STATUS_CODES.PENDING, STATUS_CODES.PROCESSING].includes(order.statusCode)"
                     class="btn btn-sm btn-outline-danger" 
-                    @click="quickUpdateStatus(order, 'Đã hủy')"
+                    @click="quickUpdateStatus(order, STATUS_CODES.CANCELLED)"
                     title="Hủy đơn hàng"
                   >
                     <i class="bi bi-x"></i>
                   </button>
                   <button
-                    v-if="['Chờ xác nhận', 'Đang xử lý'].includes(order.trangThai)"
+                    v-if="[STATUS_CODES.PENDING, STATUS_CODES.PROCESSING].includes(order.statusCode)"
                     class="btn btn-sm btn-outline-warning"
                     @click="editOrder(order)"
                     title="Chỉnh sửa đơn hàng"
@@ -386,14 +387,14 @@
       <!-- Kanban Board View -->
       <div v-else-if="viewMode === 'kanban' && filteredOrders.length > 0" class="kanban-board">
         <div class="kanban-columns">
-          <div class="kanban-column" v-for="status in orderStatuses" :key="status.value">
+          <div class="kanban-column" v-for="status in kanbanStatuses" :key="status.code">
             <div class="column-header">
               <h6 class="column-title">{{ status.label }}</h6>
-              <span class="column-count">{{ getOrdersByStatus(status.value).length }}</span>
+              <span class="column-count">{{ getOrdersByStatus(status.code).length }}</span>
             </div>
             <div class="column-content">
               <div 
-                v-for="order in getOrdersByStatus(status.value)" 
+                v-for="order in getOrdersByStatus(status.code)" 
                 :key="order.id"
                 class="kanban-card"
                 @click="viewOrder(order)"
@@ -432,9 +433,9 @@
                       <i class="bi bi-eye"></i>
                     </button>
                     <button 
-                      v-if="canUpdateStatus(order.trangThai)"
+                      v-if="canUpdateStatus(order.statusCode)"
                       class="btn btn-sm btn-outline-success" 
-                      @click.stop="updateOrderStatus(order, getNextStatus(order.trangThai))"
+                      @click.stop="updateOrderStatus(order, getNextStatus(order.statusCode))"
                     >
                       <i class="bi bi-arrow-right"></i>
                     </button>
@@ -479,16 +480,16 @@
       <div class="bulk-actions-content">
         <span class="selected-count">{{ selectedOrders.length }} đơn hàng đã chọn</span>
         <div class="bulk-buttons">
-          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus('Đang xử lý')">
+          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus(STATUS_CODES.PROCESSING)">
             <i class="bi bi-check me-1"></i>Xử lý
           </button>
-          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus('Đã giao')">
+          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus(STATUS_CODES.DELIVERED)">
             <i class="bi bi-truck me-1"></i>Giao hàng
           </button>
-          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus('Hoàn tất')">
+          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus(STATUS_CODES.COMPLETED)">
             <i class="bi bi-check-circle me-1"></i>Hoàn thành
           </button>
-          <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus('Đã hủy')">
+          <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus(STATUS_CODES.CANCELLED)">
             <i class="bi bi-x me-1"></i>Hủy
           </button>
         </div>
@@ -526,8 +527,8 @@
                   <tr>
                     <td>Trạng thái:</td>
                     <td>
-                      <span :class="['status-badge', getStatusClass(selectedOrder.trangThai)]">
-                        {{ getStatusText(selectedOrder.trangThai) }}
+                      <span :class="['status-badge', selectedOrder.statusClass]">
+                        {{ selectedOrder.statusLabel }}
                       </span>
                     </td>
                   </tr>
@@ -620,7 +621,7 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" @click="closeOrderModal">Đóng</button>
-          <button type="button" class="btn btn-primary" @click="printOrder(selectedOrder)">
+          <button type="button" class="btn btn-primary" @click="printOrder()">
             <i class="bi bi-printer me-1"></i>In đơn hàng
           </button>
         </div>
@@ -682,12 +683,13 @@
               <div class="mb-3">
                 <label class="form-label">Trạng thái</label>
                 <select class="form-select" v-model="editingOrder.trangThai">
-                  <option value="Chờ xác nhận">Chờ xác nhận</option>
-                  <option value="Đang xử lý">Đang xử lý</option>
-                  <option value="Đang giao">Đang giao</option>
-                  <option value="Đã giao">Đã giao</option>
-                  <option value="Hoàn tất">Hoàn tất</option>
-                  <option value="Đã hủy">Đã hủy</option>
+                  <option
+                    v-for="status in adminStatuses"
+                    :key="status.code"
+                    :value="status.code"
+                  >
+                    {{ status.label }}
+                  </option>
                 </select>
               </div>
               <div class="alert alert-info">
@@ -711,6 +713,17 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import axios from "axios";
+import {
+  ORDER_STATUS_FOR_ADMIN,
+  ORDER_STATUS_FOR_KANBAN,
+  normalizeOrderStatus,
+  getOrderStatusLabel,
+  ORDER_STATUS_CODES,
+} from "@/utils/orderStatus";
+
+defineOptions({
+  name: "AdminOrdersView",
+});
 
 // ======= STATE =======
 const orders = ref([]);
@@ -745,14 +758,15 @@ const selectAll = ref(false);
 const selectedOrders = ref([]);
 
 // ======= CONSTANTS =======
-const orderStatuses = ref([
-  { value: "Chờ xác nhận", label: "Chờ xử lý", color: "#ffc107" },
-  { value: "Đang xử lý", label: "Đang xử lý", color: "#17a2b8" },
-  { value: "Đang giao", label: "Đang giao", color: "#ff6b6b" },
-  { value: "Đã giao", label: "Đã giao", color: "#6f42c1" },
-  { value: "Hoàn tất", label: "Hoàn thành", color: "#28a745" },
-  { value: "Đã hủy", label: "Đã hủy", color: "#dc3545" },
-]);
+const adminStatuses = ORDER_STATUS_FOR_ADMIN.slice().sort(
+  (a, b) => a.sortOrder - b.sortOrder,
+);
+
+const kanbanStatuses = ORDER_STATUS_FOR_KANBAN.slice().sort(
+  (a, b) => a.sortOrder - b.sortOrder,
+);
+
+const STATUS_CODES = ORDER_STATUS_CODES;
 
 // ======= UTILS =======
 const toDate = (value) => (value ? new Date(value) : null);
@@ -808,11 +822,21 @@ const fetchOrders = async () => {
     const data = response.data;
     console.log('API Response:', data);
     
-    orders.value = (data.content || []).map(order => ({
-      ...order,
-      paymentStatus: order.paymentStatus || 'pending',
-      paymentMethod: order.paymentMethod || 'COD'
-    }));
+    orders.value = (data.content || []).map(order => {
+      const statusInfo = normalizeOrderStatus(order.trangThai);
+
+      return {
+        ...order,
+        trangThai: statusInfo.code,
+        statusCode: statusInfo.code,
+        statusLabel: statusInfo.label,
+        statusClass: statusInfo.badgeClass,
+        statusColor: statusInfo.color,
+        rawStatus: order.trangThai,
+        paymentStatus: order.paymentStatus || 'pending',
+        paymentMethod: order.paymentMethod || 'COD'
+      };
+    });
     
     totalPages.value = data.totalPages || 1;
     totalItems.value = data.totalItems || orders.value.length;
@@ -832,14 +856,43 @@ const fetchOrders = async () => {
 
 // ======= COMPUTED =======
 
-const orderStats = computed(() => ({
-  pending: orders.value.filter((o) => o.trangThai === "Chờ xác nhận").length,
-  processing: orders.value.filter((o) => o.trangThai === "Đang xử lý").length,
-  shipping: orders.value.filter((o) => o.trangThai === "Đang giao").length, 
-  shipped: orders.value.filter((o) => o.trangThai === "Đã giao").length,
-  delivered: orders.value.filter((o) => o.trangThai === "Hoàn tất").length,
-  cancelled: orders.value.filter((o) => o.trangThai === "Đã hủy").length,
-}));
+const orderStats = computed(() => {
+  const stats = {
+    pending: 0,
+    processing: 0,
+    shipping: 0,
+    delivered: 0,
+    completed: 0,
+    cancelled: 0,
+  };
+
+  orders.value.forEach((order) => {
+    switch (order.statusCode) {
+      case ORDER_STATUS_CODES.PENDING:
+        stats.pending += 1;
+        break;
+      case ORDER_STATUS_CODES.PROCESSING:
+        stats.processing += 1;
+        break;
+      case ORDER_STATUS_CODES.SHIPPING:
+        stats.shipping += 1;
+        break;
+      case ORDER_STATUS_CODES.DELIVERED:
+        stats.delivered += 1;
+        break;
+      case ORDER_STATUS_CODES.COMPLETED:
+        stats.completed += 1;
+        break;
+      case ORDER_STATUS_CODES.CANCELLED:
+        stats.cancelled += 1;
+        break;
+      default:
+        break;
+    }
+  });
+
+  return stats;
+});
 
 const paymentStats = computed(() => ({
   pending: orders.value.filter((o) => o.paymentStatus === "pending").length,
@@ -865,7 +918,7 @@ const filteredOrders = computed(() => {
 
   if (selectedStatus.value) {
     filtered = filtered.filter(
-      (o) => o.trangThai === selectedStatus.value
+      (o) => o.statusCode === selectedStatus.value
     );
   }
 
@@ -917,30 +970,6 @@ const visiblePages = computed(() => {
   return pages;
 });
 
-const getStatusText = (status) => {
-  const map = {
-    'Chờ xác nhận': 'Chờ xác nhận',
-    'Đang xử lý': 'Đang xử lý',
-    'Đang giao': 'Đang giao',
-    'Đã giao': 'Đã giao',
-    'Hoàn tất': 'Hoàn tất',
-    'Đã hủy': 'Đã hủy'
-  };
-  return map[status] || status;
-};
-
-const getStatusClass = (status) => {
-  const map = {
-    'Chờ xác nhận': 'bg-warning',
-    'Đang xử lý': 'bg-info',
-    'Đang giao': 'bg-danger',
-    'Đã giao': 'bg-primary',
-    'Hoàn tất': 'bg-success',
-    'Đã hủy': 'bg-danger'
-  };
-  return map[status] || 'bg-secondary';
-};
-
 const getPaymentText = (status) => {
   const map = {
     pending: "Chờ thanh toán",
@@ -959,9 +988,7 @@ const getPaymentClass = (status) => {
   return map[status] || "bg-secondary";
 };
 
-const getSortIcon = (field) => {
-  return 'bi bi-arrow-down';
-};
+const getSortIcon = () => 'bi bi-arrow-down';
 
 const sortTable = (field) => {
   if (sortBy.value === field) {
@@ -1011,26 +1038,40 @@ const toggleSelectAll = () => {
   }
 };
 
-const bulkUpdateStatus = async (status) => {
+const bulkUpdateStatus = async (statusCode) => {
   if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`)) {
     try {
       const updatePromises = selectedOrders.value.map(async (orderId) => {
         const order = orders.value.find((o) => o.id === orderId);
         if (order) {
+          const statusLabel = getOrderStatusLabel(statusCode);
+          const statusInfo = normalizeOrderStatus(statusCode);
+
           const updates = {
             diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
             ghiChu: order.ghiChu || '',
-            trangThai: status
+            trangThai: statusLabel
           };
           await axios.put(`/api/don-hang/${orderId}`, updates);
           
           const index = orders.value.findIndex(o => o.id === orderId);
           if (index !== -1) {
-            orders.value[index] = {
+            const updatedOrder = {
               ...orders.value[index],
-              trangThai: status,
+              trangThai: statusInfo.code,
+              statusCode: statusInfo.code,
+              statusLabel: statusInfo.label,
+              statusClass: statusInfo.badgeClass,
+              statusColor: statusInfo.color,
+              rawStatus: statusLabel,
               capNhatLuc: new Date().toISOString()
             };
+
+            orders.value[index] = updatedOrder;
+
+            if (selectedOrder.value?.id === orderId) {
+              selectedOrder.value = updatedOrder;
+            }
           }
         }
       });
@@ -1048,20 +1089,25 @@ const bulkUpdateStatus = async (status) => {
   }
 };
 
-const getOrdersByStatus = (status) => {
-  return filteredOrders.value.filter(order => order.trangThai === status);
+const getOrdersByStatus = (statusCode) => {
+  return filteredOrders.value.filter(order => order.statusCode === statusCode);
 };
 
 const canUpdateStatus = (status) => {
-  return ['Chờ xác nhận', 'Đang xử lý', 'Đang giao', 'Đã giao'].includes(status);
+  return [
+    STATUS_CODES.PENDING,
+    STATUS_CODES.PROCESSING,
+    STATUS_CODES.SHIPPING,
+    STATUS_CODES.DELIVERED,
+  ].includes(status);
 };
 
 const getNextStatus = (currentStatus) => {
   const statusFlow = {
-    'Chờ xác nhận': 'Đang xử lý',
-    'Đang xử lý': 'Đang giao', 
-    'Đang giao': 'Đã giao',
-    'Đã giao': 'Hoàn tất'
+    [STATUS_CODES.PENDING]: STATUS_CODES.PROCESSING,
+    [STATUS_CODES.PROCESSING]: STATUS_CODES.SHIPPING,
+    [STATUS_CODES.SHIPPING]: STATUS_CODES.DELIVERED,
+    [STATUS_CODES.DELIVERED]: STATUS_CODES.COMPLETED,
   };
   return statusFlow[currentStatus] || currentStatus;
 };
@@ -1070,7 +1116,7 @@ const updateOrderStatus = async (order, newStatus) => {
   await quickUpdateStatus(order, newStatus);
 };
 
-const printOrder = (order) => {
+const printOrder = () => {
   window.print();
 };
 
@@ -1080,7 +1126,7 @@ const editOrder = (order) => {
     soDonHang: order.soDonHang,
     diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot || '',
     ghiChu: order.ghiChu || '',
-    trangThai: order.trangThai || 'Chờ xác nhận'
+    trangThai: order.statusCode || STATUS_CODES.PENDING
   };
 
    showEditModal.value = true;
@@ -1105,24 +1151,38 @@ const saveOrderChanges = async () => {
   }
 
   try {
+    const statusLabel = getOrderStatusLabel(editingOrder.value.trangThai);
+    const statusInfo = normalizeOrderStatus(editingOrder.value.trangThai);
+
     const updates = {
       diaChiGiao: editingOrder.value.diaChiGiao.trim(),
       ghiChu: editingOrder.value.ghiChu?.trim() || '',
-      trangThai: editingOrder.value.trangThai
+      trangThai: statusLabel
     };
 
     await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates);
 
     const index = orders.value.findIndex(o => o.id === editingOrder.value.id);
     if (index !== -1) {
-      orders.value[index] = {
+      const updatedOrder = {
         ...orders.value[index],
         diaChiGiao: updates.diaChiGiao,
         diaChiGiaoSnapshot: updates.diaChiGiao,
         ghiChu: updates.ghiChu,
-        trangThai: updates.trangThai,
+        trangThai: statusInfo.code,
+        statusCode: statusInfo.code,
+        statusLabel: statusInfo.label,
+        statusClass: statusInfo.badgeClass,
+        statusColor: statusInfo.color,
+        rawStatus: statusLabel,
         capNhatLuc: new Date().toISOString()
       };
+
+      orders.value[index] = updatedOrder;
+
+      if (selectedOrder.value?.id === editingOrder.value.id) {
+        selectedOrder.value = updatedOrder;
+      }
     }
 
     closeEditModal();
@@ -1133,27 +1193,41 @@ const saveOrderChanges = async () => {
   }
 };
 
-const quickUpdateStatus = async (order, newStatus) => {
-  if (confirm(`Cập nhật trạng thái đơn hàng #${order.soDonHang} sang "${getStatusText(newStatus)}"?`)) {
+const quickUpdateStatus = async (order, newStatusCode) => {
+  const statusLabel = getOrderStatusLabel(newStatusCode);
+  const statusInfo = normalizeOrderStatus(newStatusCode);
+
+  if (confirm(`Cập nhật trạng thái đơn hàng #${order.soDonHang} sang "${statusLabel}"?`)) {
     try {
       const updates = {
         diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
         ghiChu: order.ghiChu || '',
-        trangThai: newStatus
+        trangThai: statusLabel
       };
 
       await axios.put(`/api/don-hang/${order.id}`, updates);
 
       const index = orders.value.findIndex(o => o.id === order.id);
       if (index !== -1) {
-        orders.value[index] = {
+        const updatedOrder = {
           ...orders.value[index],
-          trangThai: newStatus,
+          trangThai: statusInfo.code,
+          statusCode: statusInfo.code,
+          statusLabel: statusInfo.label,
+          statusClass: statusInfo.badgeClass,
+          statusColor: statusInfo.color,
+          rawStatus: statusLabel,
           capNhatLuc: new Date().toISOString()
         };
+
+        orders.value[index] = updatedOrder;
+
+        if (selectedOrder.value?.id === order.id) {
+          selectedOrder.value = updatedOrder;
+        }
       }
 
-      console.log(`Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${newStatus}`);
+      console.log(`Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${statusLabel}`);
     } catch (err) {
       console.error('Lỗi khi cập nhật trạng thái:', err);
       alert('Có lỗi khi cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
