@@ -42,7 +42,7 @@ const STATUS_DEFINITIONS = [
     forCustomer: true,
     forAdmin: true,
     forKanban: true,
-    aliases: ['DANG_GIAO', 'Đang giao', 'ĐANG GIAO', 'SHIPPING'],
+    aliases: ['DANG_GIAO', 'Đang giao', 'ĐANG GIAO', 'Chờ giao hàng', 'CHỜ GIAO HÀNG', 'SHIPPING'],
   },
   {
     code: 'DELIVERED',

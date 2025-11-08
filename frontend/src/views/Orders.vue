@@ -235,14 +235,6 @@
 
                       <button
                         v-if="['DELIVERED', 'COMPLETED'].includes(order.status)"
-                        class="btn btn-outline-success btn-sm"
-                        @click="reorder(order)"
-                      >
-                        <i class="bi bi-arrow-repeat me-1"></i>Mua lại
-                      </button>
-
-                      <button
-                        v-if="['DELIVERED', 'COMPLETED'].includes(order.status)"
                         class="btn btn-outline-warning btn-sm"
                         @click="rateOrder(order)"
                       >
@@ -268,10 +260,87 @@
       </div>
     </div>
   </div>
+
+  <div v-if="ratingModalVisible" class="rating-modal">
+    <div class="rating-modal__overlay" @click="closeRatingModal"></div>
+    <div class="rating-modal__content">
+      <div class="rating-modal__header">
+        <h5 class="mb-0">Đánh giá đơn hàng #{{ ratingTargetOrder?.orderNumber }}</h5>
+        <button type="button" class="btn-close" @click="closeRatingModal"></button>
+      </div>
+
+      <div class="rating-modal__body">
+        <div class="mb-3">
+          <label class="form-label">Chọn sản phẩm</label>
+          <select
+            class="form-select"
+            :value="ratingForm.chiTietId || ''"
+            @change="selectRatingItem(Number($event.target.value))"
+          >
+            <option value="" disabled>-- Chọn sản phẩm --</option>
+            <option
+              v-for="option in ratingItemOptions"
+              :key="option.id"
+              :value="option.id"
+            >
+              {{ option.name }}
+              <span v-if="option.hasReview"> (Đã đánh giá)</span>
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Số sao</label>
+          <div class="rating-stars">
+            <button
+              v-for="star in 5"
+              :key="star"
+              type="button"
+              class="rating-star"
+              :class="{ active: star <= ratingForm.rating }"
+              @click="setRatingValue(star)"
+            >
+              ★
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Nhận xét</label>
+          <textarea
+            v-model="ratingForm.comment"
+            rows="4"
+            class="form-control"
+            placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm"
+          ></textarea>
+        </div>
+
+        <div v-if="selectedRatingItem?.hasReview" class="alert alert-info">
+          <i class="bi bi-info-circle me-2"></i>
+          Sản phẩm này đã được đánh giá trước đó. Bạn có thể cập nhật lại đánh giá.
+        </div>
+      </div>
+
+      <div class="rating-modal__footer">
+        <button type="button" class="btn btn-outline-secondary" @click="closeRatingModal">
+          Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          :disabled="ratingSubmitting"
+          @click="submitRating"
+        >
+          <span v-if="ratingSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          Gửi đánh giá
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import orderService from '@/services/orderService'
@@ -322,6 +391,17 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 const searchQuery = ref('')
+
+const ratingModalVisible = ref(false)
+const ratingSubmitting = ref(false)
+const ratingTargetOrder = ref(null)
+const ratingItemOptions = ref([])
+const ratingForm = reactive({
+  orderId: null,
+  chiTietId: null,
+  rating: 0,
+  comment: '',
+})
 
 const user = computed(() => ({
   id: userStore.user?.id || null,
@@ -380,6 +460,26 @@ const getStatusCount = (statusCode) => {
   return getOrdersByStatus(statusCode).length
 }
 
+const selectedRatingItem = computed(() => {
+  return ratingItemOptions.value.find((item) => item.id === ratingForm.chiTietId) || null
+})
+
+watch(
+  () => ratingForm.chiTietId,
+  (newValue) => {
+    if (!newValue) {
+      ratingForm.rating = 0
+      ratingForm.comment = ''
+      return
+    }
+    const item = ratingItemOptions.value.find((option) => option.id === newValue)
+    if (item) {
+      ratingForm.rating = item.reviewRating || 0
+      ratingForm.comment = item.reviewComment || ''
+    }
+  },
+)
+
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
@@ -414,34 +514,131 @@ const cancelOrder = async (order) => {
   }
 }
 
-const reorder = async (order) => {
-  try {
-    loading.value = true
-    // Import cartService if not already
-    const { default: cartService } = await import('@/services/cartService')
+const prepareRatingOptions = (order) => {
+  ratingItemOptions.value = order.items.map((item) => ({
+    id: item.id,
+    name: [item.name, [item.mauSacTen, item.kichCoTen].filter(Boolean).join(' - ')].filter(Boolean).join(' | '),
+    hasReview: !!item.hasReview,
+    reviewRating: item.reviewRating || 0,
+    reviewComment: item.reviewComment || '',
+    reviewCreatedAt: item.reviewCreatedAt || null,
+  }))
+}
 
-    // Add items back to cart
-    for (const item of order.items) {
-      await cartService.addToCart({
-        sanPhamId: item.sanPhamId,
-        soLuong: item.quantity,
-        mauSacId: item.mauSacId,
-        kichCoId: item.kichCoId,
-      })
+const openRatingModal = (order) => {
+  if (!order) {
+    return
+  }
+  prepareRatingOptions(order)
+  ratingTargetOrder.value = order
+  ratingForm.orderId = order.id
+  const defaultItem = ratingItemOptions.value.find((item) => !item.hasReview) || ratingItemOptions.value[0]
+
+  if (!defaultItem) {
+    alert('Tất cả sản phẩm trong đơn này đã được đánh giá.')
+    return
+  }
+
+  ratingForm.chiTietId = defaultItem.id
+  ratingForm.rating = defaultItem.reviewRating || 0
+  ratingForm.comment = defaultItem.reviewComment || ''
+  ratingModalVisible.value = true
+}
+
+const closeRatingModal = () => {
+  ratingModalVisible.value = false
+  ratingTargetOrder.value = null
+  ratingItemOptions.value = []
+  ratingForm.orderId = null
+  ratingForm.chiTietId = null
+  ratingForm.rating = 0
+  ratingForm.comment = ''
+}
+
+const setRatingValue = (value) => {
+  ratingForm.rating = value
+}
+
+const selectRatingItem = (itemId) => {
+  if (!itemId) {
+    return
+  }
+  ratingForm.chiTietId = itemId
+}
+
+const applyRatingResult = (orderId, itemId, payload) => {
+  const targetOrder = orders.value.find((order) => order.id === orderId)
+  if (!targetOrder) {
+    return
+  }
+
+  const itemIndex = targetOrder.items.findIndex((item) => item.id === itemId)
+  if (itemIndex === -1) {
+    return
+  }
+
+  const updatedItem = {
+    ...targetOrder.items[itemIndex],
+    hasReview: true,
+    reviewRating: payload.danhGiaSoSao ?? ratingForm.rating,
+    reviewComment: payload.danhGiaNoiDung ?? ratingForm.comment,
+    reviewCreatedAt: payload.danhGiaTaoLuc || new Date().toISOString(),
+  }
+
+  targetOrder.items.splice(itemIndex, 1, updatedItem)
+
+  const optionIndex = ratingItemOptions.value.findIndex((option) => option.id === itemId)
+  if (optionIndex !== -1) {
+    ratingItemOptions.value.splice(optionIndex, 1, {
+      ...ratingItemOptions.value[optionIndex],
+      hasReview: true,
+      reviewRating: updatedItem.reviewRating,
+      reviewComment: updatedItem.reviewComment,
+      reviewCreatedAt: updatedItem.reviewCreatedAt,
+    })
+  }
+}
+
+const submitRating = async () => {
+  if (!ratingForm.orderId || !ratingForm.chiTietId) {
+    alert('Vui lòng chọn sản phẩm để đánh giá.')
+    return
+  }
+
+  if (!ratingForm.rating) {
+    alert('Vui lòng chọn số sao đánh giá.')
+    return
+  }
+
+  try {
+    ratingSubmitting.value = true
+    const response = await orderService.submitReview(ratingForm.orderId, {
+      chiTietId: ratingForm.chiTietId,
+      soSao: ratingForm.rating,
+      noiDung: ratingForm.comment,
+    })
+
+    const payload = response.data?.data || {}
+    applyRatingResult(ratingForm.orderId, ratingForm.chiTietId, payload)
+
+    alert('Đã gửi đánh giá!')
+
+    const remainingUnreviewed = ratingItemOptions.value.find((item) => !item.hasReview)
+    if (remainingUnreviewed) {
+      ratingForm.chiTietId = remainingUnreviewed.id
+    } else {
+      closeRatingModal()
     }
-    alert('Đã thêm sản phẩm vào giỏ hàng!')
-    router.push('/cart')
   } catch (err) {
-    console.error('Error reordering:', err)
-    alert('Lỗi khi đặt lại đơn hàng: ' + (err.response?.data?.message || err.message))
+    console.error('Error rating order:', err)
+    alert('Lỗi khi gửi đánh giá: ' + (err.response?.data?.message || err.message))
   } finally {
-    loading.value = false
+    ratingSubmitting.value = false
   }
 }
 
 const rateOrder = (order) => {
-  // TODO: Implement rating modal/page
-  alert(`Đánh giá đơn hàng #${order.orderNumber}`)
+  openRatingModal(order)
 }
 
 const logout = () => {
@@ -518,8 +715,16 @@ const fetchOrders = async () => {
             price: item.donGia || 0,
             quantity: item.soLuong || 1,
             subtotal: item.thanhTien || 0,
-            selectedSize: '', // Backend không có thông tin này
-            selectedColor: '', // Backend không có thông tin này
+            bienTheId: item.bienTheId || null,
+            sanPhamId: item.sanPhamId || null,
+            mauSacId: item.mauSacId || null,
+            mauSacTen: item.mauSacTen || '',
+            kichCoId: item.kichCoId || null,
+            kichCoTen: item.kichCoTen || '',
+            hasReview: !!item.daDanhGia,
+            reviewRating: item.danhGiaSoSao || 0,
+            reviewComment: item.danhGiaNoiDung || '',
+            reviewCreatedAt: item.danhGiaTaoLuc || null,
           })) || [],
       }
     })
@@ -612,6 +817,69 @@ onMounted(async () => {
 .nav-pills .nav-link.active {
   background-color: #ffc107;
   color: #212529;
+}
+
+.rating-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.rating-modal__content {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  z-index: 1;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+}
+
+.rating-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.rating-modal__body {
+  margin-bottom: 1.5rem;
+}
+
+.rating-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rating-star {
+  border: none;
+  background: transparent;
+  font-size: 1.75rem;
+  cursor: pointer;
+  color: #ced4da;
+  transition: color 0.2s ease;
+}
+
+.rating-star.active,
+.rating-star:hover,
+.rating-star:hover ~ .rating-star {
+  color: #ffc107;
 }
 
 .order-item {

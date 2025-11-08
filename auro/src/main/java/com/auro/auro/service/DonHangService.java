@@ -7,15 +7,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.auro.auro.dto.request.GHNShippingFeeRequest;
 import com.auro.auro.dto.request.GuestCheckoutRequest;
 import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
-import com.auro.auro.dto.request.GHNShippingFeeRequest;
 import com.auro.auro.dto.response.GHNShippingFeeResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.auro.auro.dto.response.DonHangChiTietResponse;
 import com.auro.auro.dto.response.DonHangResponse;
+import com.auro.auro.model.DanhGiaSanPham;
 import com.auro.auro.model.DonHang;
 import com.auro.auro.model.DonHangChiTiet;
 import com.auro.auro.repository.DonHangChiTietRepository;
@@ -25,6 +26,7 @@ import com.auro.auro.repository.KhachHangRepository;
 import com.auro.auro.repository.DiaChiRepository;
 import com.auro.auro.repository.VoucherRepository;
 import com.auro.auro.repository.BienTheSanPhamRepository;
+import com.auro.auro.repository.DanhGiaSanPhamRepository;
 import org.springframework.data.domain.PageRequest;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.transaction.Transactional;
@@ -42,6 +44,7 @@ public class DonHangService {
     private final DiaChiRepository diaChiRepository;
     private final VoucherRepository voucherRepository;
     private final BienTheSanPhamRepository bienTheSanPhamRepository;
+    private final DanhGiaSanPhamRepository danhGiaSanPhamRepository;
     private final EmailService emailService;
     private final com.auro.auro.repository.HinhAnhRepository hinhAnhRepository;
     private final GHNShippingService ghnShippingService;
@@ -194,35 +197,63 @@ public class DonHangService {
 
         // Convert chi tiết list (nếu có)
         if (dh.getChiTietList() != null) {
-            List<DonHangChiTietResponse> chiTietDTOs = dh.getChiTietList().stream().map(ct -> {
-                DonHangChiTietResponse ctDTO = new DonHangChiTietResponse();
-                ctDTO.setId(ct.getId());
-                ctDTO.setTenSanPham(ct.getTenHienThi());
-                ctDTO.setDonGia(ct.getDonGia());
-                ctDTO.setSoLuong(ct.getSoLuong());
-                ctDTO.setThanhTien(ct.getThanhTien());
-
-                // Lấy hình ảnh từ bienThe đã eager loaded
-                try {
-                    if (ct.getBienThe() != null && ct.getBienThe().getSanPham() != null) {
-                        Long sanPhamId = ct.getBienThe().getSanPham().getId();
-                        // Query hình ảnh từ repository
-                        List<HinhAnh> hinhAnhs = hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(sanPhamId);
-                        if (hinhAnhs != null && !hinhAnhs.isEmpty()) {
-                            ctDTO.setHinhAnh(hinhAnhs.get(0).getUrl());
-                        }
-                    }
-                } catch (Exception e) {
-                    System.out.println("Cannot load image: " + e.getMessage());
-                }
-
-                return ctDTO;
-            }).collect(Collectors.toList());
+            List<DonHangChiTietResponse> chiTietDTOs = dh.getChiTietList().stream()
+                    .map(this::mapChiTietToResponse)
+                    .collect(Collectors.toList());
 
             dto.setChiTietList(chiTietDTOs);
         }
 
         return dto;
+    }
+
+    private DonHangChiTietResponse mapChiTietToResponse(DonHangChiTiet ct) {
+        DonHangChiTietResponse ctDTO = new DonHangChiTietResponse();
+        ctDTO.setId(ct.getId());
+        ctDTO.setTenSanPham(ct.getTenHienThi());
+        ctDTO.setDonGia(ct.getDonGia());
+        ctDTO.setSoLuong(ct.getSoLuong());
+        ctDTO.setThanhTien(ct.getThanhTien());
+
+        if (ct.getBienThe() != null) {
+            ctDTO.setBienTheId(ct.getBienThe().getId());
+
+            if (ct.getBienThe().getSanPham() != null) {
+                ctDTO.setSanPhamId(ct.getBienThe().getSanPham().getId());
+
+                try {
+                    List<HinhAnh> hinhAnhs = hinhAnhRepository
+                            .findBySanPham_IdOrderByThuTuAscIdAsc(ct.getBienThe().getSanPham().getId());
+                    if (hinhAnhs != null && !hinhAnhs.isEmpty()) {
+                        ctDTO.setHinhAnh(hinhAnhs.get(0).getUrl());
+                    }
+                } catch (Exception e) {
+                    log.warn("Cannot load image for product {}: {}", ct.getBienThe().getSanPham().getId(),
+                            e.getMessage());
+                }
+            }
+
+            if (ct.getBienThe().getMauSac() != null) {
+                ctDTO.setMauSacId(ct.getBienThe().getMauSac().getId());
+                ctDTO.setMauSacTen(ct.getBienThe().getMauSac().getTen());
+            }
+
+            if (ct.getBienThe().getKichCo() != null) {
+                ctDTO.setKichCoId(ct.getBienThe().getKichCo().getId());
+                ctDTO.setKichCoTen(ct.getBienThe().getKichCo().getTen());
+            }
+        }
+
+        danhGiaSanPhamRepository.findByDonHangChiTiet_Id(ct.getId()).ifPresentOrElse(danhGia -> {
+            ctDTO.setDaDanhGia(true);
+            ctDTO.setDanhGiaSoSao(danhGia.getSoSao());
+            ctDTO.setDanhGiaNoiDung(danhGia.getNoiDung());
+            ctDTO.setDanhGiaTaoLuc(danhGia.getTaoLuc());
+        }, () -> {
+            ctDTO.setDaDanhGia(false);
+        });
+
+        return ctDTO;
     }
 
     // Tạo đơn từ giỏ
@@ -450,6 +481,55 @@ public class DonHangService {
         return convertToDTO(savedDonHang);
     }
 
+    @Transactional
+    public DonHangChiTietResponse danhGiaDonHang(Long donHangId, Long chiTietId, Long khachHangId,
+            Integer soSao, String noiDung) {
+        DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+        if (!coTheDanhGia(donHang.getTrangThai())) {
+            throw new RuntimeException("Chỉ có thể đánh giá đơn hàng đã giao");
+        }
+
+        DonHangChiTiet chiTiet = donHang.getChiTietList().stream()
+                .filter(item -> item.getId().equals(chiTietId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm trong đơn hàng"));
+
+        DanhGiaSanPham danhGia = danhGiaSanPhamRepository.findByDonHangChiTiet_Id(chiTietId)
+                .orElse(new DanhGiaSanPham());
+
+        danhGia.setDonHang(donHang);
+        danhGia.setDonHangChiTiet(chiTiet);
+        if (chiTiet.getBienThe() != null) {
+            danhGia.setSanPham(chiTiet.getBienThe().getSanPham());
+        }
+        danhGia.setKhachHang(donHang.getKhachHang());
+        danhGia.setSoSao(soSao);
+        danhGia.setNoiDung(noiDung);
+        if (danhGia.getTaoLuc() == null) {
+            danhGia.setTaoLuc(LocalDateTime.now());
+        }
+        danhGia.setCapNhatLuc(LocalDateTime.now());
+
+        danhGiaSanPhamRepository.save(danhGia);
+
+        return mapChiTietToResponse(chiTiet);
+    }
+
+    private boolean coTheDanhGia(String trangThaiDonHang) {
+        if (trangThaiDonHang == null) {
+            return false;
+        }
+        String normalized = trangThaiDonHang.trim().toUpperCase();
+        return normalized.equals("ĐÃ GIAO")
+                || normalized.equals("HOÀN TẤT")
+                || normalized.equals("HOÀN THÀNH")
+                || normalized.equals("DA GIAO")
+                || normalized.equals("HOAN TAT")
+                || normalized.equals("HOAN THANH");
+    }
+
     // Lấy chi tiết đơn hàng của khách hàng
     public DonHangResponse layChiTietDonHangKhach(Long donHangId, Long khachHangId) {
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
@@ -459,7 +539,8 @@ public class DonHangService {
     }
 
     @Transactional
-    public DonHangResponse taoDonHangGuest(String sessionId, GuestCheckoutRequest request, Long authenticatedKhachHangId) {
+    public DonHangResponse taoDonHangGuest(String sessionId, GuestCheckoutRequest request,
+            Long authenticatedKhachHangId) {
         // Xác định KhachHang trước để biết lấy giỏ hàng từ đâu
         KhachHang khachHang;
         GioHang gioHang;
