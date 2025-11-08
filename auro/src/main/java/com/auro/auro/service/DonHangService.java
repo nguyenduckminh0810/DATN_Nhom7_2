@@ -2,8 +2,11 @@ package com.auro.auro.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -39,6 +42,18 @@ import com.auro.auro.service.VoucherApplicationResult;
 @RequiredArgsConstructor
 @Slf4j
 public class DonHangService {
+
+    private static final Set<String> REVIEWABLE_ORDER_STATUSES = Set.of(
+            "DELIVERED",
+            "COMPLETED",
+            "DA_GIAO",
+            "DA_GIAO_HANG",
+            "HOAN_TAT",
+            "HOAN_THANH",
+            "DA_HOAN_TAT",
+            "DA_HOAN_THANH",
+            "DA_NHAN",
+            "GIAO_THANH_CONG");
 
     private final DonHangRepository donHangRepository;
     private final DonHangChiTietRepository donHangChiTietRepository;
@@ -640,16 +655,24 @@ public class DonHangService {
     }
 
     private boolean coTheDanhGia(String trangThaiDonHang) {
-        if (trangThaiDonHang == null) {
+        String normalized = normalizeTrangThaiKey(trangThaiDonHang);
+        if (normalized.isEmpty()) {
             return false;
         }
-        String normalized = trangThaiDonHang.trim().toUpperCase();
-        return normalized.equals("ĐÃ GIAO")
-                || normalized.equals("HOÀN TẤT")
-                || normalized.equals("HOÀN THÀNH")
-                || normalized.equals("DA GIAO")
-                || normalized.equals("HOAN TAT")
-                || normalized.equals("HOAN THANH");
+        return REVIEWABLE_ORDER_STATUSES.contains(normalized);
+    }
+
+    private String normalizeTrangThaiKey(String value) {
+        if (value == null) {
+            return "";
+        }
+        String upper = Normalizer.normalize(value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .replace('đ', 'd')
+                .replace('Đ', 'D')
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]+", "_");
+        return upper.replaceAll("^_+|_+$", "");
     }
 
     // Lấy chi tiết đơn hàng của khách hàng

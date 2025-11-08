@@ -293,14 +293,15 @@
 
         <div class="mb-3">
           <label class="form-label">Số sao</label>
-          <div class="rating-stars">
+          <div class="rating-stars" @mouseleave="setHoverRating(0)">
             <button
               v-for="star in 5"
               :key="star"
               type="button"
               class="rating-star"
-              :class="{ active: star <= ratingForm.rating }"
+              :class="{ active: star <= (hoverRating || ratingForm.rating) }"
               @click="setRatingValue(star)"
+              @mouseenter="setHoverRating(star)"
             >
               ★
             </button>
@@ -404,6 +405,7 @@ const ratingForm = reactive({
   rating: 0,
   comment: '',
 })
+const hoverRating = ref(0)
 
 const user = computed(() => ({
   id: userStore.user?.id || null,
@@ -472,12 +474,14 @@ watch(
     if (!newValue) {
       ratingForm.rating = 0
       ratingForm.comment = ''
+      hoverRating.value = 0
       return
     }
     const item = ratingItemOptions.value.find((option) => option.id === newValue)
     if (item) {
       ratingForm.rating = item.reviewRating || 0
       ratingForm.comment = item.reviewComment || ''
+      hoverRating.value = 0
     }
   },
 )
@@ -544,6 +548,7 @@ const openRatingModal = (order) => {
   ratingForm.chiTietId = defaultItem.id
   ratingForm.rating = defaultItem.reviewRating || 0
   ratingForm.comment = defaultItem.reviewComment || ''
+  hoverRating.value = 0
   ratingModalVisible.value = true
 }
 
@@ -555,10 +560,12 @@ const closeRatingModal = () => {
   ratingForm.chiTietId = null
   ratingForm.rating = 0
   ratingForm.comment = ''
+  hoverRating.value = 0
 }
 
 const setRatingValue = (value) => {
   ratingForm.rating = value
+  hoverRating.value = 0
 }
 
 const selectRatingItem = (itemId) => {
@@ -566,6 +573,10 @@ const selectRatingItem = (itemId) => {
     return
   }
   ratingForm.chiTietId = itemId
+}
+
+const setHoverRating = (value) => {
+  hoverRating.value = value
 }
 
 const applyRatingResult = (orderId, itemId, payload) => {
@@ -620,7 +631,7 @@ const submitRating = async () => {
       noiDung: ratingForm.comment,
     })
 
-    const payload = response.data?.data || {}
+    const payload = response?.data ?? response ?? {}
     applyRatingResult(ratingForm.orderId, ratingForm.chiTietId, payload)
 
     alert('Đã gửi đánh giá!')
@@ -879,8 +890,7 @@ onMounted(async () => {
 }
 
 .rating-star.active,
-.rating-star:hover,
-.rating-star:hover ~ .rating-star {
+.rating-star:hover {
   color: #ffc107;
 }
 
