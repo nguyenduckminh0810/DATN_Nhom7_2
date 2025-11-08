@@ -1,0 +1,13 @@
+﻿{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Run Spring Boot",
+            "request": "launch",
+            "mainClass": "com.auro.auro.AuroApplication",
+            "projectName": "auro",
+            "cwd": "${workspaceFolder}/auro"
+        }
+    ]
+}

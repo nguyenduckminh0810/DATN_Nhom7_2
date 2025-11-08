@@ -16,11 +16,11 @@ public class SanPham {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ten", nullable = false, length = 200)
+    @Column(name = "ten", nullable = false, columnDefinition = "NVARCHAR(200)")
     private String ten;
 
     // Some databases may require a non-null, unique slug for products
-    @Column(name = "slug", nullable = true, length = 200, unique = true)
+    @Column(name = "slug", nullable = true, columnDefinition = "NVARCHAR(200)", unique = true)
     private String slug;
 
     @Column(name = "mo_ta", columnDefinition = "NVARCHAR(MAX)")

@@ -213,7 +213,17 @@ public class DonHangService {
         dto.setTamTinh(dh.getTamTinh());
         dto.setPhiVanChuyen(dh.getPhiVanChuyen());
         dto.setGiamGiaTong(dh.getGiamGiaTong());
-        dto.setTongThanhToan(dh.getTongThanhToan());
+
+        // Fix: Nếu tongThanhToan null, tính lại từ tamTinh + phiVanChuyen - giamGiaTong
+        BigDecimal tongThanhToan = dh.getTongThanhToan();
+        if (tongThanhToan == null) {
+            BigDecimal tamTinh = dh.getTamTinh() != null ? dh.getTamTinh() : BigDecimal.ZERO;
+            BigDecimal phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : BigDecimal.ZERO;
+            BigDecimal giamGiaTong = dh.getGiamGiaTong() != null ? dh.getGiamGiaTong() : BigDecimal.ZERO;
+            tongThanhToan = tamTinh.add(phiVanChuyen).subtract(giamGiaTong);
+        }
+        dto.setTongThanhToan(tongThanhToan);
+
         dto.setTrangThai(dh.getTrangThai());
         dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
         dto.setGhiChu(dh.getGhiChu());
@@ -688,6 +698,34 @@ public class DonHangService {
 
         return convertToDTO(savedDonHang);
 
+    }
+
+    /**
+     * Fix các đơn hàng cũ có tongThanhToan = null
+     * Tính lại tongThanhToan = tamTinh + phiVanChuyen - giamGiaTong
+     */
+    @Transactional
+    public int fixDonHangNullTongThanhToan() {
+        List<DonHang> allOrders = donHangRepository.findAll();
+        int count = 0;
+
+        for (DonHang dh : allOrders) {
+            if (dh.getTongThanhToan() == null) {
+                BigDecimal tamTinh = dh.getTamTinh() != null ? dh.getTamTinh() : BigDecimal.ZERO;
+                BigDecimal phiVanChuyen = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : BigDecimal.ZERO;
+                BigDecimal giamGiaTong = dh.getGiamGiaTong() != null ? dh.getGiamGiaTong() : BigDecimal.ZERO;
+
+                BigDecimal tongThanhToan = tamTinh.add(phiVanChuyen).subtract(giamGiaTong);
+                dh.setTongThanhToan(tongThanhToan);
+                donHangRepository.save(dh);
+                count++;
+
+                log.info("Fixed order {} - tongThanhToan: {}", dh.getSoDonHang(), tongThanhToan);
+            }
+        }
+
+        log.info("Fixed {} orders with null tongThanhToan", count);
+        return count;
     }
 
 }
