@@ -121,13 +121,8 @@ export const useCartStore = defineStore('cart', () => {
         return
       }
       
-      // Validate stock và quantity trước khi update
-      const maxStock = item.stock || 1
-      const safeQuantity = Math.max(1, Math.min(quantity, maxStock, 100)) // Giới hạn tối đa 100
-      
-      if (quantity !== safeQuantity) {
-        console.warn(`Quantity ${quantity} invalid, using safe quantity ${safeQuantity}`)
-      }
+      // KHÔNG GIỚI HẠN STOCK Ở ĐÂY - Frontend đã kiểm tra rồi
+      const safeQuantity = Math.max(1, Math.min(quantity, 100)) // Chỉ giới hạn max 100
       
       console.log('📝 [UPDATE QTY] Updating item:', {
         itemKey,
@@ -150,8 +145,7 @@ export const useCartStore = defineStore('cart', () => {
       // Nếu lỗi API, vẫn update trên frontend (fallback)
       const item = items.value.find(item => item.itemKey === itemKey)
       if (item) {
-        const maxStock = item.stock || 1
-        item.quantity = Math.max(1, Math.min(quantity, maxStock, 100))
+        item.quantity = Math.max(1, Math.min(quantity, 100))
         saveToStorage()
       }
       
@@ -230,12 +224,15 @@ export const useCartStore = defineStore('cart', () => {
         
         // Map backend response to cart items format (only when backend has items)
         items.value = response.chiTietList.map(item => {
+          console.log('🔍 [RAW ITEM FROM BACKEND]:', JSON.stringify(item, null, 2))
+          
           const mapped = {
             id: item.id, // GioHangChiTiet ID
             itemKey: item.id, // ✅ Dùng GioHangChiTiet.id làm itemKey (unique)
-            productId: item.productId || item.bienTheId,
+            productId: item.productId || item.sanPhamId || null,
             bienTheId: item.bienTheId,
             variantId: item.bienTheId,
+            sku: item.sku || '',
             name: item.tenSanPham || 'Sản phẩm',
             price: parseFloat(item.donGia) || 0,
             quantity: parseInt(item.soLuong) || 1,
@@ -243,11 +240,11 @@ export const useCartStore = defineStore('cart', () => {
             color: item.color || extractColorFromThuocTinh(item.thuocTinh),
             size: item.size || extractSizeFromThuocTinh(item.thuocTinh),
             thuocTinh: item.thuocTinh || '',
-            stock: item.tonKho || 99,
+            stock: parseInt(item.tonKho) || 999,
             addedAt: new Date().toISOString()
           }
           
-          console.log('📦 [MAPPED ITEM]:', mapped)
+          console.log('📦 [MAPPED ITEM] stock =', mapped.stock, ', tonKho =', item.tonKho)
           return mapped
         })
         

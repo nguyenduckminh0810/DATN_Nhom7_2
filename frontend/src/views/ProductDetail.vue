@@ -836,6 +836,13 @@ const selectColor = (color) => {
     return
   }
   
+  // Nếu click vào màu đã chọn thì bỏ chọn
+  if (selectedColor.value === color) {
+    selectedColor.value = ''
+    updateURL()
+    return
+  }
+  
   selectedColor.value = color
   
   // Reset size if current size is not available for new color
@@ -856,6 +863,13 @@ const selectColor = (color) => {
 
 const selectSize = (size) => {
   if (!isSizeAvailable(size)) {
+    return
+  }
+  
+  // Nếu click vào size đã chọn thì bỏ chọn
+  if (selectedSize.value === size) {
+    selectedSize.value = ''
+    updateURL()
     return
   }
   

@@ -166,6 +166,27 @@ const getColorName = (color) => {
 }
 
 const updateItemQuantity = async (itemKey, newQuantity) => {
+  const item = items.value.find(i => i.itemKey === itemKey)
+  if (!item) return
+  
+  // Kiểm tra tồn kho trước khi tăng
+  const stock = item.stock || 999
+  
+  console.log('➕ [MINI CART UPDATE]:', {
+    itemName: item.name,
+    current: item.quantity,
+    new: newQuantity,
+    stock: stock
+  })
+  
+  if (newQuantity > stock) {
+    if (window.$toast) {
+      window.$toast.warning(`Chỉ còn ${stock} sản phẩm trong kho`, 'Không thể tăng thêm')
+    }
+    console.warn('⚠️ [MINI CART] BLOCKED - Exceeds stock limit')
+    return
+  }
+  
   try {
     await cartStore.updateQuantity(itemKey, newQuantity)
   } catch (error) {

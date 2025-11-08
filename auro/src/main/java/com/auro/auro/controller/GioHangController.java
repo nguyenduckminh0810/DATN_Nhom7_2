@@ -98,7 +98,12 @@ public class GioHangController {
 
                 // Lấy tồn kho
                 if (item.getBienThe() != null) {
-                    dto.setTonKho(item.getBienThe().getSoLuongTon());
+                    Integer tonKho = item.getBienThe().getSoLuongTon();
+                    dto.setTonKho(tonKho);
+                    System.out.println("📦 [CART ITEM] ID=" + item.getId() + " | BienTheId=" + item.getBienThe().getId()
+                            + " | TonKho=" + tonKho);
+                } else {
+                    System.out.println("⚠️ [CART ITEM] ID=" + item.getId() + " | BienThe is NULL!");
                 }
 
                 // Ước tính trọng lượng sản phẩm (gram) dựa trên danh mục
