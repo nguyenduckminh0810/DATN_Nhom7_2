@@ -158,8 +158,8 @@
                   <button 
                     class="qty-btn plus"
                     @click="increaseQuantity(item.itemKey)"
-                    :disabled="false"
-                    :title="'Click để tăng số lượng'"
+                    :disabled="isUpdating || isAtMaxStock(item)"
+                    :title="isUpdating ? 'Đang cập nhật...' : (isAtMaxStock(item) ? `Đã đạt tối đa tồn kho (${getVariantStock(item)})` : 'Click để tăng số lượng')"
                   >
                     <i class="bi bi-plus"></i>
                   </button>
@@ -208,6 +208,9 @@ const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
 
 // Store product variants data
 const productVariantsMap = ref(new Map())
+
+// Loading state để prevent spam click
+const isUpdating = ref(false)
 
 // 🔍 DEBUG: Log items from cart
 console.log('🛒 [CART ITEMS] Total items:', items.value?.length || 0)
@@ -449,28 +452,61 @@ const isAtMaxStock = (item) => {
 }
 
 const increaseQuantity = async (itemKey) => {
-  const item = items.value.find(item => item.itemKey === itemKey)
-  if (!item) return
-  
-  const stock = getVariantStock(item)
-  const newQuantity = item.quantity + 1
-  
-  console.log('➕ [INCREASE QTY]:', {
-    current: item.quantity,
-    new: newQuantity,
-    stock: stock,
-    canIncrease: newQuantity <= stock
-  })
-  
-  // Kiểm tra không vượt quá tồn kho
-  if (newQuantity > stock) {
-    if (window.$toast) {
-      window.$toast.warning(`Chỉ còn ${stock} sản phẩm trong kho`, 'Không thể tăng thêm')
-    }
+  if (isUpdating.value) {
+    console.warn('⏳ [INCREASE QTY] Already updating, please wait...')
     return
   }
   
-  await updateQuantity(itemKey, newQuantity)
+  const item = items.value.find(item => item.itemKey === itemKey)
+  if (!item) return
+  
+  isUpdating.value = true
+  
+  try {
+    // Lấy stock hiện tại từ item (có thể không chính xác)
+    let stock = getVariantStock(item)
+    const newQuantity = item.quantity + 1
+    
+    // Nếu stock là giá trị default (999) hoặc undefined, reload cart để lấy stock mới
+    if (!stock || stock >= 999 || !item.stock) {
+      console.log('🔄 [INCREASE QTY] Stock not available or default, reloading cart...')
+      const { useCartStore } = await import('@/stores/cart')
+      const cartStore = useCartStore()
+      await cartStore.loadCart()
+      
+      // Lấy lại item sau khi reload
+      const refreshedItem = items.value.find(i => i.itemKey === itemKey)
+      if (refreshedItem) {
+        stock = getVariantStock(refreshedItem)
+        console.log('✅ [INCREASE QTY] Reloaded stock:', stock)
+      }
+    }
+    
+    console.log('➕ [INCREASE QTY]:', {
+      itemName: item.name,
+      color: item.color,
+      size: item.size,
+      current: item.quantity,
+      new: newQuantity,
+      stock: stock,
+      itemStock: item.stock,
+      canIncrease: newQuantity <= stock
+    })
+    
+    // KIỂM TRA NGHIÊM NGẶT - Không cho tăng nếu vượt quá stock
+    if (!stock || stock === null || stock === undefined || newQuantity > stock) {
+      const displayStock = stock || 0
+      if (window.$toast) {
+        window.$toast.warning(`Chỉ còn ${displayStock} sản phẩm trong kho`, 'Không thể tăng thêm')
+      }
+      console.warn('⚠️ [INCREASE QTY] BLOCKED - Exceeds stock limit')
+      return
+    }
+    
+    await updateQuantity(itemKey, newQuantity)
+  } finally {
+    isUpdating.value = false
+  }
 }
 
 const decreaseQuantity = async (itemKey) => {

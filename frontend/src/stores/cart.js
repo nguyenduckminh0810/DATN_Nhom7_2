@@ -224,6 +224,8 @@ export const useCartStore = defineStore('cart', () => {
         
         // Map backend response to cart items format (only when backend has items)
         items.value = response.chiTietList.map(item => {
+          console.log('🔍 [RAW ITEM FROM BACKEND]:', JSON.stringify(item, null, 2))
+          
           const mapped = {
             id: item.id, // GioHangChiTiet ID
             itemKey: item.id, // ✅ Dùng GioHangChiTiet.id làm itemKey (unique)
@@ -238,11 +240,11 @@ export const useCartStore = defineStore('cart', () => {
             color: item.color || extractColorFromThuocTinh(item.thuocTinh),
             size: item.size || extractSizeFromThuocTinh(item.thuocTinh),
             thuocTinh: item.thuocTinh || '',
-            stock: item.tonKho || 99,
+            stock: parseInt(item.tonKho) || 999,
             addedAt: new Date().toISOString()
           }
           
-          console.log('📦 [MAPPED ITEM]:', mapped)
+          console.log('📦 [MAPPED ITEM] stock =', mapped.stock, ', tonKho =', item.tonKho)
           return mapped
         })
         
