@@ -42,6 +42,6 @@ public class TaiKhoan {
     @Column(name = "cap_nhat_luc")
     private LocalDateTime capNhatLuc;
 
-    @Column(name = "lan_dang_nhap_cuoi")
-    private LocalDateTime lanDangNhapCuoi;
+    // @Column(name = "lan_dang_nhap_cuoi")
+    // private LocalDateTime lanDangNhapCuoi;
 }

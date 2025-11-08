@@ -43,7 +43,7 @@ public class BienTheSanPham {
     @EqualsAndHashCode.Exclude
     private ChatLieu chatLieu;
 
-    @Column(name = " so_luong_ton", nullable = false)
+    @Column(name = "so_luong_ton", nullable = false)
     private Integer soLuongTon;
 
     @Column(name = "gia", precision = 12, scale = 2)
