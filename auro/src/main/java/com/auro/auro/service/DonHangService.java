@@ -29,6 +29,9 @@ import org.springframework.data.domain.PageRequest;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import com.auro.auro.service.VoucherService;
+import com.auro.auro.service.VoucherValidationResult;
+import com.auro.auro.service.VoucherApplicationResult;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +48,7 @@ public class DonHangService {
     private final EmailService emailService;
     private final com.auro.auro.repository.HinhAnhRepository hinhAnhRepository;
     private final GHNShippingService ghnShippingService;
+    private final VoucherService voucherService;
 
     // Tạo mới đơn hàng
     @Transactional
@@ -52,7 +56,10 @@ public class DonHangService {
         donHang.setSoDonHang("DH-" + UUID.randomUUID().toString());
         donHang.setTaoLuc(LocalDateTime.now());
         donHang.setCapNhatLuc(LocalDateTime.now());
-        // donHang.setKenhBan("online");
+
+        if (donHang.getTrangThai() == null || donHang.getTrangThai().trim().isEmpty()) {
+            donHang.setTrangThai("Chờ xác nhận");
+        }
 
         // Tính toán tổng tiền
         BigDecimal tamTinh = chiTietList.stream()
@@ -114,7 +121,7 @@ public class DonHangService {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
 
-        // ✅ TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
+        //TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
         String trangThaiMoi = donHang.getTrangThai();
         if (!"Đang giao".equals(trangThaiCu) && "Đang giao".equals(trangThaiMoi)) {
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
@@ -330,47 +337,120 @@ public class DonHangService {
 
         // add voucher
         BigDecimal giamGiaTong = BigDecimal.ZERO;
-        Voucher voucher = null;
+        Voucher voucherGiamGia = null;
+        Voucher voucherFreeShip = null;
 
-        if (request.getVoucherId() != null) {
-            voucher = voucherRepository.findById(request.getVoucherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
-
-            LocalDateTime now = LocalDateTime.now();
-            if (now.isBefore(voucher.getBatDauLuc()) || now.isAfter(voucher.getKetThucLuc())) {
-                throw new RuntimeException("Voucher đã hết hạn hoặc chưa có hiệu lực");
+        // check guest không thể dùng vc
+        if(request.getVoucherId() != null || request.getFreeshipVoucherId() != null) {
+            if(khachHangId == null) {
+                throw new RuntimeException("Bạn phải đăng nhập để sử dụng voucher");
             }
-
-            if (voucher.getGioiHanSuDung() != null &&
-                    voucher.getGioiHanSuDung() != -1 &&
-                    voucher.getGioiHanSuDung() <= 0) {
-                throw new RuntimeException("Voucher đã hết lượt sử dụng");
-            }
-
-            if (voucher.getDonToiThieu() != null &&
-                    tamTinh.compareTo(voucher.getDonToiThieu()) < 0) {
-                throw new RuntimeException(String.format(
-                        "Đơn hàng phải tối thiểu %s để áp dụng voucher này",
-                        voucher.getDonToiThieu()));
-            }
-            if ("PHAN_TRAM".equals(voucher.getLoai())) {
-                giamGiaTong = tamTinh.multiply(voucher.getGiaTri()).divide(BigDecimal.valueOf(100));
-                if (voucher.getGiamToiDa() != null && giamGiaTong.compareTo(voucher.getGiamToiDa()) > 0) {
-                    giamGiaTong = voucher.getGiamToiDa();
-                }
-            } else if ("SO_TIEN".equals(voucher.getLoai())) {
-                giamGiaTong = voucher.getGiaTri();
-            }
-
-            if (giamGiaTong.compareTo(tamTinh) > 0) {
-                giamGiaTong = tamTinh;
-            }
-
-            voucherRepository.decreaseLimit(voucher.getId());
         }
 
-        // tính phi ship. mặc định 30k
-        BigDecimal phiVanChuyen = BigDecimal.valueOf(30000);
+        // vc giảm giá
+        if(request.getVoucherId() != null) {
+            voucherGiamGia = voucherRepository.findById(request.getVoucherId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
+            VoucherValidationResult validation = voucherService.validateVoucher(
+                    voucherGiamGia.getMa(), khachHangId, tamTinh);
+
+            if(!validation.isValid()) {
+                throw new RuntimeException(validation.getMessage());
+            }
+            
+            // check loại voucher
+            String loai = voucherGiamGia.getLoai();
+            if ("FREESHIP".equals(loai)) {
+                throw new RuntimeException("Voucher freeship phải được áp dụng riêng");
+            }
+            if (!"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) && 
+                !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
+                !"percent".equals(loai) && !"so_tien".equals(loai)) {
+                throw new RuntimeException("Loại voucher không hợp lệ cho giảm giá: " + loai);
+            }
+
+            // voucher giảm giá
+            VoucherApplicationResult result = voucherService.applyVoucher(
+                    voucherGiamGia.getMa(), khachHangId, tamTinh);
+
+            if(!result.isSuccess()) {
+                throw new RuntimeException(result.getMessage());
+            }
+            
+            // Lấy giảm giá và voucher từ result
+            giamGiaTong = result.getGiamGia();
+            voucherGiamGia = result.getVoucher();
+        }
+
+        // vc freeship
+        if (request.getFreeshipVoucherId() != null) {
+            voucherFreeShip = voucherRepository.findById(request.getFreeshipVoucherId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher freeship"));
+            VoucherValidationResult validation = voucherService.validateVoucher(
+                    voucherFreeShip.getMa(),
+                    khachHangId,
+                    tamTinh);
+            
+            if (!validation.isValid()) {
+                throw new RuntimeException(validation.getMessage());
+            }
+            
+            // check loại voucher phải là FREESHIP
+            if (!"FREESHIP".equals(voucherFreeShip.getLoai())) {
+                throw new RuntimeException("Voucher này không phải voucher freeship");
+            }
+
+            // freeship voucher (giảm số lượng và lưu VoucherKhach)
+            VoucherApplicationResult result = voucherService.applyVoucher(
+                    voucherFreeShip.getMa(),
+                    khachHangId,
+                    tamTinh);
+    
+            if (!result.isSuccess()) {
+                throw new RuntimeException(result.getMessage());
+            }
+    
+            voucherFreeShip = result.getVoucher();
+        }
+
+        // Tính phí vận chuyển từ GHN API
+        BigDecimal phiVanChuyen;
+        try {
+            if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
+                // Tạo request để gọi GHN API
+                GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
+                ghnRequest.setToDistrictId(request.getDistrictId());
+                ghnRequest.setToWardCode(request.getWardCode());
+                ghnRequest.setServiceId(request.getServiceId());
+
+                // Tính tổng khối lượng và số lượng sản phẩm
+                int totalWeight = 0;
+                for (GioHangChiTiet item : gioHangItems) {
+                    totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
+                }
+                ghnRequest.setWeight(totalWeight);
+                ghnRequest.setInsuranceValue(tamTinh.intValue());
+
+                // Gọi GHN API
+                GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
+
+                if (ghnResponse != null && ghnResponse.getData() != null) {
+                    Integer totalFee = ghnResponse.getData().getTotal();
+                    phiVanChuyen = BigDecimal.valueOf(totalFee);
+                } else {
+                    phiVanChuyen = BigDecimal.valueOf(30000);
+                }
+            } else {
+                phiVanChuyen = BigDecimal.valueOf(30000);
+            }
+        } catch (Exception e) {
+            phiVanChuyen = BigDecimal.valueOf(30000);
+        }
+
+        // Nếu có voucher freeship thì set phí ship = 0
+        if (voucherFreeShip != null) {
+            phiVanChuyen = BigDecimal.ZERO;
+        }
 
         // tạo đơn hàng
         DonHang donHang = new DonHang();
@@ -380,7 +460,7 @@ public class DonHangService {
         donHang.setTamTinh(tamTinh);
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
-        donHang.setVoucher(voucher);
+        donHang.setVoucher(voucherGiamGia);
         donHang.setDiaChiGiao(diaChiSnapshot);
         donHang.setGhiChu(request.getGhiChu());
         donHang.setPaymentMethod(request.getPhuongThucThanhToan());
