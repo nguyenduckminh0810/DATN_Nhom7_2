@@ -127,4 +127,25 @@ public class DonHangController {
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Fix các đơn hàng cũ có tongThanhToan = null
+     * Endpoint: POST /api/don-hang/fix-null-total
+     */
+    @PostMapping("/fix-null-total")
+    public ResponseEntity<Map<String, Object>> fixNullTongThanhToan() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            int fixedCount = donHangService.fixDonHangNullTongThanhToan();
+            response.put("success", true);
+            response.put("message", "Đã fix " + fixedCount + " đơn hàng");
+            response.put("fixedCount", fixedCount);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 }
