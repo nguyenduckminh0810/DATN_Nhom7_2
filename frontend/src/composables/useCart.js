@@ -21,6 +21,42 @@ export function useCart() {
     cartStore.addItem(product, quantity)
   }
 
+  /**
+   * Thêm sản phẩm vào giỏ hàng qua API backend
+   * @param {Number} bienTheId - ID của biến thể sản phẩm
+   * @param {Number} soLuong - Số lượng sản phẩm
+   */
+  const addToCartAPI = async (bienTheId, soLuong = 1) => {
+    try {
+      console.log('🛒 [ADD TO CART API] Adding to cart:', { bienTheId, soLuong })
+      
+      // Gọi API backend để thêm vào giỏ hàng
+      await cartService.addToCart({
+        bienTheId: bienTheId,
+        soLuong: soLuong
+      })
+      
+      console.log('✅ [ADD TO CART API] Added successfully')
+      
+      // Reload giỏ hàng từ backend để cập nhật UI
+      await loadCartFromAPI()
+      
+      if (window.$toast) {
+        window.$toast.success('Đã thêm sản phẩm vào giỏ hàng', 'Thành công')
+      }
+      
+      return true
+    } catch (error) {
+      console.error('❌ [ADD TO CART API] Error:', error)
+      
+      if (window.$toast) {
+        window.$toast.error('Không thể thêm vào giỏ hàng', 'Lỗi')
+      }
+      
+      return false
+    }
+  }
+
   const removeItem = async (itemKey) => {
     try {
       await cartStore.removeItem(itemKey)
@@ -54,11 +90,10 @@ export function useCart() {
       return false
     }
     
-    // Validate stock - nếu không có stock data thì set default là 1
-    const maxStock = item.stock || 1
-    if (numQuantity > maxStock) {
+    // Kiểm tra stock nếu có (cho trường hợp gọi từ component có truyền stock)
+    if (item.stock && numQuantity > item.stock) {
       if (window.$toast) {
-        window.$toast.error(`Chỉ còn ${maxStock} sản phẩm trong kho`)
+        window.$toast.error(`Chỉ còn ${item.stock} sản phẩm trong kho`)
       }
       return false
     }
@@ -358,6 +393,7 @@ export function useCart() {
 
     // API operations
     loadCartFromAPI,
+    addToCartAPI,
 
     // Business logic
     addToCartWithValidation,

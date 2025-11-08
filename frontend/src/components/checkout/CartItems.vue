@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="cart-items-section">
     <div class="section-card">
       <!-- Header -->
@@ -77,60 +77,63 @@
               <div class="col-5">
                 <div class="cart-product-info">
                   <h6 class="mb-1 fw-bold">{{ item.name }}</h6>
-                  <div class="product-variant mb-2">
-                    <span class="variant-text">{{ item.color || 'N/A' }} / {{ item.size || 'N/A' }}</span>
-                  </div>
                   
                   <!-- Variant Controls -->
                   <div class="variant-controls mb-2">
-                    <div class="dropdown me-2">
+                    <!-- Color Dropdown -->
+                    <div class="dropdown me-2" v-if="getProductVariants(item.productId)">
                       <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                               type="button" 
-                              @click="toggleDropdown"
-                              :class="{ 'text-muted': !item.color }">
+                              :id="`color-dropdown-${item.id}`"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false">
                         <span v-if="item.color" class="d-flex align-items-center">
-                          <span class="color-swatch me-2" :style="{ backgroundColor: getColorValue(item.color) }"></span>
-                          {{ item.color }}
+                          <span class="color-dot me-2" :style="{ backgroundColor: getColorHex(item.color) }"></span>
+                          <strong>Màu:</strong>&nbsp;{{ item.color }}
                         </span>
                         <span v-else>Chọn màu</span>
                       </button>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Đen')">
-                          <span class="color-swatch me-2" style="background-color: #000000"></span>Đen
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Trắng')">
-                          <span class="color-swatch me-2" style="background-color: #ffffff; border: 1px solid #ccc"></span>Trắng
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Xám')">
-                          <span class="color-swatch me-2" style="background-color: #808080"></span>Xám
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Đỏ')">
-                          <span class="color-swatch me-2" style="background-color: #ff0000"></span>Đỏ
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Xanh')">
-                          <span class="color-swatch me-2" style="background-color: #007bff"></span>Xanh
-                        </a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'color', 'Vàng')">
-                          <span class="color-swatch me-2" style="background-color: #ffc107"></span>Vàng
-                        </a></li>
+                      <ul class="dropdown-menu" :aria-labelledby="`color-dropdown-${item.id}`">
+                        <li v-for="color in getAvailableColors(item.productId)" :key="color.name">
+                          <a class="dropdown-item" 
+                             href="#" 
+                             @click.prevent="changeVariant(item, 'color', color.name)"
+                             :class="{ 'active': item.color === color.name }">
+                            <span class="color-dot me-2" :style="{ backgroundColor: color.hex }"></span>
+                            {{ color.name }}
+                          </a>
+                        </li>
                       </ul>
                     </div>
                     
-                    <div class="dropdown">
+                    <!-- Size Dropdown -->
+                    <div class="dropdown" v-if="getProductVariants(item.productId)">
                       <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                               type="button" 
-                              @click="toggleDropdown"
-                              :class="{ 'text-muted': !item.size }">
-                        {{ item.size || 'Chọn size' }}
+                              :id="`size-dropdown-${item.id}`"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false">
+                        <strong>Size:</strong>&nbsp;{{ item.size || 'Chọn size' }}
                       </button>
-                      <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'S')">S</a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'M')">M</a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'L')">L</a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'XL')">XL</a></li>
-                        <li><a class="dropdown-item" href="#" @click.prevent="updateVariant(item.itemKey, 'size', 'XXL')">XXL</a></li>
+                      <ul class="dropdown-menu" :aria-labelledby="`size-dropdown-${item.id}`">
+                        <li v-for="size in getAvailableSizes(item.productId, item.color)" :key="size">
+                          <a class="dropdown-item" 
+                             href="#" 
+                             @click.prevent="changeVariant(item, 'size', size)"
+                             :class="{ 'active': item.size === size }">
+                            {{ size }}
+                          </a>
+                        </li>
                       </ul>
                     </div>
+                  </div>
+
+                  <!-- Fallback if no variants loaded -->
+                  <div v-if="!getProductVariants(item.productId)" class="product-variant mb-2">
+                    <span class="variant-text">
+                      <strong>Màu:</strong> {{ item.color || 'Không xác định' }} / 
+                      <strong>Size:</strong> {{ item.size || 'Không xác định' }}
+                    </span>
                   </div>
 
                   <!-- Delete Button -->
@@ -155,6 +158,8 @@
                   <button 
                     class="qty-btn plus"
                     @click="increaseQuantity(item.itemKey)"
+                    :disabled="false"
+                    :title="'Click để tăng số lượng'"
                   >
                     <i class="bi bi-plus"></i>
                   </button>
@@ -194,10 +199,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCart } from '@/composables/useCart'
+import sanPhamService from '@/services/sanPhamService'
+import cartService from '@/services/cartService'
 
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
+
+// Store product variants data
+const productVariantsMap = ref(new Map())
 
 // 🔍 DEBUG: Log items from cart
 console.log('🛒 [CART ITEMS] Total items:', items.value?.length || 0)
@@ -210,6 +220,7 @@ if (items.value && items.value.length > 0) {
       color: item.color,
       size: item.size,
       quantity: item.quantity,
+      productId: item.productId,
       bienTheId: item.bienTheId,
       variantId: item.variantId
     })
@@ -223,18 +234,257 @@ items.value.forEach(item => {
   }
 })
 
+// Load product variants for all cart items
+const loadProductVariants = async () => {
+  console.log('🔄 [LOAD VARIANTS] Starting to load variants...')
+  console.log('🔄 [LOAD VARIANTS] Cart items:', items.value)
+  
+  // Extract productId from SKU (format: SP{productId}-{size}-{color}-{random})
+  const getProductIdFromSku = (sku) => {
+    if (!sku) return null
+    const match = sku.match(/^SP(\d+)-/)
+    return match ? parseInt(match[1]) : null
+  }
+  
+  // Get unique product IDs from cart items
+  const productIds = new Set()
+  items.value.forEach(item => {
+    let productId = item.productId
+    
+    // If no productId, try to extract from SKU
+    if (!productId && item.sku) {
+      productId = getProductIdFromSku(item.sku)
+      console.log(`📝 [LOAD VARIANTS] Extracted productId ${productId} from SKU: ${item.sku}`)
+    }
+    
+    // If still no productId, try to get from bienTheId (use as fallback)
+    if (!productId && item.bienTheId) {
+      productId = item.bienTheId
+      console.log(`� [LOAD VARIANTS] Using bienTheId ${productId} as productId`)
+    }
+    
+    if (productId) {
+      productIds.add(productId)
+      // Store productId back to item for future use
+      item.productId = productId
+    }
+  })
+  
+  const uniqueProductIds = Array.from(productIds)
+  console.log('🔄 [LOAD VARIANTS] Unique product IDs:', uniqueProductIds)
+  
+  if (uniqueProductIds.length === 0) {
+    console.warn('⚠️ [LOAD VARIANTS] No product IDs found in cart items')
+    return
+  }
+  
+  for (const productId of uniqueProductIds) {
+    try {
+      console.log(`🔄 [LOAD VARIANTS] Loading variants for product ${productId}...`)
+      const productDetail = await sanPhamService.getDetail(productId)
+      
+      if (productDetail && productDetail.bienThes) {
+        console.log(`✅ [LOAD VARIANTS] Loaded ${productDetail.bienThes.length} variants for product ${productId}`)
+        productVariantsMap.value.set(productId, productDetail.bienThes)
+      } else {
+        console.warn(`⚠️ [LOAD VARIANTS] No variants found for product ${productId}`)
+      }
+    } catch (error) {
+      console.error(`❌ [LOAD VARIANTS] Error loading variants for product ${productId}:`, error)
+    }
+  }
+  
+  console.log('✅ [LOAD VARIANTS] Finished loading variants')
+  console.log('📦 [LOAD VARIANTS] Product variants map:', productVariantsMap.value)
+}
+
+// Get variants for a specific product
+const getProductVariants = (productId) => {
+  if (!productId) return null
+  return productVariantsMap.value.get(productId) || null
+}
+
+// Get available colors for a product
+const getAvailableColors = (productId) => {
+  const variants = getProductVariants(productId)
+  if (!variants) return []
+  
+  // Extract unique colors with their hex values
+  const colorMap = new Map()
+  variants.forEach(variant => {
+    if (variant.mauSac && variant.tonKho > 0) {
+      if (!colorMap.has(variant.mauSac)) {
+        colorMap.set(variant.mauSac, {
+          name: variant.mauSac,
+          hex: variant.colorHex || '#000000'
+        })
+      }
+    }
+  })
+  
+  return Array.from(colorMap.values())
+}
+
+// Get available sizes for a product (filtered by selected color if any)
+const getAvailableSizes = (productId, selectedColor) => {
+  const variants = getProductVariants(productId)
+  if (!variants) return []
+  
+  let filteredVariants = variants.filter(v => v.tonKho > 0)
+  
+  // If color is selected, filter by that color
+  if (selectedColor) {
+    filteredVariants = filteredVariants.filter(v => v.mauSac === selectedColor)
+  }
+  
+  // Extract unique sizes
+  const sizes = [...new Set(filteredVariants.map(v => v.kichThuoc).filter(Boolean))]
+  return sizes.sort()
+}
+
+// Get color hex value by name
+const getColorHex = (colorName) => {
+  // Search in all loaded variants
+  for (const variants of productVariantsMap.value.values()) {
+    const variant = variants.find(v => v.mauSac === colorName)
+    if (variant && variant.colorHex) {
+      return variant.colorHex
+    }
+  }
+  
+  // Fallback colors
+  const colorMap = {
+    'Đen': '#000000',
+    'Trắng': '#ffffff',
+    'Xám': '#808080',
+    'Đỏ': '#dc3545',
+    'Xanh navy': '#000080',
+    'Xanh dương': '#007bff',
+    'Xanh lá': '#28a745',
+    'Vàng': '#ffc107',
+    'Cam': '#fd7e14',
+    'Tím': '#6f42c1',
+    'Hồng': '#e83e8c',
+    'Nâu': '#8b4513',
+    'Be': '#f5f5dc'
+  }
+  
+  return colorMap[colorName] || '#6c757d'
+}
+
+// Change variant (color or size)
+const changeVariant = async (item, type, value) => {
+  try {
+    console.log(`🔄 [CHANGE VARIANT] Changing ${type} to ${value} for item:`, item)
+    
+    const variants = getProductVariants(item.productId)
+    if (!variants) {
+      if (window.$toast) {
+        window.$toast.error('Không tìm thấy thông tin biến thể', 'Lỗi')
+      }
+      return
+    }
+    
+    // Determine new color and size based on what's being changed
+    const newColor = type === 'color' ? value : item.color
+    const newSize = type === 'size' ? value : item.size
+    
+    // Find the matching variant
+    const newVariant = variants.find(v => 
+      v.mauSac === newColor && v.kichThuoc === newSize && v.tonKho > 0
+    )
+    
+    if (!newVariant) {
+      if (window.$toast) {
+        window.$toast.error('Không tìm thấy biến thể phù hợp', 'Lỗi')
+      }
+      return
+    }
+    
+    console.log('✅ [CHANGE VARIANT] Found new variant:', newVariant)
+    
+    // Step 1: Remove current item from cart
+    await cartService.removeFromCart(item.id)
+    
+    // Step 2: Add new variant to cart
+    await cartService.addToCart({
+      bienTheId: newVariant.id,
+      soLuong: item.quantity
+    })
+    
+    // Step 3: Reload cart from backend
+    const { useCartStore } = await import('@/stores/cart')
+    const cartStore = useCartStore()
+    await cartStore.loadCart()
+    
+    if (window.$toast) {
+      window.$toast.success(
+        `Đã đổi sang ${newColor} - ${newSize}`,
+        'Thành công'
+      )
+    }
+    
+  } catch (error) {
+    console.error('❌ [CHANGE VARIANT] Error:', error)
+    if (window.$toast) {
+      window.$toast.error('Không thể thay đổi biến thể', 'Lỗi')
+    }
+  }
+}
+
+// Load variants when component mounts
+onMounted(async () => {
+  await loadProductVariants()
+})
+
+// Get variant stock for an item - Lấy trực tiếp từ backend
+const getVariantStock = (item) => {
+  return item.stock || 999
+}
+
+// Check if item quantity is at max stock
+const isAtMaxStock = (item) => {
+  const stock = getVariantStock(item)
+  return item.quantity >= stock
+}
+
 const increaseQuantity = async (itemKey) => {
   const item = items.value.find(item => item.itemKey === itemKey)
-  if (item) {
-    await updateQuantity(itemKey, item.quantity + 1)
+  if (!item) return
+  
+  const stock = getVariantStock(item)
+  const newQuantity = item.quantity + 1
+  
+  console.log('➕ [INCREASE QTY]:', {
+    current: item.quantity,
+    new: newQuantity,
+    stock: stock,
+    canIncrease: newQuantity <= stock
+  })
+  
+  // Kiểm tra không vượt quá tồn kho
+  if (newQuantity > stock) {
+    if (window.$toast) {
+      window.$toast.warning(`Chỉ còn ${stock} sản phẩm trong kho`, 'Không thể tăng thêm')
+    }
+    return
   }
+  
+  await updateQuantity(itemKey, newQuantity)
 }
 
 const decreaseQuantity = async (itemKey) => {
   const item = items.value.find(item => item.itemKey === itemKey)
-  if (item && item.quantity > 1) {
-    await updateQuantity(itemKey, item.quantity - 1)
-  }
+  if (!item || item.quantity <= 1) return
+  
+  const newQuantity = item.quantity - 1
+  
+  console.log('➖ [DECREASE QTY]:', {
+    current: item.quantity,
+    new: newQuantity
+  })
+  
+  await updateQuantity(itemKey, newQuantity)
 }
 
 const clearAllItems = async () => {
@@ -243,38 +493,9 @@ const clearAllItems = async () => {
   }
 }
 
-const updateVariant = (itemKey, type, value) => {
-  const item = items.value.find(item => item.itemKey === itemKey)
-  if (item) {
-    if (type === 'color') {
-      item.color = value
-    } else if (type === 'size') {
-      item.size = value
-    }
-    
-    if (window.$toast) {
-      window.$toast.success(`Đã chọn ${type === 'color' ? 'màu' : 'size'} ${value}`)
-    }
-  }
-}
-
-const getColorValue = (colorName) => {
-  const colorMap = {
-    'Đen': '#000000',
-    'Trắng': '#ffffff',
-    'Xám': '#808080',
-    'Đỏ': '#ff0000',
-    'Xanh': '#007bff',
-    'Vàng': '#ffc107'
-  }
-  return colorMap[colorName] || colorName
-}
-
 const handleImageError = (event) => {
   event.target.src = 'https://via.placeholder.com/150?text=No+Image'
 }
-
-
 
 // Logic cho checkbox "Chọn tất cả"
 const allItemsSelected = computed(() => {
@@ -295,144 +516,6 @@ const toggleSelectAll = () => {
     window.$toast.success(message)
   }
 }
-
-// Handle dropdown toggle manually
-const toggleDropdown = (event) => {
-  event.preventDefault()
-  const dropdown = event.target.closest('.dropdown')
-  const cartItem = dropdown.closest('.cart-item')
-  const isOpen = dropdown.classList.contains('show')
-  
-  // Close all other dropdowns
-  document.querySelectorAll('.dropdown.show').forEach(d => {
-    if (d !== dropdown) {
-      d.classList.remove('show')
-      const menu = d.querySelector('.dropdown-menu')
-      const item = d.closest('.cart-item')
-      if (menu) {
-        menu.style.top = 'auto'
-        menu.style.left = 'auto'
-        menu.style.bottom = 'auto'
-        menu.style.transform = 'none'
-      }
-      if (item) {
-        item.classList.remove('show-dropdown')
-      }
-    }
-  })
-  
-  // Toggle current dropdown
-  if (isOpen) {
-    dropdown.classList.remove('show')
-    cartItem.classList.remove('show-dropdown')
-    const dropdownMenu = dropdown.querySelector('.dropdown-menu')
-    if (dropdownMenu) {
-      dropdownMenu.style.top = 'auto'
-      dropdownMenu.style.left = 'auto'
-      dropdownMenu.style.bottom = 'auto'
-      dropdownMenu.style.transform = 'none'
-    }
-  } else {
-    dropdown.classList.add('show')
-    cartItem.classList.add('show-dropdown')
-    
-    // Calculate position for fixed dropdown
-    const dropdownMenu = dropdown.querySelector('.dropdown-menu')
-    const button = dropdown.querySelector('.dropdown-toggle')
-    const buttonRect = button.getBoundingClientRect()
-    const viewportHeight = window.innerHeight
-    const viewportWidth = window.innerWidth
-    
-    // Calculate position
-    let top = buttonRect.bottom + window.scrollY + 4
-    let left = buttonRect.left + window.scrollX
-    
-    // Check if dropdown should open upward (for last items)
-    const dropdownHeight = 200 // Estimated height
-    if (top + dropdownHeight > viewportHeight + window.scrollY - 50) {
-      top = buttonRect.top + window.scrollY - dropdownHeight - 4
-    }
-    
-    // Check if dropdown goes beyond right edge
-    const dropdownWidth = 160 // min-width
-    if (left + dropdownWidth > viewportWidth - 10) {
-      left = viewportWidth - dropdownWidth - 10
-    }
-    
-    // Set position
-    dropdownMenu.style.top = top + 'px'
-    dropdownMenu.style.left = left + 'px'
-  }
-}
-
-// Close dropdown when clicking outside
-const handleOutsideClick = (event) => {
-  if (!event.target.closest('.dropdown')) {
-    document.querySelectorAll('.dropdown.show').forEach(dropdown => {
-      dropdown.classList.remove('show')
-      const menu = dropdown.querySelector('.dropdown-menu')
-      const item = dropdown.closest('.cart-item')
-      if (menu) {
-        menu.style.top = 'auto'
-        menu.style.left = 'auto'
-        menu.style.bottom = 'auto'
-        menu.style.transform = 'none'
-      }
-      if (item) {
-        item.classList.remove('show-dropdown')
-      }
-    })
-  }
-}
-
-// Close dropdown when scrolling
-const handleScroll = () => {
-  document.querySelectorAll('.dropdown.show').forEach(dropdown => {
-    dropdown.classList.remove('show')
-    const menu = dropdown.querySelector('.dropdown-menu')
-    const item = dropdown.closest('.cart-item')
-    if (menu) {
-      menu.style.top = 'auto'
-      menu.style.left = 'auto'
-      menu.style.bottom = 'auto'
-      menu.style.transform = 'none'
-    }
-    if (item) {
-      item.classList.remove('show-dropdown')
-    }
-  })
-}
-
-// Close dropdown when window resizes
-const handleResize = () => {
-  document.querySelectorAll('.dropdown.show').forEach(dropdown => {
-    dropdown.classList.remove('show')
-    const menu = dropdown.querySelector('.dropdown-menu')
-    const item = dropdown.closest('.cart-item')
-    if (menu) {
-      menu.style.top = 'auto'
-      menu.style.left = 'auto'
-      menu.style.bottom = 'auto'
-      menu.style.transform = 'none'
-    }
-    if (item) {
-      item.classList.remove('show-dropdown')
-    }
-  })
-}
-
-// Add event listeners with proper cleanup
-onMounted(() => {
-  document.addEventListener('click', handleOutsideClick)
-  document.addEventListener('scroll', handleScroll, true)
-  window.addEventListener('resize', handleResize)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleOutsideClick)
-  document.removeEventListener('scroll', handleScroll, true)
-  window.removeEventListener('resize', handleResize)
-})
 </script>
 
 <style scoped>
@@ -597,194 +680,101 @@ onUnmounted(() => {
 }
 
 .variant-text {
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.85rem;
+  color: #495057;
   background: #f8f9fa;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  display: inline-block;
+  border: 1px solid #e9ecef;
 }
 
+.variant-text strong {
+  color: #212529;
+  font-weight: 600;
+}
+
+.variant-info {
+  font-size: 0.8rem;
+}
+
+.variant-info small {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Variant Controls */
 .variant-controls {
-  overflow: visible !important;
-  position: relative;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .variant-controls .dropdown {
-  display: inline-block;
   position: relative;
-  overflow: visible !important;
+}
+
+.variant-controls .btn {
+  min-width: 120px;
+  text-align: left;
+  border: 1px solid #dee2e6;
+  background: white;
+  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.variant-controls .btn:hover {
+  border-color: #B8860B;
+  background: #fffbf0;
+}
+
+.variant-controls .btn strong {
+  font-weight: 600;
+  color: #495057;
 }
 
 .variant-controls .dropdown-menu {
-  display: none;
-  position: fixed !important;
-  top: auto !important;
-  left: auto !important;
-  z-index: 9999999 !important;
   min-width: 160px;
-  padding: 0.5rem 0;
-  margin: 0.125rem 0 0;
-  background-color: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 0.375rem;
-  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.175);
-  max-height: 300px;
+  max-height: 250px;
   overflow-y: auto;
-  overflow-x: visible !important;
+  font-size: 0.875rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.variant-controls .dropdown.show .dropdown-menu {
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-.variant-controls .dropdown-toggle::after {
-  display: inline-block;
-  margin-left: 0.255em;
-  vertical-align: 0.255em;
-  content: "";
-  border-top: 0.3em solid;
-  border-right: 0.3em solid transparent;
-  border-bottom: 0;
-  border-left: 0.3em solid transparent;
-}
-
-.variant-controls .dropdown .btn {
-  min-width: 100px;
-  text-align: left;
-  position: relative;
-  border: 2px solid #e9ecef !important;
-  background-color: white !important;
-  transition: all 0.2s ease;
-}
-
-.variant-controls .dropdown .btn:hover {
-  border-color: #B8860B !important;
-  background-color: white !important;
-}
-
-.variant-controls .dropdown .btn:focus {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
-  outline: none !important;
-}
-
-.variant-controls .dropdown .btn:active {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
-}
-
-.variant-controls .dropdown.show .btn {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
-}
-
-.variant-controls .dropdown .btn.text-muted {
-  color: #6c757d !important;
-  font-style: italic;
-  border: 2px solid #e9ecef !important;
-}
-
-/* Force border visibility for all button states */
-.variant-controls .dropdown .btn:not(:focus):not(:hover):not(.show) {
-  border: 2px solid #e9ecef !important;
-  background-color: white !important;
-}
-
-/* Override any conflicting styles */
-.variant-controls .dropdown .btn,
-.variant-controls .dropdown .btn:focus,
-.variant-controls .dropdown .btn:hover,
-.variant-controls .dropdown .btn:active,
-.variant-controls .dropdown .btn:visited {
-  border: 2px solid #e9ecef !important;
-  background-color: white !important;
-  outline: none !important;
-}
-
-.variant-controls .dropdown .btn:focus,
-.variant-controls .dropdown .btn:hover,
-.variant-controls .dropdown .btn:active,
-.variant-controls .dropdown.show .btn {
-  border-color: #B8860B !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
-}
-
-.variant-controls .dropdown .btn::after {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* Color swatch styling */
-.color-swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
-  display: inline-block;
-  border: 1px solid #ddd;
-  flex-shrink: 0;
-}
-
-.dropdown-item {
+.variant-controls .dropdown-item {
   display: flex;
   align-items: center;
   padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.dropdown-item:hover {
+.variant-controls .dropdown-item:hover {
   background-color: #f8f9fa;
 }
 
-.dropdown-item:hover .color-swatch {
-  transform: scale(1.1);
-  transition: transform 0.2s ease;
+.variant-controls .dropdown-item.active {
+  background-color: #B8860B;
+  color: white;
+  font-weight: 600;
 }
 
-/* Support for dropdown opening upward */
-.variant-controls .dropdown-menu.dropdown-upward {
-  top: auto !important;
-  bottom: 100% !important;
-  transform: translateY(-0.5rem) !important;
+.variant-controls .dropdown-item.active .color-dot {
+  border-color: white;
 }
 
-/* Reset Bootstrap button styles that might interfere */
-.variant-controls .btn-outline-secondary {
-  border: 2px solid #e9ecef !important;
-  background-color: white !important;
-  color: #495057 !important;
-}
-
-.variant-controls .btn-outline-secondary:hover {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  color: #495057 !important;
-}
-
-.variant-controls .btn-outline-secondary:focus {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  color: #495057 !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
-}
-
-.variant-controls .btn-outline-secondary:active {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  color: #495057 !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
-}
-
-.variant-controls .btn-outline-secondary:not(:disabled):not(.disabled):active {
-  border-color: #B8860B !important;
-  background-color: white !important;
-  color: #495057 !important;
-  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1) !important;
+.color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid #dee2e6;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .delete-btn {
@@ -805,6 +795,8 @@ onUnmounted(() => {
   border-radius: 8px;
   padding: 0.25rem;
   width: fit-content;
+  position: relative;
+  z-index: 10;
 }
 
 .qty-btn {
@@ -820,11 +812,19 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   font-size: 0.75rem;
   color: #6c757d;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .qty-btn:hover:not(:disabled) {
   background: #e9ecef;
   color: #212529;
+  transform: scale(1.1);
+}
+
+.qty-btn:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 .qty-btn:disabled {
@@ -837,6 +837,16 @@ onUnmounted(() => {
   text-align: center;
   font-weight: 600;
   font-size: 0.875rem;
+}
+
+.stock-info {
+  margin-top: 0.25rem;
+}
+
+.stock-info small {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-style: italic;
 }
 
 .current-price {
@@ -969,108 +979,5 @@ onUnmounted(() => {
     justify-content: center;
     margin: 0 auto;
   }
-}
-
-/* Fix dropdown z-index issues - Override Bootstrap CSS */
-.variant-controls .dropdown-menu {
-  pointer-events: auto !important;
-  isolation: isolate !important;
-  contain: layout style !important;
-  z-index: 9999999 !important;
-  position: fixed !important;
-}
-
-/* Override Bootstrap dropdown z-index completely */
-.dropdown-menu {
-  z-index: 9999999 !important;
-}
-
-.variant-controls .dropdown.show .dropdown-menu {
-  z-index: 9999999 !important;
-  position: fixed !important;
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Prevent any stacking context issues */
-.cart-item {
-  isolation: isolate !important;
-  position: relative;
-  z-index: 1;
-}
-
-.variant-controls {
-  isolation: isolate !important;
-  position: relative;
-  z-index: 10;
-}
-
-.variant-controls .dropdown {
-  isolation: isolate !important;
-  position: relative;
-  z-index: 1000;
-}
-
-.variant-controls .dropdown.show {
-  z-index: 1001;
-}
-
-/* Nuclear option - Override ALL possible z-index conflicts */
-.cart-items-section * {
-  position: relative;
-}
-
-.cart-items-section .variant-controls .dropdown-menu {
-  position: fixed !important;
-  z-index: 9999999 !important;
-  transform: translateZ(0) !important;
-  will-change: transform !important;
-}
-
-/* Force all cart items to lower z-index */
-.cart-item:not(.show-dropdown) {
-  z-index: 1 !important;
-}
-
-.cart-item.show-dropdown {
-  z-index: 9999998 !important;
-}
-
-/* Ensure no element can interfere */
-.cart-items-section .row,
-.cart-items-section .col-1,
-.cart-items-section .col-2,
-.cart-items-section .col-5 {
-  z-index: 1 !important;
-  position: relative !important;
-}
-
-.cart-items-section .variant-controls {
-  z-index: 9999998 !important;
-  position: relative !important;
-}
-
-/* Final nuclear option - Override Bootstrap completely */
-.cart-items-section .dropdown-menu {
-  z-index: 9999999 !important;
-  position: fixed !important;
-  display: none;
-}
-
-.cart-items-section .dropdown.show .dropdown-menu {
-  z-index: 9999999 !important;
-  position: fixed !important;
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Force hardware acceleration */
-.cart-items-section .dropdown-menu {
-  transform: translateZ(0) !important;
-  will-change: transform, top, left !important;
-  backface-visibility: hidden !important;
-  -webkit-backface-visibility: hidden !important;
 }
 </style>
