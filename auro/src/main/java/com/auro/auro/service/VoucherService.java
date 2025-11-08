@@ -74,51 +74,101 @@ public class VoucherService {
     }
 
 
-    @Transactional
+    @Transactional(noRollbackFor = {IllegalArgumentException.class})
     public VoucherApplicationResult applyVoucher(String maVoucher, Long khachHangId, BigDecimal donHangTong) {
-
-        // validate voucher
-        VoucherValidationResult validation = validateVoucher(maVoucher, khachHangId, donHangTong);
-        if(!validation.isValid()) {
-            return VoucherApplicationResult.failed(validation.getMessage());
-        }
-
-        Voucher voucher = validation.getVoucher();
-
-        // Tính giảm giá
-        BigDecimal giamGia = tinhGiamGia(voucher, donHangTong);
-
-        if(voucher.getGioiHanSuDung() != null) {
-            int updated = voucherRepository.decreaseLimit(voucher.getId());
-            if(updated == 0) {
-                return VoucherApplicationResult.failed("Voucher đã hết số lượng");
+        try {
+            // validate voucher
+            VoucherValidationResult validation = validateVoucher(maVoucher, khachHangId, donHangTong);
+            if(!validation.isValid()) {
+                return VoucherApplicationResult.failed(validation.getMessage());
             }
-        }
 
-        // Lưu lịch sử sử dụng
-        if(khachHangId != null) {
-            VoucherKhach voucherKhach = new VoucherKhach();
-            VoucherKhachId id = new VoucherKhachId(voucher.getId(), khachHangId);
-            voucherKhach.setId(id);
-            voucherKhach.setTrangThai("da_dung");
-            voucherKhachRepository.save(voucherKhach);
+            Voucher voucher = validation.getVoucher();
+
+            // Tính giảm giá
+            BigDecimal giamGia;
+            try {
+                giamGia = tinhGiamGia(voucher, donHangTong);
+            } catch (IllegalArgumentException e) {
+                return VoucherApplicationResult.failed(e.getMessage());
+            }
+
+            if(voucher.getGioiHanSuDung() != null && voucher.getGioiHanSuDung() > 0) {
+                int updated = voucherRepository.decreaseLimit(voucher.getId());
+                if(updated == 0) {
+                    return VoucherApplicationResult.failed("Voucher đã hết số lượng");
+                }
+            }
+
+            // Lưu lịch sử sử dụng
+            if(khachHangId != null) {
+                VoucherKhachId id = new VoucherKhachId(voucher.getId(), khachHangId);
+                Optional<VoucherKhach> existingVoucherKhach = voucherKhachRepository.findById(id);
+                
+                if (existingVoucherKhach.isEmpty()) {
+                    // Chưa tồn tại, tạo mới
+                    VoucherKhach voucherKhach = new VoucherKhach();
+                    voucherKhach.setId(id);
+                    voucherKhach.setTrangThai("da_dung");
+                    voucherKhachRepository.save(voucherKhach);
+                } else {
+                    // Đã tồn tại, cập nhật trạng thái
+                    VoucherKhach voucherKhach = existingVoucherKhach.get();
+                    voucherKhach.setTrangThai("da_dung");
+                    voucherKhachRepository.save(voucherKhach);
+                }
+            }
+            return VoucherApplicationResult.success(voucher, giamGia);
+        } catch (Exception e) {
+            log.error("Lỗi khi áp dụng voucher {}: {}", maVoucher, e.getMessage(), e);
+            return VoucherApplicationResult.failed("Lỗi khi áp dụng voucher: " + e.getMessage());
         }
-        return VoucherApplicationResult.success(voucher, giamGia);
     }
 
     // Tính giảm giá
     private BigDecimal tinhGiamGia(Voucher voucher, BigDecimal donHangTong) {
-        if("percent".equals(voucher.getLoai()) || "PHAN_TRAM".equals(voucher.getLoai())) {
-            BigDecimal giamGia = donHangTong.multiply(voucher.getGiaTri().divide(new BigDecimal("100")));
-
-            // Giảm tối đa
-            if(voucher.getGiamToiDa() != null && giamGia.compareTo(voucher.getGiamToiDa()) > 0) {
+        if (voucher == null) {
+            return BigDecimal.ZERO;
+        }
+        
+        String loai = voucher.getLoai();
+        
+        // Giảm theo phần trăm
+        if ("GIAM_PHAN_TRAM".equals(loai) || "PHAN_TRAM".equals(loai) || "percent".equals(loai)) {
+            BigDecimal giamGia = donHangTong.multiply(voucher.getGiaTri())
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            
+            // check giảm tối đa nếu có
+            if (voucher.getGiamToiDa() != null && giamGia.compareTo(voucher.getGiamToiDa()) > 0) {
                 giamGia = voucher.getGiamToiDa();
             }
+            
+            // check không vượt quá tổng tiền
+            if (giamGia.compareTo(donHangTong) > 0) {
+                giamGia = donHangTong;
+            }
+            
             return giamGia;
-        }else {
-            return voucher.getGiaTri();
         }
+        
+        // Giảm số tiền cố định
+        if ("GIAM_SO_TIEN".equals(loai) || "SO_TIEN".equals(loai) || "so_tien".equals(loai)) {
+            BigDecimal giamGia = voucher.getGiaTri();
+            
+            // check không vượt quá tổng tiền
+            if (giamGia.compareTo(donHangTong) > 0) {
+                giamGia = donHangTong;
+            }
+            
+            return giamGia;
+        }
+        
+        // Freeship
+        if ("FREESHIP".equals(loai)) {
+            return BigDecimal.ZERO;
+        }
+        
+        throw new IllegalArgumentException("Loại voucher không hỗ trợ: " + loai);
     }
 
     // check và tạo mới

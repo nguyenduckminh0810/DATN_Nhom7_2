@@ -10,6 +10,14 @@
 
         <!-- Voucher Cards -->
         <div class="section-body">
+          <!-- Guest Notice -->
+          <div v-if="isGuest" class="guest-notice mb-3">
+            <div class="guest-notice-content">
+              <i class="bi bi-info-circle me-2"></i>
+              <span>Vui lòng <a href="/login" class="login-link">đăng nhập</a> để sử dụng voucher</span>
+            </div>
+          </div>
+
           <!-- Loading State -->
           <div v-if="loading" class="voucher-loading">
             <div class="spinner-border text-warning" role="status">
@@ -19,7 +27,7 @@
           </div>
 
           <!-- Voucher Cards -->
-          <div v-else-if="availableVouchers.length > 0" class="voucher-cards-container">
+          <div v-else-if="availableVouchers.length > 0" class="voucher-cards-container" :class="{ 'guest-disabled': isGuest }">
             <!-- Scroll Controls - Đặt bên ngoài để không che khuất nội dung -->
             <div class="voucher-scroll-controls">
               <button class="scroll-btn scroll-left" @click="scrollVouchers('left')">
@@ -36,8 +44,8 @@
                      :key="voucher.id" 
                      class="voucher-card"
                      :class="{ 
-                       selected: selectedVoucher?.id === voucher.id,
-                       disabled: !isVoucherEligible(voucher)
+                       selected: selectedVoucher?.id === voucher.id && !isGuest,
+                       disabled: !isVoucherEligible(voucher) || isGuest
                      }"
                      @click="handleVoucherClick(voucher)">
                   <div class="voucher-perforated-edge"></div>
@@ -79,16 +87,16 @@
           </div>
 
         <!-- Manual Voucher Input -->
-        <div class="voucher-input-section mt-3">
+        <div class="voucher-input-section mt-3" :class="{ 'guest-disabled': isGuest }">
           <div class="input-group">
             <input type="text" 
                    class="form-control modern-voucher-input" 
                    v-model="manualVoucherCode"
                    placeholder="Nhập mã giảm giá"
-                   :disabled="loading">
+                   :disabled="loading || isGuest">
             <button class="btn btn-dark voucher-apply-btn" 
                     @click="handleApplyVoucher"
-                    :disabled="loading || !manualVoucherCode.trim()">
+                    :disabled="loading || !manualVoucherCode.trim() || isGuest">
               <span v-if="loading" class="spinner-border spinner-border-sm me-1" role="status"></span>
               <i v-else class="bi bi-check me-1"></i>
               {{ loading ? 'Đang kiểm tra...' : 'Áp dụng' }}
@@ -122,16 +130,19 @@ const {
   availableVouchers,
   loading,
   selectVoucher, 
-  clearVoucherSelection, 
   applyVoucher,
-  loadVouchers,
-  eligibleVouchers
+  loadVouchers
 } = useVoucher()
 
 const { items, formatPrice } = useCart()
 const { user } = useUserStore()
 
 const voucherScroll = ref(null)
+
+// Kiểm tra user là guest (chưa đăng nhập)
+const isGuest = computed(() => {
+  return !user.value || !user.value.id
+})
 
 // Load vouchers khi component mount
 onMounted(() => {
@@ -163,11 +174,24 @@ const sortedVouchers = computed(() => {
 
 // Kiểm tra voucher có đủ điều kiện không
 const isVoucherEligible = (voucher) => {
+  // Guest không thể sử dụng voucher
+  if (isGuest.value) {
+    return false
+  }
   return subtotal.value >= (voucher.donToiThieu || 0)
 }
 
 // Function để handle click voucher với kiểm tra điều kiện
 const handleVoucherClick = (voucher) => {
+  // Guest không thể chọn voucher
+  if (isGuest.value) {
+    voucherMessage.value = {
+      type: 'error',
+      text: 'Vui lòng đăng nhập để sử dụng voucher'
+    }
+    return
+  }
+  
   if (!isVoucherEligible(voucher)) {
     voucherMessage.value = {
       type: 'error',
@@ -181,6 +205,15 @@ const handleVoucherClick = (voucher) => {
 
 // Function để áp dụng voucher manual
 const handleApplyVoucher = async () => {
+  // Guest không thể áp dụng voucher
+  if (isGuest.value) {
+    voucherMessage.value = {
+      type: 'error',
+      text: 'Vui lòng đăng nhập để sử dụng voucher'
+    }
+    return
+  }
+  
   const khachHangId = user.value?.id || null
   await applyVoucher(khachHangId, subtotal.value)
 }
@@ -567,5 +600,52 @@ const scrollVouchers = (direction) => {
   background: rgba(13, 202, 240, 0.1);
   color: #0dcaf0;
   border: 1px solid rgba(13, 202, 240, 0.2);
+}
+
+/* Guest Notice */
+.guest-notice {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.guest-notice-content {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #856404;
+}
+
+.guest-notice-content i {
+  color: #ffc107;
+  font-size: 1.1rem;
+}
+
+.guest-notice-content .login-link {
+  color: #B8860B;
+  font-weight: 600;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.guest-notice-content .login-link:hover {
+  color: #DAA520;
+}
+
+/* Guest Disabled State */
+.voucher-cards-container.guest-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.voucher-input-section.guest-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.voucher-input-section.guest-disabled input,
+.voucher-input-section.guest-disabled button {
+  cursor: not-allowed;
 }
 </style>

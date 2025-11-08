@@ -100,6 +100,7 @@
                 :sizes="product.sizes || product.kichCo"
                 :availableSizes="product.availableSizes || []"
                 :stock="product.stock || product.tonKho"
+                :bienThes="product.bienThes || []"
               />
             </div>
           </div>

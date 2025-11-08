@@ -71,14 +71,6 @@
           <i class="bi bi-eye me-1"></i>
           Xem chi tiết
         </button>
-        <button 
-          class="btn-add-to-cart"
-          @click="handleAddToCart"
-          :disabled="!hasVariants && !isInStock"
-        >
-          <i class="bi bi-cart3 me-1"></i>
-          {{ addToCartText }}
-        </button>
       </div>
     </div>
 
@@ -153,11 +145,15 @@ const props = defineProps({
   stock: {
     type: Number,
     default: 10
+  },
+  bienThes: {
+    type: Array,
+    default: () => []
   }
 })
 
 const router = useRouter()
-const { addToCartWithValidation, trackAddToCart } = useCart()
+const { addToCartWithValidation, trackAddToCart, addToCartAPI } = useCart()
 
 // Local state
 const showVariantModal = ref(false)
@@ -192,7 +188,8 @@ const productData = computed(() => ({
   colorOptions: props.colorOptions,
   sizes: props.sizes,
   colorSizeMapping: props.colorSizeMapping,
-  stock: props.stock
+  stock: props.stock,
+  bienThes: props.bienThes
 }))
 
 const addToCartText = computed(() => {
@@ -250,17 +247,49 @@ const handleAddToCart = async (event) => {
     showVariantModal.value = true
   } else {
     // Direct add to cart for products without variants
-    const productData = {
-      id: props.id,
-      name: props.name,
-      price: props.priceNow,
-      image: props.img,
-      stock: props.stock
-    }
-    
-    const success = addToCartWithValidation(productData, 1)
-    if (success) {
-      trackAddToCart(productData)
+    try {
+      // Lấy bienTheId từ danh sách bienThes
+      let bienTheId = null
+      
+      if (props.bienThes && props.bienThes.length > 0) {
+        // Lấy variant đầu tiên có stock > 0
+        const availableVariant = props.bienThes.find(bt => bt.tonKho > 0)
+        if (availableVariant) {
+          bienTheId = availableVariant.id
+        } else {
+          // Nếu không có variant nào có stock, lấy variant đầu tiên
+          bienTheId = props.bienThes[0].id
+        }
+      }
+      
+      if (!bienTheId) {
+        if (window.$toast) {
+          window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
+        }
+        return
+      }
+      
+      console.log('🛒 [PRODUCT CARD] Adding to cart:', {
+        bienTheId,
+        productId: props.id,
+        productName: props.name
+      })
+      
+      // Gọi API thêm vào giỏ hàng
+      const success = await addToCartAPI(bienTheId, 1)
+      
+      if (success) {
+        const productData = {
+          id: props.id,
+          name: props.name,
+          price: props.priceNow,
+          image: props.img,
+          stock: props.stock
+        }
+        trackAddToCart(productData)
+      }
+    } catch (error) {
+      console.error('❌ [PRODUCT CARD] Error adding to cart:', error)
     }
   }
 }

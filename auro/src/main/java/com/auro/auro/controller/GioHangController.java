@@ -55,6 +55,19 @@ public class GioHangController {
 
             List<GioHangChiTiet> chiTietEntities = gioHangService.layChiTietGioHang(gioHang.getId());
             System.out.println("🔍 [GET CART] Found " + chiTietEntities.size() + " items in cart");
+
+            // ✅ Log chi tiết từng item trong giỏ hàng
+            for (GioHangChiTiet item : chiTietEntities) {
+                System.out.println("📦 [CART ITEM] ID: " + item.getId() +
+                        " | BienThe ID: " + (item.getBienThe() != null ? item.getBienThe().getId() : "null") +
+                        " | Product: "
+                        + (item.getBienThe() != null && item.getBienThe().getSanPham() != null
+                                ? item.getBienThe().getSanPham().getTen()
+                                : "null")
+                        +
+                        " | Quantity: " + item.getSoLuong());
+            }
+
             List<GioHangItemResponse> chiTietList = chiTietEntities.stream().map(item -> {
                 GioHangItemResponse dto = new GioHangItemResponse();
                 dto.setId(item.getId());
@@ -85,7 +98,12 @@ public class GioHangController {
 
                 // Lấy tồn kho
                 if (item.getBienThe() != null) {
-                    dto.setTonKho(item.getBienThe().getSoLuongTon());
+                    Integer tonKho = item.getBienThe().getSoLuongTon();
+                    dto.setTonKho(tonKho);
+                    System.out.println("📦 [CART ITEM] ID=" + item.getId() + " | BienTheId=" + item.getBienThe().getId()
+                            + " | TonKho=" + tonKho);
+                } else {
+                    System.out.println("⚠️ [CART ITEM] ID=" + item.getId() + " | BienThe is NULL!");
                 }
 
                 // Ước tính trọng lượng sản phẩm (gram) dựa trên danh mục
@@ -200,12 +218,17 @@ public class GioHangController {
             }
 
             List<GioHangChiTiet> chiTietList = gioHangChiTietRepo.findByGioHang_Id(gioHang.getId());
+
+            // ✅ Tìm item dựa trên bienTheId (không phải productId)
+            // Vì mỗi biến thể (màu + size) phải là item riêng biệt
             GioHangChiTiet existingItem = chiTietList.stream()
-                    .filter(ct -> ct.getBienThe().getId().equals(request.getBienTheId()))
+                    .filter(ct -> ct.getBienThe() != null &&
+                            ct.getBienThe().getId().equals(request.getBienTheId()))
                     .findFirst()
                     .orElse(null);
 
             if (existingItem != null) {
+                // ✅ Cập nhật số lượng nếu đã có CÙNG biến thế
                 int soLuongMoi = existingItem.getSoLuong() + request.getSoLuong();
 
                 if (bienThe.getSoLuongTon() < soLuongMoi) {
@@ -217,9 +240,13 @@ public class GioHangController {
 
                 existingItem.setSoLuong(soLuongMoi);
                 existingItem.setCapNhatLuc(LocalDateTime.now());
-                GioHangChiTiet saved = gioHangChiTietRepo.save(existingItem);
-                System.out.println("✅ [ADD TO CART] Updated existing item ID: " + saved.getId());
+                GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(existingItem); // ⚡ Dùng saveAndFlush để commit
+                                                                                      // ngay
+                System.out.println("✅ [ADD TO CART] Updated existing item ID: " + saved.getId() +
+                        " | BienThe ID: " + saved.getBienThe().getId() +
+                        " | New Quantity: " + saved.getSoLuong());
             } else {
+                // ✅ Tạo mới nếu chưa có biến thể này
                 GioHangChiTiet itemMoi = new GioHangChiTiet();
                 itemMoi.setGioHang(gioHang);
                 itemMoi.setBienThe(bienThe);
@@ -234,17 +261,24 @@ public class GioHangController {
                 itemMoi.setTaoLuc(LocalDateTime.now());
                 itemMoi.setCapNhatLuc(LocalDateTime.now());
 
-                GioHangChiTiet saved = gioHangChiTietRepo.save(itemMoi);
-                System.out.println("✅ [ADD TO CART] Created new item ID: " + saved.getId());
+                GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(itemMoi); // ⚡ Dùng saveAndFlush để commit ngay
+                System.out.println("✅ [ADD TO CART] Created new item ID: " + saved.getId() +
+                        " | BienThe ID: " + saved.getBienThe().getId() +
+                        " | Quantity: " + saved.getSoLuong());
             }
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "Thêm vào giỏ hàng thành công");
 
+            System.out.println("✅ [ADD TO CART] Transaction committed successfully");
+
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
+            System.err.println("❌ [ADD TO CART ERROR]: " + e.getMessage());
+            e.printStackTrace();
+
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", "Lỗi: " + e.getMessage());

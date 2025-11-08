@@ -836,6 +836,13 @@ const selectColor = (color) => {
     return
   }
   
+  // Nếu click vào màu đã chọn thì bỏ chọn
+  if (selectedColor.value === color) {
+    selectedColor.value = ''
+    updateURL()
+    return
+  }
+  
   selectedColor.value = color
   
   // Reset size if current size is not available for new color
@@ -856,6 +863,13 @@ const selectColor = (color) => {
 
 const selectSize = (size) => {
   if (!isSizeAvailable(size)) {
+    return
+  }
+  
+  // Nếu click vào size đã chọn thì bỏ chọn
+  if (selectedSize.value === size) {
+    selectedSize.value = ''
+    updateURL()
     return
   }
   
@@ -916,21 +930,93 @@ const increaseQuantity = () => {
   }
 }
 
-const handleAddToCart = () => {
-  if (!canAddToCart.value) return
-  
-  const item = {
-    id: product.value.id,
-    name: product.value.name,
-    price: product.value.price,
-    image: product.value.images[0],
-    color: selectedColor.value,
-    size: selectedSize.value,
-    quantity: quantity.value
+const handleAddToCart = async () => {
+  if (!canAddToCart.value) {
+    if (window.$toast) {
+      window.$toast.error('Vui lòng chọn đầy đủ màu sắc và kích thước', 'Thiếu thông tin')
+    }
+    return
   }
   
-  cartStore.addItem(item)
-  // Show success message
+  try {
+    // Validate selections
+    if (!selectedColor.value || !selectedSize.value) {
+      if (window.$toast) {
+        window.$toast.error('Vui lòng chọn màu sắc và kích thước', 'Thiếu thông tin')
+      }
+      return
+    }
+    
+    // Get selected variant
+    const selectedVariant = product.value?.variants?.find(v => 
+      v.color === selectedColor.value && v.size === selectedSize.value
+    )
+    
+    if (!selectedVariant || !selectedVariant.id) {
+      if (window.$toast) {
+        window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
+      }
+      return
+    }
+    
+    // Check stock
+    if (selectedVariant.stock <= 0) {
+      if (window.$toast) {
+        window.$toast.error('Sản phẩm đã hết hàng', 'Thông báo')
+      }
+      return
+    }
+    
+    console.log('🛒 Adding to cart:', {
+      bienTheId: selectedVariant.id,
+      soLuong: quantity.value
+    })
+    
+    // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
+    const response = await cartService.addToCart({
+      bienTheId: selectedVariant.id,
+      soLuong: quantity.value
+    })
+    
+    console.log('✅ Added to cart via API:', response)
+    
+    // Backend trả về { success: true, message: "..." }
+    if (response.success === false) {
+      const errorMsg = response.message || 'Không thể thêm vào giỏ hàng'
+      if (window.$toast) {
+        window.$toast.error(errorMsg, 'Lỗi')
+      }
+      return
+    }
+    
+    // ⚡ RELOAD giỏ hàng từ backend để đồng bộ
+    console.log('🔄 Reloading cart from backend...')
+    await cartStore.loadCart()
+    
+    // Show success message
+    if (window.$toast) {
+      window.$toast.success(
+        `${product.value.name} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
+        'Thành công'
+      )
+    }
+    
+    // Reset selections
+    selectedColor.value = ''
+    selectedSize.value = ''
+    quantity.value = 1
+    
+  } catch (error) {
+    console.error('❌ Error adding to cart:', error)
+    
+    const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        'Không thể thêm vào giỏ hàng'
+    
+    if (window.$toast) {
+      window.$toast.error(errorMessage, 'Lỗi')
+    }
+  }
 }
 
 const handleBuyNow = async () => {
@@ -1023,9 +1109,20 @@ const handleBuyNow = async () => {
       window.$toast.success('Đã thêm vào giỏ hàng!', 'Thành công')
     }
     
-    console.log('✅ Buy Now successful, redirecting to cart...')
+    console.log('✅ Buy Now successful, waiting for backend commit...')
     
-    // Chuyển ngay đến trang giỏ hàng (không cần đợi loadCart vì Cart.vue sẽ tự load)
+    // ⏱️ Đợi một chút để đảm bảo backend đã commit transaction
+    // Tăng thời gian chờ lên 500ms để chắc chắn backend đã commit
+    await new Promise(resolve => setTimeout(resolve, 500))
+    
+    console.log('✅ Redirecting to cart...')
+    console.log('🗑️ Clearing localStorage to force reload from backend...')
+    
+    // ✅ XÓA LOCALSTORAGE TRƯỚC KHI CHUYỂN TRANG
+    // Để đảm bảo Cart.vue sẽ load dữ liệu MỚI NHẤT từ backend
+    localStorage.removeItem('auro_cart_v1')
+    
+    // Chuyển ngay đến trang giỏ hàng (Cart.vue sẽ tự load từ backend)
     await router.push('/cart')
     
   } catch (error) {
@@ -1213,32 +1310,12 @@ const addToCart = async (productToAdd = product.value) => {
     console.log('✅ Added to cart via API:', response)
     console.log('🔑 User authenticated:', userStore.isAuthenticated)
     
-    // Lấy ID của GioHangChiTiet từ backend response
-    const cartItemId = response?.data?.id || response?.id
-    console.log('🆔 Cart item ID from backend:', cartItemId)
+    // ⚡ QUAN TRỌNG: SAU KHI THÊM VÀO GIỎ, PHẢI RELOAD TỪ BACKEND
+    // KHÔNG được gọi cartStore.addItem() vì sẽ gây ra duplicate
+    console.log('🔄 Reloading cart from backend after add...')
+    await cartStore.loadCart()
     
-    // Cập nhật local cart store để đồng bộ UI
     const productName = productToAdd.name || 'Sản phẩm không tên'
-    const productPrice = parseFloat(productToAdd.priceNow || productToAdd.price || 0)
-    const productImage = productToAdd.img || productToAdd.image || productToAdd.images?.[0] || ''
-    
-    const cartItem = {
-      id: cartItemId,  // ✅ Dùng ID từ backend (GioHangChiTiet.id)
-      productId: productToAdd.id,  // ID sản phẩm gốc
-      name: productName,
-      price: productPrice,
-      image: productImage,
-      size: selectedSize.value,
-      color: selectedColor.value,
-      selectedColorName: getColorName(selectedColor.value),
-      quantity: quantity.value,
-      variantStock: currentVariantStock.value,
-      variantId: selectedVariant.id,
-      bienTheId: selectedVariant.id
-    }
-    
-    // Cập nhật local store
-    cartStore.addItem(cartItem)
     
     // Show success toast
     if (window.$toast) {

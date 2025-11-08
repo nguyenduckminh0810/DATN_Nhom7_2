@@ -21,11 +21,59 @@ export function useCart() {
     cartStore.addItem(product, quantity)
   }
 
-  const removeItem = (itemKey) => {
-    cartStore.removeItem(itemKey)
+  /**
+   * Thêm sản phẩm vào giỏ hàng qua API backend
+   * @param {Number} bienTheId - ID của biến thể sản phẩm
+   * @param {Number} soLuong - Số lượng sản phẩm
+   */
+  const addToCartAPI = async (bienTheId, soLuong = 1) => {
+    try {
+      console.log('🛒 [ADD TO CART API] Adding to cart:', { bienTheId, soLuong })
+      
+      // Gọi API backend để thêm vào giỏ hàng
+      await cartService.addToCart({
+        bienTheId: bienTheId,
+        soLuong: soLuong
+      })
+      
+      console.log('✅ [ADD TO CART API] Added successfully')
+      
+      // Reload giỏ hàng từ backend để cập nhật UI
+      await loadCartFromAPI()
+      
+      if (window.$toast) {
+        window.$toast.success('Đã thêm sản phẩm vào giỏ hàng', 'Thành công')
+      }
+      
+      return true
+    } catch (error) {
+      console.error('❌ [ADD TO CART API] Error:', error)
+      
+      if (window.$toast) {
+        window.$toast.error('Không thể thêm vào giỏ hàng', 'Lỗi')
+      }
+      
+      return false
+    }
   }
 
-  const updateQuantity = (itemKey, quantity) => {
+  const removeItem = async (itemKey) => {
+    try {
+      await cartStore.removeItem(itemKey)
+      
+      if (window.$toast) {
+        window.$toast.success('Đã xóa sản phẩm khỏi giỏ hàng', 'Thành công')
+      }
+    } catch (error) {
+      console.error('Error removing item:', error)
+      
+      if (window.$toast) {
+        window.$toast.error('Không thể xóa sản phẩm', 'Lỗi')
+      }
+    }
+  }
+
+  const updateQuantity = async (itemKey, quantity) => {
     const numQuantity = parseInt(quantity) || 0
 
     const item = cartStore.items.find(item => item.itemKey === itemKey)
@@ -42,21 +90,42 @@ export function useCart() {
       return false
     }
     
-    // Validate stock - nếu không có stock data thì set default là 1
-    const maxStock = item.stock || 1
-    if (numQuantity > maxStock) {
+    // Kiểm tra stock nếu có (cho trường hợp gọi từ component có truyền stock)
+    if (item.stock && numQuantity > item.stock) {
       if (window.$toast) {
-        window.$toast.error(`Chỉ còn ${maxStock} sản phẩm trong kho`)
+        window.$toast.error(`Chỉ còn ${item.stock} sản phẩm trong kho`)
       }
       return false
     }
     
-    cartStore.updateQuantity(itemKey, numQuantity)
-    return true
+    try {
+      await cartStore.updateQuantity(itemKey, numQuantity)
+      return true
+    } catch (error) {
+      console.error('Error updating quantity:', error)
+      
+      if (window.$toast) {
+        window.$toast.error('Không thể cập nhật số lượng', 'Lỗi')
+      }
+      
+      return false
+    }
   }
 
-  const clearCart = () => {
-    cartStore.clearCart()
+  const clearCart = async () => {
+    try {
+      await cartStore.clearCart()
+      
+      if (window.$toast) {
+        window.$toast.success('Đã xóa toàn bộ giỏ hàng', 'Thành công')
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error)
+      
+      if (window.$toast) {
+        window.$toast.error('Không thể xóa giỏ hàng', 'Lỗi')
+      }
+    }
   }
 
   const formatPrice = (price) => {
@@ -73,52 +142,31 @@ export function useCart() {
    */
   const loadCartFromAPI = async () => {
     try {
-      const response = await cartService.getCart()
+      console.log('🔄 [LOAD CART] Starting to load cart from API...')
       
-      // Sử dụng method loadCart từ store để cập nhật trực tiếp
-      if (cartStore.loadCart) {
-        await cartStore.loadCart()
-      } else {
-        // Fallback: Cập nhật thủ công nếu method không có
-        if (response && response.chiTietList && Array.isArray(response.chiTietList)) {
-          
-          // Map từ backend format sang cart store format
-          const mappedItems = response.chiTietList.map(item => {
-            const thuocTinhParsed = parseThuocTinh(item.thuocTinh || '')
-            
-            // Fallback image nếu backend không trả về
-            const fallbackImage = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=300&h=300&fit=crop'
-            
-            return {
-              id: item.id, // GioHangChiTiet ID
-              itemKey: item.id,
-              bienTheId: item.bienTheId,
-              variantId: item.bienTheId,
-              productId: item.productId || item.bienTheId,
-              name: item.tenSanPham || 'Sản phẩm',
-              price: parseFloat(item.donGia) || 0,
-              quantity: parseInt(item.soLuong) || 1,
-              image: item.image || fallbackImage,
-              color: thuocTinhParsed.color || '',
-              size: thuocTinhParsed.size || '',
-              thuocTinh: item.thuocTinh || '',
-              stock: item.tonKho || 99,
-              addedAt: new Date().toISOString()
-            }
+      // ✅ CHỈ GỌI cartStore.loadCart() - KHÔNG FALLBACK
+      // Vì cartStore.loadCart() đã handle tất cả logic cần thiết
+      await cartStore.loadCart()
+      
+      console.log('✅ [LOAD CART] Loaded', cartStore.items.length, 'items')
+      
+      // Log chi tiết từng item
+      if (cartStore.items.length > 0) {
+        cartStore.items.forEach((item, index) => {
+          console.log(`📦 [LOADED ITEM ${index + 1}]:`, {
+            id: item.id,
+            itemKey: item.itemKey,
+            name: item.name,
+            color: item.color,
+            size: item.size,
+            quantity: item.quantity,
+            bienTheId: item.bienTheId
           })
-          
-          // Cập nhật trực tiếp vào store items
-          cartStore.items = mappedItems
-          cartStore.saveToStorage()
-        } else {
-          // Đừng xóa giỏ cục bộ nếu API rỗng; giữ nguyên localStorage để có thể sync ngược
-          if (cartStore.loadFromStorage) {
-            cartStore.loadFromStorage()
-          }
-        }
+        })
       }
-    } catch (error) {
       
+    } catch (error) {
+      console.error('❌ [LOAD CART] Error:', error)
       // Nếu lỗi, giữ nguyên local cart (không clear)
     }
   }
@@ -345,6 +393,7 @@ export function useCart() {
 
     // API operations
     loadCartFromAPI,
+    addToCartAPI,
 
     // Business logic
     addToCartWithValidation,

@@ -12,14 +12,23 @@ public class TaoDonTuGioHangRequest {
 
     private String ghiChu;
     private Long voucherId;
+    private Long freeshipVoucherId;
+
+    private Integer districtId;
+    private String wardCode;
+    private Integer serviceId;
 
     public TaoDonTuGioHangRequest(){}
 
-    public TaoDonTuGioHangRequest(Long diaChiId, String phuongThucThanhToan, String ghiChu, Long voucherId) {
+    public TaoDonTuGioHangRequest(Long diaChiId, String phuongThucThanhToan, String ghiChu, Long voucherId, Long freeshipVoucherId, Integer districtId, String wardCode, Integer serviceId) {
         this.diaChiId = diaChiId;
         this.phuongThucThanhToan = phuongThucThanhToan;
         this.ghiChu = ghiChu;
         this.voucherId = voucherId;
+        this.freeshipVoucherId = freeshipVoucherId;
+        this.districtId = districtId;
+        this.wardCode = wardCode;
+        this.serviceId = serviceId;
     }
 
     public Long getDiaChiId() { return diaChiId; }
@@ -33,4 +42,16 @@ public class TaoDonTuGioHangRequest {
     
     public Long getVoucherId() { return voucherId; }
     public void setVoucherId(Long voucherId) { this.voucherId = voucherId; }
+
+    public Long getFreeshipVoucherId() { return freeshipVoucherId; }
+    public void setFreeshipVoucherId(Long freeshipVoucherId) { this.freeshipVoucherId = freeshipVoucherId; }
+
+    public Integer getDistrictId() { return districtId; }
+    public void setDistrictId(Integer districtId) { this.districtId = districtId; }
+    
+    public String getWardCode() { return wardCode; }
+    public void setWardCode(String wardCode) { this.wardCode = wardCode; }
+    
+    public Integer getServiceId() { return serviceId; }
+    public void setServiceId(Integer serviceId) { this.serviceId = serviceId; }
 }
