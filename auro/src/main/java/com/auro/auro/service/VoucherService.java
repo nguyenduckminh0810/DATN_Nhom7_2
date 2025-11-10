@@ -5,6 +5,7 @@ import com.auro.auro.dto.request.VoucherUpdateRequest;
 import com.auro.auro.model.Voucher;
 import com.auro.auro.model.VoucherKhach;
 import com.auro.auro.model.VoucherKhachId;
+import com.auro.auro.model.KhachHang;
 import com.auro.auro.repository.VoucherRepository;
 import com.auro.auro.repository.VoucherKhachRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,9 +52,12 @@ public class VoucherService {
             return VoucherValidationResult.invalid("Voucher đã hết hạn");
         }
 
-        //check số lượng
-        if (voucher.getGioiHanSuDung() != null && voucher.getGioiHanSuDung() <= 0) {
-            return VoucherValidationResult.invalid("Voucher đã hết số lượng");
+        // Check số lượng
+        if (voucher.getGioiHanSuDung() != null) {
+            Integer limit = voucher.getGioiHanSuDung();
+            if (!Integer.valueOf(-1).equals(limit) && limit <= 0) {
+                return VoucherValidationResult.invalid("Voucher đã hết số lượng");
+            }
         }
 
         // check điều kiện đơn hàng
@@ -74,8 +78,10 @@ public class VoucherService {
     }
 
 
-    @Transactional(noRollbackFor = {IllegalArgumentException.class})
-    public VoucherApplicationResult applyVoucher(String maVoucher, Long khachHangId, BigDecimal donHangTong) {
+    @Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW,
+            noRollbackFor = {IllegalArgumentException.class})
+    public VoucherApplicationResult applyVoucher(String maVoucher, Long khachHangId, BigDecimal donHangTong, BigDecimal phiVanChuyen) {
         try {
             // validate voucher
             VoucherValidationResult validation = validateVoucher(maVoucher, khachHangId, donHangTong);
@@ -88,7 +94,7 @@ public class VoucherService {
             // Tính giảm giá
             BigDecimal giamGia;
             try {
-                giamGia = tinhGiamGia(voucher, donHangTong);
+                giamGia = tinhGiamGia(voucher, donHangTong, phiVanChuyen);
             } catch (IllegalArgumentException e) {
                 return VoucherApplicationResult.failed(e.getMessage());
             }
@@ -100,22 +106,34 @@ public class VoucherService {
                 }
             }
 
-            // Lưu lịch sử sử dụng
-            if(khachHangId != null) {
-                VoucherKhachId id = new VoucherKhachId(voucher.getId(), khachHangId);
-                Optional<VoucherKhach> existingVoucherKhach = voucherKhachRepository.findById(id);
-                
-                if (existingVoucherKhach.isEmpty()) {
-                    // Chưa tồn tại, tạo mới
-                    VoucherKhach voucherKhach = new VoucherKhach();
-                    voucherKhach.setId(id);
-                    voucherKhach.setTrangThai("da_dung");
-                    voucherKhachRepository.save(voucherKhach);
-                } else {
-                    // Đã tồn tại, cập nhật trạng thái
-                    VoucherKhach voucherKhach = existingVoucherKhach.get();
-                    voucherKhach.setTrangThai("da_dung");
-                    voucherKhachRepository.save(voucherKhach);
+            // Lưu lịch sử sử dụng (chỉ khi có khachHangId; bọc try/catch để không ảnh hưởng giao dịch đặt hàng)
+            if (khachHangId != null) {
+                try {
+                    VoucherKhachId id = new VoucherKhachId(voucher.getId(), khachHangId);
+                    Optional<VoucherKhach> existingVoucherKhach = voucherKhachRepository.findById(id);
+
+                    if (existingVoucherKhach.isEmpty()) {
+                        VoucherKhach voucherKhach = new VoucherKhach();
+                        voucherKhach.setId(id);
+                        voucherKhach.setVoucher(voucher);
+                        KhachHang khachHangRef = new KhachHang();
+                        khachHangRef.setId(khachHangId);
+                        voucherKhach.setKhachHang(khachHangRef);
+                        voucherKhach.setTrangThai("da_dung");
+                        voucherKhachRepository.save(voucherKhach);
+                    } else {
+                        VoucherKhach voucherKhach = existingVoucherKhach.get();
+                        voucherKhach.setVoucher(voucher);
+                        if (voucherKhach.getKhachHang() == null || voucherKhach.getKhachHang().getId() == null) {
+                            KhachHang khachHangRef = new KhachHang();
+                            khachHangRef.setId(khachHangId);
+                            voucherKhach.setKhachHang(khachHangRef);
+                        }
+                        voucherKhach.setTrangThai("da_dung");
+                        voucherKhachRepository.save(voucherKhach);
+                    }
+                } catch (Exception ignore) {
+                    // Không để lỗi tracking làm rollback đơn hàng
                 }
             }
             return VoucherApplicationResult.success(voucher, giamGia);
@@ -125,50 +143,96 @@ public class VoucherService {
         }
     }
 
+    @Transactional(
+            propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW,
+            noRollbackFor = {IllegalArgumentException.class})
+    public VoucherApplicationResult applyVoucher(String maVoucher, Long khachHangId, BigDecimal donHangTong) {
+        return applyVoucher(maVoucher, khachHangId, donHangTong, null);
+    }
+
     // Tính giảm giá
-    private BigDecimal tinhGiamGia(Voucher voucher, BigDecimal donHangTong) {
+    private BigDecimal tinhGiamGia(Voucher voucher, BigDecimal donHangTong, BigDecimal phiVanChuyen) {
         if (voucher == null) {
+            log.warn("⚠️ tinhGiamGia: voucher is null");
             return BigDecimal.ZERO;
         }
         
-        String loai = voucher.getLoai();
-        
-        // Giảm theo phần trăm
-        if ("GIAM_PHAN_TRAM".equals(loai) || "PHAN_TRAM".equals(loai) || "percent".equals(loai)) {
-            BigDecimal giamGia = donHangTong.multiply(voucher.getGiaTri())
-                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-            
-            // check giảm tối đa nếu có
-            if (voucher.getGiamToiDa() != null && giamGia.compareTo(voucher.getGiamToiDa()) > 0) {
-                giamGia = voucher.getGiamToiDa();
+        String loai = voucher.getLoai() != null ? voucher.getLoai().trim().toUpperCase() : "";
+        log.info("💰 tinhGiamGia: loai={}, giaTri={}, donHangTong={}, phiVanChuyen={}",
+                loai, voucher.getGiaTri(), donHangTong, phiVanChuyen);
+        switch (loai) {
+            case "GIAM_PHAN_TRAM":
+            case "PHAN_TRAM":
+            case "PERCENT": {
+                BigDecimal tyLe = voucher.getGiaTri() != null ? voucher.getGiaTri() : BigDecimal.ZERO;
+                BigDecimal giamGia;
+
+                if (tyLe.compareTo(BigDecimal.ZERO) <= 0) {
+                    log.warn("⚠️ tinhGiamGia: tyLe <= 0, returning ZERO");
+                    return BigDecimal.ZERO;
+                }
+
+                if (tyLe.compareTo(BigDecimal.ONE) <= 0) {
+                    // Lưu giá trị dạng 0.1 = 10%
+                    giamGia = donHangTong.multiply(tyLe);
+                    log.info("💰 tinhGiamGia: tyLe <= 1, giamGia = donHangTong * tyLe = {} * {} = {}", donHangTong, tyLe, giamGia);
+                } else {
+                    giamGia = donHangTong.multiply(tyLe)
+                            .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                    log.info("💰 tinhGiamGia: tyLe > 1, giamGia = donHangTong * tyLe / 100 = {} * {} / 100 = {}", donHangTong, tyLe, giamGia);
+                }
+
+                // check giảm tối đa nếu có
+                if (voucher.getGiamToiDa() != null
+                        && voucher.getGiamToiDa().compareTo(BigDecimal.ZERO) > 0
+                        && giamGia.compareTo(voucher.getGiamToiDa()) > 0) {
+                    log.info("💰 tinhGiamGia: capping giamGia from {} to giamToiDa={}", giamGia, voucher.getGiamToiDa());
+                    giamGia = voucher.getGiamToiDa();
+                }
+
+                // check không vượt quá tổng tiền
+                if (giamGia.compareTo(donHangTong) > 0) {
+                    log.info("💰 tinhGiamGia: capping giamGia from {} to donHangTong={}", giamGia, donHangTong);
+                    giamGia = donHangTong;
+                }
+
+                log.info("✅ tinhGiamGia: final giamGia={}", giamGia);
+                return giamGia;
             }
-            
-            // check không vượt quá tổng tiền
-            if (giamGia.compareTo(donHangTong) > 0) {
-                giamGia = donHangTong;
+            case "GIAM_SO_TIEN":
+            case "SO_TIEN":
+            case "AMOUNT": {
+                BigDecimal giamGia = voucher.getGiaTri() != null ? voucher.getGiaTri() : BigDecimal.ZERO;
+
+                // check không vượt quá tổng tiền
+                if (giamGia.compareTo(donHangTong) > 0) {
+                    log.info("💰 tinhGiamGia: capping giamGia from {} to donHangTong={}", giamGia, donHangTong);
+                    giamGia = donHangTong;
+                }
+
+                log.info("✅ tinhGiamGia: final giamGia={}", giamGia);
+                return giamGia;
             }
-            
-            return giamGia;
-        }
-        
-        // Giảm số tiền cố định
-        if ("GIAM_SO_TIEN".equals(loai) || "SO_TIEN".equals(loai) || "so_tien".equals(loai)) {
-            BigDecimal giamGia = voucher.getGiaTri();
-            
-            // check không vượt quá tổng tiền
-            if (giamGia.compareTo(donHangTong) > 0) {
-                giamGia = donHangTong;
+            case "FREESHIP": {
+                if (phiVanChuyen == null) {
+                    log.warn("⚠️ tinhGiamGia: FREESHIP but phiVanChuyen null, returning ZERO");
+                    return BigDecimal.ZERO;
+                }
+                BigDecimal giamGia = phiVanChuyen.max(BigDecimal.ZERO);
+
+                if (voucher.getGiamToiDa() != null
+                        && voucher.getGiamToiDa().compareTo(BigDecimal.ZERO) > 0
+                        && giamGia.compareTo(voucher.getGiamToiDa()) > 0) {
+                    log.info("💰 tinhGiamGia: capping freeship giamGia from {} to giamToiDa={}", giamGia, voucher.getGiamToiDa());
+                    giamGia = voucher.getGiamToiDa();
+                }
+                log.info("✅ tinhGiamGia FREESHIP: final giamGia={}", giamGia);
+                return giamGia;
             }
-            
-            return giamGia;
+            default:
+                log.warn("⚠️ tinhGiamGia: Loại voucher không hỗ trợ: {}", loai);
+                return BigDecimal.ZERO;
         }
-        
-        // Freeship
-        if ("FREESHIP".equals(loai)) {
-            return BigDecimal.ZERO;
-        }
-        
-        throw new IllegalArgumentException("Loại voucher không hỗ trợ: " + loai);
     }
 
     // check và tạo mới

@@ -155,7 +155,7 @@ const discountAmount = computed(() => {
   
   // Nếu có voucher được chọn từ list
   if (selectedVoucher.value) {
-    const { loai, giaTri, donToiThieu } = selectedVoucher.value
+    const { loai, giaTri, donToiThieu, giamToiDa } = selectedVoucher.value
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
     if (subtotal.value < (donToiThieu || 0)) {
@@ -163,12 +163,15 @@ const discountAmount = computed(() => {
     }
     
     let discount = 0
-    if (loai === 'percent' || loai === 'PHAN_TRAM') {
+    const loaiUc = String(loai || '').toUpperCase()
+    if (loaiUc === 'PERCENT' || loaiUc === 'PHAN_TRAM' || loaiUc === 'GIAM_PHAN_TRAM') {
       discount = Math.floor(subtotal.value * giaTri / 100)
-    } else if (loai === 'fixed' || loai === 'SO_TIEN') {
+    } else if (loaiUc === 'FIXED' || loaiUc === 'SO_TIEN' || loaiUc === 'GIAM_SO_TIEN') {
       discount = Math.min(giaTri, subtotal.value) 
-    } else if (loai === 'freeship') {
-      discount = Math.min(30000, subtotal.value)
+    } else if (loaiUc === 'FREESHIP') {
+      const ship = Number(shippingFee.value || 0)
+      const cap = giamToiDa != null && Number(giamToiDa) > 0 ? Number(giamToiDa) : ship
+      discount = Math.min(ship, cap, subtotal.value)
     }
     
     return discount
@@ -176,7 +179,7 @@ const discountAmount = computed(() => {
   
   // Nếu có voucher manual và đã được validate
   if (manualVoucherCode.value && manualVoucherCode.value.trim() && selectedVoucher.value) {
-    const { loai, giaTri, donToiThieu } = selectedVoucher.value
+    const { loai, giaTri, donToiThieu, giamToiDa } = selectedVoucher.value
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
     if (subtotal.value < (donToiThieu || 0)) {
@@ -184,12 +187,15 @@ const discountAmount = computed(() => {
     }
     
     let discount = 0
-    if (loai === 'percent' || loai === 'PHAN_TRAM') {
+    const loaiUc = String(loai || '').toUpperCase()
+    if (loaiUc === 'PERCENT' || loaiUc === 'PHAN_TRAM' || loaiUc === 'GIAM_PHAN_TRAM') {
       discount = Math.floor(subtotal.value * giaTri / 100)
-    } else if (loai === 'fixed' || loai === 'SO_TIEN') {
+    } else if (loaiUc === 'FIXED' || loaiUc === 'SO_TIEN' || loaiUc === 'GIAM_SO_TIEN') {
       discount = Math.min(giaTri, subtotal.value)
-    } else if (loai === 'freeship') {
-      discount = Math.min(30000, subtotal.value) // Giả sử phí ship là 30k
+    } else if (loaiUc === 'FREESHIP') {
+      const ship = Number(shippingFee.value || 0)
+      const cap = giamToiDa != null && Number(giamToiDa) > 0 ? Number(giamToiDa) : ship
+      discount = Math.min(ship, cap, subtotal.value)
     }
     
     return discount
@@ -538,7 +544,8 @@ if ((selectedPaymentMethod.value || '').toString().toUpperCase() === 'VNPAY') {
   try {
     const pay = await paymentService.taoUrlThanhToan({
       donHangId,
-      soTien: Number(tongThanhToan || 0),
+      // Ưu tiên số tiền từ backend (đã trừ voucher, phí ship), fallback UI
+      soTien: Number(tongThanhToan || finalTotal.value || 0),
       moTa: `Thanh toán đơn hàng #${donHangId}`
     })
 

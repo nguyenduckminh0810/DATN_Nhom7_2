@@ -130,6 +130,8 @@ public class DonHangKhachController {
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            System.out.println("ERROR Guest checkout: " + e.getMessage());
+            e.printStackTrace();
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             error.put("message", "Lỗi: " + e.getMessage());

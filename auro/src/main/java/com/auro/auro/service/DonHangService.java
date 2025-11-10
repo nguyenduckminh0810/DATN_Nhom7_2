@@ -348,69 +348,77 @@ public class DonHangService {
         }
 
         // vc giảm giá
-        if(request.getVoucherId() != null) {
-            voucherGiamGia = voucherRepository.findById(request.getVoucherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
-            VoucherValidationResult validation = voucherService.validateVoucher(
-                    voucherGiamGia.getMa(), khachHangId, tamTinh);
+        if (request.getVoucherId() != null) {
+            try {
+                voucherGiamGia = voucherRepository.findById(request.getVoucherId())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
+                VoucherValidationResult validation = voucherService.validateVoucher(
+                        voucherGiamGia.getMa(), khachHangId, tamTinh);
 
-            if(!validation.isValid()) {
-                throw new RuntimeException(validation.getMessage());
+                if (!validation.isValid()) {
+                    log.warn("Voucher invalid: {}", validation.getMessage());
+                    voucherGiamGia = null;
+                } else {
+                    String loai = voucherGiamGia.getLoai();
+                    if ("FREESHIP".equals(loai)) {
+                        log.warn("Voucher freeship phải áp dụng riêng - skip");
+                        voucherGiamGia = null;
+                    } else if (
+                            !"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) &&
+                            !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
+                            !"percent".equals(loai) && !"so_tien".equals(loai)
+                    ) {
+                        log.warn("Loại voucher không hợp lệ cho giảm giá: {}", loai);
+                        voucherGiamGia = null;
+                    } else {
+                        VoucherApplicationResult result = voucherService.applyVoucher(
+                                voucherGiamGia.getMa(), khachHangId, tamTinh);
+                        if (!result.isSuccess()) {
+                            log.warn("Apply voucher failed: {}", result.getMessage());
+                            voucherGiamGia = null;
+                        } else {
+                            giamGiaTong = result.getGiamGia();
+                            voucherGiamGia = result.getVoucher();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Lỗi xử lý voucher giảm giá: {}", e.getMessage());
+                voucherGiamGia = null;
             }
-            
-            // check loại voucher
-            String loai = voucherGiamGia.getLoai();
-            if ("FREESHIP".equals(loai)) {
-                throw new RuntimeException("Voucher freeship phải được áp dụng riêng");
-            }
-            if (!"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) && 
-                !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
-                !"percent".equals(loai) && !"so_tien".equals(loai)) {
-                throw new RuntimeException("Loại voucher không hợp lệ cho giảm giá: " + loai);
-            }
-
-            // voucher giảm giá
-            VoucherApplicationResult result = voucherService.applyVoucher(
-                    voucherGiamGia.getMa(), khachHangId, tamTinh);
-
-            if(!result.isSuccess()) {
-                throw new RuntimeException(result.getMessage());
-            }
-            
-            // Lấy giảm giá và voucher từ result
-            giamGiaTong = result.getGiamGia();
-            voucherGiamGia = result.getVoucher();
         }
 
         // vc freeship
         if (request.getFreeshipVoucherId() != null) {
-            voucherFreeShip = voucherRepository.findById(request.getFreeshipVoucherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher freeship"));
-            VoucherValidationResult validation = voucherService.validateVoucher(
-                    voucherFreeShip.getMa(),
-                    khachHangId,
-                    tamTinh);
-            
-            if (!validation.isValid()) {
-                throw new RuntimeException(validation.getMessage());
-            }
-            
-            // check loại voucher phải là FREESHIP
-            if (!"FREESHIP".equals(voucherFreeShip.getLoai())) {
-                throw new RuntimeException("Voucher này không phải voucher freeship");
-            }
+            try {
+                voucherFreeShip = voucherRepository.findById(request.getFreeshipVoucherId())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher freeship"));
+                VoucherValidationResult validation = voucherService.validateVoucher(
+                        voucherFreeShip.getMa(), khachHangId, tamTinh);
 
-            // freeship voucher (giảm số lượng và lưu VoucherKhach)
-            VoucherApplicationResult result = voucherService.applyVoucher(
-                    voucherFreeShip.getMa(),
-                    khachHangId,
-                    tamTinh);
-    
-            if (!result.isSuccess()) {
-                throw new RuntimeException(result.getMessage());
+                if (!validation.isValid()) {
+                    log.warn("Voucher freeship invalid: {}", validation.getMessage());
+                    voucherFreeShip = null;
+                } else if (!"FREESHIP".equals(voucherFreeShip.getLoai())) {
+                    log.warn("Voucher không phải FREESHIP - skip");
+                    voucherFreeShip = null;
+                } else {
+                    VoucherApplicationResult result = voucherService.applyVoucher(
+                            voucherFreeShip.getMa(),
+                            khachHangId,
+                            tamTinh);
+
+                    if (!result.isSuccess()) {
+                        log.warn("Apply freeship failed: {}", result.getMessage());
+                        voucherFreeShip = null;
+                    } else {
+                        voucherFreeShip = result.getVoucher();
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Lỗi xử lý voucher freeship: {}", e.getMessage());
+                voucherFreeShip = null;
             }
-    
-            voucherFreeShip = result.getVoucher();
         }
 
         // Tính phí vận chuyển từ GHN API
@@ -524,6 +532,14 @@ public class DonHangService {
         }
         // Xóa giỏ hàng
         gioHangService.xoaGioHang(khachHangId);
+
+        // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
+        try {
+            donHangRepository.flush();
+        } catch (Exception e) {
+            log.error("Flush failed in taoDonTuGioHang: {}", e.getMessage(), e);
+            throw e;
+        }
         try {
             emailService.guiEmailXacNhanDonHang(savedDonHang);
         } catch (Exception e) {
@@ -681,7 +697,48 @@ public class DonHangService {
             phiVanChuyen = BigDecimal.valueOf(30000);
         }
 
+        // Áp dụng voucher nếu có
+        Voucher appliedVoucher = null;
         BigDecimal giamGiaTong = BigDecimal.ZERO;
+        if (request.getMaVoucher() != null && !request.getMaVoucher().trim().isEmpty()) {
+            String code = request.getMaVoucher().trim();
+            log.info("🎫 Applying voucher: code={}, khachHangId={}, tamTinh={}", code, authenticatedKhachHangId, tamTinh);
+            try {
+                // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
+                Voucher voucher = voucherRepository.findByMa(code)
+                        .orElseGet(() -> voucherRepository.findByMa(code.toUpperCase())
+                                .orElseGet(() -> voucherRepository.findByMa(code.toLowerCase()).orElse(null)));
+                if (voucher != null) {
+                    String loai = voucher.getLoai();
+                    log.info("🎫 Found voucher: id={}, loai={}, giaTri={}, giamToiDa={}", 
+                            voucher.getId(), loai, voucher.getGiaTri(), voucher.getGiamToiDa());
+                    if ("FREESHIP".equalsIgnoreCase(loai)) {
+                        // Freeship: miễn phí ship
+                        phiVanChuyen = BigDecimal.ZERO;
+                        appliedVoucher = voucher;
+                        log.info("✅ Applied FREESHIP voucher - shipping fee set to 0");
+                    } else {
+                        // Giảm giá: sử dụng service để tính đúng giamGiaTong
+                        VoucherApplicationResult result = voucherService.applyVoucher(code, authenticatedKhachHangId, tamTinh);
+                        log.info("🎫 Voucher apply result: success={}, message={}, giamGia={}", 
+                                result.isSuccess(), result.getMessage(), result.getGiamGia());
+                        if (!result.isSuccess()) {
+                            log.error("❌ Voucher apply failed: {}", result.getMessage());
+                            throw new RuntimeException(result.getMessage());
+                        }
+                        giamGiaTong = result.getGiamGia();
+                        appliedVoucher = result.getVoucher();
+                        log.info("✅ Applied discount voucher - giamGiaTong={}, voucherId={}", giamGiaTong, appliedVoucher != null ? appliedVoucher.getId() : "null");
+                    }
+                } else {
+                    log.warn("⚠️ Voucher code {} not found - skipping", code);
+                }
+            } catch (Exception e) {
+                log.error("❌ Apply voucher error: {}", e.getMessage(), e);
+                // Không throw để cho phép đặt hàng dù voucher fail, nhưng log rõ ràng
+            }
+        }
+        log.info("💰 Final pricing: tamTinh={}, giamGiaTong={}, phiVanChuyen={}", tamTinh, giamGiaTong, phiVanChuyen);
 
         String diaChiSnapshot = String.format(
                 "%s - %s - %s, %s, %s, %s",
@@ -700,7 +757,7 @@ public class DonHangService {
         donHang.setTamTinh(tamTinh);
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
-        donHang.setVoucher(null);
+        donHang.setVoucher(appliedVoucher);
         donHang.setDiaChiGiao(diaChiSnapshot);
         donHang.setGhiChu(request.getGhiChu());
         donHang.setPaymentMethod(request.getPhuongThucThanhToan());
@@ -768,6 +825,14 @@ public class DonHangService {
         } else {
             // Xóa giỏ hàng guest theo sessionId
             gioHangService.xoaGioHangTheoSession(sessionId);
+        }
+
+        // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
+        try {
+            donHangRepository.flush();
+        } catch (Exception e) {
+            log.error("Flush failed in taoDonHangGuest: {}", e.getMessage(), e);
+            throw e;
         }
 
         try {
