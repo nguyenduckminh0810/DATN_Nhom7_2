@@ -38,13 +38,14 @@
       <div class="collapse navbar-collapse" id="navbarNav">
         <ul class="navbar-nav mx-auto">
           <li class="nav-item">
-            <router-link
+            <a
               class="nav-link modern-nav-link"
               :class="{ active: $route.name === 'home' }"
-              to="/"
+              href="#"
+              @click.prevent="scrollToNewProducts"
             >
               <span class="nav-text new-text">NEW</span>
-            </router-link>
+            </a>
           </li>
 
           <!-- dynamic parent categories -->
@@ -121,15 +122,15 @@
             <button
               class="nav-link modern-nav-link position-relative cart-trigger"
               @click="toggleMiniCart"
-            ><span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
+            >
+              <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
               <i class="bi bi-cart3">
                 <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
-                {{ cartStore.itemCount }}
-              </span>
+                  {{ cartStore.itemCount }}
+                </span>
               </i>
-              
             </button>
           </li>
 
@@ -306,11 +307,11 @@ const handleSwitchToLogin = () => {
 const handleLogout = async () => {
   try {
     await userStore.logout()
-    
+
     // Xóa giỏ hàng khi đăng xuất
     cartStore.clearCart()
     console.log('🗑️ Cart cleared on logout')
-    
+
     success('Đăng xuất thành công!')
     setTimeout(() => {
       router.push('/')
@@ -328,6 +329,34 @@ const toggleMiniCart = () => {
 
 const closeMiniCart = () => {
   showMiniCart.value = false
+}
+
+// Scroll to new products section
+const scrollToNewProducts = async () => {
+  // If not on home page, navigate to home first
+  if (router.currentRoute.value.name !== 'home') {
+    await router.push('/')
+    // Wait for navigation to complete
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+
+  // Find and scroll to new arrivals section
+  const newArrivalsSection = document.querySelector('#new-arrivals')
+  if (newArrivalsSection) {
+    const navbarHeight = 80 // Account for fixed navbar
+    const targetPosition = newArrivalsSection.offsetTop - navbarHeight
+
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth',
+    })
+  } else {
+    // Fallback: scroll to approximate position if section not found
+    window.scrollTo({
+      top: window.innerHeight * 0.8, // Scroll past hero section
+      behavior: 'smooth',
+    })
+  }
 }
 
 // Search handler

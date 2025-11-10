@@ -47,8 +47,8 @@
             </p>
           </div>
           <div class="col-md-4 text-md-end">
-            <span :class="['badge', 'fs-6', getStatusClass(order.trangThai)]">
-              {{ getStatusText(order.trangThai) }}
+            <span :class="['badge', 'fs-6', order.statusClass]">
+              {{ order.statusLabel }}
             </span>
           </div>
         </div>
@@ -104,11 +104,11 @@
                       <p class="text-muted small">{{ formatDate(order.taoLuc) }}</p>
                     </div>
                   </div>
-                  <div class="timeline-item" :class="{ active: isStatusActive('CONFIRMED') }">
+                  <div class="timeline-item" :class="{ active: isStatusActive('PROCESSING') }">
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
-                      <h6>Đã xác nhận</h6>
-                      <p class="text-muted small">Đang chờ xác nhận</p>
+                      <h6>Đang xử lý</h6>
+                      <p class="text-muted small">Đơn hàng đang được xử lý</p>
                     </div>
                   </div>
                   <div class="timeline-item" :class="{ active: isStatusActive('SHIPPING') }">
@@ -212,6 +212,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import orderService from '@/services/orderService'
+import {
+  normalizeOrderStatus,
+  getOrderStatusCode,
+  ORDER_STATUS_FLOW,
+  ORDER_STATUS_CODES,
+} from '@/utils/orderStatus'
 
 const route = useRoute()
 const router = useRouter()
@@ -223,7 +229,10 @@ const isNewOrder = ref(false)
 
 const canCancelOrder = computed(() => {
   if (!order.value) return false
-  return ['PENDING', 'CONFIRMED'].includes(order.value.trangThai)
+
+  const currentStatus = order.value.statusCode || getOrderStatusCode(order.value.rawStatus)
+
+  return [ORDER_STATUS_CODES.PENDING, ORDER_STATUS_CODES.PROCESSING].includes(currentStatus)
 })
 
 onMounted(async () => {
@@ -239,9 +248,19 @@ const fetchOrderDetail = async () => {
     
     const orderId = route.params.id
     const response = await orderService.getOrderById(orderId)
-    
+
+    const orderData = response?.data || response
+    const statusInfo = normalizeOrderStatus(orderData?.trangThai)
+
     console.log('Order detail response:', response)
-    order.value = response
+
+    order.value = {
+      ...orderData,
+      rawStatus: orderData?.trangThai,
+      statusCode: statusInfo.code,
+      statusLabel: statusInfo.label,
+      statusClass: statusInfo.badgeClass,
+    }
     
   } catch (err) {
     console.error('Error fetching order:', err)
@@ -296,35 +315,25 @@ const formatAddress = (address) => {
   return address.replace(/\n/g, '<br>')
 }
 
-const getStatusClass = (status) => {
-  const statusMap = {
-    'PENDING': 'bg-warning',
-    'CONFIRMED': 'bg-info',
-    'SHIPPING': 'bg-primary',
-    'DELIVERED': 'bg-success',
-    'CANCELLED': 'bg-danger'
-  }
-  return statusMap[status] || 'bg-secondary'
-}
+const timelineStatuses = ORDER_STATUS_FLOW.filter((code) => code !== 'COMPLETED')
 
-const getStatusText = (status) => {
-  const statusMap = {
-    'PENDING': 'Chờ xác nhận',
-    'CONFIRMED': 'Đã xác nhận',
-    'SHIPPING': 'Đang giao',
-    'DELIVERED': 'Đã giao',
-    'CANCELLED': 'Đã hủy'
-  }
-  return statusMap[status] || status
-}
-
-const isStatusActive = (status) => {
+const isStatusActive = (statusCode) => {
   if (!order.value) return false
-  
-  const statusOrder = ['PENDING', 'CONFIRMED', 'SHIPPING', 'DELIVERED']
-  const currentIndex = statusOrder.indexOf(order.value.trangThai)
-  const checkIndex = statusOrder.indexOf(status)
-  
+
+  const currentStatus = order.value.statusCode || getOrderStatusCode(order.value.rawStatus)
+  const normalizedStatus = currentStatus === ORDER_STATUS_CODES.COMPLETED ? ORDER_STATUS_CODES.DELIVERED : currentStatus
+
+  if (normalizedStatus === ORDER_STATUS_CODES.CANCELLED) {
+    return statusCode === 'PENDING'
+  }
+
+  const currentIndex = timelineStatuses.indexOf(normalizedStatus)
+  const checkIndex = timelineStatuses.indexOf(statusCode)
+
+  if (currentIndex === -1 || checkIndex === -1) {
+    return false
+  }
+
   return checkIndex <= currentIndex
 }
 

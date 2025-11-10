@@ -20,7 +20,7 @@ public class UserInfoResponse {
     private String vaiTro;
     private Boolean trangThai;
     private LocalDateTime taoLuc;
-    private LocalDateTime lanDangNhapCuoi;
+    // private LocalDateTime lanDangNhapCuoi;
 
     private String kieu;
 

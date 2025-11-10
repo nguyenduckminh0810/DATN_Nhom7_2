@@ -47,18 +47,12 @@
               <router-link to="/orders" class="list-group-item list-group-item-action active py-3">
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
-              <router-link to="/wishlist" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
-              </router-link>
               <router-link
                 to="/profile/addresses"
                 class="list-group-item list-group-item-action py-3"
               >
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-credit-card me-2"></i>Phương thức thanh toán
-              </a>
               <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bell me-2"></i>Thông báo
               </a>
@@ -78,62 +72,44 @@
           <!-- Filter Tabs -->
           <div class="card mb-4">
             <div class="card-body">
-              <ul class="nav nav-pills nav-fill" role="tablist">
-                <li class="nav-item" role="presentation">
+              <div class="orders-search mb-3">
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    class="form-control"
+                    placeholder="Tìm theo mã đơn, trạng thái hoặc sản phẩm"
+                    aria-label="Tìm kiếm đơn hàng"
+                  />
                   <button
-                    class="nav-link"
-                    :class="{ active: activeTab === 'all' }"
-                    @click="activeTab = 'all'"
+                    v-if="searchQuery"
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    @click="searchQuery = ''"
                   >
-                    Tất cả ({{ orders.length }})
+                    Xóa
                   </button>
-                </li>
-                <li class="nav-item" role="presentation">
+                </div>
+              </div>
+
+              <div class="status-tabs">
+                <div
+                  v-for="(row, rowIndex) in statusRows"
+                  :key="rowIndex"
+                  class="nav nav-pills gap-2 flex-wrap justify-content-center status-tabs__row"
+                >
                   <button
-                    class="nav-link"
-                    :class="{ active: activeTab === 'pending' }"
-                    @click="activeTab = 'pending'"
+                    v-for="option in row"
+                    :key="option.code"
+                    class="nav-link status-tabs__button"
+                    :class="{ active: activeTab === option.code }"
+                    @click="activeTab = option.code"
                   >
-                    Chờ xử lý ({{ getOrdersByStatus('pending').length }})
+                    {{ option.label }} ({{ getStatusCount(option.code) }})
                   </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    :class="{ active: activeTab === 'processing' }"
-                    @click="activeTab = 'processing'"
-                  >
-                    Đang xử lý ({{ getOrdersByStatus('processing').length }})
-                  </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    :class="{ active: activeTab === 'shipped' }"
-                    @click="activeTab = 'shipped'"
-                  >
-                    Đang giao ({{ getOrdersByStatus('shipped').length }})
-                  </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    :class="{ active: activeTab === 'delivered' }"
-                    @click="activeTab = 'delivered'"
-                  >
-                    Đã giao ({{ getOrdersByStatus('delivered').length }})
-                  </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                  <button
-                    class="nav-link"
-                    :class="{ active: activeTab === 'cancelled' }"
-                    @click="activeTab = 'cancelled'"
-                  >
-                    Đã hủy ({{ getOrdersByStatus('cancelled').length }})
-                  </button>
-                </li>
-              </ul>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -164,8 +140,8 @@
                     <small class="text-muted">Đặt ngày {{ formatDate(order.orderDate) }}</small>
                   </div>
                   <div class="col-md-6 text-md-end">
-                    <span :class="getStatusClass(order.status)" class="badge">
-                      {{ getStatusText(order.status) }}
+                    <span :class="['badge', order.statusClass]">
+                      {{ order.statusLabel || getOrderStatusLabel(order.status) }}
                     </span>
                   </div>
                 </div>
@@ -244,7 +220,7 @@
                       </button>
 
                       <button
-                        v-if="order.status === 'pending'"
+                        v-if="order.status === 'PENDING'"
                         class="btn btn-outline-danger btn-sm"
                         @click="cancelOrder(order)"
                       >
@@ -252,7 +228,7 @@
                       </button>
 
                       <button
-                        v-if="order.status === 'delivered'"
+                        v-if="['DELIVERED', 'COMPLETED','delivered','completed'].includes(order.status)"
                         class="btn btn-outline-success btn-sm"
                         @click="reorder(order)"
                       >
@@ -260,7 +236,7 @@
                       </button>
 
                       <button
-                        v-if="order.status === 'delivered'"
+                        v-if="['DELIVERED', 'COMPLETED'].includes(order.status)"
                         class="btn btn-outline-warning btn-sm"
                         @click="rateOrder(order)"
                       >
@@ -293,15 +269,53 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import orderService from '@/services/orderService'
+import {
+  ORDER_STATUS_FOR_CUSTOMER,
+  normalizeOrderStatus,
+  getOrderStatusLabel,
+} from '@/utils/orderStatus'
+
+defineOptions({
+  name: 'OrdersView',
+})
 
 const router = useRouter()
 const userStore = useUserStore()
 
 // Reactive data
-const activeTab = ref('all')
+const statusTabs = ORDER_STATUS_FOR_CUSTOMER.slice().sort(
+  (a, b) => a.sortOrder - b.sortOrder,
+)
+
+const STATUS_PER_ROW = 4
+
+const statusOptions = computed(() => [
+  {
+    code: 'ALL',
+    label: 'Tất cả',
+    isAll: true,
+  },
+  ...statusTabs.map((status) => ({
+    code: status.code,
+    label: status.label,
+    isAll: false,
+  })),
+])
+
+const statusRows = computed(() => {
+  const rows = []
+  const options = statusOptions.value
+  for (let i = 0; i < options.length; i += STATUS_PER_ROW) {
+    rows.push(options.slice(i, i + STATUS_PER_ROW))
+  }
+  return rows
+})
+
+const activeTab = ref('ALL')
 const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
+const searchQuery = ref('')
 
 const user = computed(() => ({
   id: userStore.user?.id || null,
@@ -312,10 +326,26 @@ const user = computed(() => ({
 
 // Computed
 const filteredOrders = computed(() => {
-  if (activeTab.value === 'all') {
-    return orders.value
+  const baseOrders =
+    activeTab.value === 'ALL' ? orders.value : getOrdersByStatus(activeTab.value)
+
+  const query = searchQuery.value.trim().toLowerCase()
+  if (!query) {
+    return baseOrders
   }
-  return getOrdersByStatus(activeTab.value)
+
+  return baseOrders.filter((order) => {
+    const searchableFields = [
+      order.orderNumber,
+      order.statusLabel || order.rawStatus || '',
+      order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : '',
+      order.items?.map((item) => item.name || '').join(' ') || '',
+    ]
+
+    return searchableFields.some((field) =>
+      (field || '').toString().toLowerCase().includes(query),
+    )
+  })
 })
 
 // Methods
@@ -323,26 +353,25 @@ const getOrdersByStatus = (status) => {
   return orders.value.filter((order) => order.status === status)
 }
 
-const getStatusClass = (status) => {
-  const statusClasses = {
-    pending: 'bg-warning',
-    processing: 'bg-info',
-    shipped: 'bg-primary',
-    delivered: 'bg-success',
-    cancelled: 'bg-danger',
+const parseAmount = (value) => {
+  if (value == null) {
+    return 0
   }
-  return statusClasses[status] || 'bg-secondary'
+
+  const numberValue = Number(value)
+  return Number.isNaN(numberValue) ? 0 : numberValue
 }
 
-const getStatusText = (status) => {
-  const statusTexts = {
-    pending: 'Chờ xử lý',
-    processing: 'Đang xử lý',
-    shipped: 'Đang giao',
-    delivered: 'Đã giao',
-    cancelled: 'Đã hủy',
+const calculateOrderTotal = (subtotal, shipping, discount) => {
+  const total = parseAmount(subtotal) - parseAmount(discount) + parseAmount(shipping)
+  return total > 0 ? total : 0
+}
+
+const getStatusCount = (statusCode) => {
+  if (statusCode === 'ALL') {
+    return orders.value.length
   }
-  return statusTexts[status] || 'Không xác định'
+  return getOrdersByStatus(statusCode).length
 }
 
 const formatPrice = (price) => {
@@ -449,29 +478,45 @@ const fetchOrders = async () => {
     console.log('📋 Is array?:', Array.isArray(orderData))
 
     // Map backend data to frontend structure
-    orders.value = orderData.map((order) => ({
-      id: order.id,
-      orderNumber: order.soDonHang || `ORD${order.id}`,
-      orderDate: order.taoLuc || order.createdAt,
-      status: mapBackendStatus(order.trangThai),
-      subtotal: order.tamTinh || 0,
-      shippingFee: order.phiVanChuyen || 0,
-      discount: order.giamGiaTong || 0,
-      total: order.tongThanhToan || 0,
-      paymentStatus: order.paymentStatus,
-      paymentMethod: order.paymentMethod,
-      items:
-        order.chiTietList?.map((item) => ({
-          id: item.id,
-          name: item.tenSanPham || 'Sản phẩm',
-          image: item.hinhAnh || 'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
-          price: item.donGia || 0,
-          quantity: item.soLuong || 1,
-          subtotal: item.thanhTien || 0,
-          selectedSize: '', // Backend không có thông tin này
-          selectedColor: '', // Backend không có thông tin này
-        })) || [],
-    }))
+    orders.value = orderData.map((order) => {
+      const statusInfo = normalizeOrderStatus(order.trangThai)
+      const subtotal = order.tamTinh || 0
+      const shippingFee = order.phiVanChuyen || 0
+      const discount = order.giamGiaTong || 0
+      const total =
+        order.tongThanhToan != null
+          ? parseAmount(order.tongThanhToan)
+          : calculateOrderTotal(subtotal, shippingFee, discount)
+
+      return {
+        id: order.id,
+        orderNumber: order.soDonHang || `ORD${order.id}`,
+        orderDate: order.taoLuc || order.createdAt,
+        status: statusInfo.code,
+        statusLabel: statusInfo.label,
+        statusClass: statusInfo.badgeClass,
+        rawStatus: order.trangThai,
+        subtotal,
+        shippingFee,
+        discount,
+        total,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        items:
+          order.chiTietList?.map((item) => ({
+            id: item.id,
+            name: item.tenSanPham || 'Sản phẩm',
+            image:
+              item.hinhAnh ||
+              'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
+            price: item.donGia || 0,
+            quantity: item.soLuong || 1,
+            subtotal: item.thanhTien || 0,
+            selectedSize: '', // Backend không có thông tin này
+            selectedColor: '', // Backend không có thông tin này
+          })) || [],
+      }
+    })
 
     console.log('✅ Mapped orders:', orders.value)
     console.log('📊 First order details:', orders.value[0])
@@ -516,18 +561,6 @@ const fetchOrders = async () => {
 }
 
 // Map backend status to frontend status
-const mapBackendStatus = (backendStatus) => {
-  const statusMap = {
-    CHO_XAC_NHAN: 'pending',
-    DANG_XU_LY: 'processing',
-    DANG_GIAO: 'shipped',
-    DA_GIAO: 'delivered',
-    HOAN_THANH: 'delivered',
-    DA_HUY: 'cancelled',
-  }
-  return statusMap[backendStatus] || 'pending'
-}
-
 // Lifecycle
 onMounted(async () => {
   await fetchOrders()
@@ -555,6 +588,19 @@ onMounted(async () => {
   border-radius: 0.5rem;
   color: #6c757d;
   font-weight: 500;
+}
+
+.status-tabs__row {
+  margin-bottom: 0.5rem;
+}
+
+.status-tabs__row:last-child {
+  margin-bottom: 0;
+}
+
+.status-tabs__button {
+  flex: 1 1 calc(25% - 0.5rem);
+  min-width: 140px;
 }
 
 .nav-pills .nav-link.active {
@@ -587,5 +633,24 @@ onMounted(async () => {
 
 .btn-sm {
   font-size: 0.8rem;
+}
+
+.orders-search .form-control {
+  min-width: 220px;
+}
+
+@media (max-width: 576px) {
+  .orders-search .input-group {
+    flex-wrap: nowrap;
+  }
+
+  .orders-search .form-control {
+    min-width: 0;
+  }
+
+  .status-tabs__button {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 120px;
+  }
 }
 </style>

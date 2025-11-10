@@ -162,7 +162,7 @@ watch(() => props.isOpen, (newValue, oldValue) => {
   // Modal state changed
 }, { immediate: true })
 
-const { addToCartWithValidation, trackAddToCart } = useCart()
+const { addToCartWithValidation, trackAddToCart, addToCartAPI } = useCart()
 
 // Local state
 const selectedColor = ref(null)
@@ -302,29 +302,67 @@ const validateQuantity = () => {
   }
 }
 
-const handleAddToCart = () => {
+const handleAddToCart = async () => {
   if (!canAddToCart.value) return
   
-  const variantData = {
-    variantId: selectedColor.value && selectedSize.value ? 
-      `${props.product.id}-${selectedColor.value}-${selectedSize.value}` : null,
-    color: selectedColor.value,
-    size: selectedSize.value,
-    quantity: quantity.value
-  }
-  
-  // Add to cart with validation
-  const success = addToCartWithValidation(props.product, quantity.value, variantData)
-  
-  if (success) {
-    // Track analytics
-    trackAddToCart(props.product, variantData)
+  try {
+    // Tìm bienTheId từ danh sách variants của product
+    let bienTheId = null
     
-    // Emit event
-    emit('add-to-cart', variantData)
+    if (props.product.bienThes && props.product.bienThes.length > 0) {
+      // Tìm variant khớp với màu và size đã chọn
+      const variant = props.product.bienThes.find(bt => {
+        const colorMatch = !selectedColor.value || bt.mauSac === getColorName(selectedColor.value)
+        const sizeMatch = !selectedSize.value || bt.kichThuoc === selectedSize.value
+        return colorMatch && sizeMatch
+      })
+      
+      if (variant) {
+        bienTheId = variant.id
+      } else {
+        // Nếu không tìm thấy variant cụ thể, lấy variant đầu tiên có stock > 0
+        const availableVariant = props.product.bienThes.find(bt => bt.tonKho > 0)
+        if (availableVariant) {
+          bienTheId = availableVariant.id
+        }
+      }
+    }
     
-    // Close modal
-    closeModal()
+    if (!bienTheId) {
+      if (window.$toast) {
+        window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
+      }
+      return
+    }
+    
+    console.log('🛒 [VARIANT MODAL] Adding to cart:', {
+      bienTheId,
+      soLuong: quantity.value,
+      color: selectedColor.value ? getColorName(selectedColor.value) : null,
+      size: selectedSize.value
+    })
+    
+    // Gọi API thêm vào giỏ hàng
+    const success = await addToCartAPI(bienTheId, quantity.value)
+    
+    if (success) {
+      // Track analytics
+      const variantData = {
+        variantId: bienTheId,
+        color: selectedColor.value,
+        size: selectedSize.value,
+        quantity: quantity.value
+      }
+      trackAddToCart(props.product, variantData)
+      
+      // Emit event
+      emit('add-to-cart', variantData)
+      
+      // Close modal
+      closeModal()
+    }
+  } catch (error) {
+    console.error('❌ [VARIANT MODAL] Error adding to cart:', error)
   }
 }
 

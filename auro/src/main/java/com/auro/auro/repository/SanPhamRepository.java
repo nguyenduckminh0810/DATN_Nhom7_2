@@ -88,4 +88,18 @@ public interface SanPhamRepository extends JpaRepository<SanPham, Long> {
 
   // Optionally: delete products by ids - JpaRepository#deleteAllById exists, but
   // we may also declare a convenience method if needed in service/controller.
+
+  // New methods for filtering by status
+  Page<SanPham> findByTrangThai(String trangThai, Pageable pageable);
+
+  Page<SanPham> findByDanhMuc_IdAndTrangThai(Long danhMucId, String trangThai, Pageable pageable);
+
+  Page<SanPham> findByTenContainingIgnoreCaseAndTrangThai(String ten, String trangThai, Pageable pageable);
+
+  Page<SanPham> findByDanhMuc_IdAndTenContainingIgnoreCaseAndTrangThai(Long danhMucId, String ten, String trangThai,
+      Pageable pageable);
+
+  // For related products - same category, different product, active status
+  Page<SanPham> findByDanhMucIdAndIdNotAndTrangThai(Long danhMucId, Long excludeId, String trangThai,
+      Pageable pageable);
 }

@@ -26,6 +26,13 @@ setupGlobalErrorHandler(app)
 const pinia = createPinia()
 app.use(pinia)
 
+// ✅ XÓA CART CŨ TRONG LOCALSTORAGE KHI APP KHỞI ĐỘNG
+// Để đảm bảo luôn load từ backend (nguồn chân lý)
+console.log('🗑️ [APP INIT] Clearing old cart localStorage...')
+localStorage.removeItem('auro_cart')  // Version cũ
+localStorage.removeItem('auro_cart_v1')  // Version mới
+console.log('✅ [APP INIT] Cart localStorage cleared')
+
 // Load user from localStorage after Pinia is initialized
 const userStore = useUserStore()
 userStore.loadUserFromStorage()
