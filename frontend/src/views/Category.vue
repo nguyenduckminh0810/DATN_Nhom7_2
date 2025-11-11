@@ -164,26 +164,51 @@ const filteredProducts = computed(() => {
         if (filters.priceRange.min > 0 || filters.priceRange.max > 0) {
           const price = product.gia || product.price || 0
           if (filters.priceRange.min > 0 && price < filters.priceRange.min) {
+            console.log(
+              `❌ "${product.ten}" filtered out by price (${price} < ${filters.priceRange.min})`,
+            )
             return false
           }
           if (filters.priceRange.max > 0 && price > filters.priceRange.max) {
+            console.log(
+              `❌ "${product.ten}" filtered out by price (${price} > ${filters.priceRange.max})`,
+            )
             return false
           }
         }
 
         // Availability filter - support both tonKho (API) and stock (mock)
         if (filters.availability !== 'all') {
-          const stockValue = product.tonKho !== undefined ? product.tonKho : product.stock
-          const inStock = stockValue > 0
+          let stockValue
+          let inStock
 
-          // Debug log cho áo khoác da bò
-          if (product.ten && product.ten.includes('khoác')) {
-            console.log(`🔍 Filter debug for "${product.ten}":`, {
-              tonKho: product.tonKho,
-              stockValue,
+          // If product has variants, check variants stock instead of product stock
+          if (product.bienThes && Array.isArray(product.bienThes)) {
+            // Sum up stock from all variants
+            const totalVariantStock = product.bienThes.reduce(
+              (sum, variant) => sum + (variant.tonKho || 0),
+              0,
+            )
+            stockValue = totalVariantStock
+            inStock = totalVariantStock > 0
+          } else {
+            // No variants, use product stock
+            stockValue = product.tonKho !== undefined ? product.tonKho : product.stock
+            inStock = stockValue > 0
+          }
+
+          // Debug log cho products
+          if (product.ten && (product.ten.includes('áo') || product.ten.includes('khoác'))) {
+            console.log(`🔍 Availability filter debug for "${product.ten}":`, {
+              hasVariants: !!product.bienThes,
+              productTonKho: product.tonKho,
+              variantStocks: product.bienThes
+                ? product.bienThes.map((bt) => ({ size: bt.kichThuoc, stock: bt.tonKho }))
+                : 'no variants',
+              calculatedStock: stockValue,
               inStock,
               filterAvailability: filters.availability,
-              willShow:
+              willPass:
                 !(filters.availability === 'inStock' && !inStock) &&
                 !(filters.availability === 'outOfStock' && inStock),
             })
@@ -202,6 +227,24 @@ const filteredProducts = computed(() => {
           const hasMatchingSize = product.bienThes.some(
             (bt) => filters.sizes.includes(bt.kichThuoc) && bt.tonKho > 0,
           )
+
+          // Debug log for ALL products with size filtering
+          console.log(`Size filter for "${product.ten}":`, {
+            activeFilterSizes: filters.sizes,
+            hasVariants: !!product.bienThes,
+            variants: product.bienThes
+              ? product.bienThes.map((bt) => ({
+                  size: bt.kichThuoc,
+                  stock: bt.tonKho,
+                  isRequestedSize: filters.sizes.includes(bt.kichThuoc),
+                  hasStock: bt.tonKho > 0,
+                  matches: filters.sizes.includes(bt.kichThuoc) && bt.tonKho > 0,
+                }))
+              : 'no variants',
+            hasMatchingSize,
+            willPass: hasMatchingSize,
+          })
+
           if (!hasMatchingSize) {
             return false
           }
@@ -209,9 +252,46 @@ const filteredProducts = computed(() => {
 
         // Color filter (check variants)
         if (filters.colors.length > 0 && product.bienThes) {
-          const hasMatchingColor = product.bienThes.some(
-            (bt) => filters.colors.includes(bt.mauSac) && bt.tonKho > 0,
-          )
+          // Debug: Log active color filters
+          console.log('🎨 Active color filters:', filters.colors)
+
+          // Create color mapping from Vietnamese to English values
+          const colorMapping = {
+            Đen: 'black',
+            Trắng: 'white',
+            Xám: 'gray',
+            'Xanh navy': 'navy',
+            'Xanh dương': 'blue',
+            'Xanh lá': 'green',
+            Đỏ: 'red',
+            Nâu: 'brown',
+            Be: 'beige',
+            Kem: 'cream',
+          }
+
+          const hasMatchingColor = product.bienThes.some((bt) => {
+            const mappedColor = colorMapping[bt.mauSac] || bt.mauSac.toLowerCase()
+            return filters.colors.includes(mappedColor) && bt.tonKho > 0
+          })
+
+          // Debug log for color filtering
+          if (product.ten && (product.ten.includes('khoác') || product.ten.includes('hihi'))) {
+            console.log(`🎨 Color filter debug for "${product.ten}":`, {
+              activeFilterColors: filters.colors,
+              productVariantColors: product.bienThes.map((bt) => bt.mauSac),
+              colorMapping,
+              hasMatchingColor,
+              variants: product.bienThes.map((bt) => ({
+                originalColor: bt.mauSac,
+                mappedColor: colorMapping[bt.mauSac] || bt.mauSac.toLowerCase(),
+                stock: bt.tonKho,
+                matches:
+                  filters.colors.includes(colorMapping[bt.mauSac] || bt.mauSac.toLowerCase()) &&
+                  bt.tonKho > 0,
+              })),
+            })
+          }
+
           if (!hasMatchingColor) {
             return false
           }
