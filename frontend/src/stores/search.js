@@ -291,28 +291,54 @@ export const useSearchStore = defineStore('search', () => {
 
   // Actions
   /**
-   * Load available sizes from database
+   * Load available sizes and colors from products with variants
    */
   const loadAvailableSizes = async () => {
-    if (isLoadingSizes.value) return // Prevent duplicate calls
+    if (isLoadingSizes.value) return
 
     try {
       isLoadingSizes.value = true
-      // api.get() already returns response.data, so we get the data directly
-      // Note: api.js baseURL is already '/api', so we just need '/kich-co/ten'
-      const data = await api.get('/kich-co/ten')
 
-      if (data && Array.isArray(data)) {
-        availableSizes.value = data
-      } else if (Array.isArray(data.data)) {
-        // Fallback if API returns nested data
-        availableSizes.value = data.data
+      // Get products with variants to extract sizes and colors
+      const data = await api.get('/san-pham?page=0&size=100')
+
+      if (data && data.content) {
+        const sizesSet = new Set()
+        const colorsUsed = new Set()
+
+        // Extract sizes and colors from product variants
+        data.content.forEach((product) => {
+          if (product.bienThes && Array.isArray(product.bienThes)) {
+            product.bienThes.forEach((variant) => {
+              if (variant.kichThuoc && variant.tonKho > 0) {
+                sizesSet.add(variant.kichThuoc)
+              }
+              if (variant.mauSac) {
+                colorsUsed.add(variant.mauSac)
+              }
+            })
+          }
+        })
+
+        // Update available sizes (sort them properly)
+        const sizeOrder = ['S', 'M', 'L', 'XL', 'XXL', '2XL', '3XL']
+        availableSizes.value = sizeOrder.filter((size) => sizesSet.has(size))
+
+        // Don't filter colors - show all but mark which are available
+        // availableColors already contains all colors, keep them all
+        console.log('Loaded available sizes:', availableSizes.value)
+        console.log('Colors in database:', Array.from(colorsUsed))
+        console.log(
+          'All available colors:',
+          availableColors.value.map((c) => c.name),
+        )
       } else {
-        availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
+        // Fallback to default
+        availableSizes.value = ['S', 'M', 'L', 'XL', 'XXL', '3XL']
       }
     } catch (error) {
-      // Fallback to default sizes
-      availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
+      console.error('Error loading sizes/colors:', error)
+      availableSizes.value = ['S', 'M', 'L', 'XL', 'XXL', '3XL']
     } finally {
       isLoadingSizes.value = false
     }
@@ -441,11 +467,14 @@ export const useSearchStore = defineStore('search', () => {
   }
 
   const toggleColor = (color) => {
+    console.log('🎨 toggleColor called with:', color)
     const index = activeFilters.value.colors.indexOf(color)
     if (index > -1) {
       activeFilters.value.colors.splice(index, 1)
+      console.log('🎨 Removed color, active colors:', activeFilters.value.colors)
     } else {
       activeFilters.value.colors.push(color)
+      console.log('🎨 Added color, active colors:', activeFilters.value.colors)
     }
     updateFilterStatus()
   }
