@@ -22,7 +22,7 @@ class ApiService {
         const url = config.url || ''
         
         // Public endpoints không cần JWT token
-        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping']
+        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping', '/mau-sac']
         const publicPrefixes = ['/shipping'] // Public cho tất cả methods (GET, POST, etc.)
         
         const isPublicGet = method === 'get' && publicGetPrefixes.some((p) => url.startsWith(p))
