@@ -95,46 +95,35 @@ const loading = ref(true)
 const paymentResult = ref(null)
 const errorMessage = ref('')
 
-// Process VNPay callback
-onMounted(async () => {
-  try {
-    // Get all query parameters
-    const params = { ...route.query }
-    
-    console.log('📥 VNPay callback params:', params)
+// Process VNPay callbacks
+onMounted(() => {
+  const params = { ...route.query }
+  console.log('📥 VNPay callback params:', params)
 
-    if (!params.vnp_TxnRef) {
-      errorMessage.value = 'Thiếu thông tin giao dịch'
-      loading.value = false
-      return
+  // 1) Trường hợp chuẩn: backend đã verify và redirect về FE
+  if (params.verified_success === 'true') {
+    const oid = params.verified_donHangId || params.donHangId || params.vnp_TxnRef || null
+    if (window.$toast) {
+      window.$toast.success('Thanh toán thành công!', 'Đang chuyển tới trang đơn hàng…')
     }
-
-    // Call backend để xử lý callback
-    const response = await apiService.get('/payment/vnpay-return', { params })
-
-console.log('✅ Payment result:', response)
-
-paymentResult.value = response
-
-if (response?.success) {
-  const oid = response?.donHangId || params.vnp_TxnRef || params.orderId || null
-  // Điều hướng tới trang thành công
-  router.replace({ name: 'order-success', query: { orderId: oid } })
-  return
-} else {
-  errorMessage.value = response?.message || getErrorMessage(params.vnp_ResponseCode)
-  // Điều hướng quay lại Checkout khi thất bại
-  router.replace({ name: 'cart', query: { error: 'payment_failed' } })
-  return
-}
-
-  } catch (error) {
-    console.error('❌ Error processing payment callback:', error)
-    errorMessage.value = error.response?.data?.message || 'Có lỗi xảy ra khi xử lý thanh toán'
-    paymentResult.value = { success: false }
-  } finally {
-    loading.value = false
+    setTimeout(() => router.replace({ name: 'order-success', query: { orderId: oid } }), 600)
+    return
   }
+
+  // 2) Fallback: VNPay trả thành công nhưng thiếu verified_success (tránh trường hợp 302 gây hiểu nhầm)
+  if (params.vnp_ResponseCode === '00' && (params.vnp_TransactionStatus === '00' || !params.vnp_TransactionStatus)) {
+    const oid = params.donHangId || params.vnp_TxnRef || null
+    if (window.$toast) {
+      window.$toast.success('Thanh toán thành công!', 'Đang chuyển tới trang đơn hàng…')
+    }
+    setTimeout(() => router.replace({ name: 'order-success', query: { orderId: oid } }), 600)
+    return
+  }
+
+  // 3) Còn lại → thất bại
+  errorMessage.value = getErrorMessage(params.vnp_ResponseCode)
+  router.replace({ name: 'cart', query: { error: 'payment_failed' } })
+  loading.value = false
 })
 
 const formatMoney = (amount) => {

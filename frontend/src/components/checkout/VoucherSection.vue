@@ -117,10 +117,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useVoucher } from '@/stores/voucher'
 import { useCart } from '@/composables/useCart'
 import { useUserStore } from '@/stores/user'
+import { useShipping } from '@/composables/useShipping'
 
 const { 
   selectedVoucher, 
@@ -135,17 +136,25 @@ const {
 } = useVoucher()
 
 const { items, formatPrice } = useCart()
-const { user } = useUserStore()
+const { user, isAuthenticated } = useUserStore()
+const { shippingFee } = useShipping()
 
 const voucherScroll = ref(null)
 
-// Kiểm tra user là guest (chưa đăng nhập)
+// Guest nếu chưa xác thực; fallback vào token để tránh "guest giả" khi store chưa hydrate
 const isGuest = computed(() => {
-  return !user.value || !user.value.id
+  if (isAuthenticated.value) return false
+  const hasToken = !!localStorage.getItem('auro_token')
+  return !hasToken
 })
 
 // Load vouchers khi component mount
 onMounted(() => {
+  loadVouchers()
+})
+
+// Reload vouchers mỗi khi login/logout để đảm bảo luôn hiển thị đúng
+watch(isAuthenticated, () => {
   loadVouchers()
 })
 
@@ -215,7 +224,7 @@ const handleApplyVoucher = async () => {
   }
   
   const khachHangId = user.value?.id || null
-  await applyVoucher(khachHangId, subtotal.value)
+  await applyVoucher(khachHangId, subtotal.value, shippingFee.value || 0)
 }
 
 // Helper functions

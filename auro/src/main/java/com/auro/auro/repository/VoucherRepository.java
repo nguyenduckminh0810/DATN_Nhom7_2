@@ -33,6 +33,7 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
 
     // Tăng số lượng đã dùng (dùng khi áp voucher thành công)
     @Modifying
-    @Query("UPDATE Voucher v SET v.gioiHanSuDung = v.gioiHanSuDung - 1 WHERE v.id = :id AND (v.gioiHanSuDung IS NULL OR v.gioiHanSuDung > 0 OR v.gioiHanSuDung = -1)")
+    @Query("UPDATE Voucher v SET v.gioiHanSuDung = v.gioiHanSuDung - 1 " +
+            "WHERE v.id = :id AND v.gioiHanSuDung IS NOT NULL AND v.gioiHanSuDung > 0")
     int decreaseLimit(@Param("id") Long id);
 }

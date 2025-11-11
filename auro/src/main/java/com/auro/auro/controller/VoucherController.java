@@ -58,7 +58,12 @@ public class VoucherController {
 
     @PostMapping("/ap-dung")
     public ResponseEntity<?> apDung(@Valid @RequestBody VoucherApplyRequest request) {
-        VoucherApplicationResult result = voucherService.applyVoucher(request.getMaVoucher(), request.getKhachHangId(), request.getDonHangTong());
+        VoucherApplicationResult result = voucherService.applyVoucher(
+            request.getMaVoucher(),
+            request.getKhachHangId(),
+            request.getDonHangTong(),
+            request.getPhiVanChuyen()
+        );
 
         if(result.isSuccess()) {
             return ResponseEntity.ok(Map.of(

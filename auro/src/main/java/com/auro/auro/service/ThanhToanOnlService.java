@@ -11,9 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Service;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -41,8 +40,27 @@ public class ThanhToanOnlService {
             // Tạo mã gd
             String txnRef = dh.getSoDonHang();
 
-            // Tính tiền VNPay (tiền * 100)
-            Long amount = request.getSoTien().longValue() * 100;
+            // Xác định số tiền thực tế từ đơn hàng (ưu tiên dữ liệu trong DB để tránh sai lệch)
+            BigDecimal orderAmount = dh.getTongThanhToan();
+            if (orderAmount == null) {
+                BigDecimal tamTinh = dh.getTamTinh() != null ? dh.getTamTinh() : BigDecimal.ZERO;
+                BigDecimal giamGia = dh.getGiamGiaTong() != null ? dh.getGiamGiaTong() : BigDecimal.ZERO;
+                BigDecimal phiShip = dh.getPhiVanChuyen() != null ? dh.getPhiVanChuyen() : BigDecimal.ZERO;
+                orderAmount = tamTinh.subtract(giamGia).add(phiShip);
+            }
+
+            if (orderAmount.compareTo(BigDecimal.ZERO) < 0) {
+                orderAmount = BigDecimal.ZERO;
+            }
+
+            // So sánh với số tiền FE gửi lên để log cảnh báo nếu lệch
+            if (request.getSoTien() != null && orderAmount.compareTo(request.getSoTien()) != 0) {
+                log.warn("VNPay amount mismatch for order {}: FE sent {}, actual {}", dh.getSoDonHang(), request.getSoTien(), orderAmount);
+            }
+
+            Long amount = orderAmount.multiply(BigDecimal.valueOf(100))
+                    .setScale(0, RoundingMode.HALF_UP)
+                    .longValueExact();
 
             // Tạo tham số cho VNPay
             Map<String, String> vnpParams = new HashMap<>();

@@ -77,10 +77,14 @@ public class VoucherAdminController {
             System.out.println("Final API response: " + apiResponse);
             
             return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
+        } catch (IllegalArgumentException e) {
+            // Lỗi nghiệp vụ (mã trùng, dữ liệu không hợp lệ) -> 400
+            System.out.println("BUSINESS ERROR in createVoucher: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
             System.out.println("ERROR in createVoucher: " + e.getMessage());
             e.printStackTrace();
-            throw e;
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
         }
     }
 

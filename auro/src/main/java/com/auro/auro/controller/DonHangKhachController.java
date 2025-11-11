@@ -118,6 +118,8 @@ public class DonHangKhachController {
             System.out.println("=== Guest Checkout ===");
             System.out.println("Session ID: " + sessionId);
             System.out.println("Authenticated khachHangId: " + khachHangId);
+            System.out.println("MaVoucher from request: '" + request.getMaVoucher() + "'");
+            System.out.println("Payment method: " + request.getPhuongThucThanhToan());
 
             // Tạo đơn và nhận lại thông tin để FE có id/tổng tiền cho VNPay
             com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request, khachHangId);
@@ -127,12 +129,31 @@ public class DonHangKhachController {
             if (dh != null) {
                 result.put("donHangId", dh.getId());
                 result.put("tongThanhToan", dh.getTongThanhToan());
+                result.put("tamTinh", dh.getTamTinh());
+                result.put("giamGiaTong", dh.getGiamGiaTong());
+                result.put("phiVanChuyen", dh.getPhiVanChuyen());
+                System.out.println("=== Guest Checkout Response ===");
+                System.out.println("DonHang ID: " + dh.getId());
+                System.out.println("TamTinh: " + dh.getTamTinh());
+                System.out.println("GiamGiaTong: " + dh.getGiamGiaTong());
+                System.out.println("PhiVanChuyen: " + dh.getPhiVanChuyen());
+                System.out.println("TongThanhToan: " + dh.getTongThanhToan());
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
+            System.out.println("ERROR Guest checkout: " + e.getMessage());
+            e.printStackTrace();
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            error.put("message", "Lỗi: " + e.getMessage());
+            // Lấy message từ exception, nếu có chứa "Voucher" thì giữ nguyên message
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("Voucher")) {
+                // Message đã rõ ràng (ví dụ: "Voucher không hợp lệ: Bạn đã sử dụng voucher này rồi")
+                error.put("message", errorMessage);
+            } else {
+                // Các lỗi khác
+                error.put("message", "Lỗi khi đặt hàng: " + (errorMessage != null ? errorMessage : "Vui lòng thử lại"));
+            }
             return ResponseEntity.badRequest().body(error);
         }
     }
