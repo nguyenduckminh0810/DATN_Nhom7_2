@@ -17,27 +17,27 @@
       </div>
     </nav>
 
-      <!-- Loading State -->
+    <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
-          <div class="text-center py-5">
-            <div class="spinner-border text-primary mb-3" role="status">
-              <span class="visually-hidden">Đang tải...</span>
-            </div>
-            <h5>Đang tải thông tin sản phẩm...</h5>
+      <div class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Đang tải...</span>
         </div>
+        <h5>Đang tải thông tin sản phẩm...</h5>
       </div>
+    </div>
 
-      <!-- Product Not Found -->
+    <!-- Product Not Found -->
     <div v-else-if="!product" class="error-state">
-          <div class="text-center py-5">
-            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
-            <h4 class="mt-3 mb-3">Không tìm thấy sản phẩm</h4>
-            <p class="text-muted mb-4">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
+      <div class="text-center py-5">
+        <i class="bi bi-exclamation-triangle text-danger" style="font-size: 4rem"></i>
+        <h4 class="mt-3 mb-3">Không tìm thấy sản phẩm</h4>
+        <p class="text-muted mb-4">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
         <router-link to="/category" class="btn btn-primary">
-              <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
-            </router-link>
-        </div>
+          <i class="bi bi-arrow-left me-2"></i>Quay lại danh sách
+        </router-link>
       </div>
+    </div>
 
     <!-- Hero Section (max-width 1320px, centered) -->
     <section v-else class="hero-section">
@@ -47,25 +47,25 @@
           <div class="gallery-column">
             <div class="gallery-wrapper">
               <div class="product-gallery">
-          <ImageGallery
-            :images="productImages"
-            :initial-index="currentImageIndex"
-            :key="`gallery-${currentImageIndex}`"
-            :main-image-width="600"
-            :main-image-height="600"
-            :thumbnail-width="80"
-            :thumbnail-height="80"
+                <ImageGallery
+                  :images="productImages"
+                  :initial-index="currentImageIndex"
+                  :key="`gallery-${currentImageIndex}`"
+                  :main-image-width="600"
+                  :main-image-height="600"
+                  :thumbnail-width="80"
+                  :thumbnail-height="80"
                   :show-navigation="true"
                   :show-thumbnails="true"
                   :show-counter="true"
                   :show-zoom-button="true"
-            @image-change="handleImageChange"
-            @lightbox-open="handleLightboxOpen"
-            @lightbox-close="handleLightboxClose"
-          />
+                  @image-change="handleImageChange"
+                  @lightbox-open="handleLightboxOpen"
+                  @lightbox-close="handleLightboxClose"
+                />
               </div>
             </div>
-        </div>
+          </div>
 
           <!-- Product Summary Column -->
           <div class="summary-column">
@@ -75,98 +75,135 @@
                 <span class="badge-modern">{{ product?.discount }}% OFF</span>
               </div>
 
-            <!-- Product Title -->
+              <!-- Product Title -->
               <h1 class="product-title">{{ product?.name || 'Đang tải...' }}</h1>
 
-            <!-- Product Rating -->
-            <div class="product-rating mb-3">
-              <div class="stars">
-                  <i v-for="i in 5" :key="i" 
-                     :class="['bi', i <= Math.floor(product?.rating) ? 'bi-star-fill' : 'bi-star']"></i>
-              </div>
+              <!-- Product Rating -->
+              <div class="product-rating mb-3">
+                <div class="stars">
+                  <i
+                    v-for="i in 5"
+                    :key="i"
+                    :class="['bi', i <= Math.floor(product?.rating) ? 'bi-star-fill' : 'bi-star']"
+                  ></i>
+                </div>
                 <span class="rating-text">
                   <strong>{{ product?.rating }}</strong>
                   <span class="rating-count">({{ product?.reviewCount }} đánh giá)</span>
                 </span>
-            </div>
+              </div>
 
-            <!-- Product Price -->
-            <div class="product-price mb-4">
+              <!-- Product Price -->
+              <div class="product-price mb-4">
                 <div class="price-container">
                   <span class="current-price">{{ formatPrice(currentPrice) }}</span>
-                  <span v-if="product?.originalPrice && product?.originalPrice > currentPrice" 
-                        class="original-price">{{ formatPrice(product?.originalPrice) }}</span>
+                  <span
+                    v-if="product?.originalPrice && product?.originalPrice > currentPrice"
+                    class="original-price"
+                    >{{ formatPrice(product?.originalPrice) }}</span
+                  >
+                </div>
               </div>
-            </div>
 
-
-            <!-- Product Description -->
+              <!-- Product Description -->
               <div class="product-description-modern mb-4">
                 <h6 class="section-title-modern">Mô tả sản phẩm</h6>
                 <p class="description-text">{{ product?.description || 'Đang tải mô tả...' }}</p>
-            </div>
-
-            <!-- Product Variants -->
-            <div class="product-variants mb-4">
-                <!-- Color Selection -->
-              <div class="variant-group mb-3">
-                  <label class="variant-label">Màu sắc</label>
-                  <div class="color-options">
-                    <button v-for="color in availableColors" :key="color"
-                            :class="['color-btn', { 
-                              'selected': selectedColor === color,
-                              'disabled': selectedSize && !isColorAvailableForSize(color)
-                            }]"
-                            :style="{ backgroundColor: color }"
-                            @click="selectColor(color)"
-                            :disabled="selectedSize && !isColorAvailableForSize(color)"
-                            :title="getColorName(color)"
-                            :aria-pressed="selectedColor === color">
-                      <i v-if="selectedColor === color" class="bi bi-check check-icon"></i>
-                  </button>
-                    
-                </div>
               </div>
 
+              <!-- Product Variants -->
+              <div class="product-variants mb-4">
+                <!-- Color Selection -->
+                <div class="variant-group mb-3">
+                  <label class="variant-label">Màu sắc</label>
+                  <div class="color-options">
+                    <button
+                      v-for="color in availableColors"
+                      :key="color"
+                      :class="[
+                        'color-btn',
+                        {
+                          selected: selectedColor === color,
+                          disabled: selectedSize && !isColorAvailableForSize(color),
+                        },
+                      ]"
+                      :style="{ backgroundColor: color }"
+                      @click="selectColor(color)"
+                      :disabled="selectedSize && !isColorAvailableForSize(color)"
+                      :title="getColorName(color)"
+                      :aria-pressed="selectedColor === color"
+                    >
+                      <i v-if="selectedColor === color" class="bi bi-check check-icon"></i>
+                    </button>
+                  </div>
+                </div>
+
                 <!-- Size Selection -->
-              <div class="variant-group mb-3">
+                <div class="variant-group mb-3">
                   <label class="variant-label">Kích thước</label>
                   <div class="size-options">
-                    <button v-for="size in availableSizes" :key="size"
-                            :class="['size-btn', { 'selected': selectedSize === size, 'disabled': !isSizeAvailable(size) }]"
-                            @click="selectSize(size)"
-                            :disabled="!isSizeAvailable(size)"
-                            :aria-pressed="selectedSize === size">
+                    <button
+                      v-for="size in availableSizes"
+                      :key="size"
+                      :class="[
+                        'size-btn',
+                        { selected: selectedSize === size, disabled: !isSizeAvailable(size) },
+                      ]"
+                      @click="selectSize(size)"
+                      :disabled="!isSizeAvailable(size)"
+                      :aria-pressed="selectedSize === size"
+                    >
                       {{ size }}
-                  </button>
-                </div>
+                    </button>
+                  </div>
                   <a href="#bang-size" class="size-guide-link">
                     <i class="bi bi-rulers me-1"></i>Hướng dẫn chọn size
                   </a>
-              </div>
+                </div>
 
-              <!-- Variant Info Badge (shows when variant is selected) -->
-              <div v-if="currentVariant && selectedColor && selectedSize" class="variant-info-badge">
-                <div class="variant-badge-content">
-                  <i class="bi bi-info-circle me-2"></i>
-                  <span class="variant-text">
-                    Đã chọn: <strong>{{ getColorName(selectedColor) }}</strong> - <strong>{{ selectedSize }}</strong>
-                    <span v-if="currentVariant.price && currentVariant.price !== product?.price" class="variant-price-badge">
-                      ({{ formatPrice(currentVariant.price) }})
+                <!-- Variant Info Badge (shows when variant is selected) -->
+                <div
+                  v-if="currentVariant && selectedColor && selectedSize"
+                  class="variant-info-badge"
+                >
+                  <div class="variant-badge-content">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <span class="variant-text">
+                      Đã chọn: <strong>{{ getColorName(selectedColor) }}</strong> -
+                      <strong>{{ selectedSize }}</strong>
+                      <span
+                        v-if="currentVariant.price && currentVariant.price !== product?.price"
+                        class="variant-price-badge"
+                      >
+                        ({{ formatPrice(currentVariant.price) }})
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Quantity Selection -->
-            <div class="quantity-selection mb-4">
+              <!-- Quantity Selection -->
+              <div class="quantity-selection mb-4">
                 <label class="variant-label">Số lượng</label>
-              <div class="quantity-controls">
-                  <button class="qty-btn" @click="decreaseQuantity" :disabled="quantity <= 1">-</button>
-                  <input v-model.number="quantity" type="number" class="quantity-input" min="1" :max="maxQuantity">
-                  <button class="qty-btn" @click="increaseQuantity" :disabled="quantity >= maxQuantity">+</button>
-              </div>
+                <div class="quantity-controls">
+                  <button class="qty-btn" @click="decreaseQuantity" :disabled="quantity <= 1">
+                    -
+                  </button>
+                  <input
+                    v-model.number="quantity"
+                    type="number"
+                    class="quantity-input"
+                    min="1"
+                    :max="maxQuantity"
+                  />
+                  <button
+                    class="qty-btn"
+                    @click="increaseQuantity"
+                    :disabled="quantity >= maxQuantity"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
 
               <!-- Stock Information -->
@@ -179,59 +216,54 @@
                   <i class="bi bi-x-circle-fill me-2"></i>
                   <span class="stock-text">Hết hàng</span>
                 </div>
-            </div>
+              </div>
 
-            <!-- Action Buttons -->
-            <div class="action-buttons mb-4">
-                <button class="btn-add-to-cart" 
-                  :disabled="!canAddToCart"
-                        @click="handleAddToCart">
+              <!-- Action Buttons -->
+              <div class="action-buttons mb-4">
+                <button class="btn-add-to-cart" :disabled="!canAddToCart" @click="handleAddToCart">
                   <i class="bi bi-cart-plus me-2"></i>
                   {{ canAddToCart ? 'Thêm vào giỏ hàng' : 'Chọn màu và size' }}
                 </button>
-                <button class="btn-buy-now" 
-                        :disabled="!canAddToCart"
-                        @click="handleBuyNow">
+                <button class="btn-buy-now" :disabled="!canAddToCart" @click="handleBuyNow">
                   <i class="bi bi-lightning-fill me-2"></i>
                   Mua ngay
                 </button>
-            </div>
+              </div>
 
               <!-- Service Badges -->
               <div class="service-badges">
                 <div class="badge-item">
                   <div class="badge-icon">
                     <i class="bi bi-truck"></i>
-              </div>
+                  </div>
                   <div class="badge-content">
                     <div class="badge-title">Miễn phí vận chuyển</div>
                     <div class="badge-subtitle">Đơn hàng từ 500.000₫</div>
-              </div>
-              </div>
+                  </div>
+                </div>
                 <div class="badge-item">
                   <div class="badge-icon">
                     <i class="bi bi-arrow-repeat"></i>
-            </div>
+                  </div>
                   <div class="badge-content">
                     <div class="badge-title">Đổi trả dễ dàng</div>
                     <div class="badge-subtitle">Trong 30 ngày</div>
-          </div>
-        </div>
+                  </div>
+                </div>
                 <div class="badge-item">
                   <div class="badge-icon">
                     <i class="bi bi-shield-check"></i>
-      </div>
+                  </div>
                   <div class="badge-content">
                     <div class="badge-title">Bảo hành chính hãng</div>
                     <div class="badge-subtitle">1 năm</div>
+                  </div>
                 </div>
               </div>
-                </div>
-              </div>
-                            </div>
-                          </div>
-                        </div>
-
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Anchor Navigation -->
@@ -239,15 +271,25 @@
       <div class="container">
         <ul class="nav-list">
           <li><a href="#mo-ta" :class="{ active: activeSection === 'mo-ta' }">Mô tả</a></li>
-          <li><a href="#chat-lieu" :class="{ active: activeSection === 'chat-lieu' }">Chất liệu</a></li>
-          <li><a href="#bang-size" :class="{ active: activeSection === 'bang-size' }">Bảng size</a></li>
-          <li><a href="#danh-gia" :class="{ active: activeSection === 'danh-gia' }">Đánh giá</a></li>
+          <li>
+            <a href="#chat-lieu" :class="{ active: activeSection === 'chat-lieu' }">Chất liệu</a>
+          </li>
+          <li>
+            <a href="#bang-size" :class="{ active: activeSection === 'bang-size' }">Bảng size</a>
+          </li>
+          <li>
+            <a href="#danh-gia" :class="{ active: activeSection === 'danh-gia' }">Đánh giá</a>
+          </li>
           <li v-if="viewedProductsStore.getRecentViewedProducts.length > 0">
             <a href="#da-xem" :class="{ active: activeSection === 'da-xem' }">Sản phẩm đã xem</a>
           </li>
-          <li><a href="#lien-quan" :class="{ active: activeSection === 'lien-quan' }">Sản phẩm liên quan</a></li>
+          <li>
+            <a href="#lien-quan" :class="{ active: activeSection === 'lien-quan' }"
+              >Sản phẩm liên quan</a
+            >
+          </li>
         </ul>
-                      </div>
+      </div>
     </nav>
 
     <!-- Full-width Content Sections -->
@@ -255,32 +297,34 @@
       <div class="content-wrapper">
         <div class="section-header">
           <h2>Mô tả sản phẩm</h2>
-                            </div>
+        </div>
         <div class="section-content">
           <p>{{ product?.description || 'Đang tải mô tả...' }}</p>
           <div class="product-details">
             <h3>Chi tiết sản phẩm</h3>
             <ul>
-              <li>Chất liệu: {{ product.material || 'Cotton cao cấp' }}</li>
-              <li>Xuất xứ: {{ product.origin || 'Việt Nam' }}</li>
-              <li>Phong cách: {{ product.style || 'Casual, Business' }}</li>
-              <li>Phù hợp: {{ product.suitable || 'Mọi lứa tuổi' }}</li>
+              <li>Chất liệu: {{ product?.material || 'Cotton cao cấp' }}</li>
+              <li>Xuất xứ: {{ product?.origin || 'Việt Nam' }}</li>
+              <li>Phong cách: {{ product?.style || 'Casual, Business' }}</li>
+              <li>Phù hợp: {{ product?.suitable || 'Mọi lứa tuổi' }}</li>
             </ul>
-                          </div>
-                            </div>
-                          </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section id="chat-lieu" class="content-section alt-bg">
       <div class="content-wrapper">
         <div class="section-header">
           <h2>Chất liệu & Bảo quản</h2>
-                            </div>
+        </div>
         <div class="section-content">
           <div class="material-info">
             <h3>Thông tin chất liệu</h3>
-            <p>Chất liệu cotton cao cấp 100%, mềm mại và thoáng khí, phù hợp với khí hậu nhiệt đới.</p>
-                          </div>
+            <p>
+              Chất liệu cotton cao cấp 100%, mềm mại và thoáng khí, phù hợp với khí hậu nhiệt đới.
+            </p>
+          </div>
           <div class="care-instructions">
             <h3>Hướng dẫn bảo quản</h3>
             <ul>
@@ -289,16 +333,16 @@
               <li>Phơi khô tự nhiên</li>
               <li>Ủi ở nhiệt độ thấp</li>
             </ul>
-                            </div>
-                          </div>
-                            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section id="bang-size" class="content-section">
       <div class="content-wrapper">
         <div class="section-header">
           <h2>Bảng size</h2>
-                          </div>
+        </div>
         <div class="section-content">
           <div class="size-chart">
             <table class="size-table">
@@ -319,29 +363,32 @@
                 </tr>
               </tbody>
             </table>
-                        </div>
-                      </div>
-                    </div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section id="danh-gia" class="content-section alt-bg">
       <div class="content-wrapper">
         <div class="section-header">
           <h2>Đánh giá sản phẩm</h2>
-                  </div>
+        </div>
         <div class="section-content">
           <div class="reviews-summary">
             <div class="rating-overview">
               <div class="rating-score">
                 <span class="score">{{ product?.rating }}</span>
-                          <div class="stars">
-                  <i v-for="i in 5" :key="i" 
-                     :class="['bi', i <= Math.floor(product?.rating) ? 'bi-star-fill' : 'bi-star']"></i>
-                          </div>
+                <div class="stars">
+                  <i
+                    v-for="i in 5"
+                    :key="i"
+                    :class="['bi', i <= Math.floor(product?.rating) ? 'bi-star-fill' : 'bi-star']"
+                  ></i>
+                </div>
                 <p>{{ product?.reviewCount }} đánh giá</p>
-                        </div>
-                      </div>
-                    </div>
+              </div>
+            </div>
+          </div>
           <div class="reviews-list">
             <div class="review-item">
               <div class="review-header">
@@ -365,7 +412,11 @@
     </section>
 
     <!-- Sản phẩm đã xem -->
-    <section id="da-xem" class="content-section" v-if="viewedProductsStore.getRecentViewedProducts.length > 0">
+    <section
+      id="da-xem"
+      class="content-section"
+      v-if="viewedProductsStore.getRecentViewedProducts.length > 0"
+    >
       <div class="content-wrapper">
         <div class="section-header">
           <h2>Sản phẩm đã xem</h2>
@@ -373,18 +424,21 @@
         </div>
         <div class="section-content">
           <div class="viewed-products">
-            <div 
-              v-for="viewedProduct in viewedProductsStore.getRecentViewedProducts" 
-              :key="viewedProduct.id" 
+            <div
+              v-for="viewedProduct in viewedProductsStore.getRecentViewedProducts"
+              :key="viewedProduct.id"
               class="viewed-product-card"
               @click="router.push(`/product/${viewedProduct.id}`)"
             >
               <div class="product-image">
-                <img 
-                  :src="viewedProduct.image || 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=250&h=250&fit=crop'" 
+                <img
+                  :src="
+                    viewedProduct.image ||
+                    'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=250&h=250&fit=crop'
+                  "
                   :alt="viewedProduct.name"
                   loading="lazy"
-                >
+                />
                 <div class="viewed-badge">
                   <i class="bi bi-eye"></i>
                 </div>
@@ -393,8 +447,14 @@
                 <h4>{{ viewedProduct.name }}</h4>
                 <div class="price-info">
                   <span class="current-price">{{ formatPrice(viewedProduct.price) }}</span>
-                  <span v-if="viewedProduct.originalPrice && viewedProduct.originalPrice > viewedProduct.price" 
-                        class="original-price">{{ formatPrice(viewedProduct.originalPrice) }}</span>
+                  <span
+                    v-if="
+                      viewedProduct.originalPrice &&
+                      viewedProduct.originalPrice > viewedProduct.price
+                    "
+                    class="original-price"
+                    >{{ formatPrice(viewedProduct.originalPrice) }}</span
+                  >
                 </div>
                 <div v-if="viewedProduct.discount" class="discount-badge">
                   -{{ viewedProduct.discount }}%
@@ -413,35 +473,38 @@
         </div>
         <div class="section-content">
           <div v-if="relatedProducts && relatedProducts.length > 0" class="related-products">
-            <div 
-              v-for="relatedProduct in relatedProducts" 
-              :key="relatedProduct.id" 
+            <div
+              v-for="relatedProduct in relatedProducts"
+              :key="relatedProduct.id"
               class="related-product-card"
             >
               <div class="product-image">
-                <img 
-                  :src="relatedProduct.image || 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=250&h=250&fit=crop'" 
-                      :alt="relatedProduct.name"
+                <img
+                  :src="
+                    relatedProduct.image ||
+                    'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=250&h=250&fit=crop'
+                  "
+                  :alt="relatedProduct.name"
                   loading="lazy"
-                >
-                    </div>
+                />
+              </div>
               <div class="product-info">
                 <h4>{{ relatedProduct.name }}</h4>
                 <p class="price">{{ formatPrice(relatedProduct.price) }}</p>
-                      <router-link 
-                        :to="`/product/${relatedProduct.id}`" 
+                <router-link
+                  :to="`/product/${relatedProduct.id}`"
                   class="btn btn-sm btn-outline-primary mt-2"
-                      >
-                        Xem chi tiết
-                      </router-link>
-                    </div>
-                  </div>
-                </div>
-          <div v-else class="no-related-products">
-            <p class="text-muted">Không có sản phẩm liên quan</p>
+                >
+                  Xem chi tiết
+                </router-link>
               </div>
             </div>
           </div>
+          <div v-else class="no-related-products">
+            <p class="text-muted">Không có sản phẩm liên quan</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Mobile Sticky Bottom Bar -->
@@ -450,8 +513,7 @@
       <button class="mobile-cta" :disabled="!canAddToCart" @click="handleAddToCart">
         {{ canAddToCart ? 'Thêm vào giỏ' : 'Chọn size' }}
       </button>
-        </div>
-
+    </div>
   </div>
 </template>
 
@@ -459,26 +521,25 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
-import { useProductStore } from '../stores/product'
+
 import { useViewedProductsStore } from '../stores/viewedProducts'
 import { useUserStore } from '../stores/user'
 import cartService from '../services/cartService'
 import ImageGallery from '../components/common/ImageGallery.vue'
 import LazyImage from '../components/common/LazyImage.vue'
-import { 
-  getColorName, 
+import { config } from '../config/env'
+import {
+  getColorName,
   buildColorSizeMapping,
   getAvailableColors,
   getAvailableSizes,
   getVariantStock,
   getTotalStock,
-  isVariantAvailable
 } from '../utils/colorMapping'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
-const productStore = useProductStore()
 const viewedProductsStore = useViewedProductsStore()
 const userStore = useUserStore()
 
@@ -487,7 +548,7 @@ const isLoading = ref(true)
 const error = ref(null)
 const product = ref(null)
 const relatedProducts = ref([])
-const activeTab = ref('description')
+
 const selectedSize = ref('')
 const selectedColor = ref('')
 const quantity = ref(1)
@@ -500,27 +561,27 @@ const anchorNav = ref(null)
 
 // API Functions
 const fetchProductDetail = async (productId) => {
-    isLoading.value = true
-    error.value = null
-    
+  isLoading.value = true
+  error.value = null
+
   try {
     // Fetch product detail from API
     const { default: sanPhamService } = await import('../services/sanPhamService')
     const productData = await sanPhamService.getDetail(productId)
-    
+
     if (!productData) {
       throw new Error('Product not found')
     }
-    
+
     // Collect all product images
-    const productImages = productData.hinhAnhs?.map(img => img.url) || []
-    
+    const productImages = productData.hinhAnhs?.map((img) => img.url) || []
+
     // Map variants from detail response and collect variant images
     let variants = []
     if (productData.bienThes && productData.bienThes.length > 0) {
       console.log('🔍 Raw bienThes from API:', productData.bienThes)
-      
-      variants = productData.bienThes.map(v => {
+
+      variants = productData.bienThes.map((v) => {
         const mapped = {
           id: v.id,
           color: v.colorHex || '#000000',
@@ -529,20 +590,20 @@ const fetchProductDetail = async (productId) => {
           stock: v.tonKho || 0,
           price: v.gia || productData.gia,
           imageUrl: v.hinhAnh,
-          available: (v.tonKho || 0) > 0
+          available: (v.tonKho || 0) > 0,
         }
         console.log('📦 Mapped variant:', mapped)
         return mapped
       })
-      
+
       // Add variant images to product images if not already included
-      variants.forEach(variant => {
+      variants.forEach((variant) => {
         if (variant.imageUrl && !productImages.includes(variant.imageUrl)) {
           productImages.push(variant.imageUrl)
         }
       })
     }
-    
+
     // Map API response to product object
     product.value = {
       id: productData.id,
@@ -562,46 +623,47 @@ const fetchProductDetail = async (productId) => {
       inStock: productData.trangThai === 'active',
       tags: productData.tags || [],
       sku: productData.sku || '',
-      variants: variants
+      variants: variants,
     }
-    
+
     // Continue with variants processing
     if (variants.length > 0) {
-      
       // Extract unique colors and sizes from variants WITH STOCK
-      const uniqueColors = [...new Set(product.value.variants.filter(v => v.stock > 0).map(v => v.color))]
-      const uniqueSizes = [...new Set(product.value.variants.filter(v => v.stock > 0).map(v => v.size))]
-      
+      const uniqueColors = [
+        ...new Set(product.value.variants.filter((v) => v.stock > 0).map((v) => v.color)),
+      ]
+      const uniqueSizes = [
+        ...new Set(product.value.variants.filter((v) => v.stock > 0).map((v) => v.size)),
+      ]
+
       console.log('🎯 Unique colors with stock:', uniqueColors)
       console.log('🎯 Unique sizes with stock:', uniqueSizes)
-      
-      product.value.colors = uniqueColors.map(color => {
-        const variant = product.value.variants.find(v => v.color === color)
+
+      product.value.colors = uniqueColors.map((color) => {
+        const variant = product.value.variants.find((v) => v.color === color)
         return {
           name: variant?.colorName || color,
           value: color,
-          available: product.value.variants.some(v => v.color === color && v.available)
+          available: product.value.variants.some((v) => v.color === color && v.available),
         }
       })
-      
-      product.value.sizes = uniqueSizes.map(size => ({
+
+      product.value.sizes = uniqueSizes.map((size) => ({
         name: size,
-        available: product.value.variants.some(v => v.size === size && v.available)
+        available: product.value.variants.some((v) => v.size === size && v.available),
       }))
-      
+
       console.log('Loaded variants:', product.value.variants.length)
       console.log('Total images (product + variants):', product.value.images.length)
-      console.log('Variant images:', product.value.variants.filter(v => v.imageUrl).map(v => v.imageUrl))
+      console.log(
+        'Variant images:',
+        product.value.variants.filter((v) => v.imageUrl).map((v) => v.imageUrl),
+      )
     } else {
       // No variants, use default mock data
-      product.value.colors = [
-        { name: 'Mặc định', value: '#000000', available: true }
-      ]
-      product.value.sizes = [
-        { name: 'M', available: true }
-      ]
+      product.value.colors = [{ name: 'Mặc định', value: '#000000', available: true }]
+      product.value.sizes = [{ name: 'M', available: true }]
     }
-    
   } catch (err) {
     console.error('Failed to load product:', err)
     error.value = 'Không thể tải thông tin sản phẩm'
@@ -609,29 +671,48 @@ const fetchProductDetail = async (productId) => {
   } finally {
     isLoading.value = false
   }
-  
+
   // Fetch related products with fallback (async, don't wait)
   if (product.value) {
     fetchRelatedProducts(productId)
   }
-  
+
   // Debug: Log related products
   console.log('Related products after fetch:', relatedProducts.value)
 }
 
+// Helper function to build full image URL
+const buildImageUrl = (imageUrl) => {
+  if (!imageUrl) return 'https://via.placeholder.com/300x400?text=No+Image'
+  if (imageUrl.startsWith('http')) return imageUrl
+  if (imageUrl.startsWith('/files/')) {
+    return `http://localhost:8080${imageUrl}`
+  }
+  // If it's just filename, add the base path
+  return `http://localhost:8080/files/${imageUrl}`
+}
+
 const fetchRelatedProducts = async (productId) => {
   try {
-    const result = await productStore.fetchRelatedProducts(productId)
-    
-    if (result.success && result.data?.products) {
-      relatedProducts.value = result.data.products
+    // Use direct API call since backend endpoint is now available
+    const response = await fetch(
+      `${config.api.baseURL.replace('/api', '')}/api/san-pham/id/${productId}/related`,
+    )
+    if (response.ok) {
+      const data = await response.json()
+      // Transform API data to match template expectations
+      relatedProducts.value = (data.content || []).map((product) => ({
+        ...product,
+        name: product.ten,
+        image: buildImageUrl(product.anhDaiDien),
+        price: product.gia,
+      }))
+      console.log('Related products loaded:', relatedProducts.value.length)
     } else {
-      // Fallback: use empty array instead of mock data to avoid loading unnecessary data
-      console.warn('Related products API not available')
+      console.warn('Failed to fetch related products:', response.status)
       relatedProducts.value = []
     }
   } catch (error) {
-    // Silently handle error and show no related products
     console.warn('Error fetching related products:', error.message)
     relatedProducts.value = []
   }
@@ -658,8 +739,8 @@ const availableColorsForSize = computed(() => {
   if (!selectedSize.value || !colorSizeMapping.value) {
     return availableColors.value
   }
-  return availableColors.value.filter(color => 
-    colorSizeMapping.value[color]?.includes(selectedSize.value)
+  return availableColors.value.filter((color) =>
+    colorSizeMapping.value[color]?.includes(selectedSize.value),
   )
 })
 
@@ -668,9 +749,9 @@ const currentVariant = computed(() => {
   if (!selectedColor.value || !selectedSize.value || !product.value?.variants) {
     return null
   }
-  
+
   return product.value.variants.find(
-    v => v.color === selectedColor.value && v.size === selectedSize.value
+    (v) => v.color === selectedColor.value && v.size === selectedSize.value,
   )
 })
 
@@ -687,7 +768,7 @@ const currentPrice = computed(() => {
   if (!currentVariant.value) {
     return product.value?.price || 0
   }
-  
+
   // Use variant price if available, otherwise fall back to product price
   return currentVariant.value.price || product.value?.price || 0
 })
@@ -705,10 +786,10 @@ const displayQuantity = computed(() => {
 // Store image-variant mapping separately
 const imageVariantMap = computed(() => {
   if (!product.value || !product.value.variants) return new Map()
-  
+
   const map = new Map()
-  
-  product.value.variants.forEach(variant => {
+
+  product.value.variants.forEach((variant) => {
     if (variant.imageUrl) {
       if (!map.has(variant.imageUrl)) {
         map.set(variant.imageUrl, [])
@@ -719,26 +800,26 @@ const imageVariantMap = computed(() => {
         size: variant.size,
         variantId: variant.id,
         price: variant.price,
-        stock: variant.stock
+        stock: variant.stock,
       })
     }
   })
-  
+
   return map
 })
 
 const productImages = computed(() => {
   if (!product.value) return []
-  
+
   // Return images in the format ImageGallery expects: { src, alt }
   const images = product.value.images.map((src, index) => ({
     src,
-    alt: `${product.value.name} - Hình ${index + 1}`
+    alt: `${product.value.name} - Hình ${index + 1}`,
   }))
-  
+
   console.log('Product Images:', images)
   console.log('Image-Variant Map:', imageVariantMap.value)
-  
+
   return images
 })
 
@@ -747,9 +828,9 @@ const activeImageIndex = computed(() => {
   if (!currentVariant.value || !currentVariant.value.imageUrl || !product.value?.images) {
     return 0
   }
-  
+
   // Find the index of the image URL in the product images array
-  const index = product.value.images.findIndex(imgUrl => imgUrl === currentVariant.value.imageUrl)
+  const index = product.value.images.findIndex((imgUrl) => imgUrl === currentVariant.value.imageUrl)
   return index >= 0 ? index : 0
 })
 
@@ -760,7 +841,7 @@ const sizeChart = computed(() => {
     { size: 'M', length: 70, chest: 96, shoulder: 46 },
     { size: 'L', length: 72, chest: 100, shoulder: 48 },
     { size: 'XL', length: 74, chest: 104, shoulder: 50 },
-    { size: '2XL', length: 76, chest: 108, shoulder: 52 }
+    { size: '2XL', length: 76, chest: 108, shoulder: 52 },
   ]
 })
 
@@ -783,20 +864,23 @@ const availableColors = computed(() => {
 
 const availableSizes = computed(() => {
   console.log('🔧 availableSizes computed called')
-  
+
   if (!product.value?.variants || product.value.variants.length === 0) {
     console.log('⚠️ No variants found')
     return []
   }
-  
+
   console.log('🔍 All product variants:', product.value.variants)
-  console.log('🔍 Variants with stock:', product.value.variants.filter(v => v.stock > 0))
+  console.log(
+    '🔍 Variants with stock:',
+    product.value.variants.filter((v) => v.stock > 0),
+  )
   console.log('🔍 product.value.sizes:', product.value.sizes)
-  
+
   const sizes = getAvailableSizes(product.value.variants)
   console.log('✅ Available sizes from getAvailableSizes():', sizes)
   console.log('📦 Total variants:', product.value.variants.length)
-  
+
   // Return sizes from variants, no fallback
   return sizes
 })
@@ -826,7 +910,7 @@ const isColorAvailableForSize = (color) => {
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(price)
 }
 
@@ -835,29 +919,29 @@ const selectColor = (color) => {
   if (!isColorAvailable(color)) {
     return
   }
-  
+
   // Nếu click vào màu đã chọn thì bỏ chọn
   if (selectedColor.value === color) {
     selectedColor.value = ''
     updateURL()
     return
   }
-  
+
   selectedColor.value = color
-  
+
   // Reset size if current size is not available for new color
   if (selectedSize.value && !availableSizesForColor.value.includes(selectedSize.value)) {
     selectedSize.value = ''
   }
-  
+
   // Update product image if variant has image
   updateVariantImage()
-  
+
   // Reset quantity
   if (quantity.value > currentVariantStock.value) {
     quantity.value = Math.min(1, currentVariantStock.value)
   }
-  
+
   updateURL()
 }
 
@@ -865,29 +949,29 @@ const selectSize = (size) => {
   if (!isSizeAvailable(size)) {
     return
   }
-  
+
   // Nếu click vào size đã chọn thì bỏ chọn
   if (selectedSize.value === size) {
     selectedSize.value = ''
     updateURL()
     return
   }
-  
+
   selectedSize.value = size
-  
+
   // Reset color if current color is not available for new size
   if (selectedColor.value && !availableColorsForSize.value.includes(selectedColor.value)) {
     selectedColor.value = ''
   }
-  
+
   // Update product image if variant has image
   updateVariantImage()
-  
+
   // Reset quantity if exceeds new stock
   if (quantity.value > currentVariantStock.value) {
     quantity.value = Math.min(1, currentVariantStock.value)
   }
-  
+
   updateURL()
 }
 
@@ -896,22 +980,22 @@ const updateVariantImage = () => {
     console.log('No current variant selected')
     return
   }
-  
+
   // Update main image if variant has image
   if (currentVariant.value.imageUrl) {
     // Update current image index to highlight the correct thumbnail
     const newIndex = activeImageIndex.value
     currentImageIndex.value = newIndex
-    
+
     // Set as main image
     product.value.image = currentVariant.value.imageUrl
     product.value.img = currentVariant.value.imageUrl
-    
+
     console.log('Updated variant image:', {
       variantImageUrl: currentVariant.value.imageUrl,
       newIndex: newIndex,
       color: currentVariant.value.colorName,
-      size: currentVariant.value.size
+      size: currentVariant.value.size,
     })
   } else {
     console.log('Current variant has no image URL')
@@ -937,7 +1021,7 @@ const handleAddToCart = async () => {
     }
     return
   }
-  
+
   try {
     // Validate selections
     if (!selectedColor.value || !selectedSize.value) {
@@ -946,19 +1030,19 @@ const handleAddToCart = async () => {
       }
       return
     }
-    
+
     // Get selected variant
-    const selectedVariant = product.value?.variants?.find(v => 
-      v.color === selectedColor.value && v.size === selectedSize.value
+    const selectedVariant = product.value?.variants?.find(
+      (v) => v.color === selectedColor.value && v.size === selectedSize.value,
     )
-    
+
     if (!selectedVariant || !selectedVariant.id) {
       if (window.$toast) {
         window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
       }
       return
     }
-    
+
     // Check stock
     if (selectedVariant.stock <= 0) {
       if (window.$toast) {
@@ -966,20 +1050,20 @@ const handleAddToCart = async () => {
       }
       return
     }
-    
+
     console.log('🛒 Adding to cart:', {
       bienTheId: selectedVariant.id,
-      soLuong: quantity.value
+      soLuong: quantity.value,
     })
-    
+
     // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
     const response = await cartService.addToCart({
       bienTheId: selectedVariant.id,
-      soLuong: quantity.value
+      soLuong: quantity.value,
     })
-    
+
     console.log('✅ Added to cart via API:', response)
-    
+
     // Backend trả về { success: true, message: "..." }
     if (response.success === false) {
       const errorMsg = response.message || 'Không thể thêm vào giỏ hàng'
@@ -988,31 +1072,29 @@ const handleAddToCart = async () => {
       }
       return
     }
-    
+
     // ⚡ RELOAD giỏ hàng từ backend để đồng bộ
     console.log('🔄 Reloading cart from backend...')
     await cartStore.loadCart()
-    
+
     // Show success message
     if (window.$toast) {
       window.$toast.success(
         `${product.value.name} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
-        'Thành công'
+        'Thành công',
       )
     }
-    
+
     // Reset selections
     selectedColor.value = ''
     selectedSize.value = ''
     quantity.value = 1
-    
   } catch (error) {
     console.error('❌ Error adding to cart:', error)
-    
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Không thể thêm vào giỏ hàng'
-    
+
+    const errorMessage =
+      error.response?.data?.message || error.message || 'Không thể thêm vào giỏ hàng'
+
     if (window.$toast) {
       window.$toast.error(errorMessage, 'Lỗi')
     }
@@ -1025,7 +1107,7 @@ const handleBuyNow = async () => {
   console.log('📏 Selected size:', selectedSize.value)
   console.log('📦 Product:', product.value)
   console.log('🔢 Available variants:', product.value?.variants)
-  
+
   if (!canAddToCart.value) {
     console.log('❌ Cannot buy now - missing color or size')
     if (window.$toast) {
@@ -1033,7 +1115,7 @@ const handleBuyNow = async () => {
     }
     return
   }
-  
+
   try {
     // Validate selections
     if (!selectedColor.value || !selectedSize.value) {
@@ -1042,28 +1124,31 @@ const handleBuyNow = async () => {
       }
       return
     }
-    
+
     // Get selected variant with more detailed logging
     console.log('🔍 Looking for variant with:')
     console.log('  - Color:', selectedColor.value)
     console.log('  - Size:', selectedSize.value)
-    
-    const selectedVariant = product.value?.variants?.find(v => {
+
+    const selectedVariant = product.value?.variants?.find((v) => {
       console.log(`  Checking variant: color=${v.color}, size=${v.size}, id=${v.id}`)
       return v.color === selectedColor.value && v.size === selectedSize.value
     })
-    
+
     if (!selectedVariant || !selectedVariant.id) {
       console.log('❌ No variant found!')
       console.log('📦 All available variants:', product.value?.variants)
       if (window.$toast) {
-        window.$toast.error('Không tìm thấy biến thể sản phẩm. Vui lòng chọn lại màu sắc và kích thước.', 'Lỗi')
+        window.$toast.error(
+          'Không tìm thấy biến thể sản phẩm. Vui lòng chọn lại màu sắc và kích thước.',
+          'Lỗi',
+        )
       }
       return
     }
-    
+
     console.log('✅ Found variant:', selectedVariant)
-    
+
     // Check stock
     if (selectedVariant.stock <= 0) {
       if (window.$toast) {
@@ -1071,21 +1156,21 @@ const handleBuyNow = async () => {
       }
       return
     }
-    
+
     console.log('🚀 Adding to cart via API (Buy Now)...')
     console.log('📦 Variant ID:', selectedVariant.id)
     console.log('📦 Quantity:', quantity.value)
-    
+
     // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
     const response = await cartService.addToCart({
       bienTheId: selectedVariant.id,
-      soLuong: quantity.value
+      soLuong: quantity.value,
     })
-    
+
     console.log('✅ API Response:', response)
     console.log('✅ Response type:', typeof response)
     console.log('✅ Response keys:', Object.keys(response || {}))
-    
+
     // Check nếu response là undefined hoặc null
     if (!response) {
       console.error('❌ Response is undefined/null')
@@ -1094,7 +1179,7 @@ const handleBuyNow = async () => {
       }
       return
     }
-    
+
     // Backend trả về { success: true, message: "..." }
     if (response.success === false) {
       const errorMsg = response.message || 'Không thể thêm vào giỏ hàng'
@@ -1103,36 +1188,34 @@ const handleBuyNow = async () => {
       }
       return
     }
-    
+
     // Hiển thị thông báo thành công
     if (window.$toast) {
       window.$toast.success('Đã thêm vào giỏ hàng!', 'Thành công')
     }
-    
+
     console.log('✅ Buy Now successful, waiting for backend commit...')
-    
+
     // ⏱️ Đợi một chút để đảm bảo backend đã commit transaction
     // Tăng thời gian chờ lên 500ms để chắc chắn backend đã commit
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
+    await new Promise((resolve) => setTimeout(resolve, 500))
+
     console.log('✅ Redirecting to cart...')
     console.log('🗑️ Clearing localStorage to force reload from backend...')
-    
+
     // ✅ XÓA LOCALSTORAGE TRƯỚC KHI CHUYỂN TRANG
     // Để đảm bảo Cart.vue sẽ load dữ liệu MỚI NHẤT từ backend
     localStorage.removeItem('auro_cart_v1')
-    
+
     // Chuyển ngay đến trang giỏ hàng (Cart.vue sẽ tự load từ backend)
     await router.push('/cart')
-    
   } catch (error) {
     console.error('❌ Buy Now failed:', error)
     console.error('Error response:', error.response)
-    
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Không thể mua ngay. Vui lòng thử lại.'
-    
+
+    const errorMessage =
+      error.response?.data?.message || error.message || 'Không thể mua ngay. Vui lòng thử lại.'
+
     if (window.$toast) {
       window.$toast.error(errorMessage, 'Mua ngay thất bại')
     }
@@ -1143,26 +1226,29 @@ const updateURL = () => {
   const params = new URLSearchParams()
   if (selectedColor.value) params.set('color', selectedColor.value)
   if (selectedSize.value) params.set('size', selectedSize.value)
-  
+
   const newUrl = `${route.path}${params.toString() ? '?' + params.toString() : ''}`
   window.history.replaceState({}, '', newUrl)
 }
 
 const setupScrollSpy = () => {
   const sections = ['mo-ta', 'chat-lieu', 'bang-size', 'danh-gia', 'lien-quan']
-  
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        activeSection.value = entry.target.id
-      }
-    })
-  }, {
-    threshold: 0.3,
-    rootMargin: '-100px 0px -50% 0px'
-  })
-  
-  sections.forEach(id => {
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          activeSection.value = entry.target.id
+        }
+      })
+    },
+    {
+      threshold: 0.3,
+      rootMargin: '-100px 0px -50% 0px',
+    },
+  )
+
+  sections.forEach((id) => {
     const element = document.getElementById(id)
     if (element) {
       observer.observe(element)
@@ -1182,24 +1268,29 @@ const handleResize = () => {
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', handleResize)
-  
+
   const productId = route.params.id
   await fetchProductDetail(productId)
-  
+
   // Track sản phẩm đã xem
   if (product.value) {
-    viewedProductsStore.addViewedProduct(product.value)
+    viewedProductsStore.addViewedProduct({
+      id: product.value.id,
+      name: product.value.ten,
+      price: product.value.gia,
+      image: buildImageUrl(product.value.anhDaiDien),
+    })
   }
-  
+
   // Setup scroll spy after content is loaded
   await nextTick()
   setupScrollSpy()
-  
+
   // Read URL parameters
   const urlParams = new URLSearchParams(window.location.search)
   const color = urlParams.get('color')
   const size = urlParams.get('size')
-  
+
   if (color && availableColors.value.includes(color)) {
     selectedColor.value = color
   }
@@ -1217,12 +1308,10 @@ const getColorCode = (hexColor) => {
   return hexColor
 }
 
-
-
 const updateQuantity = (event) => {
   const newValue = parseInt(event.target.value) || 1
   const maxStock = currentVariantStock.value || 10
-  
+
   // Validate the input
   if (newValue < 1) {
     quantity.value = 1
@@ -1231,7 +1320,7 @@ const updateQuantity = (event) => {
   } else {
     quantity.value = newValue
   }
-  
+
   // Force update the input value to ensure it displays correctly
   nextTick(() => {
     if (event.target.value !== quantity.value.toString()) {
@@ -1245,7 +1334,7 @@ const addToCart = async (productToAdd = product.value) => {
     console.error('Product data is null or undefined')
     return
   }
-  
+
   // Debug: Log product data
   console.log('Product data for cart:', {
     id: productToAdd.id,
@@ -1254,9 +1343,9 @@ const addToCart = async (productToAdd = product.value) => {
     priceNow: productToAdd.priceNow,
     img: productToAdd.img,
     image: productToAdd.image,
-    isAuthenticated: userStore.isAuthenticated
+    isAuthenticated: userStore.isAuthenticated,
   })
-  
+
   // Validate selections
   if (!selectedColor.value || !selectedSize.value) {
     if (window.$toast) {
@@ -1264,7 +1353,7 @@ const addToCart = async (productToAdd = product.value) => {
     }
     return
   }
-  
+
   // Check stock
   if (currentVariantStock.value <= 0) {
     if (window.$toast) {
@@ -1272,69 +1361,71 @@ const addToCart = async (productToAdd = product.value) => {
     }
     return
   }
-  
+
   // Check quantity
   if (quantity.value > currentVariantStock.value) {
     if (window.$toast) {
       window.$toast.error(
         `Chỉ còn ${currentVariantStock.value} sản phẩm trong kho`,
-        'Vượt quá số lượng'
+        'Vượt quá số lượng',
       )
     }
     return
   }
-  
+
   try {
     // Tìm bienTheId từ variants
-    const selectedVariant = product.value.variants?.find(v => 
-      v.color === selectedColor.value && v.size === selectedSize.value
+    const selectedVariant = product.value.variants?.find(
+      (v) => v.color === selectedColor.value && v.size === selectedSize.value,
     )
-    
+
     if (!selectedVariant || !selectedVariant.id) {
-      console.error('Không tìm thấy variant ID:', { selectedColor: selectedColor.value, selectedSize: selectedSize.value })
+      console.error('Không tìm thấy variant ID:', {
+        selectedColor: selectedColor.value,
+        selectedSize: selectedSize.value,
+      })
       if (window.$toast) {
         window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
       }
       return
     }
-    
+
     // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
     // Backend sẽ tự động:
     // - Nếu đã đăng nhập: lưu theo khachHangId
     // - Nếu chưa đăng nhập: lưu theo sessionId (guest cart)
     const response = await cartService.addToCart({
-      bienTheId: selectedVariant.id,  // ID của biến thể sản phẩm
-      soLuong: quantity.value         // Số lượng
+      bienTheId: selectedVariant.id, // ID của biến thể sản phẩm
+      soLuong: quantity.value, // Số lượng
     })
-    
+
     console.log('✅ Added to cart via API:', response)
     console.log('🔑 User authenticated:', userStore.isAuthenticated)
-    
+
     // ⚡ QUAN TRỌNG: SAU KHI THÊM VÀO GIỎ, PHẢI RELOAD TỪ BACKEND
     // KHÔNG được gọi cartStore.addItem() vì sẽ gây ra duplicate
     console.log('🔄 Reloading cart from backend after add...')
     await cartStore.loadCart()
-    
+
     const productName = productToAdd.name || 'Sản phẩm không tên'
-    
+
     // Show success toast
     if (window.$toast) {
       window.$toast.success(
         `${productName} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
-        'Thêm vào giỏ hàng thành công'
+        'Thêm vào giỏ hàng thành công',
       )
     }
-    
+
     // Reset selections
     selectedColor.value = ''
     selectedSize.value = ''
     quantity.value = 1
-    
   } catch (error) {
     console.error('❌ Error adding to cart:', error)
-    
+
     const errorMessage = error.response?.data?.message || 'Không thể thêm sản phẩm vào giỏ hàng'
-    
+
     if (window.$toast) {
       window.$toast.error(errorMessage, 'Lỗi')
     }
@@ -1343,27 +1434,28 @@ const addToCart = async (productToAdd = product.value) => {
 
 const handleImageChange = (data) => {
   // When user clicks on a thumbnail, automatically select the corresponding variant
-  if (!data || !productImages.value || data.index < 0 || data.index >= productImages.value.length) return
-  
+  if (!data || !productImages.value || data.index < 0 || data.index >= productImages.value.length)
+    return
+
   const clickedImage = productImages.value[data.index]
   const imageSrc = clickedImage.src
-  
+
   // Check if this image has associated variants
   const variants = imageVariantMap.value.get(imageSrc)
-  
+
   if (variants && variants.length > 0) {
     // Get the first variant associated with this image
     const variantInfo = variants[0]
-    
+
     // Auto-select the color and size
     if (variantInfo.color && availableColors.value.includes(variantInfo.color)) {
       selectedColor.value = variantInfo.color
     }
-    
+
     if (variantInfo.size && availableSizes.value.includes(variantInfo.size)) {
       selectedSize.value = variantInfo.size
     }
-    
+
     console.log('Auto-selected variant from image:', variantInfo)
   } else {
     console.log('No variant associated with this image')
@@ -1403,18 +1495,21 @@ watch(activeImageIndex, (newIndex) => {
 })
 
 // Watch route params to fetch product when ID changes
-watch(() => route.params.id, (newId) => {
-  if (newId) {
-    // Reset state
-    selectedColor.value = ''
-    selectedSize.value = ''
-    quantity.value = 1
-    
-    // Fetch new product
-    fetchProductDetail(newId)
-  }
-}, { immediate: false })
+watch(
+  () => route.params.id,
+  (newId) => {
+    if (newId) {
+      // Reset state
+      selectedColor.value = ''
+      selectedSize.value = ''
+      quantity.value = 1
 
+      // Fetch new product
+      fetchProductDetail(newId)
+    }
+  },
+  { immediate: false },
+)
 </script>
 
 <style scoped>
@@ -1535,7 +1630,6 @@ watch(() => route.params.id, (newId) => {
   transform: none !important;
   border-color: #e9ecef !important;
 }
-
 
 .quantity-controls {
   display: flex;
@@ -1802,12 +1896,12 @@ watch(() => route.params.id, (newId) => {
   transition: all 0.3s ease;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .product-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.15) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15) !important;
 }
 
 /* Enhanced Card Body */
@@ -1849,7 +1943,7 @@ watch(() => route.params.id, (newId) => {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .product-overlay {
@@ -1857,7 +1951,7 @@ watch(() => route.params.id, (newId) => {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(0,0,0,0.8));
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
   padding: 1rem;
   transform: translateY(100%);
   transition: transform 0.3s ease;
@@ -1881,7 +1975,7 @@ watch(() => route.params.id, (newId) => {
   font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 0.25rem;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .price-original {
@@ -1905,13 +1999,13 @@ watch(() => route.params.id, (newId) => {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,123,255,0.3);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
 }
 
 .card-action-btn:hover {
   background: linear-gradient(135deg, #0056b3, #004085);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,123,255,0.4);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.4);
 }
 
 .card-action-btn i {
@@ -1923,39 +2017,39 @@ watch(() => route.params.id, (newId) => {
   .product-title {
     font-size: 1.5rem;
   }
-  
+
   .price-amount {
     font-size: 1.5rem;
   }
-  
+
   .action-buttons .d-flex {
     flex-direction: column;
   }
-  
+
   .action-buttons .btn {
     width: 100%;
   }
-  
+
   .related-products-section {
     padding: 1rem;
   }
-  
+
   .section-title {
     font-size: 1.25rem;
   }
-  
+
   .product-card .card-body {
     padding: 1rem;
   }
-  
+
   .price-section {
     padding: 0.5rem;
   }
-  
+
   .price-current {
     font-size: 1.1rem;
   }
-  
+
   .card-action-btn {
     padding: 0.6rem 0.8rem;
     font-size: 0.8rem;
@@ -2455,7 +2549,6 @@ watch(() => route.params.id, (newId) => {
   line-height: 1.2;
 }
 
-
 /* ===== ANCHOR NAVIGATION ===== */
 
 .anchor-nav {
@@ -2643,19 +2736,19 @@ watch(() => route.params.id, (newId) => {
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1rem;
   }
-  
+
   .viewed-product-card .product-info {
     padding: 1rem;
   }
-  
+
   .viewed-product-card .product-info h4 {
     font-size: 1rem;
   }
-  
+
   .viewed-product-card .current-price {
     font-size: 1.1rem;
   }
-  
+
   .related-products {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
@@ -2761,21 +2854,21 @@ watch(() => route.params.id, (newId) => {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
-  
+
   .gallery-wrapper,
   .product-summary {
     position: static;
   }
-  
+
   .mobile-sticky-bar {
     display: block;
   }
-  
+
   .nav-list {
     gap: 1rem;
     flex-wrap: wrap;
   }
-  
+
   .nav-list li a {
     font-size: 0.9rem;
     padding: 0.4rem 0.8rem;
@@ -2786,56 +2879,56 @@ watch(() => route.params.id, (newId) => {
   .hero-container {
     padding: 0 1rem;
   }
-  
+
   .content-wrapper {
     padding: 0 1rem;
   }
-  
+
   .product-title {
     font-size: 1.5rem;
   }
-  
+
   .current-price {
     font-size: 1.5rem;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .service-badges {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
-  
+
   .badge-item {
     padding: 0.75rem;
     gap: 0.6rem;
     min-height: auto;
   }
-  
+
   .badge-icon {
     width: 28px;
     height: 28px;
   }
-  
+
   .badge-icon i {
     font-size: 0.9rem;
   }
-  
+
   .badge-title {
     font-size: 0.85rem;
     margin-bottom: 0.1rem;
   }
-  
+
   .badge-subtitle {
     font-size: 0.75rem;
   }
-  
+
   .size-table {
     font-size: 0.9rem;
   }
-  
+
   .size-table th,
   .size-table td {
     padding: 0.5rem;
@@ -2871,7 +2964,7 @@ watch(() => route.params.id, (newId) => {
 .modern-product-container {
   background: #fff;
   border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   margin-top: 2rem;
 }
@@ -2906,7 +2999,7 @@ watch(() => route.params.id, (newId) => {
   font-size: 0.8rem;
   padding: 0.5rem 1rem;
   border-radius: 20px;
-  box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -2940,7 +3033,7 @@ watch(() => route.params.id, (newId) => {
 .stars-modern i {
   color: #ffc107;
   font-size: 1.1rem;
-  filter: drop-shadow(0 1px 2px rgba(255,193,7,0.3));
+  filter: drop-shadow(0 1px 2px rgba(255, 193, 7, 0.3));
 }
 
 .rating-text-modern {
@@ -2969,7 +3062,7 @@ watch(() => route.params.id, (newId) => {
   font-size: 2.5rem;
   font-weight: 800;
   color: #dc3545;
-  text-shadow: 0 2px 4px rgba(220,53,69,0.2);
+  text-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
 }
 
 .original-price-modern {
@@ -3067,7 +3160,7 @@ watch(() => route.params.id, (newId) => {
   border-color: #dc3545;
   color: #dc3545;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220,53,69,0.2);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
 }
 
 .size-btn-modern.active {
@@ -3075,7 +3168,7 @@ watch(() => route.params.id, (newId) => {
   border-color: #dc3545;
   color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
 }
 
 .size-btn-modern.disabled {
@@ -3106,13 +3199,13 @@ watch(() => route.params.id, (newId) => {
 
 .color-btn-modern:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .color-btn-modern.active {
   border-color: #dc3545;
   transform: scale(1.1);
-  box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
 }
 
 .color-btn-modern.disabled {
@@ -3131,7 +3224,7 @@ watch(() => route.params.id, (newId) => {
   color: white;
   font-size: 1.2rem;
   font-weight: bold;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* Modern Quantity */
@@ -3226,7 +3319,7 @@ watch(() => route.params.id, (newId) => {
   font-size: 1.1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3236,7 +3329,7 @@ watch(() => route.params.id, (newId) => {
 .btn-add-to-cart-modern:hover:not(:disabled) {
   background: linear-gradient(135deg, #c82333, #a71e2a);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(220,53,69,0.4);
+  box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
 }
 
 .btn-add-to-cart-modern:disabled,
@@ -3265,7 +3358,7 @@ watch(() => route.params.id, (newId) => {
   border-color: #dc3545;
   color: #dc3545;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(220,53,69,0.2);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
 }
 
 .secondary-actions {
@@ -3288,7 +3381,7 @@ watch(() => route.params.id, (newId) => {
   border-color: #007bff;
   color: #007bff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,123,255,0.2);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
 }
 
 /* Modern Product Features */
@@ -3313,12 +3406,12 @@ watch(() => route.params.id, (newId) => {
   align-items: center;
   gap: 1rem;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .feature-icon {
@@ -3353,7 +3446,7 @@ watch(() => route.params.id, (newId) => {
   background: transparent !important;
   border-radius: 16px !important;
   overflow: hidden !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
   padding: 0 !important;
   margin: 0 !important;
   width: 100% !important;
@@ -3373,7 +3466,7 @@ watch(() => route.params.id, (newId) => {
   border-radius: 16px !important;
   overflow: hidden !important;
   background: #f8f9fa !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
   width: 100% !important;
   aspect-ratio: 1 / 1 !important;
   max-height: 400px !important;
@@ -3409,7 +3502,7 @@ watch(() => route.params.id, (newId) => {
   transform: translateY(-50%) !important;
   background: rgba(220, 53, 69, 0.9) !important;
   color: white !important;
-  border: 2px solid rgba(255,255,255,0.2) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
   width: 50px !important;
   height: 50px !important;
   border-radius: 50% !important;
@@ -3445,8 +3538,8 @@ watch(() => route.params.id, (newId) => {
 .product-image-section .gallery-nav:hover:not(:disabled) {
   background: rgba(220, 53, 69, 1) !important;
   transform: translateY(-50%) scale(1.15) !important;
-  box-shadow: 0 4px 15px rgba(220,53,69,0.4) !important;
-  border-color: rgba(255,255,255,0.4) !important;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
 }
 
 .product-image-section .thumbnails-container {
@@ -3519,17 +3612,17 @@ watch(() => route.params.id, (newId) => {
   .product-detail {
     padding: 1rem;
   }
-  
+
   .loading-state,
   .error-state {
     padding: 1rem;
   }
-  
+
   .product-layout {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .product-left,
   .product-right {
     flex: 1;
@@ -3541,51 +3634,51 @@ watch(() => route.params.id, (newId) => {
   .product-title-modern {
     font-size: 1.8rem;
   }
-  
+
   .current-price-modern {
     font-size: 2rem;
   }
-  
+
   .main-actions {
     flex-direction: column;
   }
-  
+
   .btn-wishlist-modern {
     width: 100%;
     height: 50px;
   }
-  
+
   .features-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .product-info-card {
     padding: 1.5rem;
   }
-  
+
   .product-image-section {
     padding: 1rem;
   }
-  
+
   .product-image-section .gallery-nav {
     width: 40px;
     height: 40px;
     font-size: 1rem;
   }
-  
+
   .product-image-section .gallery-nav-prev {
     left: 15px;
   }
-  
+
   .product-image-section .gallery-nav-next {
     right: 15px;
   }
-  
+
   .product-image-section .thumbnail {
     width: 60px;
     height: 60px;
   }
-  
+
   .product-image-section .thumbnails-container {
     padding: 0 0.5rem;
   }

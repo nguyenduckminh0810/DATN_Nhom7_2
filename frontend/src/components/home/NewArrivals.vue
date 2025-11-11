@@ -1,235 +1,147 @@
 <template>
-  <section class="new-arrivals-section">
+  <section id="new-arrivals" class="new-arrivals-section">
     <!-- Header with container -->
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Sản phẩm mới</h2>
-        <router-link to="/san-pham?sort=createdAt" class="btn-view-all">
-          Xem tất cả
-        </router-link>
+        <router-link to="/san-pham?sort=createdAt" class="btn-view-all"> Xem tất cả </router-link>
       </div>
     </div>
-    
+
     <!-- Full-width products carousel -->
     <div class="products-carousel-container">
-      <button class="prev-btn" @click="scrollProducts('prev')">
-        ‹
-      </button>
-      
-        <div class="products-grid" ref="productsGrid" @scroll="handleScroll">
-          <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
+      <button class="prev-btn" @click="scrollProducts('prev')">‹</button>
+
+      <div class="products-grid" ref="productsGrid" @scroll="handleScroll">
+        <template v-if="loading">
+          <div v-for="n in 5" :key="n" class="product-card skeleton">
             <div class="skeleton-image"></div>
             <div class="skeleton-content">
               <div class="skeleton-title"></div>
               <div class="skeleton-price"></div>
             </div>
           </div>
-          
-          <ProductCard
-            v-else
-            v-for="(product, index) in displayProducts"
-            :key="`${product.id}-${index}`"
-            :id="product.id"
-            :name="product.name"
-            :img="product.image"
-            :hover-img="product.hoverImage"
-            :price-now="product.price"
-            :price-old="product.originalPrice"
-            :discount="product.discount"
-            :promotional-badge="product.promotionalBadge"
-            :color-options="product.colorOptions"
-            :sizes="product.sizes"
-            :available-sizes="product.availableSizes"
-            :color-size-mapping="product.colorSizeMapping"
-          />
-        </div>
-      
-      <button class="next-btn" @click="scrollProducts('next')">
-        ›
-      </button>
+        </template>
+
+        <ProductCard
+          v-else
+          v-for="(product, index) in displayProducts"
+          :key="`${product.id}-${index}`"
+          :id="product.id"
+          :name="product.name"
+          :img="product.image"
+          :hover-img="product.hoverImage"
+          :price-now="product.price"
+          :price-old="product.originalPrice"
+          :discount="product.discount"
+          :promotional-badge="product.promotionalBadge"
+          :color-options="product.colorOptions"
+          :sizes="product.sizes"
+          :available-sizes="product.availableSizes"
+          :color-size-mapping="product.colorSizeMapping"
+        />
+      </div>
+
+      <button class="next-btn" @click="scrollProducts('next')">›</button>
     </div>
   </section>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
-import { useProductStore } from '../../stores/product'
+import productService from '../../services/productService'
 import ProductCard from '../product/ProductCard.vue'
-
-const productStore = useProductStore()
 
 const products = ref([])
 const loading = ref(true)
 const error = ref(null)
 const productsGrid = ref(null)
 const currentIndex = ref(0)
-const showButtons = ref(false)
 
 const fetchNewArrivals = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    // Fetch new arrivals from API
-    const result = await productStore.fetchProducts({ sort: 'newest', limit: 10 })
-    
-    if (result.success && result.data?.products) {
-      products.value = result.data.products
-    } else {
-      // Fallback mock data for development when API is not ready
-      console.warn('API not available, using mock data for NewArrivals')
-      products.value = [
-        {
-          id: 1,
-          name: 'Áo thun nữ mới nhất',
-          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-          price: 199000,
-          originalPrice: 299000,
-          discount: 33,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#ff69b4', '#007bff', '#28a745'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
+
+    console.log('🆕 Loading new arrivals from backend API - sản phẩm thật từ admin')
+
+    // Gọi API để lấy sản phẩm mới từ backend
+    const response = await productService.getNewArrivals({
+      size: 10, // Lấy 10 sản phẩm mới nhất
+      sortBy: 'taoLuc', // Sắp xếp theo thời gian tạo
+      sortOrder: 'desc', // Mới nhất trước
+      status: 'active', // Chỉ lấy sản phẩm đang hoạt động
+      inStock: true, // Chỉ lấy sản phẩm còn hàng
+    })
+
+    if (response.success && response.data) {
+      let apiProducts = response.data
+
+      // Nếu response.data có structure như { content: [...] }
+      if (apiProducts.content && Array.isArray(apiProducts.content)) {
+        apiProducts = apiProducts.content
+      }
+
+      // Nếu không phải array, chuyển thành array
+      if (!Array.isArray(apiProducts)) {
+        apiProducts = [apiProducts]
+      }
+
+      // Convert API response to component format
+      products.value = apiProducts.map((product) => {
+        // Helper function to build full image URL
+        const buildImageUrl = (imageUrl) => {
+          if (!imageUrl) return 'https://via.placeholder.com/300x400?text=No+Image'
+          if (imageUrl.startsWith('http')) return imageUrl
+          if (imageUrl.startsWith('/files/')) {
+            return `http://localhost:8080${imageUrl}`
+          }
+          // If it's just filename, add the base path
+          return `http://localhost:8080/files/${imageUrl}`
+        }
+
+        return {
+          id: product.id,
+          name: product.ten || product.name || 'Sản phẩm mới',
+          image: buildImageUrl(product.anhDaiDien || product.anhChinh || product.image),
+          hoverImage: buildImageUrl(
+            product.anhPhu?.[0] ||
+              product.hoverImage ||
+              product.anhDaiDien ||
+              product.anhChinh ||
+              product.image,
+          ),
+          price: product.gia || product.giaBan || product.price || 0,
+          originalPrice: product.giaGoc || product.originalPrice,
+          discount: product.phanTramGiam || product.discount || 0,
+          promotionalBadge: 'SẢN PHẨM MỚI',
+          colorOptions: ['#000000', '#8B4513', '#2F4F4F'], // Default colors
+          sizes: ['S', 'M', 'L', 'XL'],
           availableSizes: ['S', 'M', 'L', 'XL'],
-          colorSizeMapping: {
-            '#ff69b4': ['S', 'M', 'L'],
-            '#007bff': ['M', 'L', 'XL'],
-            '#28a745': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 2,
-          name: 'Quần jean nữ skinny',
-          image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          price: 499000,
-          originalPrice: null,
-          discount: null,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#000080', '#000000', '#808080'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-          colorSizeMapping: {
-            '#000080': ['S', 'M', 'L', 'XL'],
-            '#000000': ['M', 'L', 'XL', '2XL'],
-            '#808080': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 3,
-          name: 'Áo sơ mi nữ công sở',
-          image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          price: 399000,
-          originalPrice: 499000,
-          discount: 20,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-          colorOptions: ['#000000', '#ffffff', '#ff69b4'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
           colorSizeMapping: {
             '#000000': ['S', 'M', 'L', 'XL'],
-            '#ffffff': ['M', 'L', 'XL', '2XL'],
-            '#ff69b4': ['L', 'XL', '2XL', '3XL']
-          }
-        },
-        {
-          id: 4,
-          name: 'Váy nữ dạo phố',
-          image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-          price: 299000,
-          originalPrice: null,
-          discount: null,
-          promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-          colorOptions: ['#ff69b4', '#000000', '#ffffff'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['S', 'M', 'L', 'XL'],
-          colorSizeMapping: {
-            '#ff69b4': ['S', 'M', 'L'],
-            '#000000': ['M', 'L', 'XL'],
-            '#ffffff': ['L', 'XL', '2XL']
-          }
-        },
-        {
-          id: 5,
-          name: 'Áo khoác nữ dài tay',
-          image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=500&h=600&fit=crop',
-          hoverImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=500&h=600&fit=crop',
-          price: 699000,
-          originalPrice: 899000,
-          discount: 22,
-          promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-          colorOptions: ['#000000', '#808080', '#8b4513'],
-          sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-          availableSizes: ['L', 'XL', '2XL', '3XL'],
-          colorSizeMapping: {
-            '#000000': ['L', 'XL', '2XL'],
-            '#808080': ['XL', '2XL', '3XL'],
-            '#8b4513': ['2XL', '3XL']
-          }
+            '#8B4513': ['M', 'L', 'XL'],
+            '#2F4F4F': ['L', 'XL'],
+          },
         }
-      ]
+      })
+
+      console.log(`✅ Loaded ${products.value.length} new arrivals from API successfully`)
+    } else {
+      console.warn('❌ API response unsuccessful or empty:', response)
+      products.value = []
     }
   } catch (err) {
-    // Fallback mock data for development
-    console.warn('API error, using mock data for NewArrivals:', err.message)
-    products.value = [
-      {
-        id: 1,
-        name: 'Áo thun nữ mới nhất',
-        image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?w=500&h=600&fit=crop',
-        price: 199000,
-        originalPrice: 299000,
-        discount: 33,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 15%',
-        colorOptions: ['#ff69b4', '#007bff', '#28a745'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL'],
-        colorSizeMapping: {
-          '#ff69b4': ['S', 'M', 'L'],
-          '#007bff': ['M', 'L', 'XL'],
-          '#28a745': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 2,
-        name: 'Quần jean nữ skinny',
-        image: 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        price: 499000,
-        originalPrice: null,
-        discount: null,
-        promotionalBadge: 'TẶNG 01 TẤT THỂ THAO',
-        colorOptions: ['#000080', '#000000', '#808080'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL', '2XL'],
-        colorSizeMapping: {
-          '#000080': ['S', 'M', 'L', 'XL'],
-          '#000000': ['M', 'L', 'XL', '2XL'],
-          '#808080': ['L', 'XL', '2XL']
-        }
-      },
-      {
-        id: 3,
-        name: 'Áo sơ mi nữ công sở',
-        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&h=600&fit=crop',
-        hoverImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=500&h=600&fit=crop',
-        price: 399000,
-        originalPrice: 499000,
-        discount: 20,
-        promotionalBadge: 'MUA 2 GIẢM THÊM 10%',
-        colorOptions: ['#000000', '#ffffff', '#ff69b4'],
-        sizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        availableSizes: ['S', 'M', 'L', 'XL', '2XL', '3XL'],
-        colorSizeMapping: {
-          '#000000': ['S', 'M', 'L', 'XL'],
-          '#ffffff': ['M', 'L', 'XL', '2XL'],
-          '#ff69b4': ['L', 'XL', '2XL', '3XL']
-        }
-      }
-    ]
+    error.value = err.message || 'Lỗi khi tải sản phẩm mới'
+    console.error('❌ Error loading new arrivals from API:', err)
+
+    // Log chi tiết để debug
+    if (err.response) {
+      console.error('Response status:', err.response.status)
+      console.error('Response data:', err.response.data)
+    }
+
+    products.value = []
   } finally {
     loading.value = false
   }
@@ -250,7 +162,7 @@ const scrollProducts = (direction) => {
 // Display 5 products starting from currentIndex
 const displayProducts = computed(() => {
   if (products.value.length === 0) return []
-  
+
   const result = []
   for (let i = 0; i < 5; i++) {
     const index = (currentIndex.value + i) % products.value.length
@@ -402,7 +314,8 @@ watch(products, () => {
 }
 
 /* Carousel Navigation Buttons */
-.prev-btn, .next-btn {
+.prev-btn,
+.next-btn {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
@@ -423,7 +336,8 @@ watch(products, () => {
   justify-content: center;
 }
 
-.prev-btn:hover, .next-btn:hover {
+.prev-btn:hover,
+.next-btn:hover {
   background: #000;
   color: #fff;
 }
@@ -469,8 +383,9 @@ watch(products, () => {
     max-width: calc((100vw - 40px - 20px) / 2);
     min-width: calc((100vw - 40px - 20px) / 2);
   }
-  
-  .prev-btn, .next-btn {
+
+  .prev-btn,
+  .next-btn {
     display: none;
   }
 }
@@ -532,7 +447,7 @@ watch(products, () => {
   .section-title {
     font-size: 2rem;
   }
-  
+
   .section-header {
     margin-bottom: 2rem;
   }
@@ -542,7 +457,7 @@ watch(products, () => {
   .products-grid {
     gap: 16px;
   }
-  
+
   .products-carousel-container {
     padding: 0 20px;
   }
@@ -552,28 +467,28 @@ watch(products, () => {
   .products-grid {
     gap: 14px;
   }
-  
+
   .products-carousel-container {
     padding: 0 15px;
   }
-  
+
   .section-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
     margin-bottom: 2rem;
   }
-  
+
   .btn-view-all {
     position: static;
     margin-top: 1rem;
     align-self: center;
   }
-  
+
   .section-title {
     font-size: 1.75rem;
   }
-  
+
   .new-arrivals-section {
     padding: 2rem 0;
   }

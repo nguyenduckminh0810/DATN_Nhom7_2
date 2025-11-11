@@ -106,6 +106,53 @@ public class SanPhamService {
     return page.map(this::mapToResponse);
   }
 
+  public Page<SanPhamResponse> getPage(String search, Long danhMucId, String sortBy, String sortOrder, String status,
+      Boolean inStock, Pageable pageable) {
+    // Create new pageable with sorting if specified
+    if (sortBy != null && !sortBy.trim().isEmpty()) {
+      org.springframework.data.domain.Sort.Direction direction = "asc".equalsIgnoreCase(sortOrder)
+          ? org.springframework.data.domain.Sort.Direction.ASC
+          : org.springframework.data.domain.Sort.Direction.DESC;
+
+      String sortField = "created_at".equals(sortBy) ? "taoLuc" : sortBy;
+      org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by(direction, sortField);
+      pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+    }
+
+    Page<SanPham> page;
+
+    // Build query conditions
+    if (search != null && !search.trim().isEmpty() && danhMucId != null) {
+      if ("active".equals(status)) {
+        page = sanPhamRepository.findByDanhMuc_IdAndTenContainingIgnoreCaseAndTrangThai(
+            danhMucId, search, "active", pageable);
+      } else {
+        page = sanPhamRepository.findByDanhMuc_IdAndTenContainingIgnoreCaseOrDanhMuc_IdAndMoTaContainingIgnoreCase(
+            danhMucId, search, danhMucId, search, pageable);
+      }
+    } else if (search != null && !search.trim().isEmpty()) {
+      if ("active".equals(status)) {
+        page = sanPhamRepository.findByTenContainingIgnoreCaseAndTrangThai(search, "active", pageable);
+      } else {
+        page = sanPhamRepository.findByTenContainingIgnoreCaseOrMoTaContainingIgnoreCase(search, search, pageable);
+      }
+    } else if (danhMucId != null) {
+      if ("active".equals(status)) {
+        page = sanPhamRepository.findByDanhMuc_IdAndTrangThai(danhMucId, "active", pageable);
+      } else {
+        page = sanPhamRepository.findByDanhMuc_Id(danhMucId, pageable);
+      }
+    } else {
+      if ("active".equals(status)) {
+        page = sanPhamRepository.findByTrangThai("active", pageable);
+      } else {
+        page = sanPhamRepository.findAll(pageable);
+      }
+    }
+
+    return page.map(this::mapToResponse);
+  }
+
   public SanPhamResponse getById(Long id) {
     SanPham sp = sanPhamRepository.findById(id)
         .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại: " + id));
@@ -426,6 +473,32 @@ public class SanPhamService {
       // Fallback: trả về sản phẩm active thông thường
       Page<SanPham> fallbackPage = sanPhamRepository.findAll(
           PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()));
+      return fallbackPage.map(this::mapToResponse);
+    }
+  }
+
+  // Lấy sản phẩm liên quan dựa trên cùng danh mục
+  @Transactional(readOnly = true)
+  public Page<SanPhamResponse> getRelatedProducts(Long productId, Pageable pageable) {
+    try {
+      // Lấy sản phẩm gốc
+      SanPham product = sanPhamRepository.findById(productId)
+          .orElseThrow(() -> new ResourceNotFoundException("Sản phẩm không tồn tại"));
+
+      // Lấy sản phẩm cùng danh mục, trừ sản phẩm hiện tại
+      Page<SanPham> relatedPage = sanPhamRepository.findByDanhMucIdAndIdNotAndTrangThai(
+          product.getDanhMuc().getId(),
+          productId,
+          "active",
+          pageable);
+
+      return relatedPage.map(this::mapToResponse);
+    } catch (Exception e) {
+      System.err.println("Error fetching related products: " + e.getMessage());
+      e.printStackTrace();
+
+      // Fallback: trả về sản phẩm active ngẫu nhiên
+      Page<SanPham> fallbackPage = sanPhamRepository.findByTrangThai("active", pageable);
       return fallbackPage.map(this::mapToResponse);
     }
   }

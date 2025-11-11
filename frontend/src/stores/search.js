@@ -18,7 +18,7 @@ export const useSearchStore = defineStore('search', () => {
     materials: [],
     categories: [],
     sortBy: 'relevance',
-    availability: 'all' // all, inStock, outOfStock
+    availability: 'all', // all, inStock, outOfStock
   })
 
   const isFilterActive = ref(false)
@@ -37,7 +37,7 @@ export const useSearchStore = defineStore('search', () => {
     { name: 'Đỏ', value: 'red', hex: '#FF0000' },
     { name: 'Nâu', value: 'brown', hex: '#8B4513' },
     { name: 'Be', value: 'beige', hex: '#F5F5DC' },
-    { name: 'Kem', value: 'cream', hex: '#FFFDD0' }
+    { name: 'Kem', value: 'cream', hex: '#FFFDD0' },
   ])
 
   const availableMaterials = ref([
@@ -49,7 +49,7 @@ export const useSearchStore = defineStore('search', () => {
     'Silk',
     'Leather',
     'Synthetic',
-    'Blend'
+    'Blend',
   ])
 
   const priceRanges = ref([
@@ -57,7 +57,7 @@ export const useSearchStore = defineStore('search', () => {
     { label: '200k - 500k', min: 200000, max: 500000 },
     { label: '500k - 1M', min: 500000, max: 1000000 },
     { label: '1M - 2M', min: 1000000, max: 2000000 },
-    { label: 'Trên 2M', min: 2000000, max: 5000000 }
+    { label: 'Trên 2M', min: 2000000, max: 5000000 },
   ])
 
   // Mock products data for search
@@ -69,9 +69,11 @@ export const useSearchStore = defineStore('search', () => {
       price: 450000,
       originalPrice: 600000,
       discount: 25,
-      image: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      stock: 50, // Còn hàng
+      image:
+        'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
       category: 'ao',
-      tags: ['áo sơ mi', 'cotton', 'nam', 'cao cấp', 'formal']
+      tags: ['áo sơ mi', 'cotton', 'nam', 'cao cấp', 'formal'],
     },
     {
       id: 2,
@@ -80,42 +82,50 @@ export const useSearchStore = defineStore('search', () => {
       price: 650000,
       originalPrice: 800000,
       discount: 19,
-      image: 'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      stock: 0, // Hết hàng
+      image:
+        'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
       category: 'quan',
-      tags: ['quần âu', 'nam', 'hiện đại', 'formal']
+      tags: ['quần âu', 'nam', 'hiện đại', 'formal'],
     },
     {
       id: 3,
-      name: 'Áo khoác nam',
-      description: 'Áo khoác nam phong cách casual',
-      price: 850000,
-      originalPrice: 1200000,
-      discount: 29,
-      image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-      category: 'ao',
-      tags: ['áo khoác', 'casual', 'nam', 'thời trang']
+      name: 'Váy hoa nữ',
+      description: 'Váy hoa nữ dáng xòe',
+      price: 320000,
+      originalPrice: 400000,
+      discount: 20,
+      stock: 25, // Còn hàng
+      image:
+        'https://images.unsplash.com/photo-1495385794356-15371f348c31?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'vay',
+      tags: ['váy', 'nữ', 'hoa', 'xòe'],
     },
     {
       id: 4,
-      name: 'Áo thun nam',
-      description: 'Áo thun nam chất liệu cotton mềm mại',
-      price: 250000,
-      originalPrice: 350000,
-      discount: 29,
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-      category: 'ao',
-      tags: ['áo thun', 'cotton', 'nam', 'casual', 'mềm mại']
+      name: 'Giày thể thao',
+      description: 'Giày thể thao chạy bộ',
+      price: 1200000,
+      originalPrice: 1500000,
+      discount: 20,
+      stock: 15, // Còn hàng
+      image:
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'giay',
+      tags: ['giày', 'thể thao', 'chạy bộ'],
     },
     {
       id: 5,
-      name: 'Quần jean nam',
-      description: 'Quần jean nam phong cách trẻ trung',
-      price: 550000,
-      originalPrice: 750000,
-      discount: 27,
-      image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
-      category: 'quan',
-      tags: ['quần jean', 'denim', 'nam', 'trẻ trung', 'casual']
+      name: 'Túi xách da',
+      description: 'Túi xách da thật cao cấp',
+      price: 890000,
+      originalPrice: 1100000,
+      discount: 19,
+      stock: 0, // Hết hàng
+      image:
+        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'tui',
+      tags: ['túi xách', 'da', 'cao cấp'],
     },
     {
       id: 6,
@@ -124,9 +134,11 @@ export const useSearchStore = defineStore('search', () => {
       price: 380000,
       originalPrice: 500000,
       discount: 24,
-      image: 'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      stock: 20, // Còn hàng
+      image:
+        'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
       category: 'ao',
-      tags: ['áo polo', 'nam', 'cao cấp', 'casual', 'sport']
+      tags: ['áo polo', 'nam', 'cao cấp', 'casual', 'sport'],
     },
     {
       id: 7,
@@ -135,9 +147,11 @@ export const useSearchStore = defineStore('search', () => {
       price: 320000,
       originalPrice: 420000,
       discount: 24,
-      image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      stock: 0, // Hết hàng
+      image:
+        'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
       category: 'quan',
-      tags: ['quần short', 'nam', 'mùa hè', 'thoải mái', 'casual']
+      tags: ['quần short', 'nam', 'mùa hè', 'thoải mái', 'casual'],
     },
     {
       id: 8,
@@ -146,17 +160,108 @@ export const useSearchStore = defineStore('search', () => {
       price: 680000,
       originalPrice: 850000,
       discount: 20,
-      image: 'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      stock: 30, // Còn hàng
+      image:
+        'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
       category: 'ao',
-      tags: ['áo hoodie', 'streetwear', 'nam', 'thời trang', 'casual']
-    }
+      tags: ['áo hoodie', 'streetwear', 'nam', 'thời trang', 'casual'],
+    },
+    // Các sản phẩm áo khoác da bò mới thêm
+    {
+      id: 9,
+      name: 'Áo khoác da bò cao cấp',
+      description: 'Áo khoác da bò thật 100%, thiết kế classic',
+      price: 2500000,
+      originalPrice: 3200000,
+      discount: 22,
+      stock: 8, // Còn hàng
+      isNew: true, // Sản phẩm mới
+      image:
+        'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'ao',
+      tags: ['áo khoác', 'da bò', 'cao cấp', 'classic', 'leather'],
+    },
+    {
+      id: 10,
+      name: 'Áo khoác da bò vintage',
+      description: 'Áo khoác da bò phong cách vintage retro',
+      price: 2200000,
+      originalPrice: 2800000,
+      discount: 21,
+      stock: 12, // Còn hàng
+      isNew: true, // Sản phẩm mới
+      image:
+        'https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'ao',
+      tags: ['áo khoác', 'da bò', 'vintage', 'retro', 'leather'],
+    },
+    {
+      id: 11,
+      name: 'Áo khoác da bò bomber',
+      description: 'Áo khoác da bò kiểu bomber hiện đại',
+      price: 1800000,
+      originalPrice: 2300000,
+      discount: 22,
+      stock: 15, // Còn hàng
+      isNew: true, // Sản phẩm mới
+      image:
+        'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'ao',
+      tags: ['áo khoác', 'da bò', 'bomber', 'hiện đại', 'leather'],
+    },
+    {
+      id: 12,
+      name: 'Áo khoác da bò racing',
+      description: 'Áo khoác da bò phong cách racing thể thao',
+      price: 2800000,
+      originalPrice: 3500000,
+      discount: 20,
+      stock: 6, // Còn hàng
+      isNew: true, // Sản phẩm mới
+      image:
+        'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'ao',
+      tags: ['áo khoác', 'da bò', 'racing', 'thể thao', 'leather'],
+    },
+    {
+      id: 13,
+      name: 'Áo khoác da bò blazer',
+      description: 'Áo khoác da bò kiểu blazer formal',
+      price: 2600000,
+      originalPrice: 3300000,
+      discount: 21,
+      stock: 10, // Còn hàng
+      isNew: true, // Sản phẩm mới
+      image:
+        'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'ao',
+      tags: ['áo khoác', 'da bò', 'blazer', 'formal', 'leather'],
+    },
+    {
+      id: 14,
+      name: 'Áo khoác da bò biker',
+      description: 'Áo khoác da bò phong cách biker cổ điển',
+      price: 2400000,
+      originalPrice: 3000000,
+      discount: 20,
+      stock: 9, // Còn hàng
+      isNew: true, // Sản phẩm mới
+      image:
+        'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80',
+      category: 'ao',
+      tags: ['áo khoác', 'da bò', 'biker', 'cổ điển', 'leather'],
+    },
   ])
 
   // Getters
   const hasResults = computed(() => searchResults.value.length > 0)
   const resultCount = computed(() => searchResults.value.length)
   const popularSearches = computed(() => [
-    'áo sơ mi', 'quần âu', 'áo khoác', 'áo thun', 'quần jean'
+    'áo sơ mi',
+    'quần âu',
+    'áo khoác',
+    'áo thun',
+    'quần jean',
   ])
 
   // Filter Getters
@@ -178,7 +283,8 @@ export const useSearchStore = defineStore('search', () => {
     if (activeFilters.value.colors.length > 0) count++
     if (activeFilters.value.materials.length > 0) count++
     if (activeFilters.value.categories.length > 0) count++
-    if (activeFilters.value.priceRange.min > 0 || activeFilters.value.priceRange.max < 5000000) count++
+    if (activeFilters.value.priceRange.min > 0 || activeFilters.value.priceRange.max < 5000000)
+      count++
     if (activeFilters.value.availability !== 'all') count++
     return count
   })
@@ -189,13 +295,13 @@ export const useSearchStore = defineStore('search', () => {
    */
   const loadAvailableSizes = async () => {
     if (isLoadingSizes.value) return // Prevent duplicate calls
-    
+
     try {
       isLoadingSizes.value = true
       // api.get() already returns response.data, so we get the data directly
       // Note: api.js baseURL is already '/api', so we just need '/kich-co/ten'
       const data = await api.get('/kich-co/ten')
-      
+
       if (data && Array.isArray(data)) {
         availableSizes.value = data
       } else if (Array.isArray(data.data)) {
@@ -205,7 +311,6 @@ export const useSearchStore = defineStore('search', () => {
         availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
       }
     } catch (error) {
-      
       // Fallback to default sizes
       availableSizes.value = ['S', 'M', 'L', 'XL', '2XL']
     } finally {
@@ -223,15 +328,19 @@ export const useSearchStore = defineStore('search', () => {
     searchQuery.value = query
 
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
-    // Search logic
-    const results = allProducts.value.filter(product => {
+    // Search logic - support both API and mock data formats
+    const results = allProducts.value.filter((product) => {
       const searchTerm = query.toLowerCase()
+      const productName = (product.ten || product.name || '').toLowerCase()
+      const productDesc = (product.moTa || product.description || '').toLowerCase()
+      const productTags = product.tags || []
+
       return (
-        product.name.toLowerCase().includes(searchTerm) ||
-        product.description.toLowerCase().includes(searchTerm) ||
-        product.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+        productName.includes(searchTerm) ||
+        productDesc.includes(searchTerm) ||
+        productTags.some((tag) => tag.toLowerCase().includes(searchTerm))
       )
     })
 
@@ -246,10 +355,10 @@ export const useSearchStore = defineStore('search', () => {
     if (!query.trim()) return
 
     // Remove if already exists
-    const existingIndex = searchHistory.value.findIndex(item => 
-      item.toLowerCase() === query.toLowerCase()
+    const existingIndex = searchHistory.value.findIndex(
+      (item) => item.toLowerCase() === query.toLowerCase(),
     )
-    
+
     if (existingIndex > -1) {
       searchHistory.value.splice(existingIndex, 1)
     }
@@ -294,11 +403,11 @@ export const useSearchStore = defineStore('search', () => {
     const searchTerm = query.toLowerCase()
 
     // Search in product names and tags
-    allProducts.value.forEach(product => {
+    allProducts.value.forEach((product) => {
       if (product.name.toLowerCase().includes(searchTerm)) {
         suggestions.push(product.name)
       }
-      product.tags.forEach(tag => {
+      product.tags.forEach((tag) => {
         if (tag.toLowerCase().includes(searchTerm) && !suggestions.includes(tag)) {
           suggestions.push(tag)
         }
@@ -306,7 +415,7 @@ export const useSearchStore = defineStore('search', () => {
     })
 
     // Search in history
-    searchHistory.value.forEach(item => {
+    searchHistory.value.forEach((item) => {
       if (item.toLowerCase().includes(searchTerm) && !suggestions.includes(item)) {
         suggestions.push(item)
       }
@@ -382,7 +491,7 @@ export const useSearchStore = defineStore('search', () => {
       materials: [],
       categories: [],
       sortBy: 'relevance',
-      availability: 'all'
+      availability: 'all',
     }
     isFilterActive.value = false
   }
@@ -417,18 +526,20 @@ export const useSearchStore = defineStore('search', () => {
       return products
     }
 
-    return products.filter(product => {
+    return products.filter((product) => {
       // Price filter
-      if (product.price < activeFilters.value.priceRange.min || 
-          product.price > activeFilters.value.priceRange.max) {
+      if (
+        product.price < activeFilters.value.priceRange.min ||
+        product.price > activeFilters.value.priceRange.max
+      ) {
         return false
       }
 
       // Size filter
       if (activeFilters.value.sizes.length > 0) {
         const productSizes = product.availableSizes || ['M', 'L', 'XL']
-        const hasMatchingSize = activeFilters.value.sizes.some(size => 
-          productSizes.includes(size)
+        const hasMatchingSize = activeFilters.value.sizes.some((size) =>
+          productSizes.includes(size),
         )
         if (!hasMatchingSize) return false
       }
@@ -436,8 +547,8 @@ export const useSearchStore = defineStore('search', () => {
       // Color filter
       if (activeFilters.value.colors.length > 0) {
         const productColors = product.availableColors || ['black', 'white']
-        const hasMatchingColor = activeFilters.value.colors.some(color => 
-          productColors.includes(color)
+        const hasMatchingColor = activeFilters.value.colors.some((color) =>
+          productColors.includes(color),
         )
         if (!hasMatchingColor) return false
       }
@@ -445,8 +556,8 @@ export const useSearchStore = defineStore('search', () => {
       // Material filter
       if (activeFilters.value.materials.length > 0) {
         const productMaterials = product.materials || ['Cotton']
-        const hasMatchingMaterial = activeFilters.value.materials.some(material => 
-          productMaterials.includes(material)
+        const hasMatchingMaterial = activeFilters.value.materials.some((material) =>
+          productMaterials.includes(material),
         )
         if (!hasMatchingMaterial) return false
       }
@@ -460,7 +571,9 @@ export const useSearchStore = defineStore('search', () => {
 
       // Availability filter
       if (activeFilters.value.availability !== 'all') {
-        const inStock = product.stock > 0
+        // Support both 'stock' (mock data) and 'tonKho' (API data)
+        const stockValue = product.tonKho !== undefined ? product.tonKho : product.stock
+        const inStock = stockValue > 0
         if (activeFilters.value.availability === 'inStock' && !inStock) {
           return false
         }
@@ -476,20 +589,38 @@ export const useSearchStore = defineStore('search', () => {
   // Sort products based on active sort option
   const sortProducts = (products) => {
     const sortedProducts = [...products]
-    
+
     switch (activeFilters.value.sortBy) {
       case 'price-asc':
-        return sortedProducts.sort((a, b) => a.price - b.price)
+        return sortedProducts.sort((a, b) => {
+          const priceA = a.gia !== undefined ? a.gia : a.price
+          const priceB = b.gia !== undefined ? b.gia : b.price
+          return priceA - priceB
+        })
       case 'price-desc':
-        return sortedProducts.sort((a, b) => b.price - a.price)
+        return sortedProducts.sort((a, b) => {
+          const priceA = a.gia !== undefined ? a.gia : a.price
+          const priceB = b.gia !== undefined ? b.gia : b.price
+          return priceB - priceA
+        })
       case 'name-asc':
-        return sortedProducts.sort((a, b) => a.name.localeCompare(b.name))
+        return sortedProducts.sort((a, b) => {
+          const nameA = a.ten || a.name
+          const nameB = b.ten || b.name
+          return nameA.localeCompare(nameB)
+        })
       case 'name-desc':
-        return sortedProducts.sort((a, b) => b.name.localeCompare(a.name))
+        return sortedProducts.sort((a, b) => {
+          const nameA = a.ten || a.name
+          const nameB = b.ten || b.name
+          return nameB.localeCompare(nameA)
+        })
       case 'discount-desc':
         return sortedProducts.sort((a, b) => (b.discount || 0) - (a.discount || 0))
       case 'newest':
-        return sortedProducts.sort((a, b) => new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now()))
+        return sortedProducts.sort(
+          (a, b) => new Date(b.createdAt || Date.now()) - new Date(a.createdAt || Date.now()),
+        )
       case 'popular':
         return sortedProducts.sort((a, b) => (b.sales || 0) - (a.sales || 0))
       default:
@@ -525,7 +656,7 @@ export const useSearchStore = defineStore('search', () => {
   loadSearchHistory()
   loadFilters()
   loadAvailableSizes() // Load sizes from database
-  
+
   // Clear old filter data if needed (for migration)
   const clearOldFilterData = () => {
     const saved = localStorage.getItem('auro_active_filters')
@@ -544,7 +675,7 @@ export const useSearchStore = defineStore('search', () => {
       }
     }
   }
-  
+
   clearOldFilterData()
 
   return {
@@ -597,6 +728,6 @@ export const useSearchStore = defineStore('search', () => {
     sortProducts,
     applyFilters,
     saveFilters,
-    loadFilters
+    loadFilters,
   }
 })
