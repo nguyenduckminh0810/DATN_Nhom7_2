@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -599,6 +600,10 @@ public class DonHangService {
     @Transactional
     public DonHangResponse taoDonHangGuest(String sessionId, GuestCheckoutRequest request,
             Long authenticatedKhachHangId) {
+        System.out.println("=== taoDonHangGuest START ===");
+        System.out.println("SessionId: " + sessionId);
+        System.out.println("AuthenticatedKhachHangId: " + authenticatedKhachHangId);
+        System.out.println("Request maVoucher: '" + request.getMaVoucher() + "'");
         // Xác định KhachHang trước để biết lấy giỏ hàng từ đâu
         KhachHang khachHang;
         GioHang gioHang;
@@ -700,44 +705,103 @@ public class DonHangService {
         // Áp dụng voucher nếu có
         Voucher appliedVoucher = null;
         BigDecimal giamGiaTong = BigDecimal.ZERO;
+        System.out.println("=== VOUCHER PROCESSING START ===");
+        System.out.println("🎫 Checking voucher - maVoucher from request: '" + request.getMaVoucher() + "'");
+        log.info("🎫 Checking voucher - maVoucher from request: '{}'", request.getMaVoucher());
         if (request.getMaVoucher() != null && !request.getMaVoucher().trim().isEmpty()) {
             String code = request.getMaVoucher().trim();
+            System.out.println("🎫 Applying voucher: code=" + code + ", khachHangId=" + authenticatedKhachHangId + ", tamTinh=" + tamTinh);
             log.info("🎫 Applying voucher: code={}, khachHangId={}, tamTinh={}", code, authenticatedKhachHangId, tamTinh);
             try {
                 // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
-                Voucher voucher = voucherRepository.findByMa(code)
-                        .orElseGet(() -> voucherRepository.findByMa(code.toUpperCase())
-                                .orElseGet(() -> voucherRepository.findByMa(code.toLowerCase()).orElse(null)));
+                System.out.println("🔍 Searching for voucher with code: '" + code + "'");
+                log.info("🔍 Searching for voucher with code: '{}'", code);
+                Optional<Voucher> voucherOpt = voucherRepository.findByMa(code);
+                if (voucherOpt.isEmpty()) {
+                    System.out.println("🔍 Not found with original code, trying uppercase: '" + code.toUpperCase() + "'");
+                    log.info("🔍 Not found with original code, trying uppercase: '{}'", code.toUpperCase());
+                    voucherOpt = voucherRepository.findByMa(code.toUpperCase());
+                }
+                if (voucherOpt.isEmpty()) {
+                    System.out.println("🔍 Not found with uppercase, trying lowercase: '" + code.toLowerCase() + "'");
+                    log.info("🔍 Not found with uppercase, trying lowercase: '{}'", code.toLowerCase());
+                    voucherOpt = voucherRepository.findByMa(code.toLowerCase());
+                }
+                if (voucherOpt.isEmpty()) {
+                    System.out.println("⚠️ Voucher code '" + code + "' not found in database after trying all case variations");
+                    log.warn("⚠️ Voucher code '{}' not found in database after trying all case variations", code);
+                }
+                Voucher voucher = voucherOpt.orElse(null);
                 if (voucher != null) {
+                    // Lấy mã voucher từ DB (đảm bảo đúng case)
+                    String voucherMaFromDB = voucher.getMa();
                     String loai = voucher.getLoai();
-                    log.info("🎫 Found voucher: id={}, loai={}, giaTri={}, giamToiDa={}", 
-                            voucher.getId(), loai, voucher.getGiaTri(), voucher.getGiamToiDa());
+                    System.out.println("🎫 Found voucher: id=" + voucher.getId() + ", ma=" + voucherMaFromDB + 
+                            ", loai=" + loai + ", giaTri=" + voucher.getGiaTri() + 
+                            ", giamToiDa=" + voucher.getGiamToiDa() + ", donToiThieu=" + voucher.getDonToiThieu());
+                    log.info("🎫 Found voucher: id={}, ma={}, loai={}, giaTri={}, giamToiDa={}, donToiThieu={}", 
+                            voucher.getId(), voucherMaFromDB, loai, voucher.getGiaTri(), 
+                            voucher.getGiamToiDa(), voucher.getDonToiThieu());
                     if ("FREESHIP".equalsIgnoreCase(loai)) {
                         // Freeship: miễn phí ship
                         phiVanChuyen = BigDecimal.ZERO;
                         appliedVoucher = voucher;
+                        System.out.println("✅ Applied FREESHIP voucher - shipping fee set to 0");
                         log.info("✅ Applied FREESHIP voucher - shipping fee set to 0");
                     } else {
                         // Giảm giá: sử dụng service để tính đúng giamGiaTong
-                        VoucherApplicationResult result = voucherService.applyVoucher(code, authenticatedKhachHangId, tamTinh);
+                        // QUAN TRỌNG: Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request (code)
+                        // để đảm bảo tìm được voucher trong validateVoucher()
+                        System.out.println("🎫 Calling applyVoucher with: voucherMaFromDB=" + voucherMaFromDB + 
+                                ", khachHangId=" + authenticatedKhachHangId + ", tamTinh=" + tamTinh);
+                        log.info("🎫 Calling applyVoucher with: voucherMaFromDB={}, khachHangId={}, tamTinh={}", 
+                                voucherMaFromDB, authenticatedKhachHangId, tamTinh);
+                        VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB, authenticatedKhachHangId, tamTinh);
+                        System.out.println("🎫 Voucher apply result: success=" + result.isSuccess() + 
+                                ", message=" + result.getMessage() + ", giamGia=" + result.getGiamGia());
                         log.info("🎫 Voucher apply result: success={}, message={}, giamGia={}", 
                                 result.isSuccess(), result.getMessage(), result.getGiamGia());
                         if (!result.isSuccess()) {
+                            System.out.println("❌ Voucher apply failed: " + result.getMessage());
                             log.error("❌ Voucher apply failed: {}", result.getMessage());
-                            throw new RuntimeException(result.getMessage());
+                            // QUAN TRỌNG: Throw exception để ngăn chặn đặt hàng khi voucher không hợp lệ
+                            // Đặc biệt là khi voucher đã được sử dụng
+                            throw new RuntimeException("Voucher không hợp lệ: " + result.getMessage());
+                        } else {
+                            giamGiaTong = result.getGiamGia();
+                            appliedVoucher = result.getVoucher();
+                            System.out.println("✅ Applied discount voucher - giamGiaTong=" + giamGiaTong + 
+                                    ", voucherId=" + (appliedVoucher != null ? appliedVoucher.getId() : "null"));
+                            log.info("✅ Applied discount voucher - giamGiaTong={}, voucherId={}", 
+                                    giamGiaTong, appliedVoucher != null ? appliedVoucher.getId() : "null");
                         }
-                        giamGiaTong = result.getGiamGia();
-                        appliedVoucher = result.getVoucher();
-                        log.info("✅ Applied discount voucher - giamGiaTong={}, voucherId={}", giamGiaTong, appliedVoucher != null ? appliedVoucher.getId() : "null");
                     }
                 } else {
-                    log.warn("⚠️ Voucher code {} not found - skipping", code);
+                    System.out.println("⚠️ Voucher code '" + code + "' not found in database - skipping voucher");
+                    log.warn("⚠️ Voucher code '{}' not found in database - skipping voucher", code);
+                    // Voucher không tìm thấy → cho phép đặt hàng tiếp tục (không có giảm giá)
                 }
+            } catch (RuntimeException e) {
+                // Nếu là RuntimeException từ applyVoucher (voucher không hợp lệ, đã sử dụng, etc.)
+                // thì throw ra ngoài để ngăn chặn đặt hàng
+                String errorMsg = e.getMessage();
+                System.out.println("❌ Voucher validation/application failed: " + errorMsg);
+                log.error("❌ Voucher validation/application failed: {}", errorMsg);
+                throw e; // Re-throw để controller có thể catch và trả về error message cho frontend
             } catch (Exception e) {
-                log.error("❌ Apply voucher error: {}", e.getMessage(), e);
+                // Các exception khác (database error, etc.) → log và bỏ qua
+                System.out.println("❌ Apply voucher error (exception caught): " + e.getMessage());
+                e.printStackTrace();
+                log.error("❌ Apply voucher error (exception caught): {}", e.getMessage(), e);
                 // Không throw để cho phép đặt hàng dù voucher fail, nhưng log rõ ràng
+                // giamGiaTong đã được set = 0 ở đầu, không cần làm gì thêm
             }
+        } else {
+            System.out.println("🎫 No voucher code provided in request");
+            log.info("🎫 No voucher code provided in request");
         }
+        System.out.println("💰 Final pricing: tamTinh=" + tamTinh + ", giamGiaTong=" + giamGiaTong + ", phiVanChuyen=" + phiVanChuyen);
+        System.out.println("=== VOUCHER PROCESSING END ===");
         log.info("💰 Final pricing: tamTinh={}, giamGiaTong={}, phiVanChuyen={}", tamTinh, giamGiaTong, phiVanChuyen);
 
         String diaChiSnapshot = String.format(
@@ -841,7 +905,15 @@ public class DonHangService {
             log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}", savedDonHang.getSoDonHang(), e.getMessage());
         }
 
-        return convertToDTO(savedDonHang);
+        // Log trước khi convert để debug
+        log.info("📦 taoDonHangGuest completed - DonHang ID: {}, tamTinh: {}, giamGiaTong: {}, phiVanChuyen: {}, tongThanhToan: {}", 
+                savedDonHang.getId(), savedDonHang.getTamTinh(), savedDonHang.getGiamGiaTong(), 
+                savedDonHang.getPhiVanChuyen(), savedDonHang.getTongThanhToan());
+        
+        DonHangResponse response = convertToDTO(savedDonHang);
+        log.info("📦 Response DTO - tongThanhToan: {}, giamGiaTong: {}", response.getTongThanhToan(), response.getGiamGiaTong());
+        
+        return response;
 
     }
 

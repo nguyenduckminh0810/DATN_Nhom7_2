@@ -34,21 +34,36 @@ public class VoucherService {
 
     // check validate
     public VoucherValidationResult validateVoucher(String maVoucher, Long khachHangId, BigDecimal donHangTong){
-        // Tìm voucher
+        log.info("🔍 validateVoucher: maVoucher={}, khachHangId={}, donHangTong={}", maVoucher, khachHangId, donHangTong);
+        // Tìm voucher, thử không phân biệt hoa/thường nếu không tìm thấy
         Optional<Voucher> voucherOpt = voucherRepository.findByMa(maVoucher);
         if(voucherOpt.isEmpty()) {
+            log.info("🔍 Voucher not found with original code, trying uppercase: '{}'", maVoucher.toUpperCase());
+            voucherOpt = voucherRepository.findByMa(maVoucher.toUpperCase());
+        }
+        if(voucherOpt.isEmpty()) {
+            log.info("🔍 Voucher not found with uppercase, trying lowercase: '{}'", maVoucher.toLowerCase());
+            voucherOpt = voucherRepository.findByMa(maVoucher.toLowerCase());
+        }
+        if(voucherOpt.isEmpty()) {
+            log.warn("⚠️ Voucher not found after trying all case variations: {}", maVoucher);
             return VoucherValidationResult.invalid("Mã voucher không tồn tại");
         }
 
         Voucher voucher = voucherOpt.get();
         LocalDateTime now = LocalDateTime.now();
+        log.info("🔍 Found voucher: id={}, ma={}, loai={}, giaTri={}, batDauLuc={}, ketThucLuc={}, gioiHanSuDung={}, donToiThieu={}", 
+                voucher.getId(), voucher.getMa(), voucher.getLoai(), voucher.getGiaTri(),
+                voucher.getBatDauLuc(), voucher.getKetThucLuc(), voucher.getGioiHanSuDung(), voucher.getDonToiThieu());
 
         //check time hiệu lực
         if (now.isBefore(voucher.getBatDauLuc())) {
+            log.warn("⚠️ Voucher not yet valid: now={}, batDauLuc={}", now, voucher.getBatDauLuc());
             return VoucherValidationResult.invalid("Voucher chưa có hiệu lực");
         }
 
         if(now.isAfter(voucher.getKetThucLuc())) {
+            log.warn("⚠️ Voucher expired: now={}, ketThucLuc={}", now, voucher.getKetThucLuc());
             return VoucherValidationResult.invalid("Voucher đã hết hạn");
         }
 
@@ -56,12 +71,14 @@ public class VoucherService {
         if (voucher.getGioiHanSuDung() != null) {
             Integer limit = voucher.getGioiHanSuDung();
             if (!Integer.valueOf(-1).equals(limit) && limit <= 0) {
+                log.warn("⚠️ Voucher out of stock: gioiHanSuDung={}", limit);
                 return VoucherValidationResult.invalid("Voucher đã hết số lượng");
             }
         }
 
         // check điều kiện đơn hàng
         if(voucher.getDonToiThieu() != null && donHangTong.compareTo(voucher.getDonToiThieu()) < 0) {
+            log.warn("⚠️ Order total too low: donHangTong={}, donToiThieu={}", donHangTong, voucher.getDonToiThieu());
             return VoucherValidationResult.invalid(String.format("Đơn hàng phải tối thiểu %s VNĐ", voucher.getDonToiThieu()));
         }
 
@@ -70,10 +87,14 @@ public class VoucherService {
             VoucherKhachId id = new VoucherKhachId(voucher.getId(), khachHangId);
             Optional<VoucherKhach> voucherKhachOpt = voucherKhachRepository.findById(id);
             if(voucherKhachOpt.isPresent() && "da_dung".equals(voucherKhachOpt.get().getTrangThai())) {
+                log.warn("⚠️ Customer already used voucher: khachHangId={}, voucherId={}", khachHangId, voucher.getId());
                 return VoucherValidationResult.invalid("Bạn đã sử dụng voucher này rồi");
             }
+        } else {
+            log.info("ℹ️ Guest user (khachHangId=null) - skipping usage check");
         }
 
+        log.info("✅ Voucher validation passed");
         return VoucherValidationResult.valid(voucher);
     }
 
@@ -82,20 +103,27 @@ public class VoucherService {
             propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW,
             noRollbackFor = {IllegalArgumentException.class})
     public VoucherApplicationResult applyVoucher(String maVoucher, Long khachHangId, BigDecimal donHangTong, BigDecimal phiVanChuyen) {
+        log.info("🎫 applyVoucher called: maVoucher={}, khachHangId={}, donHangTong={}, phiVanChuyen={}", 
+                maVoucher, khachHangId, donHangTong, phiVanChuyen);
         try {
             // validate voucher
             VoucherValidationResult validation = validateVoucher(maVoucher, khachHangId, donHangTong);
             if(!validation.isValid()) {
+                log.error("❌ Voucher validation failed: {}", validation.getMessage());
                 return VoucherApplicationResult.failed(validation.getMessage());
             }
 
             Voucher voucher = validation.getVoucher();
+            log.info("✅ Voucher validated successfully: id={}, loai={}, giaTri={}", 
+                    voucher.getId(), voucher.getLoai(), voucher.getGiaTri());
 
             // Tính giảm giá
             BigDecimal giamGia;
             try {
                 giamGia = tinhGiamGia(voucher, donHangTong, phiVanChuyen);
+                log.info("💰 Calculated discount: giamGia={}", giamGia);
             } catch (IllegalArgumentException e) {
+                log.error("❌ Error calculating discount: {}", e.getMessage());
                 return VoucherApplicationResult.failed(e.getMessage());
             }
 
@@ -163,7 +191,8 @@ public class VoucherService {
         switch (loai) {
             case "GIAM_PHAN_TRAM":
             case "PHAN_TRAM":
-            case "PERCENT": {
+            case "PERCENT":
+            case "PERCENTAGE": {
                 BigDecimal tyLe = voucher.getGiaTri() != null ? voucher.getGiaTri() : BigDecimal.ZERO;
                 BigDecimal giamGia;
 
@@ -172,17 +201,20 @@ public class VoucherService {
                     return BigDecimal.ZERO;
                 }
 
-                if (tyLe.compareTo(BigDecimal.ONE) <= 0) {
-                    // Lưu giá trị dạng 0.1 = 10%
-                    giamGia = donHangTong.multiply(tyLe);
-                    log.info("💰 tinhGiamGia: tyLe <= 1, giamGia = donHangTong * tyLe = {} * {} = {}", donHangTong, tyLe, giamGia);
+                if (tyLe.compareTo(BigDecimal.ONE) <= 0 && tyLe.compareTo(BigDecimal.ZERO) > 0) {
+                    if (tyLe.compareTo(BigDecimal.ONE) == 0) {
+                        giamGia = donHangTong.multiply(tyLe)
+                                .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+                        log.info("💰 tinhGiamGia: tyLe = 1, treating as 1%, giamGia = donHangTong * 1 / 100 = {} * 1 / 100 = {}", donHangTong, giamGia);
+                    } else {
+                        giamGia = donHangTong.multiply(tyLe);
+                        log.info("💰 tinhGiamGia: tyLe < 1 ({}), treating as direct ratio, giamGia = donHangTong * tyLe = {} * {} = {}", tyLe, donHangTong, tyLe, giamGia);
+                    }
                 } else {
                     giamGia = donHangTong.multiply(tyLe)
                             .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-                    log.info("💰 tinhGiamGia: tyLe > 1, giamGia = donHangTong * tyLe / 100 = {} * {} / 100 = {}", donHangTong, tyLe, giamGia);
+                    log.info("💰 tinhGiamGia: tyLe > 1 ({}), treating as percentage, giamGia = donHangTong * tyLe / 100 = {} * {} / 100 = {}", tyLe, donHangTong, tyLe, giamGia);
                 }
-
-                // check giảm tối đa nếu có
                 if (voucher.getGiamToiDa() != null
                         && voucher.getGiamToiDa().compareTo(BigDecimal.ZERO) > 0
                         && giamGia.compareTo(voucher.getGiamToiDa()) > 0) {
@@ -190,7 +222,6 @@ public class VoucherService {
                     giamGia = voucher.getGiamToiDa();
                 }
 
-                // check không vượt quá tổng tiền
                 if (giamGia.compareTo(donHangTong) > 0) {
                     log.info("💰 tinhGiamGia: capping giamGia from {} to donHangTong={}", giamGia, donHangTong);
                     giamGia = donHangTong;
@@ -203,7 +234,6 @@ public class VoucherService {
             case "SO_TIEN":
             case "AMOUNT": {
                 BigDecimal giamGia = voucher.getGiaTri() != null ? voucher.getGiaTri() : BigDecimal.ZERO;
-
                 // check không vượt quá tổng tiền
                 if (giamGia.compareTo(donHangTong) > 0) {
                     log.info("💰 tinhGiamGia: capping giamGia from {} to donHangTong={}", giamGia, donHangTong);

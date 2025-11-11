@@ -441,10 +441,13 @@ const handleCheckout = async () => {
 
     let response
 
-    // Xác định đã đăng nhập hay chưa dựa vào token
     if (token && isAuthenticated.value) {
-      // Sử dụng guest checkout format cho cả user đã đăng nhập
-      // Backend sẽ tự động map user từ token (auth parameter trong controller)
+      const maVoucherValue = selectedVoucher.value?.ma || manualVoucherCode.value || null
+      console.log('🎫 FE - Voucher info:', {
+        selectedVoucher: selectedVoucher.value,
+        manualVoucherCode: manualVoucherCode.value,
+        maVoucher: maVoucherValue
+      })
       const orderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -455,7 +458,7 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        maVoucher: maVoucherValue,
         // Thêm thông tin GHN để tính phí ship (nếu có)
         districtId: shipping?.selectedDistrict?.value || null,
         wardCode: shipping?.selectedWard?.value || null,
@@ -474,6 +477,12 @@ const handleCheckout = async () => {
       }
     } else {
       // Guest checkout (không có token)
+      const maVoucherValue = selectedVoucher.value?.ma || manualVoucherCode.value || null
+      console.log('🎫 FE - Voucher info (guest):', {
+        selectedVoucher: selectedVoucher.value,
+        manualVoucherCode: manualVoucherCode.value,
+        maVoucher: maVoucherValue
+      })
       const guestOrderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -484,7 +493,7 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        maVoucher: maVoucherValue,
         // Thêm thông tin GHN để tính phí ship (nếu có)
         districtId: shipping?.selectedDistrict?.value || null,
         wardCode: shipping?.selectedWard?.value || null,
@@ -589,18 +598,28 @@ await clearCart()
     
     let errorMessage = 'Có lỗi xảy ra khi đặt hàng'
     
+    // Ưu tiên lấy message từ error object (api.js handleError trả về { message, status, data })
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error.data?.message) {
+      errorMessage = error.data.message
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    }
+    
+    // Xử lý các status code đặc biệt
     if (error.status === 403) {
       errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
     } else if (error.status === 401) {
       errorMessage = 'Bạn cần đăng nhập để đặt hàng'
-    } else if (error.message) {
-      errorMessage = error.message
-    } else if (error.data?.message) {
-      errorMessage = error.data.message
     }
     
+    // Hiển thị thông báo lỗi cho user
     if (window.$toast) {
       window.$toast.error(errorMessage, 'Đặt hàng thất bại')
+    } else {
+      // Fallback nếu không có toast
+      alert(errorMessage)
     }
   } finally {
     isProcessing.value = false
