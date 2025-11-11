@@ -163,18 +163,22 @@
                           height="60"
                           style="object-fit: cover"
                         />
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1 me-3">
                           <h6 class="mb-1 small">{{ item.name }}</h6>
-                          <small class="text-muted">
-                            <span v-if="item.selectedSize">Size: {{ item.selectedSize }}</span>
-                            <span v-if="item.selectedSize && item.selectedColor">, </span>
-                            <span v-if="item.selectedColor">Màu: {{ item.selectedColor }}</span>
+                          <small class="text-muted" v-if="item.kichCoTen || item.mauSacTen">
+                            <span v-if="item.kichCoTen">Size: {{ item.kichCoTen }}</span>
+                            <span v-if="item.kichCoTen && item.mauSacTen">, </span>
+                            <span v-if="item.mauSacTen">Màu: {{ item.mauSacTen }}</span>
                           </small>
                         </div>
-                        <div class="text-end">
-                          <small class="text-muted">x{{ item.quantity }}</small>
-                          <div class="small fw-bold">
-                            {{ formatPrice(item.price * item.quantity) }}
+                        <div class="order-item__price text-end me-3">
+                          <small class="text-muted d-block">Đơn giá</small>
+                          <span class="fw-semibold">{{ formatPrice(item.price) }}</span>
+                        </div>
+                        <div class="order-item__total text-end">
+                          <small class="text-muted d-block">Số lượng: x{{ item.quantity }}</small>
+                          <div class="small fw-bold text-nowrap">
+                            {{ formatPrice(item.subtotal) }}
                           </div>
                         </div>
                       </div>
@@ -202,7 +206,9 @@
                       <hr class="my-2" />
                       <div class="d-flex justify-content-between">
                         <strong>Tổng cộng:</strong>
-                        <strong class="text-warning">{{ formatPrice(order.total) }}</strong>
+                        <strong class="text-warning">
+                          {{ formatPrice(computeOrderTotal(order)) }}
+                        </strong>
                       </div>
                     </div>
                   </div>
@@ -467,6 +473,13 @@ const calculateOrderTotal = (subtotal, shipping, discount) => {
   return total > 0 ? total : 0
 }
 
+const computeOrderTotal = (order) => {
+  if (!order) {
+    return 0
+  }
+  return calculateOrderTotal(order.subtotal, order.shippingFee, order.discount)
+}
+
 const getStatusCount = (statusCode) => {
   if (statusCode === 'ALL') {
     return orders.value.length
@@ -708,40 +721,22 @@ const fetchOrders = async () => {
     // Map backend data to frontend structure
     orders.value = orderData.map((order) => {
       const statusInfo = normalizeOrderStatus(order.trangThai)
-      const subtotal = order.tamTinh || 0
-      const shippingFee = order.phiVanChuyen || 0
-      const discount = order.giamGiaTong || 0
-      const total =
-        order.tongThanhToan != null
-          ? parseAmount(order.tongThanhToan)
-          : calculateOrderTotal(subtotal, shippingFee, discount)
 
-      return {
-        id: order.id,
-        orderNumber: order.soDonHang || `ORD${order.id}`,
-        orderDate: order.taoLuc || order.createdAt,
-        status: statusInfo.code,
-        statusLabel: statusInfo.label,
-        statusClass: statusInfo.badgeClass,
-        rawStatus: order.trangThai,
-        subtotal,
-        shippingFee,
-        discount,
-        total,
-        paymentStatus: order.paymentStatus,
-        paymentMethod: order.paymentMethod,
-        shippingSnapshot: order.diaChiGiaoSnapshot || order.diaChiGiao || '',
-        shippingNote: order.ghiChu || '',
-        items:
-          order.chiTietList?.map((item) => ({
+      const items =
+        order.chiTietList?.map((item) => {
+          const unitPrice = parseAmount(item.donGia)
+          const quantity = parseAmount(item.soLuong || 1)
+          const lineTotal = unitPrice * quantity
+
+          return {
             id: item.id,
             name: item.tenSanPham || 'Sản phẩm',
             image:
               item.hinhAnh ||
               'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
-            price: item.donGia || 0,
-            quantity: item.soLuong || 1,
-            subtotal: item.thanhTien || 0,
+            price: unitPrice,
+            quantity,
+            subtotal: lineTotal,
             bienTheId: item.bienTheId || null,
             sanPhamId: item.sanPhamId || null,
             mauSacId: item.mauSacId || null,
@@ -752,7 +747,31 @@ const fetchOrders = async () => {
             reviewRating: item.danhGiaSoSao || 0,
             reviewComment: item.danhGiaNoiDung || '',
             reviewCreatedAt: item.danhGiaTaoLuc || null,
-          })) || [],
+          }
+        }) || []
+
+      const computedSubtotal = items.reduce((sum, item) => sum + parseAmount(item.subtotal), 0)
+      const shippingFee = parseAmount(order.phiVanChuyen)
+      const discount = parseAmount(order.giamGiaTong)
+      const total = calculateOrderTotal(computedSubtotal, shippingFee, discount)
+
+      return {
+        id: order.id,
+        orderNumber: order.soDonHang || `ORD${order.id}`,
+        orderDate: order.taoLuc || order.createdAt,
+        status: statusInfo.code,
+        statusLabel: statusInfo.label,
+        statusClass: statusInfo.badgeClass,
+        rawStatus: order.trangThai,
+        subtotal: computedSubtotal,
+        shippingFee,
+        discount,
+        total,
+        paymentStatus: order.paymentStatus,
+        paymentMethod: order.paymentMethod,
+        shippingSnapshot: order.diaChiGiaoSnapshot || order.diaChiGiao || '',
+        shippingNote: order.ghiChu || '',
+        items,
       }
     })
 
@@ -917,6 +936,15 @@ onMounted(async () => {
   border-bottom: none;
 }
 
+.order-item__price,
+.order-item__total {
+  min-width: 120px;
+}
+
+.order-item__total .small {
+  font-size: 0.9rem;
+}
+
 .breadcrumb {
   background: none;
   padding: 0;
@@ -951,6 +979,11 @@ onMounted(async () => {
   .status-tabs__button {
     flex: 1 1 calc(50% - 0.5rem);
     min-width: 120px;
+  }
+
+  .order-item__price,
+  .order-item__total {
+    min-width: auto;
   }
 }
 </style>

@@ -73,17 +73,23 @@
                         class="img-fluid rounded"
                       />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                       <h6 class="mb-1">{{ item.tenSanPham }}</h6>
-                      <p class="text-muted small mb-0">
+                      <p class="text-muted small mb-0" v-if="item.moTaBienThe || buildVariantText(item)">
                         {{ item.moTaBienThe || buildVariantText(item) }}
                       </p>
                     </div>
                     <div class="col-md-2 text-center">
-                      <span class="text-muted">x{{ item.soLuong }}</span>
+                      <div class="text-muted small">Đơn giá</div>
+                      <strong>{{ formatPrice(item.donGia) }}</strong>
+                    </div>
+                    <div class="col-md-1 text-center">
+                      <div class="text-muted small">SL</div>
+                      <strong>x{{ item.soLuong }}</strong>
                     </div>
                     <div class="col-md-2 text-end">
-                      <strong>{{ formatPrice(item.donGia * item.soLuong) }}</strong>
+                      <div class="text-muted small">Thành tiền</div>
+                      <strong>{{ formatPrice(item.lineTotal || item.donGia * item.soLuong) }}</strong>
                     </div>
                   </div>
 
@@ -205,7 +211,14 @@
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                   <span>Phí vận chuyển:</span>
-                  <strong>{{ formatPrice(order.tongThanhToan - order.tamTinh) }}</strong>
+                  <strong>{{ formatPrice(order.phiVanChuyen) }}</strong>
+                </div>
+                <div
+                  v-if="order.giamGiaTong > 0"
+                  class="d-flex justify-content-between mb-2 text-success"
+                >
+                  <span>Giảm giá:</span>
+                  <strong>-{{ formatPrice(order.giamGiaTong) }}</strong>
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between">
@@ -277,10 +290,24 @@ const fetchOrderDetail = async () => {
 
     console.log('Order detail response:', response)
 
-    const mappedItems = (orderData?.chiTietList || []).map((item) => ({
-      ...item,
-      moTaBienThe: item.moTaBienThe || createVariantText(item),
-    }))
+    const mappedItems = (orderData?.chiTietList || []).map((item) => {
+      const unitPrice = parseAmount(item.donGia)
+      const quantity = parseAmount(item.soLuong || 1)
+      const lineTotal = unitPrice * quantity
+
+      return {
+        ...item,
+        donGia: unitPrice,
+        soLuong: quantity,
+        lineTotal,
+        moTaBienThe: item.moTaBienThe || createVariantText(item),
+      }
+    })
+
+    const subtotal = mappedItems.reduce((sum, item) => sum + parseAmount(item.lineTotal), 0)
+    const shippingFee = parseAmount(orderData?.phiVanChuyen)
+    const discount = parseAmount(orderData?.giamGiaTong)
+    const total = subtotal - discount + shippingFee
 
     order.value = {
       ...orderData,
@@ -289,6 +316,10 @@ const fetchOrderDetail = async () => {
       statusLabel: statusInfo.label,
       statusClass: statusInfo.badgeClass,
       chiTietList: mappedItems,
+      tamTinh: subtotal,
+      phiVanChuyen: shippingFee,
+      giamGiaTong: discount,
+      tongThanhToan: total,
     }
     
   } catch (err) {
@@ -297,6 +328,11 @@ const fetchOrderDetail = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const parseAmount = (value) => {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : 0
 }
 
 const cancelOrder = async () => {
@@ -437,6 +473,10 @@ const getPaymentStatusText = (status) => {
 
 .order-item:last-child {
   border-bottom: none;
+}
+
+.order-item .text-muted.small {
+  display: block;
 }
 
 .order-item__review {
