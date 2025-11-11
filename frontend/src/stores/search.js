@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '../services/api'
+import colorService from '../services/colorService'
 
 export const useSearchStore = defineStore('search', () => {
   // Search State
@@ -27,18 +28,9 @@ export const useSearchStore = defineStore('search', () => {
   const availableSizes = ref([])
   const isLoadingSizes = ref(false)
 
-  const availableColors = ref([
-    { name: 'Đen', value: 'black', hex: '#000000' },
-    { name: 'Trắng', value: 'white', hex: '#FFFFFF' },
-    { name: 'Xám', value: 'gray', hex: '#808080' },
-    { name: 'Xanh navy', value: 'navy', hex: '#000080' },
-    { name: 'Xanh dương', value: 'blue', hex: '#0066CC' },
-    { name: 'Xanh lá', value: 'green', hex: '#008000' },
-    { name: 'Đỏ', value: 'red', hex: '#FF0000' },
-    { name: 'Nâu', value: 'brown', hex: '#8B4513' },
-    { name: 'Be', value: 'beige', hex: '#F5F5DC' },
-    { name: 'Kem', value: 'cream', hex: '#FFFDD0' },
-  ])
+  // Colors will be loaded from database
+  const availableColors = ref([])
+  const isLoadingColors = ref(false)
 
   const availableMaterials = ref([
     'Cotton',
@@ -290,6 +282,51 @@ export const useSearchStore = defineStore('search', () => {
   })
 
   // Actions
+  /**
+   * Load available colors from database
+   */
+  const loadAvailableColors = async () => {
+    if (isLoadingColors.value) return
+
+    try {
+      isLoadingColors.value = true
+      console.log('🎨 Loading colors from database...')
+
+      const response = await colorService.getAll()
+      console.log('📡 Raw API response:', response)
+      
+      // Handle different response structures
+      let colors = []
+      if (Array.isArray(response)) {
+        colors = response
+      } else if (response && Array.isArray(response.data)) {
+        colors = response.data
+      } else if (response && response.data) {
+        colors = [response.data]
+      }
+
+      if (colors.length > 0) {
+        // Map database colors to filter format
+        availableColors.value = colors.map(color => ({
+          name: color.ten,        // Tên màu từ DB (tiếng Việt)
+          value: color.ten,       // Giá trị để filter (giống tên)
+          hex: color.ma || '#000000' // Mã màu hex từ DB
+        }))
+        
+        console.log('🎨 Loaded colors from database:', availableColors.value)
+      } else {
+        console.warn('⚠️ No colors found in response')
+        availableColors.value = []
+      }
+    } catch (error) {
+      console.error('❌ Error loading colors from database:', error)
+      // Fallback to empty array
+      availableColors.value = []
+    } finally {
+      isLoadingColors.value = false
+    }
+  }
+
   /**
    * Load available sizes and colors from products with variants
    */
@@ -684,7 +721,9 @@ export const useSearchStore = defineStore('search', () => {
   // Initialize
   loadSearchHistory()
   loadFilters()
-  loadAvailableSizes() // Load sizes from database
+  // Don't auto-load colors/sizes here - let components trigger it
+  // loadAvailableSizes() // Load sizes from database
+  // loadAvailableColors() // Load colors from database
 
   // Clear old filter data if needed (for migration)
   const clearOldFilterData = () => {
@@ -722,6 +761,7 @@ export const useSearchStore = defineStore('search', () => {
     availableSizes,
     isLoadingSizes,
     availableColors,
+    isLoadingColors,
     availableMaterials,
     priceRanges,
 
@@ -736,6 +776,7 @@ export const useSearchStore = defineStore('search', () => {
 
     // Search Actions
     loadAvailableSizes,
+    loadAvailableColors,
     searchProducts,
     addToSearchHistory,
     loadSearchHistory,

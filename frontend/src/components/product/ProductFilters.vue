@@ -121,33 +121,6 @@
       </div>
     </div>
 
-    <!-- Material Filter -->
-    <div class="filter-section mb-4">
-      <h6 class="filter-title">
-        <i class="bi bi-grid-3x3-gap me-2"></i>Chất liệu
-        <button
-          v-if="activeFilters.materials.length > 0"
-          class="btn btn-sm btn-link p-0 ms-2"
-          @click="clearFilter('materials')"
-        >
-          <i class="bi bi-x"></i>
-        </button>
-      </h6>
-      <div class="material-list">
-        <div v-for="material in availableMaterials" :key="material" class="form-check">
-          <input
-            class="form-check-input"
-            type="checkbox"
-            :id="`material-${material}`"
-            :checked="activeFilters.materials.includes(material)"
-            @change="toggleMaterial(material)"
-          />
-          <label class="form-check-label" :for="`material-${material}`">
-            {{ material }}
-          </label>
-        </div>
-      </div>
-    </div>
 
     <!-- Availability Filter -->
     <div class="filter-section mb-4">
@@ -219,9 +192,12 @@ import { useSearchStore } from '../../stores/search'
 const searchStore = useSearchStore()
 
 // Load sizes when component mounts
-onMounted(() => {
-  console.log('🔄 ProductFilters mounted, loading sizes...')
-  searchStore.loadAvailableSizes()
+onMounted(async () => {
+  console.log('🔄 ProductFilters mounted, loading sizes and colors...')
+  await searchStore.loadAvailableColors()
+  await searchStore.loadAvailableSizes()
+  console.log('✅ Loaded colors:', searchStore.availableColors)
+  console.log('✅ Loaded sizes:', searchStore.availableSizes)
 })
 
 // Local state
@@ -231,8 +207,14 @@ const priceRange = ref({ min: 0, max: 5000000 })
 const activeFilters = computed(() => searchStore.activeFilters)
 const hasActiveFilters = computed(() => searchStore.hasActiveFilters)
 const activeFiltersCount = computed(() => searchStore.activeFiltersCount)
-const availableSizes = computed(() => searchStore.availableSizes)
-const availableColors = computed(() => searchStore.availableColors)
+const availableSizes = computed(() => {
+  console.log('📊 availableSizes computed:', searchStore.availableSizes)
+  return searchStore.availableSizes
+})
+const availableColors = computed(() => {
+  console.log('🎨 availableColors computed:', searchStore.availableColors)
+  return searchStore.availableColors
+})
 const availableMaterials = computed(() => searchStore.availableMaterials)
 const priceRanges = computed(() => searchStore.priceRanges)
 

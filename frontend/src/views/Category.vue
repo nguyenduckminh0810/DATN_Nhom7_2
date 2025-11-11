@@ -223,76 +223,74 @@ const filteredProducts = computed(() => {
         }
 
         // Size filter (check variants)
+        // Logic: Product must have ALL selected sizes (not just one)
         if (filters.sizes.length > 0 && product.bienThes) {
-          const hasMatchingSize = product.bienThes.some(
-            (bt) => filters.sizes.includes(bt.kichThuoc) && bt.tonKho > 0,
+          // Get all available sizes from variants with stock
+          const availableSizes = product.bienThes
+            .filter(bt => bt.tonKho > 0)
+            .map(bt => bt.kichThuoc)
+          
+          // Check if product has ALL selected sizes
+          const hasAllSelectedSizes = filters.sizes.every(selectedSize => 
+            availableSizes.includes(selectedSize)
           )
 
           // Debug log for ALL products with size filtering
           console.log(`Size filter for "${product.ten}":`, {
             activeFilterSizes: filters.sizes,
-            hasVariants: !!product.bienThes,
-            variants: product.bienThes
-              ? product.bienThes.map((bt) => ({
-                  size: bt.kichThuoc,
-                  stock: bt.tonKho,
-                  isRequestedSize: filters.sizes.includes(bt.kichThuoc),
-                  hasStock: bt.tonKho > 0,
-                  matches: filters.sizes.includes(bt.kichThuoc) && bt.tonKho > 0,
-                }))
-              : 'no variants',
-            hasMatchingSize,
-            willPass: hasMatchingSize,
+            availableSizes,
+            hasAllSelectedSizes,
+            variants: product.bienThes.map((bt) => ({
+              size: bt.kichThuoc,
+              stock: bt.tonKho,
+              isRequestedSize: filters.sizes.includes(bt.kichThuoc),
+              hasStock: bt.tonKho > 0,
+            })),
+            willPass: hasAllSelectedSizes,
           })
 
-          if (!hasMatchingSize) {
+          if (!hasAllSelectedSizes) {
             return false
           }
         }
 
         // Color filter (check variants)
+        // Logic: Product must have ALL selected colors (not just one)
         if (filters.colors.length > 0 && product.bienThes) {
-          // Debug: Log active color filters
-          console.log('🎨 Active color filters:', filters.colors)
+          // Get all available colors from variants with stock (using Vietnamese names directly)
+          const availableColors = product.bienThes
+            .filter(bt => bt.tonKho > 0)
+            .map(bt => bt.mauSac?.trim()) // Just trim whitespace, keep Vietnamese name
+            .filter(color => color) // Remove null/undefined
+          
+          // Remove duplicates from available colors
+          const uniqueAvailableColors = [...new Set(availableColors)]
+          
+          // Check if product has ALL selected colors (direct comparison)
+          const hasAllSelectedColors = filters.colors.every(selectedColor => 
+            uniqueAvailableColors.includes(selectedColor)
+          )
 
-          // Create color mapping from Vietnamese to English values
-          const colorMapping = {
-            Đen: 'black',
-            Trắng: 'white',
-            Xám: 'gray',
-            'Xanh navy': 'navy',
-            'Xanh dương': 'blue',
-            'Xanh lá': 'green',
-            Đỏ: 'red',
-            Nâu: 'brown',
-            Be: 'beige',
-            Kem: 'cream',
-          }
-
-          const hasMatchingColor = product.bienThes.some((bt) => {
-            const mappedColor = colorMapping[bt.mauSac] || bt.mauSac.toLowerCase()
-            return filters.colors.includes(mappedColor) && bt.tonKho > 0
+          // DETAILED Debug log for ALL products with color filtering
+          console.log(`🎨 Color filter for "${product.ten}":`)
+          console.log(`   ✅ Selected colors:`, filters.colors)
+          console.log(`   📦 Available colors:`, uniqueAvailableColors)
+          console.log(`   🔍 Checking each selected color:`)
+          filters.colors.forEach(selectedColor => {
+            const found = uniqueAvailableColors.includes(selectedColor)
+            console.log(`      - "${selectedColor}": ${found ? '✅ FOUND' : '❌ NOT FOUND'}`)
           })
+          console.log(`   ⚖️  Has all selected colors: ${hasAllSelectedColors ? '✅ YES' : '❌ NO'}`)
+          console.log(`   🎯 Will pass filter: ${hasAllSelectedColors ? '✅ YES' : '❌ NO'}`)
+          console.log(`   📋 Variants detail:`, product.bienThes.map((bt) => ({
+            originalColor: bt.mauSac,
+            trimmedColor: bt.mauSac?.trim(),
+            stock: bt.tonKho,
+            hasStock: bt.tonKho > 0,
+          })))
+          console.log('---')
 
-          // Debug log for color filtering
-          if (product.ten && (product.ten.includes('khoác') || product.ten.includes('hihi'))) {
-            console.log(`🎨 Color filter debug for "${product.ten}":`, {
-              activeFilterColors: filters.colors,
-              productVariantColors: product.bienThes.map((bt) => bt.mauSac),
-              colorMapping,
-              hasMatchingColor,
-              variants: product.bienThes.map((bt) => ({
-                originalColor: bt.mauSac,
-                mappedColor: colorMapping[bt.mauSac] || bt.mauSac.toLowerCase(),
-                stock: bt.tonKho,
-                matches:
-                  filters.colors.includes(colorMapping[bt.mauSac] || bt.mauSac.toLowerCase()) &&
-                  bt.tonKho > 0,
-              })),
-            })
-          }
-
-          if (!hasMatchingColor) {
+          if (!hasAllSelectedColors) {
             return false
           }
         }
