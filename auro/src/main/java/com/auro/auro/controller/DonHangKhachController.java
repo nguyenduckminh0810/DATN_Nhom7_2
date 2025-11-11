@@ -150,7 +150,6 @@ public class DonHangKhachController {
         }
     }
 
-
     @PostMapping("/guest-checkout")
     public ResponseEntity<?> guestCheckout(@RequestBody GuestCheckoutRequest request,
             HttpServletRequest httpRequest,
@@ -164,7 +163,8 @@ public class DonHangKhachController {
             System.out.println("Authenticated khachHangId: " + khachHangId);
 
             // Tạo đơn và nhận lại thông tin để FE có id/tổng tiền cho VNPay
-            com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request, khachHangId);
+            com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request,
+                    khachHangId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "Đặt hàng thành công! Kiểm tra email xác nhận (nếu có).");

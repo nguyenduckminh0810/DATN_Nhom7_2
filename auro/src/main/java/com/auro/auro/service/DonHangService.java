@@ -22,6 +22,8 @@ import com.auro.auro.dto.response.DonHangResponse;
 import com.auro.auro.model.DanhGiaSanPham;
 import com.auro.auro.model.DonHang;
 import com.auro.auro.model.DonHangChiTiet;
+import com.auro.auro.model.GioHang;
+import com.auro.auro.model.GioHangChiTiet;
 import com.auro.auro.repository.DonHangChiTietRepository;
 import com.auro.auro.repository.DonHangRepository;
 import com.auro.auro.model.*;
@@ -34,9 +36,6 @@ import org.springframework.data.domain.PageRequest;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import com.auro.auro.service.VoucherService;
-import com.auro.auro.service.VoucherValidationResult;
-import com.auro.auro.service.VoucherApplicationResult;
 
 @Service
 @RequiredArgsConstructor
@@ -139,7 +138,7 @@ public class DonHangService {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
 
-        //TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
+        // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
         String trangThaiMoi = donHang.getTrangThai();
         if (!"Đang giao".equals(trangThaiCu) && "Đang giao".equals(trangThaiMoi)) {
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
@@ -387,31 +386,31 @@ public class DonHangService {
         Voucher voucherFreeShip = null;
 
         // check guest không thể dùng vc
-        if(request.getVoucherId() != null || request.getFreeshipVoucherId() != null) {
-            if(khachHangId == null) {
+        if (request.getVoucherId() != null || request.getFreeshipVoucherId() != null) {
+            if (khachHangId == null) {
                 throw new RuntimeException("Bạn phải đăng nhập để sử dụng voucher");
             }
         }
 
         // vc giảm giá
-        if(request.getVoucherId() != null) {
+        if (request.getVoucherId() != null) {
             voucherGiamGia = voucherRepository.findById(request.getVoucherId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
             VoucherValidationResult validation = voucherService.validateVoucher(
                     voucherGiamGia.getMa(), khachHangId, tamTinh);
 
-            if(!validation.isValid()) {
+            if (!validation.isValid()) {
                 throw new RuntimeException(validation.getMessage());
             }
-            
+
             // check loại voucher
             String loai = voucherGiamGia.getLoai();
             if ("FREESHIP".equals(loai)) {
                 throw new RuntimeException("Voucher freeship phải được áp dụng riêng");
             }
-            if (!"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) && 
-                !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
-                !"percent".equals(loai) && !"so_tien".equals(loai)) {
+            if (!"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) &&
+                    !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
+                    !"percent".equals(loai) && !"so_tien".equals(loai)) {
                 throw new RuntimeException("Loại voucher không hợp lệ cho giảm giá: " + loai);
             }
 
@@ -419,10 +418,10 @@ public class DonHangService {
             VoucherApplicationResult result = voucherService.applyVoucher(
                     voucherGiamGia.getMa(), khachHangId, tamTinh);
 
-            if(!result.isSuccess()) {
+            if (!result.isSuccess()) {
                 throw new RuntimeException(result.getMessage());
             }
-            
+
             // Lấy giảm giá và voucher từ result
             giamGiaTong = result.getGiamGia();
             voucherGiamGia = result.getVoucher();
@@ -436,11 +435,11 @@ public class DonHangService {
                     voucherFreeShip.getMa(),
                     khachHangId,
                     tamTinh);
-            
+
             if (!validation.isValid()) {
                 throw new RuntimeException(validation.getMessage());
             }
-            
+
             // check loại voucher phải là FREESHIP
             if (!"FREESHIP".equals(voucherFreeShip.getLoai())) {
                 throw new RuntimeException("Voucher này không phải voucher freeship");
@@ -451,11 +450,11 @@ public class DonHangService {
                     voucherFreeShip.getMa(),
                     khachHangId,
                     tamTinh);
-    
+
             if (!result.isSuccess()) {
                 throw new RuntimeException(result.getMessage());
             }
-    
+
             voucherFreeShip = result.getVoucher();
         }
 

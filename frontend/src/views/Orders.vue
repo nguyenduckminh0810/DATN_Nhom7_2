@@ -228,11 +228,19 @@
                       </button>
 
                       <button
-                        v-if="['DELIVERED', 'COMPLETED'].includes(order.status)"
-                        class="btn btn-outline-success btn-sm"
+                        v-if="['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(order.status)"
+                        class="btn btn-outline-success btn-sm d-flex align-items-center"
+                        :disabled="isOrderReordering(order.id)"
                         @click="reorder(order)"
                       >
-                        <i class="bi bi-arrow-repeat me-1"></i>Mua lại
+                        <span
+                          v-if="isOrderReordering(order.id)"
+                          class="spinner-border spinner-border-sm me-1"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                        <i v-else class="bi bi-arrow-repeat me-1"></i>
+                        {{ isOrderReordering(order.id) ? 'Đang thêm...' : 'Mua lại' }}
                       </button>
 
                       <button
@@ -347,6 +355,7 @@ import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import orderService from '@/services/orderService'
+import { useReorder } from '@/composables/useReorder'
 import {
   ORDER_STATUS_FOR_CUSTOMER,
   normalizeOrderStatus,
@@ -359,6 +368,7 @@ defineOptions({
 
 const router = useRouter()
 const userStore = useUserStore()
+const { reorderOrder, isOrderReordering } = useReorder()
 
 // Reactive data
 const statusTabs = ORDER_STATUS_FOR_CUSTOMER.slice().sort(
@@ -519,6 +529,8 @@ const cancelOrder = async (order) => {
     loading.value = false
   }
 }
+
+const reorder = (order) => reorderOrder(order)
 
 const prepareRatingOptions = (order) => {
   ratingItemOptions.value = order.items.map((item) => ({
@@ -718,6 +730,8 @@ const fetchOrders = async () => {
         total,
         paymentStatus: order.paymentStatus,
         paymentMethod: order.paymentMethod,
+        shippingSnapshot: order.diaChiGiaoSnapshot || order.diaChiGiao || '',
+        shippingNote: order.ghiChu || '',
         items:
           order.chiTietList?.map((item) => ({
             id: item.id,

@@ -231,6 +231,9 @@ import { useCart } from '@/composables/useCart'
 import { useUserStore } from '@/stores/user'
 import addressService from '@/services/addressService'
 
+const REORDER_STORAGE_KEY = 'auro_reorder_shipping'
+const MAX_REORDER_STORAGE_AGE = 1000 * 60 * 30
+
 // Get user store
 const userStore = useUserStore()
 
@@ -265,7 +268,15 @@ console.log('✅ useShipping initialized. Provinces:', provinces.value.length)
 // Initialize cart composable with fallback
 const cart = useCart()
 const items = computed(() => cart?.items?.value || [])
-const total = computed(() => cart?.total?.value || 0)
+const total = computed(() => {
+  if (cart?.totalPrice?.value != null) {
+    return cart.totalPrice.value
+  }
+  if (cart?.total?.value != null) {
+    return cart.total.value
+  }
+  return 0
+})
 
 // Shipping info form data - Inject từ parent Cart.vue
 const shippingFormData = inject('shippingFormData', null)
@@ -285,6 +296,7 @@ const shippingInfo =
 const savedAddresses = ref([])
 const selectedAddressId = ref(null)
 const loadingAddresses = ref(false)
+const reorderPrefilled = ref(false)
 
 // Load saved addresses for authenticated users
 const loadSavedAddresses = async () => {
@@ -311,11 +323,12 @@ const loadSavedAddresses = async () => {
 
       console.log('✅ Loaded saved addresses:', savedAddresses.value.length)
 
-      // Auto-select default address if exists
-      const defaultAddress = savedAddresses.value.find((addr) => addr.macDinh)
-      if (defaultAddress) {
-        console.log('🎯 Auto-selecting default address:', defaultAddress.hoTen)
-        await selectAddress(defaultAddress)
+      if (!reorderPrefilled.value) {
+        const defaultAddress = savedAddresses.value.find((addr) => addr.macDinh)
+        if (defaultAddress) {
+          console.log('🎯 Auto-selecting default address:', defaultAddress.hoTen)
+          await selectAddress(defaultAddress)
+        }
       }
     } else {
       // Tài khoản không phải khách hàng (Admin/Staff)
@@ -467,6 +480,123 @@ const formatWeight = (grams) => {
   return `${grams}g`
 }
 
+const loadReorderPayload = () => {
+  try {
+    const raw = localStorage.getItem(REORDER_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+    const payload = JSON.parse(raw)
+    if (!payload || typeof payload !== 'object' || !payload.shipping) {
+      localStorage.removeItem(REORDER_STORAGE_KEY)
+      return null
+    }
+    if (payload.createdAt && Date.now() - payload.createdAt > MAX_REORDER_STORAGE_AGE) {
+      localStorage.removeItem(REORDER_STORAGE_KEY)
+      return null
+    }
+    return payload
+  } catch (error) {
+    console.error('❌ [SHIPPING FORM] Không thể đọc dữ liệu mua lại:', error)
+    localStorage.removeItem(REORDER_STORAGE_KEY)
+    return null
+  }
+}
+
+const applyReorderShippingIfNeeded = async () => {
+  const payload = loadReorderPayload()
+  if (!payload?.shipping) {
+    return
+  }
+
+  const shipping = payload.shipping
+  reorderPrefilled.value = true
+  selectedAddressId.value = null
+
+  if (shippingInfo.value) {
+    if (shipping.fullName) {
+      shippingInfo.value.fullName = shipping.fullName
+    }
+    if (shipping.phone) {
+      shippingInfo.value.phone = shipping.phone
+    }
+    if (shipping.email) {
+      shippingInfo.value.email = shipping.email
+    }
+    if (shipping.addressLine) {
+      shippingInfo.value.address = shipping.addressLine
+    }
+    if (shipping.note) {
+      shippingInfo.value.notes = shipping.note
+    }
+  }
+
+  let provinceMatched = false
+  if (shipping.provinceName) {
+    const province = addressService.findProvinceInGHN(shipping.provinceName, provinces.value)
+    if (province) {
+      selectedProvince.value = province.ProvinceID
+      if (shippingInfo.value) {
+        shippingInfo.value.province = province.ProvinceName
+        shippingInfo.value.provinceId = province.ProvinceID
+      }
+      await loadDistricts(province.ProvinceID, true)
+      provinceMatched = true
+    }
+  }
+
+  let districtMatched = false
+  if (provinceMatched && shipping.districtName) {
+    const district = addressService.findDistrictInGHN(shipping.districtName, districts.value)
+    if (district) {
+      selectedDistrict.value = district.DistrictID
+      if (shippingInfo.value) {
+        shippingInfo.value.district = district.DistrictName
+        shippingInfo.value.districtId = district.DistrictID
+      }
+      await loadWards(district.DistrictID, true)
+      await loadServices(district.DistrictID)
+      districtMatched = true
+    }
+  }
+
+  if (districtMatched && shipping.wardName) {
+    const ward = addressService.findWardInGHN(shipping.wardName, wards.value)
+    if (ward) {
+      selectedWard.value = ward.WardCode
+      if (shippingInfo.value) {
+        shippingInfo.value.ward = ward.WardName
+        shippingInfo.value.wardCode = ward.WardCode
+      }
+    }
+  }
+
+  if (selectedDistrict.value) {
+    try {
+      await loadServices(selectedDistrict.value)
+    } catch (error) {
+      console.error('❌ [SHIPPING FORM] Lỗi load dịch vụ giao hàng khi mua lại:', error)
+    }
+  }
+
+  if (selectedWard.value && selectedDistrict.value) {
+    try {
+      await calculateShippingFee({
+        totalWeight: totalWeight.value,
+        insuranceValue: total.value,
+      })
+    } catch (error) {
+      console.error('❌ [SHIPPING FORM] Lỗi tính phí vận chuyển khi mua lại:', error)
+    }
+  }
+
+  localStorage.removeItem(REORDER_STORAGE_KEY)
+
+  if (window.$toast) {
+    window.$toast.success('Đã điền sẵn thông tin giao hàng từ đơn hàng trước', 'Mua lại')
+  }
+}
+
 const onProvinceChange = async () => {
   if (selectedProvince.value) {
     await loadDistricts(selectedProvince.value)
@@ -565,13 +695,15 @@ onMounted(async () => {
   try {
     await loadProvinces()
 
+    await applyReorderShippingIfNeeded()
+
     // Load saved addresses for authenticated users
     if (userStore.isAuthenticated) {
       await loadSavedAddresses()
     }
 
     // Auto-fill user information if authenticated (only if no saved address selected)
-    if (userStore.isAuthenticated && !selectedAddressId.value) {
+    if (userStore.isAuthenticated && !selectedAddressId.value && !reorderPrefilled.value) {
       console.log('🔑 User authenticated, auto-filling shipping info...')
 
       // Only fill if fields are empty (don't overwrite existing data)
@@ -591,7 +723,11 @@ onMounted(async () => {
         phone: shippingInfo.value.phone,
       })
     } else {
-      console.log('ℹ️ User not authenticated, skipping auto-fill')
+      if (reorderPrefilled.value) {
+        console.log('ℹ️ Đã áp dụng thông tin giao hàng từ đơn mua lại, bỏ qua auto-fill mặc định')
+      } else {
+        console.log('ℹ️ User not authenticated, skipping auto-fill')
+      }
     }
 
     console.log('✅ ShippingForm mounted successfully')
