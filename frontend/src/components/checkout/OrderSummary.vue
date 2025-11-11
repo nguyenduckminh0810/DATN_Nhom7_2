@@ -155,7 +155,7 @@ const discountAmount = computed(() => {
   
   // Nếu có voucher được chọn từ list
   if (selectedVoucher.value) {
-    const { loai, giaTri, donToiThieu } = selectedVoucher.value
+    const { loai, giaTri, donToiThieu, giamToiDa } = selectedVoucher.value
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
     if (subtotal.value < (donToiThieu || 0)) {
@@ -163,12 +163,15 @@ const discountAmount = computed(() => {
     }
     
     let discount = 0
-    if (loai === 'percent' || loai === 'PHAN_TRAM') {
+    const loaiUc = String(loai || '').toUpperCase()
+    if (loaiUc === 'PERCENT' || loaiUc === 'PHAN_TRAM' || loaiUc === 'GIAM_PHAN_TRAM') {
       discount = Math.floor(subtotal.value * giaTri / 100)
-    } else if (loai === 'fixed' || loai === 'SO_TIEN') {
+    } else if (loaiUc === 'FIXED' || loaiUc === 'SO_TIEN' || loaiUc === 'GIAM_SO_TIEN') {
       discount = Math.min(giaTri, subtotal.value) 
-    } else if (loai === 'freeship') {
-      discount = Math.min(30000, subtotal.value)
+    } else if (loaiUc === 'FREESHIP') {
+      const ship = Number(shippingFee.value || 0)
+      const cap = giamToiDa != null && Number(giamToiDa) > 0 ? Number(giamToiDa) : ship
+      discount = Math.min(ship, cap, subtotal.value)
     }
     
     return discount
@@ -176,7 +179,7 @@ const discountAmount = computed(() => {
   
   // Nếu có voucher manual và đã được validate
   if (manualVoucherCode.value && manualVoucherCode.value.trim() && selectedVoucher.value) {
-    const { loai, giaTri, donToiThieu } = selectedVoucher.value
+    const { loai, giaTri, donToiThieu, giamToiDa } = selectedVoucher.value
     
     // Kiểm tra điều kiện đơn hàng tối thiểu
     if (subtotal.value < (donToiThieu || 0)) {
@@ -184,12 +187,15 @@ const discountAmount = computed(() => {
     }
     
     let discount = 0
-    if (loai === 'percent' || loai === 'PHAN_TRAM') {
+    const loaiUc = String(loai || '').toUpperCase()
+    if (loaiUc === 'PERCENT' || loaiUc === 'PHAN_TRAM' || loaiUc === 'GIAM_PHAN_TRAM') {
       discount = Math.floor(subtotal.value * giaTri / 100)
-    } else if (loai === 'fixed' || loai === 'SO_TIEN') {
+    } else if (loaiUc === 'FIXED' || loaiUc === 'SO_TIEN' || loaiUc === 'GIAM_SO_TIEN') {
       discount = Math.min(giaTri, subtotal.value)
-    } else if (loai === 'freeship') {
-      discount = Math.min(30000, subtotal.value) // Giả sử phí ship là 30k
+    } else if (loaiUc === 'FREESHIP') {
+      const ship = Number(shippingFee.value || 0)
+      const cap = giamToiDa != null && Number(giamToiDa) > 0 ? Number(giamToiDa) : ship
+      discount = Math.min(ship, cap, subtotal.value)
     }
     
     return discount
@@ -435,10 +441,13 @@ const handleCheckout = async () => {
 
     let response
 
-    // Xác định đã đăng nhập hay chưa dựa vào token
     if (token && isAuthenticated.value) {
-      // Sử dụng guest checkout format cho cả user đã đăng nhập
-      // Backend sẽ tự động map user từ token (auth parameter trong controller)
+      const maVoucherValue = selectedVoucher.value?.ma || manualVoucherCode.value || null
+      console.log('🎫 FE - Voucher info:', {
+        selectedVoucher: selectedVoucher.value,
+        manualVoucherCode: manualVoucherCode.value,
+        maVoucher: maVoucherValue
+      })
       const orderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -449,7 +458,7 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        maVoucher: maVoucherValue,
         // Thêm thông tin GHN để tính phí ship (nếu có)
         districtId: shipping?.selectedDistrict?.value || null,
         wardCode: shipping?.selectedWard?.value || null,
@@ -468,6 +477,12 @@ const handleCheckout = async () => {
       }
     } else {
       // Guest checkout (không có token)
+      const maVoucherValue = selectedVoucher.value?.ma || manualVoucherCode.value || null
+      console.log('🎫 FE - Voucher info (guest):', {
+        selectedVoucher: selectedVoucher.value,
+        manualVoucherCode: manualVoucherCode.value,
+        maVoucher: maVoucherValue
+      })
       const guestOrderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -478,7 +493,7 @@ const handleCheckout = async () => {
         tinhThanh: shippingFormData.value.province || '',
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
-        maVoucher: selectedVoucher.value?.ma || manualVoucherCode.value || null,
+        maVoucher: maVoucherValue,
         // Thêm thông tin GHN để tính phí ship (nếu có)
         districtId: shipping?.selectedDistrict?.value || null,
         wardCode: shipping?.selectedWard?.value || null,
@@ -538,7 +553,8 @@ if ((selectedPaymentMethod.value || '').toString().toUpperCase() === 'VNPAY') {
   try {
     const pay = await paymentService.taoUrlThanhToan({
       donHangId,
-      soTien: Number(tongThanhToan || 0),
+      // Ưu tiên số tiền từ backend (đã trừ voucher, phí ship), fallback UI
+      soTien: Number(tongThanhToan || finalTotal.value || 0),
       moTa: `Thanh toán đơn hàng #${donHangId}`
     })
 
@@ -582,18 +598,28 @@ await clearCart()
     
     let errorMessage = 'Có lỗi xảy ra khi đặt hàng'
     
+    // Ưu tiên lấy message từ error object (api.js handleError trả về { message, status, data })
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error.data?.message) {
+      errorMessage = error.data.message
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message
+    }
+    
+    // Xử lý các status code đặc biệt
     if (error.status === 403) {
       errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!'
     } else if (error.status === 401) {
       errorMessage = 'Bạn cần đăng nhập để đặt hàng'
-    } else if (error.message) {
-      errorMessage = error.message
-    } else if (error.data?.message) {
-      errorMessage = error.data.message
     }
     
+    // Hiển thị thông báo lỗi cho user
     if (window.$toast) {
       window.$toast.error(errorMessage, 'Đặt hàng thất bại')
+    } else {
+      // Fallback nếu không có toast
+      alert(errorMessage)
     }
   } finally {
     isProcessing.value = false

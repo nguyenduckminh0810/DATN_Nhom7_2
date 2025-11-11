@@ -518,6 +518,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import apiService from '@/services/api'
+import { useUserStore } from '@/stores/user'
 
 // Reactive data
 const searchQuery = ref('')
@@ -551,6 +552,7 @@ const promotionForm = ref({
 const promotions = ref([])
 const loading = ref(false)
 const error = ref(null)
+const { isAdmin } = useUserStore()
 
 // Computed
 const activePromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'active'))
@@ -904,13 +906,30 @@ const loadVouchers = async () => {
   try {
     loading.value = true
     error.value = null
-    const response = await apiService.adminVoucher.getAll()
+    let response
+    if (isAdmin?.value) {
+      response = await apiService.adminVoucher.getAll()
+    } else {
+      response = await apiService.voucher.getAvailable()
+    }
     console.log('Loaded vouchers from API:', response.data)
     promotions.value = response.data || []
     console.log('Promotions array after load:', promotions.value)
   } catch (err) {
-    error.value = 'Không thể tải danh sách voucher'
-    console.error('Lỗi khi tải voucher:', err)
+    // Fallback nếu 403 từ admin API
+    if (err?.status === 403) {
+      try {
+        const res = await apiService.voucher.getAvailable()
+        promotions.value = res.data || []
+        error.value = null
+      } catch (e2) {
+        error.value = 'Không thể tải danh sách voucher'
+        console.error('Lỗi khi tải voucher (fallback):', e2)
+      }
+    } else {
+      error.value = 'Không thể tải danh sách voucher'
+      console.error('Lỗi khi tải voucher:', err)
+    }
   } finally {
     loading.value = false
   }

@@ -37,6 +37,9 @@ public class GuestCheckoutRequest {
 
     private String ghiChu;
 
+    // Mã voucher (giảm giá hoặc freeship) từ FE
+    private String maVoucher;
+
     public GuestCheckoutRequest() {
     }
 
@@ -148,6 +151,14 @@ public class GuestCheckoutRequest {
 
     public void setServiceId(Integer serviceId) {
         this.serviceId = serviceId;
+    }
+
+    public String getMaVoucher() {
+        return maVoucher;
+    }
+
+    public void setMaVoucher(String maVoucher) {
+        this.maVoucher = maVoucher;
     }
 
 }

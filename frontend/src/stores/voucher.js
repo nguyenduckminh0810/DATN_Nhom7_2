@@ -29,12 +29,13 @@ export function useVoucher() {
   }
 
   // Function để kiểm tra voucher
-  const checkVoucher = async (code, khachHangId, donHangTong) => {
+  const checkVoucher = async (code, khachHangId, donHangTong, phiVanChuyen) => {
     try {
       const response = await apiService.voucher.kiemTra({
         maVoucher: code,
         khachHangId: khachHangId,
-        donHangTong: donHangTong
+        donHangTong: donHangTong,
+        phiVanChuyen: phiVanChuyen
       })
       
       if (response.success) {
@@ -49,12 +50,13 @@ export function useVoucher() {
   }
 
   // Function để áp dụng voucher
-  const applyVoucherToOrder = async (code, khachHangId, donHangTong) => {
+  const applyVoucherToOrder = async (code, khachHangId, donHangTong, phiVanChuyen) => {
     try {
       const response = await apiService.voucher.apDung({
         maVoucher: code,
         khachHangId: khachHangId,
-        donHangTong: donHangTong
+        donHangTong: donHangTong,
+        phiVanChuyen: phiVanChuyen
       })
       
       if (response.success) {
@@ -106,7 +108,7 @@ export function useVoucher() {
   }
 
   // Function để áp dụng voucher manual
-  const applyVoucher = async (khachHangId, donHangTong) => {
+  const applyVoucher = async (khachHangId, donHangTong, phiVanChuyen) => {
     if (!manualVoucherCode.value.trim()) {
       voucherMessage.value = {
         type: 'error',
@@ -117,7 +119,7 @@ export function useVoucher() {
 
     try {
       loading.value = true
-      const result = await checkVoucher(manualVoucherCode.value, khachHangId, donHangTong)
+      const result = await checkVoucher(manualVoucherCode.value, khachHangId, donHangTong, phiVanChuyen)
       
       if (result.success) {
         selectedVoucher.value = result.data

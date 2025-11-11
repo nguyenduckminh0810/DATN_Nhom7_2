@@ -34,21 +34,16 @@ export function validateToken(token) {
     // Check if authorities have proper format
     const hasValidAuthority = payload.authorities.some(auth => {
       // Authority should be an object with "authority" property
-      if (!auth || typeof auth !== 'object') {
-        return false
-      }
+      if (!auth || typeof auth !== 'object' || !auth.authority) return false
 
-      // Authority property should start with "ROLE_"
-      if (!auth.authority || !auth.authority.startsWith('ROLE_')) {
+      const value = String(auth.authority).toUpperCase()
+      const validWithRole = ['ROLE_CUS', 'ROLE_STF', 'ROLE_ADM', 'ROLE_GST']
+      const validPlain    = ['CUS', 'STF', 'ADM', 'GST']
+      
+      if (!(validWithRole.includes(value) || validPlain.includes(value))) {
         return false
       }
       
-      // Check if it's one of the supported roles
-      const supportedRoles = ['ROLE_CUS', 'ROLE_STF', 'ROLE_ADM', 'ROLE_GST']
-      if (!supportedRoles.includes(auth.authority)) {
-        
-      }
-
       return true
     })
 
