@@ -126,6 +126,33 @@ class ProductService {
       }
     }
   }
+
+  // Lấy sản phẩm mới - sản phẩm có trạng thái hoạt động và còn hàng
+  async getNewArrivals(params = {}) {
+    try {
+      const queryParams = {
+        ...params,
+        sortBy: 'created_at',
+        sortOrder: 'desc',
+        status: 'active',
+        inStock: true,
+        limit: params.limit || 10,
+      }
+
+      const response = await apiService.products.getAll(queryParams)
+      return {
+        success: true,
+        data: response.data || response,
+        message: 'Lấy sản phẩm mới thành công',
+      }
+    } catch (error) {
+      return {
+        success: false,
+        data: null,
+        message: error.message || 'Lỗi khi lấy sản phẩm mới',
+      }
+    }
+  }
 }
 
 const productService = new ProductService()

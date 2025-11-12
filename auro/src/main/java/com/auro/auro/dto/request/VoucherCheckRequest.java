@@ -15,4 +15,5 @@ public class VoucherCheckRequest {
 
     @NotNull(message = "Tổng đơn hàng không được để trống")
     private BigDecimal donHangTong;
+    private BigDecimal phiVanChuyen;
 }

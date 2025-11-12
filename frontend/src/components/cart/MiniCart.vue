@@ -228,14 +228,13 @@ const clearAllItems = async () => {
   z-index: 1050;
   display: flex;
   justify-content: flex-end;
-  padding-top: 80px; /* Account for navbar height */
 }
 
 .mini-cart-container {
   background: white;
   width: 100%;
   max-width: 400px;
-  height: calc(100vh - 80px);
+  height: calc(110vh - 80px);
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);

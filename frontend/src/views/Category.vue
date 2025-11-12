@@ -25,7 +25,7 @@
           </div>
         </div>
       </div>
-<p class="text-muted fs-5">{{ totalElements }} sản phẩm</p>
+      <p class="text-muted fs-5">{{ totalElements }} sản phẩm</p>
 
       <div class="row">
         <!-- Sidebar Filters -->
@@ -35,116 +35,12 @@
 
         <!-- Products Grid -->
         <div class="col-lg-9">
-          <!-- Sort and View Options -->
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <div class="d-flex align-items-center gap-3">
-              <span class="text-muted fw-medium">Sắp xếp theo:</span>
-              <select v-model="searchStore.activeFilters.sortBy" class="form-select modern-select">
-                <option value="relevance">Độ liên quan</option>
-                <option value="price-asc">Giá tăng dần</option>
-                <option value="price-desc">Giá giảm dần</option>
-                <option value="name-asc">Tên A-Z</option>
-                <option value="name-desc">Tên Z-A</option>
-                <option value="discount-desc">Giảm giá cao nhất</option>
-                <option value="newest">Mới nhất</option>
-                <option value="popular">Phổ biến nhất</option>
-              </select>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-              <button @click="viewMode = 'grid'" :class="['btn btn-sm modern-view-btn', viewMode === 'grid' ? 'btn-warning' : 'btn-outline-secondary']">
-                <i class="bi bi-grid-3x3-gap"></i>
-              </button>
-              <button @click="viewMode = 'list'" :class="['btn btn-sm modern-view-btn', viewMode === 'list' ? 'btn-warning' : 'btn-outline-secondary']">
-                <i class="bi bi-list"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Loading State -->
-          <div v-if="isLoading" :class="['row', viewMode === 'list' ? 'g-3' : 'g-4']">
-            <div 
-              v-for="n in 12" 
-              :key="`skeleton-${n}`" 
-              :class="viewMode === 'list' ? 'col-12' : 'col-md-6 col-lg-4'"
-            >
-              <SkeletonLoader variant="product" />
-            </div>
-          </div>
-
-          <!-- Error State -->
-          <div v-else-if="error" class="col-12">
-            <div class="alert alert-danger text-center">
-              <i class="bi bi-exclamation-triangle-fill me-2"></i>{{ error }}
-              <button 
-                @click="route.params.slug ? fetchProductsByCategory(route.params.slug) : fetchAllProducts()" 
-                class="btn btn-sm btn-outline-danger ms-3"
-              >
-                <i class="bi bi-arrow-clockwise me-1"></i>Thử lại
-              </button>
-            </div>
-          </div>
-          
-          <!-- Products -->
-          <div v-else-if="filteredProducts.length > 0" :class="['row', viewMode === 'list' ? 'g-3' : 'g-4']">
-            <div v-for="product in filteredProducts" :key="product.id" 
-                 :class="viewMode === 'list' ? 'col-12' : 'col-md-6 col-lg-4'">
-              <ProductCard
-                :id="product.id"
-                :name="product.name || product.ten"
-                :img="product.anhDaiDien"
-                :priceNow="product.price || product.gia"
-                :priceOld="product.originalPrice || product.giaGoc"
-                :discount="product.discount || product.giamGia"
-                :promotionalBadge="product.promotionalBadge"
-                :colorOptions="product.colorOptions || product.mauSac"
-                :sizes="product.sizes || product.kichCo"
-                :availableSizes="product.availableSizes || []"
-                :stock="product.stock || product.tonKho"
-                :bienThes="product.bienThes || []"
-              />
-            </div>
-          </div>
-
-          <!-- No Products -->
-          <div v-else class="text-center py-5">
-            <div class="empty-state">
-              <div class="empty-state-icon">
-                <i class="bi bi-search"></i>
-              </div>
-              <h3 class="empty-state-title">Không tìm thấy sản phẩm</h3>
-              <p class="empty-state-description">
-                Chúng tôi không tìm thấy sản phẩm nào phù hợp với tiêu chí của bạn.<br>
-                Hãy thử điều chỉnh bộ lọc hoặc xem các sản phẩm khác.
-              </p>
-              <div class="empty-state-actions">
-                <button @click="clearFilters" class="btn btn-primary btn-lg">
-                  <i class="bi bi-funnel me-2"></i>Xóa bộ lọc
-                </button>
-                <router-link to="/" class="btn btn-outline-secondary btn-lg ms-3">
-                  <i class="bi bi-house me-2"></i>Về trang chủ
-                </router-link>
-              </div>
-            </div>
-          </div>
-
-          <!-- Pagination -->
-          <nav v-if="totalPages > 1" class="mt-5">
-            <ul class="pagination justify-content-center modern-pagination">
-              <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                <button class="page-link" @click="changePage(currentPage - 1)">
-                  <i class="bi bi-chevron-left"></i>
-                </button>
-              </li>
-              <li v-for="page in visiblePages" :key="page" class="page-item" :class="{ active: page === currentPage }">
-                <button class="page-link" @click="changePage(page)">{{ page }}</button>
-              </li>
-              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                <button class="page-link" @click="changePage(currentPage + 1)">
-                  <i class="bi bi-chevron-right"></i>
-                </button>
-              </li>
-            </ul>
-          </nav>
+          <!-- Products Grid with Filters -->
+          <ProductGrid
+            :products="filteredProducts"
+            :loading="isLoading"
+            @clear-filters="clearFilters"
+          />
         </div>
       </div>
     </div>
@@ -154,40 +50,38 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
 
 import ProductFilters from '../components/product/ProductFilters.vue'
-import ProductCard from '../components/product/ProductCard.vue'
-import SkeletonLoader from '../components/common/SkeletonLoader.vue'
+import ProductGrid from '../components/product/ProductGrid.vue'
 import { useSearchStore } from '../stores/search'
-import { useCartStore } from '../stores/cart'
 import sanPhamService from '@/services/sanPhamService'
 const route = useRoute()
 const searchStore = useSearchStore()
-const cartStore = useCartStore()
 
 // ======= STATE =======
-const products = ref([])                // data trang hiện tại
+const products = ref([]) // data trang hiện tại
 const categoryName = ref('')
 const isLoading = ref(true)
 const error = ref(null)
-const viewMode = ref('grid')
+// const viewMode = ref('grid') // Removed - handled by ProductGrid
 
 // server-side pagination
-const currentPage = ref(1)              // UI hiển thị 1-based
+const currentPage = ref(1) // UI hiển thị 1-based
 const itemsPerPage = 12
 const totalPages = ref(0)
 const totalElements = ref(0)
 
-
 // ======= HELPERS =======
 const toTitle = (slug) =>
-  (slug || '').split('-').map(w => w.toUpperCase()).join(' ')
+  (slug || '')
+    .split('-')
+    .map((w) => w.toUpperCase())
+    .join(' ')
 
 const buildParams = () => {
   const params = {
-    page: Math.max(currentPage.value - 1, 0),  // BE 0-based
-    size: itemsPerPage
+    page: Math.max(currentPage.value - 1, 0), // BE 0-based
+    size: itemsPerPage,
   }
   // nếu bạn có ô search/filters riêng, có thể truyền thêm ở đây:
   if (searchStore?.keyword && searchStore.keyword.trim()) {
@@ -198,7 +92,8 @@ const buildParams = () => {
 
 // ======= API CALLS =======
 const fetchProductsByCategory = async (slug) => {
-  isLoading.value = true; error.value = null
+  isLoading.value = true
+  error.value = null
   try {
     // lấy response thô (có thể là axios response hoặc service wrapper)
     const resp = await sanPhamService.getByCategorySlug(slug, { params: buildParams() })
@@ -218,14 +113,17 @@ const fetchProductsByCategory = async (slug) => {
   } catch (e) {
     console.error('fetchProductsByCategory error', e)
     error.value = e?.response?.data?.message || e?.message || 'Không thể tải sản phẩm theo danh mục'
-    products.value = []; totalPages.value = 0; totalElements.value = 0
+    products.value = []
+    totalPages.value = 0
+    totalElements.value = 0
   } finally {
     isLoading.value = false
   }
 }
 
 const fetchAllProducts = async () => {
-  isLoading.value = true; error.value = null
+  isLoading.value = true
+  error.value = null
   try {
     categoryName.value = 'TẤT CẢ SẢN PHẨM'
     const resp = await sanPhamService.page(buildParams())
@@ -242,39 +140,214 @@ const fetchAllProducts = async () => {
   } catch (e) {
     console.error('fetchAllProducts error', e)
     error.value = e?.response?.data?.message || e?.message || 'Có lỗi xảy ra từ server'
-    products.value = []; totalPages.value = 0; totalElements.value = 0
+    products.value = []
+    totalPages.value = 0
+    totalElements.value = 0
   } finally {
     isLoading.value = false
   }
 }
 
 // ======= COMPUTED =======
-// Nếu muốn áp bộ lọc FE trên trang hiện tại, giữ lại; nếu không thì return products.value
+// Áp dụng bộ lọc trên sản phẩm từ API
 const filteredProducts = computed(() => {
   try {
-    // Get base products list
+    // Get base products list from API
     let productList = products.value
-    
-    // Áp bộ lọc trong trang hiện tại (nếu cần)
-    if (searchStore?.applyFilters) {
-      productList = searchStore.applyFilters(productList)
+
+    // Apply filters directly here instead of using searchStore
+    if (searchStore?.activeFilters) {
+      const filters = searchStore.activeFilters
+
+      productList = productList.filter((product) => {
+        // Price filter
+        if (filters.priceRange.min > 0 || filters.priceRange.max > 0) {
+          const price = product.gia || product.price || 0
+          if (filters.priceRange.min > 0 && price < filters.priceRange.min) {
+            console.log(
+              `❌ "${product.ten}" filtered out by price (${price} < ${filters.priceRange.min})`,
+            )
+            return false
+          }
+          if (filters.priceRange.max > 0 && price > filters.priceRange.max) {
+            console.log(
+              `❌ "${product.ten}" filtered out by price (${price} > ${filters.priceRange.max})`,
+            )
+            return false
+          }
+        }
+
+        // Availability filter - support both tonKho (API) and stock (mock)
+        if (filters.availability !== 'all') {
+          let stockValue
+          let inStock
+
+          // If product has variants, check variants stock instead of product stock
+          if (product.bienThes && Array.isArray(product.bienThes)) {
+            // Sum up stock from all variants
+            const totalVariantStock = product.bienThes.reduce(
+              (sum, variant) => sum + (variant.tonKho || 0),
+              0,
+            )
+            stockValue = totalVariantStock
+            inStock = totalVariantStock > 0
+          } else {
+            // No variants, use product stock
+            stockValue = product.tonKho !== undefined ? product.tonKho : product.stock
+            inStock = stockValue > 0
+          }
+
+          // Debug log cho products
+          if (product.ten && (product.ten.includes('áo') || product.ten.includes('khoác'))) {
+            console.log(`🔍 Availability filter debug for "${product.ten}":`, {
+              hasVariants: !!product.bienThes,
+              productTonKho: product.tonKho,
+              variantStocks: product.bienThes
+                ? product.bienThes.map((bt) => ({ size: bt.kichThuoc, stock: bt.tonKho }))
+                : 'no variants',
+              calculatedStock: stockValue,
+              inStock,
+              filterAvailability: filters.availability,
+              willPass:
+                !(filters.availability === 'inStock' && !inStock) &&
+                !(filters.availability === 'outOfStock' && inStock),
+            })
+          }
+
+          if (filters.availability === 'inStock' && !inStock) {
+            return false
+          }
+          if (filters.availability === 'outOfStock' && inStock) {
+            return false
+          }
+        }
+
+        // Size filter (check variants)
+        // Logic: Product must have ALL selected sizes (not just one)
+        if (filters.sizes.length > 0 && product.bienThes) {
+          // Get all available sizes from variants with stock
+          const availableSizes = product.bienThes
+            .filter(bt => bt.tonKho > 0)
+            .map(bt => bt.kichThuoc)
+          
+          // Check if product has ALL selected sizes
+          const hasAllSelectedSizes = filters.sizes.every(selectedSize => 
+            availableSizes.includes(selectedSize)
+          )
+
+          // Debug log for ALL products with size filtering
+          console.log(`Size filter for "${product.ten}":`, {
+            activeFilterSizes: filters.sizes,
+            availableSizes,
+            hasAllSelectedSizes,
+            variants: product.bienThes.map((bt) => ({
+              size: bt.kichThuoc,
+              stock: bt.tonKho,
+              isRequestedSize: filters.sizes.includes(bt.kichThuoc),
+              hasStock: bt.tonKho > 0,
+            })),
+            willPass: hasAllSelectedSizes,
+          })
+
+          if (!hasAllSelectedSizes) {
+            return false
+          }
+        }
+
+        // Color filter (check variants)
+        // Logic: Product must have ALL selected colors (not just one)
+        if (filters.colors.length > 0 && product.bienThes) {
+          // Get all available colors from variants with stock (using Vietnamese names directly)
+          const availableColors = product.bienThes
+            .filter(bt => bt.tonKho > 0)
+            .map(bt => bt.mauSac?.trim()) // Just trim whitespace, keep Vietnamese name
+            .filter(color => color) // Remove null/undefined
+          
+          // Remove duplicates from available colors
+          const uniqueAvailableColors = [...new Set(availableColors)]
+          
+          // Check if product has ALL selected colors (direct comparison)
+          const hasAllSelectedColors = filters.colors.every(selectedColor => 
+            uniqueAvailableColors.includes(selectedColor)
+          )
+
+          // DETAILED Debug log for ALL products with color filtering
+          console.log(`🎨 Color filter for "${product.ten}":`)
+          console.log(`   ✅ Selected colors:`, filters.colors)
+          console.log(`   📦 Available colors:`, uniqueAvailableColors)
+          console.log(`   🔍 Checking each selected color:`)
+          filters.colors.forEach(selectedColor => {
+            const found = uniqueAvailableColors.includes(selectedColor)
+            console.log(`      - "${selectedColor}": ${found ? '✅ FOUND' : '❌ NOT FOUND'}`)
+          })
+          console.log(`   ⚖️  Has all selected colors: ${hasAllSelectedColors ? '✅ YES' : '❌ NO'}`)
+          console.log(`   🎯 Will pass filter: ${hasAllSelectedColors ? '✅ YES' : '❌ NO'}`)
+          console.log(`   📋 Variants detail:`, product.bienThes.map((bt) => ({
+            originalColor: bt.mauSac,
+            trimmedColor: bt.mauSac?.trim(),
+            stock: bt.tonKho,
+            hasStock: bt.tonKho > 0,
+          })))
+          console.log('---')
+
+          if (!hasAllSelectedColors) {
+            return false
+          }
+        }
+
+        return true
+      })
+
+      // Apply sorting
+      if (filters.sortBy && filters.sortBy !== 'relevance') {
+        productList = [...productList]
+        switch (filters.sortBy) {
+          case 'price-asc':
+            productList.sort((a, b) => {
+              const priceA = a.gia !== undefined ? a.gia : a.price
+              const priceB = b.gia !== undefined ? b.gia : b.price
+              return priceA - priceB
+            })
+            break
+          case 'price-desc':
+            productList.sort((a, b) => {
+              const priceA = a.gia !== undefined ? a.gia : a.price
+              const priceB = b.gia !== undefined ? b.gia : b.price
+              return priceB - priceA
+            })
+            break
+          case 'name-asc':
+            productList.sort((a, b) => {
+              const nameA = a.ten || a.name
+              const nameB = b.ten || b.name
+              return nameA.localeCompare(nameB)
+            })
+            break
+          case 'name-desc':
+            productList.sort((a, b) => {
+              const nameA = a.ten || a.name
+              const nameB = b.ten || b.name
+              return nameB.localeCompare(nameA)
+            })
+            break
+        }
+      }
     }
-    
+
     // Map each product to include availableSizes from bienThes
-    return productList.map(product => {
+    return productList.map((product) => {
       // Extract available sizes from bienThes (variants with stock > 0)
       const availableSizes = product.bienThes
-        ? [...new Set(product.bienThes
-            .filter(bt => bt.tonKho > 0)
-            .map(bt => bt.kichThuoc))]
+        ? [...new Set(product.bienThes.filter((bt) => bt.tonKho > 0).map((bt) => bt.kichThuoc))]
         : []
-      
+
       return {
         ...product,
-        availableSizes
+        availableSizes,
       }
     })
-  } catch {
+  } catch (err) {
+    console.error('Error filtering products:', err)
     return products.value
   }
 })
@@ -310,16 +383,15 @@ const reload = () => {
   }
 }
 
-const addToCart = (product) => {
-  cartStore.addItem(product)
-}
-
 // ======= WATCH & LIFECYCLE =======
-watch(() => route.params.slug, (newSlug) => {
-  currentPage.value = 1
-  if (newSlug) fetchProductsByCategory(newSlug)
-  else fetchAllProducts()
-})
+watch(
+  () => route.params.slug,
+  (newSlug) => {
+    currentPage.value = 1
+    if (newSlug) fetchProductsByCategory(newSlug)
+    else fetchAllProducts()
+  },
+)
 
 onMounted(() => {
   const slug = route.params.slug
@@ -327,7 +399,6 @@ onMounted(() => {
   else fetchAllProducts()
 })
 </script>
-
 
 <style scoped>
 /* Breadcrumb */
@@ -589,7 +660,7 @@ onMounted(() => {
     position: static;
     margin-bottom: 2rem;
   }
-  
+
   .modern-select {
     min-width: 150px;
   }
@@ -633,7 +704,7 @@ onMounted(() => {
 .section-divider {
   width: 80px;
   height: 4px;
-  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
   border-radius: 2px;
   margin: 1.5rem auto 0;
 }
@@ -662,7 +733,7 @@ onMounted(() => {
 }
 
 .filter-card-header {
-  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
   color: white;
   padding: 1rem 1.5rem;
   border-radius: 20px 20px 0 0;
@@ -710,7 +781,7 @@ onMounted(() => {
 }
 
 .modern-select:focus {
-  border-color: #B8860B;
+  border-color: #b8860b;
   box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.25);
 }
 
@@ -743,16 +814,16 @@ onMounted(() => {
 }
 
 .modern-pagination .page-link:hover {
-  background: #B8860B;
-  border-color: #B8860B;
+  background: #b8860b;
+  border-color: #b8860b;
   color: white;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
 }
 
 .modern-pagination .page-item.active .page-link {
-  background: linear-gradient(135deg, #B8860B 0%, #DAA520 100%);
-  border-color: #B8860B;
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
+  border-color: #b8860b;
   color: white;
 }
 
@@ -773,6 +844,6 @@ onMounted(() => {
 }
 
 .breadcrumb-link:hover {
-  color: #B8860B;
+  color: #b8860b;
 }
 </style>

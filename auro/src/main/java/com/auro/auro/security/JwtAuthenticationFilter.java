@@ -44,9 +44,20 @@ protected void doFilterInternal(
     }
 
     jwt = authHeader.substring(7);
+try {
     userEmail = jwtService.extractUsername(jwt);
-    
-    System.out.println("DEBUG - JwtAuthenticationFilter: userEmail = " + userEmail);
+} catch (io.jsonwebtoken.ExpiredJwtException |
+         io.jsonwebtoken.MalformedJwtException |
+         io.jsonwebtoken.security.SignatureException ex) {
+    org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    filterChain.doFilter(request, response);
+    return;
+} catch (Exception ex) {
+    org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    filterChain.doFilter(request, response);
+    return;
+}
+System.out.println("DEBUG - JwtAuthenticationFilter: userEmail = " + userEmail);
 
     if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
         try {

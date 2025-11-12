@@ -50,9 +50,14 @@ public class SanPhamController {
     public ResponseEntity<Page<SanPhamResponse>> page(
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "danhMucId", required = false) Long danhMucId,
+            @RequestParam(value = "sortBy", required = false) String sortBy,
+            @RequestParam(value = "sortOrder", required = false) String sortOrder,
+            @RequestParam(value = "status", required = false) String status,
+            @RequestParam(value = "inStock", required = false) Boolean inStock,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        Page<SanPhamResponse> p = sanPhamService.getPage(search, danhMucId, PageRequest.of(page, size));
+        Page<SanPhamResponse> p = sanPhamService.getPage(search, danhMucId, sortBy, sortOrder, status, inStock,
+                PageRequest.of(page, size));
         return ResponseEntity.ok(p);
     }
 
@@ -101,6 +106,16 @@ public class SanPhamController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
         Page<SanPhamResponse> p = sanPhamService.getBestSellers(
                 PageRequest.of(page, size));
+        return ResponseEntity.ok(p);
+    }
+
+    // Lấy sản phẩm liên quan
+    @GetMapping("/id/{id}/related")
+    public ResponseEntity<Page<SanPhamResponse>> getRelated(
+            @PathVariable Long id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "6") int size) {
+        Page<SanPhamResponse> p = sanPhamService.getRelatedProducts(id, PageRequest.of(page, size));
         return ResponseEntity.ok(p);
     }
 }
