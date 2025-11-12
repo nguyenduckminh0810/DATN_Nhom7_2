@@ -67,7 +67,7 @@
               <div class="col-2">
                 <div class="cart-product-image">
                   <img :src="item.image || 'https://via.placeholder.com/150'" 
-                       :alt="getItemDisplayName(item)"
+                       :alt="item.name"
                        class="img-fluid rounded"
                        @error="handleImageError">
                 </div>
@@ -76,7 +76,7 @@
               <!-- Product Info -->
               <div class="col-5">
                 <div class="cart-product-info">
-                  <h6 class="mb-1 fw-bold">{{ getItemDisplayName(item) }}</h6>
+                  <h6 class="mb-1 fw-bold">{{ item.name }}</h6>
                   
                   <!-- Variant Controls -->
                   <div class="variant-controls mb-2">
@@ -204,14 +204,10 @@ import { useCart } from '@/composables/useCart'
 import sanPhamService from '@/services/sanPhamService'
 import cartService from '@/services/cartService'
 
-const REORDER_ITEMS_KEY = 'auro_reorder_items'
-const MAX_REORDER_ITEMS_AGE = 1000 * 60 * 30
-
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
 
 // Store product variants data
 const productVariantsMap = ref(new Map())
-const reorderLabelMap = ref(new Map())
 
 // Loading state để prevent spam click
 const isUpdating = ref(false)
@@ -240,96 +236,6 @@ items.value.forEach(item => {
     item.selected = true  // Mặc định tất cả sản phẩm được chọn
   }
 })
-
-const loadReorderItemLabels = () => {
-  try {
-    const raw = localStorage.getItem(REORDER_ITEMS_KEY)
-    if (!raw) {
-      reorderLabelMap.value = new Map()
-      return
-    }
-
-    const payload = JSON.parse(raw)
-    if (
-      !payload ||
-      typeof payload !== 'object' ||
-      !Array.isArray(payload.items) ||
-      (payload.createdAt && Date.now() - payload.createdAt > MAX_REORDER_ITEMS_AGE)
-    ) {
-      localStorage.removeItem(REORDER_ITEMS_KEY)
-      reorderLabelMap.value = new Map()
-      return
-    }
-
-    const map = new Map()
-    payload.items.forEach((snapshot) => {
-      const identifiers = Array.isArray(snapshot.identifiers) ? snapshot.identifiers : []
-
-      identifiers.forEach((identifier) => {
-        if (identifier && !map.has(identifier)) {
-          map.set(identifier, snapshot)
-        }
-      })
-
-      // Backward compatibility: direct variant/product ids
-      if (snapshot.variantId && !map.has(`variant:${snapshot.variantId}`)) {
-        map.set(`variant:${snapshot.variantId}`, snapshot)
-      }
-      if (snapshot.productId) {
-        const normalizedColor = (snapshot.color || '').toString().trim().toLowerCase()
-        const normalizedSize = (snapshot.size || '').toString().trim().toLowerCase()
-        const productKey = `product:${snapshot.productId}|${normalizedColor}|${normalizedSize}`
-        if (!map.has(productKey)) {
-          map.set(productKey, snapshot)
-        }
-      }
-    })
-
-    reorderLabelMap.value = map
-    localStorage.removeItem(REORDER_ITEMS_KEY)
-  } catch (error) {
-    console.error('❌ [CART ITEMS] Không thể đọc dữ liệu tên sản phẩm trong lần mua lại:', error)
-    reorderLabelMap.value = new Map()
-    localStorage.removeItem(REORDER_ITEMS_KEY)
-  }
-}
-
-const getItemDisplayName = (item) => {
-  if (!item) {
-    return ''
-  }
-
-  const normalizedColor = (item.color || '').toString().trim().toLowerCase()
-  const normalizedSize = (item.size || '').toString().trim().toLowerCase()
-  const normalizedName = (item.name || '').toString().trim().toLowerCase()
-
-  const keyCandidates = []
-  if (item.variantId) {
-    keyCandidates.push(`variant:${item.variantId}`)
-  }
-  if (item.bienTheId) {
-    keyCandidates.push(`variant:${item.bienTheId}`)
-  }
-  if (item.productId) {
-    keyCandidates.push(`product:${item.productId}|${normalizedColor}|${normalizedSize}`)
-  }
-  const variantTextKey = [normalizedColor, normalizedSize].filter(Boolean).join('|')
-  if (variantTextKey) {
-    keyCandidates.push(`variantText:${variantTextKey}`)
-  }
-  if (normalizedName) {
-    keyCandidates.push(`name:${normalizedName}`)
-  }
-
-  for (const key of keyCandidates) {
-    if (reorderLabelMap.value.has(key)) {
-      const snapshot = reorderLabelMap.value.get(key)
-      return snapshot?.displayName || snapshot?.name || item.name
-    }
-  }
-
-  return item.name
-}
 
 // Load product variants for all cart items
 const loadProductVariants = async () => {
@@ -531,7 +437,6 @@ const changeVariant = async (item, type, value) => {
 
 // Load variants when component mounts
 onMounted(async () => {
-  loadReorderItemLabels()
   await loadProductVariants()
 })
 

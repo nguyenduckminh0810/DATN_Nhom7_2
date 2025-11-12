@@ -237,7 +237,7 @@
                         v-if="['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(order.status)"
                         class="btn btn-outline-success btn-sm d-flex align-items-center"
                         :disabled="isOrderReordering(order.id)"
-                        @click="reorder(order)"
+                        @click="reorderOrder(order)"
                       >
                         <span
                           v-if="isOrderReordering(order.id)"
@@ -542,8 +542,6 @@ const cancelOrder = async (order) => {
     loading.value = false
   }
 }
-
-const reorder = (order) => reorderOrder(order)
 
 const prepareRatingOptions = (order) => {
   ratingItemOptions.value = order.items.map((item) => ({

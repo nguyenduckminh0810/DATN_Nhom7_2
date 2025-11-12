@@ -2,237 +2,233 @@ import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import cartService from '@/services/cartService'
 import { useCartStore } from '@/stores/cart'
-import orderService from '@/services/orderService'
 
-const REORDER_STORAGE_KEY = 'auro_reorder_shipping'
-const REORDER_ITEMS_KEY = 'auro_reorder_items'
+const SNAPSHOT_STORAGE_KEY = 'auro_reorder_variant_labels'
+const SNAPSHOT_STORAGE_TTL = 1000 * 60 * 30
 
-const MAX_STORAGE_AGE = 1000 * 60 * 30 // 30 phút
+const ensurePositiveInteger = (value, fallback = 1) => {
+  const number = Number(value)
+  if (Number.isNaN(number) || number <= 0) {
+    return fallback
+  }
+  return Math.floor(number)
+}
 
-const cleanReorderStorageIfExpired = () => {
+const normalizeText = (value) => {
+  if (value == null) {
+    return ''
+  }
+  return value.toString().trim()
+}
+
+const normalizeKeyPart = (value) => {
+  return normalizeText(value).toLowerCase()
+}
+
+const buildProductKey = (productId, color, size) => {
+  if (!productId) {
+    return null
+  }
+  return `${productId}|${normalizeKeyPart(color)}|${normalizeKeyPart(size)}`
+}
+
+const readStoredSnapshots = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null
+  }
+
   try {
-    const raw = localStorage.getItem(REORDER_STORAGE_KEY)
+    const raw = window.localStorage.getItem(SNAPSHOT_STORAGE_KEY)
     if (!raw) {
       return null
     }
+
     const payload = JSON.parse(raw)
-    if (!payload || typeof payload !== 'object') {
-      localStorage.removeItem(REORDER_STORAGE_KEY)
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      (payload.createdAt && Date.now() - payload.createdAt > SNAPSHOT_STORAGE_TTL)
+    ) {
+      window.localStorage.removeItem(SNAPSHOT_STORAGE_KEY)
       return null
     }
-    if (payload.createdAt && Date.now() - payload.createdAt > MAX_STORAGE_AGE) {
-      localStorage.removeItem(REORDER_STORAGE_KEY)
-      return null
+
+    return {
+      createdAt: payload.createdAt || Date.now(),
+      variants: payload.variants || {},
+      products: payload.products || {},
     }
-    return payload
   } catch (error) {
-    console.error('❌ [REORDER] Không thể đọc dữ liệu lưu trữ mua lại:', error)
-    localStorage.removeItem(REORDER_STORAGE_KEY)
+    console.error('❌ [REORDER] Không thể đọc snapshot lưu trữ:', error)
+    window.localStorage.removeItem(SNAPSHOT_STORAGE_KEY)
     return null
   }
 }
 
-const saveReorderShipping = (orderId, shipping) => {
-  if (!shipping) {
+const writeStoredSnapshots = (data) => {
+  if (typeof window === 'undefined' || !window.localStorage) {
     return
   }
+
   try {
-    const payload = {
-      orderId,
-      createdAt: Date.now(),
-      shipping,
-    }
-    localStorage.setItem(REORDER_STORAGE_KEY, JSON.stringify(payload))
+    window.localStorage.setItem(SNAPSHOT_STORAGE_KEY, JSON.stringify(data))
   } catch (error) {
-    console.error('❌ [REORDER] Không thể lưu thông tin giao hàng cho mua lại:', error)
+    console.error('❌ [REORDER] Không thể ghi snapshot lưu trữ:', error)
   }
 }
 
-const saveReorderItems = (orderId, items) => {
-  if (!Array.isArray(items) || items.length === 0) {
+const mergeSnapshotsWithStorage = (snapshots) => {
+  if (!Array.isArray(snapshots) || snapshots.length === 0) {
     return
   }
-  try {
-    const itemSnapshots = items.map((item) => {
-      const color = item.mauSacTen || item.selectedColor || item.color || ''
-      const size = item.kichCoTen || item.selectedSize || item.size || ''
-      const variantText = [color, size].filter(Boolean).join(' - ')
-      const baseName = item.name || ''
-      const displayName = variantText ? `${baseName} (${variantText})` : baseName
-      const variantId = item.bienTheId || item.variantId || null
-      const productId = item.sanPhamId || item.productId || null
-      const normalizedColor = normalizeKeyPart(color)
-      const normalizedSize = normalizeKeyPart(size)
-      const normalizedName = normalizeKeyPart(baseName)
 
-      const identifiers = []
-      if (variantId) {
-        identifiers.push(`variant:${variantId}`)
-      }
-      if (productId) {
-        identifiers.push(`product:${productId}|${normalizedColor}|${normalizedSize}`)
-      }
-      const variantTextKey = [normalizedColor, normalizedSize].filter(Boolean).join('|')
-      if (variantTextKey) {
-        identifiers.push(`variantText:${variantTextKey}`)
-      }
-      if (normalizedName) {
-        identifiers.push(`name:${normalizedName}`)
-      }
+  const stored = readStoredSnapshots() || {
+    createdAt: Date.now(),
+    variants: {},
+    products: {},
+  }
 
-      return {
-        orderId,
-        variantId,
-        productId,
-        name: baseName,
-        displayName,
-        color,
-        size,
-        quantity: item.quantity || item.soLuong || 1,
-        identifiers,
-      }
-    })
+  const now = Date.now()
+
+  snapshots.forEach((snapshot) => {
+    if (!snapshot) {
+      return
+    }
 
     const payload = {
-      orderId,
-      createdAt: Date.now(),
-      items: itemSnapshots,
+      displayName: snapshot.displayName,
+      color: snapshot.color,
+      size: snapshot.size,
+      productId: snapshot.productId || null,
+      savedAt: now,
     }
 
-    localStorage.setItem(REORDER_ITEMS_KEY, JSON.stringify(payload))
-  } catch (error) {
-    console.error('❌ [REORDER] Không thể lưu thông tin sản phẩm mua lại:', error)
-  }
-}
-
-const normalizeText = (text) => {
-  return (text || '').trim()
-}
-
-const normalizeKeyPart = (value) => {
-  if (value == null) {
-    return ''
-  }
-  return value.toString().trim().toLowerCase()
-}
-
-const parseShippingSnapshot = (snapshot, note) => {
-  if (!snapshot) {
-    return {
-      fullName: '',
-      phone: '',
-      email: '',
-      addressLine: '',
-      provinceName: '',
-      districtName: '',
-      wardName: '',
-      note: note || '',
-    }
-  }
-
-  const info = {
-    fullName: '',
-    phone: '',
-    email: '',
-    addressLine: '',
-    provinceName: '',
-    districtName: '',
-    wardName: '',
-    note: note || '',
-  }
-
-  const normalizedSnapshot = snapshot.replace(/<br\s*\/?>/gi, '\n')
-  const lines = normalizedSnapshot
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-
-  const parseLine = (line) => {
-    const [label, ...rest] = line.split(':')
-    if (!label || rest.length === 0) {
-      return { label: '', value: line }
-    }
-    return {
-      label: label.trim().toLowerCase(),
-      value: rest.join(':').trim(),
-    }
-  }
-
-  lines.forEach((line) => {
-    const { label, value } = parseLine(line)
-    const lowerLine = line.toLowerCase()
-
-    if (!label) {
-      if (!info.addressLine) {
-        info.addressLine = normalizeText(value)
-      }
-      return
+    if (snapshot.variantId) {
+      stored.variants[snapshot.variantId] = payload
     }
 
-    if (label.includes('họ tên') || label.includes('người nhận') || label.includes('ten nguoi nhan')) {
-      info.fullName = normalizeText(value)
-      return
-    }
-
-    if (label.includes('điện thoại') || label.includes('số điện thoại') || label.includes('phone')) {
-      info.phone =
-        normalizeText(value).replace(/[^0-9+]/g, '') ||
-        normalizeText(value)
-      return
-    }
-
-    if (label.includes('email')) {
-      info.email = normalizeText(value)
-      return
-    }
-
-    if (label.includes('địa chỉ') || label.includes('dia chi')) {
-      info.addressLine = normalizeText(value)
-      return
-    }
-
-    if (label.includes('phường') || label.includes('xã')) {
-      info.wardName = normalizeText(value)
-      return
-    }
-
-    if (label.includes('quận') || label.includes('huyện')) {
-      info.districtName = normalizeText(value)
-      return
-    }
-
-    if (label.includes('tỉnh') || label.includes('thành phố')) {
-      info.provinceName = normalizeText(value)
-      return
-    }
-
-    if (lowerLine.startsWith('ghi chú') || lowerLine.startsWith('ghi chu')) {
-      info.note = normalizeText(value)
+    const productKey = buildProductKey(snapshot.productId, snapshot.color, snapshot.size)
+    if (productKey) {
+      stored.products[productKey] = payload
     }
   })
 
-  if (info.addressLine) {
-    const segments = info.addressLine
-      .split(',')
-      .map((segment) => segment.trim())
-      .filter(Boolean)
-    if (!info.provinceName && segments.length >= 1) {
-      info.provinceName = normalizeText(segments[segments.length - 1])
+  stored.createdAt = now
+  writeStoredSnapshots(stored)
+}
+
+const createOrderItemSnapshot = (item) => {
+  if (!item) {
+    return null
+  }
+
+  const variantId = item.bienTheId || item.variantId || null
+  const productId = item.sanPhamId || item.productId || null
+  if (!variantId && !productId) {
+    return null
+  }
+
+  const baseName = normalizeText(
+    item.tenSanPham ||
+      item.name ||
+      item.productName ||
+      item.title ||
+      (item.sanPham && item.sanPham.tenSanPham) ||
+      'Sản phẩm',
+  )
+  const color = normalizeText(item.mauSacTen || item.selectedColor || item.color)
+  const size = normalizeText(item.kichCoTen || item.selectedSize || item.size)
+  const variantLabel = [color, size].filter(Boolean).join(' - ')
+  const displayName = variantLabel ? `${baseName} | ${variantLabel}` : baseName
+
+  return {
+    variantId,
+    productId,
+    color,
+    size,
+    displayName,
+  }
+}
+
+const applySnapshotsToCart = (cartItems, extraSnapshots = []) => {
+  if (!Array.isArray(cartItems) || cartItems.length === 0) {
+    return
+  }
+
+  const snapshotMap = new Map()
+
+  const addSnapshotToMap = (snapshot) => {
+    if (!snapshot) {
+      return
     }
-    if (!info.districtName && segments.length >= 2) {
-      info.districtName = normalizeText(segments[segments.length - 2])
+
+    if (snapshot.variantId) {
+      snapshotMap.set(`variant:${snapshot.variantId}`, snapshot)
     }
-    if (!info.wardName && segments.length >= 3) {
-      info.wardName = normalizeText(segments[segments.length - 3])
+
+    const productKey = buildProductKey(snapshot.productId, snapshot.color, snapshot.size)
+    if (productKey) {
+      snapshotMap.set(`product:${productKey}`, snapshot)
     }
   }
 
-  return info
+  if (Array.isArray(extraSnapshots)) {
+    extraSnapshots.forEach(addSnapshotToMap)
+  }
+
+  const stored = readStoredSnapshots()
+  if (stored) {
+    Object.entries(stored.variants || {}).forEach(([variantId, data]) => {
+      addSnapshotToMap({
+        variantId,
+        productId: data.productId,
+        color: data.color,
+        size: data.size,
+        displayName: data.displayName,
+      })
+    })
+
+    Object.entries(stored.products || {}).forEach(([productKey, data]) => {
+      const [productId] = productKey.split('|')
+      addSnapshotToMap({
+        productId: data.productId || productId,
+        color: data.color,
+        size: data.size,
+        displayName: data.displayName,
+      })
+    })
+  }
+
+  cartItems.forEach((cartItem) => {
+    if (!cartItem) {
+      return
+    }
+
+    const variantId = cartItem.variantId || cartItem.bienTheId || null
+    const productKey = buildProductKey(cartItem.productId, cartItem.color, cartItem.size)
+
+    let matched = null
+    if (variantId && snapshotMap.has(`variant:${variantId}`)) {
+      matched = snapshotMap.get(`variant:${variantId}`)
+    } else if (productKey && snapshotMap.has(`product:${productKey}`)) {
+      matched = snapshotMap.get(`product:${productKey}`)
+    }
+
+    if (matched?.displayName) {
+      cartItem.name = matched.displayName
+    }
+    if (matched?.color) {
+      cartItem.color = matched.color
+    }
+    if (matched?.size) {
+      cartItem.size = matched.size
+    }
+  })
 }
 
 export function useReorder() {
-  const cartStore = useCartStore()
   const router = useRouter()
+  const cartStore = useCartStore()
   const reorderingState = reactive({})
 
   const setReorderingState = (orderId, value) => {
@@ -251,54 +247,38 @@ export function useReorder() {
 
   const reorderOrder = async (order) => {
     if (!order) {
+      alert('Không tìm thấy thông tin đơn hàng.')
       return
     }
 
     const orderId = order.id
-    cleanReorderStorageIfExpired()
+    if (orderId == null) {
+      alert('Đơn hàng không hợp lệ.')
+      return
+    }
 
     if (isOrderReordering(orderId)) {
       return
     }
 
-    if (!order.items || order.items.length === 0) {
-      alert('Đơn hàng này không có sản phẩm để mua lại.')
-      return
-    }
-
-    const itemsToReorder = order.items.filter((item) => item?.bienTheId)
+    const itemsToReorder = Array.isArray(order.items)
+      ? order.items.filter((item) => item?.bienTheId)
+      : []
 
     if (itemsToReorder.length === 0) {
-      alert('Không tìm thấy biến thể sản phẩm hợp lệ để thêm vào giỏ hàng.')
+      alert('Đơn hàng không có sản phẩm hợp lệ để mua lại.')
       return
     }
 
-    let shippingInfo = null
+    setReorderingState(orderId, true)
 
-    if (order.shippingSnapshot) {
-      shippingInfo = parseShippingSnapshot(order.shippingSnapshot, order.shippingNote)
-    } else {
-      try {
-        const response = await orderService.getOrderById(orderId)
-        const detailData = response?.data || response
-        const snapshot = detailData?.diaChiGiaoSnapshot || ''
-        const note = detailData?.ghiChu || ''
-        if (snapshot) {
-          shippingInfo = parseShippingSnapshot(snapshot, note)
-        }
-      } catch (error) {
-        console.error('❌ [REORDER] Không thể lấy chi tiết đơn hàng để điền địa chỉ:', error)
-      }
-    }
+    const failedItems = []
+    const snapshots = []
+    let successCount = 0
 
     try {
-      setReorderingState(orderId, true)
-
-      const failedItems = []
-      let successCount = 0
-
       for (const item of itemsToReorder) {
-        const quantity = item.quantity && item.quantity > 0 ? item.quantity : 1
+        const quantity = ensurePositiveInteger(item.quantity || item.soLuong, 1)
 
         try {
           await cartService.addToCart({
@@ -313,30 +293,31 @@ export function useReorder() {
           })
           failedItems.push(item)
         }
+
+        const snapshot = createOrderItemSnapshot(item)
+        if (snapshot) {
+          snapshots.push(snapshot)
+        }
       }
 
       if (successCount > 0) {
+        mergeSnapshotsWithStorage(snapshots)
+
         try {
           await cartStore.loadCart()
+          applySnapshotsToCart(cartStore.items, snapshots)
         } catch (loadError) {
           console.error('❌ [REORDER] Lỗi khi tải lại giỏ hàng:', loadError)
         }
       }
 
-      if (failedItems.length === itemsToReorder.length) {
+      if (successCount === 0) {
         alert('Không thể thêm sản phẩm nào vào giỏ hàng. Vui lòng thử lại sau.')
         return
       }
 
-      if (successCount > 0) {
-        saveReorderItems(orderId, itemsToReorder)
-        if (shippingInfo) {
-          saveReorderShipping(orderId, shippingInfo)
-        }
-      }
-
       if (failedItems.length > 0) {
-        const failedNames = failedItems.map((item) => item.name).join(', ')
+        const failedNames = failedItems.map((item) => item.name || 'Sản phẩm').join(', ')
         alert(
           `Một số sản phẩm không thể thêm vào giỏ hàng: ${failedNames}. Các sản phẩm còn lại đã được thêm.`,
         )
@@ -344,13 +325,10 @@ export function useReorder() {
         alert('Đã thêm tất cả sản phẩm vào giỏ hàng. Vui lòng kiểm tra giỏ hàng của bạn.')
       }
 
-      if (successCount > 0) {
-        cleanReorderStorageIfExpired()
-        try {
-          await router.push({ path: '/cart', query: { reorder: orderId } })
-        } catch (navigationError) {
-          console.error('❌ [REORDER] Lỗi khi điều hướng tới trang giỏ hàng:', navigationError)
-        }
+      try {
+        await router.push({ path: '/cart', query: { reorder: orderId } })
+      } catch (navigationError) {
+        console.error('❌ [REORDER] Lỗi khi điều hướng tới trang giỏ hàng:', navigationError)
       }
     } catch (error) {
       console.error('❌ [REORDER] Lỗi chung khi mua lại:', error)
@@ -367,4 +345,5 @@ export function useReorder() {
 }
 
 export default useReorder
+
 
