@@ -15,6 +15,8 @@ public interface BienTheSanPhamRepository extends JpaRepository<BienTheSanPham, 
     // Find variants for multiple products
     List<BienTheSanPham> findBySanPham_IdIn(Iterable<Long> sanPhamIds);
 
+    long countBySoLuongTonLessThanEqual(Integer threshold);
+
     // Get variant IDs for multiple products (only IDs, no entity loading)
     @Query("SELECT b.id FROM BienTheSanPham b WHERE b.sanPham.id IN :sanPhamIds")
     List<Long> findIdsBySanPham_IdIn(@Param("sanPhamIds") Iterable<Long> sanPhamIds);

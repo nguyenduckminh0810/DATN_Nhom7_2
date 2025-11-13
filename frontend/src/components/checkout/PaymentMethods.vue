@@ -29,42 +29,6 @@
             </div>
           </div>
 
-          <!-- ZaloPay -->
-          <div class="payment-option" 
-               :class="{ active: paymentMethod === 'zalopay' }" 
-               @click="paymentMethod = 'zalopay'">
-            <input class="payment-radio" 
-                   type="radio" 
-                   v-model="paymentMethod" 
-                   value="zalopay"
-                   id="payment-zalopay">
-            <div class="payment-info">
-              <div class="payment-header">
-                <i class="bi bi-wallet2 payment-icon zalopay"></i>
-                <strong>ZaloPay</strong>
-              </div>
-              <small>Thanh toán qua ví điện tử ZaloPay</small>
-            </div>
-          </div>
-
-          <!-- Momo -->
-          <div class="payment-option" 
-               :class="{ active: paymentMethod === 'momo' }" 
-               @click="paymentMethod = 'momo'">
-            <input class="payment-radio" 
-                   type="radio" 
-                   v-model="paymentMethod" 
-                   value="momo"
-                   id="payment-momo">
-            <div class="payment-info">
-              <div class="payment-header">
-                <i class="bi bi-wallet2 payment-icon momo"></i>
-                <strong>Ví Momo</strong>
-              </div>
-              <small>Thanh toán qua ví điện tử Momo</small>
-            </div>
-          </div>
-
           <!-- VNPay -->
           <div class="payment-option" 
                :class="{ active: paymentMethod === 'vnpay' }" 
@@ -253,14 +217,6 @@ const paymentMethod = injectedPaymentMethod || ref(null)
 .payment-icon {
   font-size: 1.25rem;
   color: #B8860B;
-}
-
-.payment-icon.zalopay {
-  color: #0068ff;
-}
-
-.payment-icon.momo {
-  color: #d82d8b;
 }
 
 .payment-icon.vnpay {

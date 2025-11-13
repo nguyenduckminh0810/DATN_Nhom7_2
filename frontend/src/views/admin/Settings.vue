@@ -375,22 +375,7 @@
                 </div>
               </div>
 
-              <div class="payment-item">
-                <div class="payment-header">
-                  <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" v-model="settings.payment.methods.momo.enabled" id="momoCheck">
-                    <label class="form-check-label" for="momoCheck">
-                      <strong>Momo</strong>
-                    </label>
-                  </div>
-                </div>
-                <div v-if="settings.payment.methods.momo.enabled" class="payment-config">
-                  <div class="alert alert-info">
-                    <i class="bi bi-info-circle me-2"></i>
-                    Cấu hình Momo cần credentials từ business portal (không hiển thị ở đây vì bảo mật)
-                  </div>
-                </div>
-              </div>
+
             </div>
           </div>
         </div>
@@ -530,9 +515,6 @@ const settings = ref({
         accountName: ''
       },
       vnpay: {
-        enabled: false
-      },
-      momo: {
         enabled: false
       }
     }

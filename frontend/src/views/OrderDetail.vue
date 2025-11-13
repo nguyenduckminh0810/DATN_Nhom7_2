@@ -341,7 +341,6 @@ const getPaymentMethodText = (method) => {
   const methodMap = {
     'COD': 'Thanh toán khi nhận hàng',
     'VNPAY': 'VNPay',
-    'MOMO': 'MoMo',
     'BANK_TRANSFER': 'Chuyển khoản ngân hàng'
   }
   return methodMap[method] || method

@@ -15,10 +15,10 @@
       </div>
             </div>
             <div class="card-content">
-              <div class="main-value">15,420,000₫</div>
-              <div class="trend positive">
-                <i class="bi bi-graph-up"></i>
-                <span>+12.5%</span>
+              <div class="main-value">{{ summary?.revenueToday?.toLocaleString('vi-VN') }}₫</div>
+              <div v-if="revenueGrowth !== null" :class="['trend', revenueGrowth >= 0 ? 'positive' : 'negative']">
+                <i :class="revenueGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+                <span>{{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth }}%</span>
         </div>
       </div>
     </div>
@@ -34,10 +34,10 @@
           </div>
         </div>
             <div class="card-content">
-              <div class="main-value">89</div>
-              <div class="trend positive">
-                <i class="bi bi-graph-up"></i>
-                <span>+8.3%</span>
+              <div class="main-value">{{ summary?.newOrders24h ?? 0 }}</div>
+              <div v-if="ordersGrowth !== null" :class="['trend', ordersGrowth >= 0 ? 'positive' : 'negative']">
+                <i :class="ordersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+                <span>{{ ordersGrowth >= 0 ? '+' : '' }}{{ ordersGrowth }}%</span>
       </div>
             </div>
           </div>
@@ -53,10 +53,10 @@
               </div>
             </div>
             <div class="card-content">
-              <div class="main-value">23</div>
-              <div class="trend positive">
-                <i class="bi bi-graph-up"></i>
-                <span>+15.2%</span>
+              <div class="main-value">{{ summary?.newCustomersToday ?? 0 }}</div>
+              <div v-if="customersGrowth !== null" :class="['trend', customersGrowth >= 0 ? 'positive' : 'negative']">
+                <i :class="customersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+                <span>{{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth }}%</span>
         </div>
       </div>
     </div>
@@ -72,7 +72,7 @@
       </div>
         </div>
             <div class="card-content">
-              <div class="main-value">12</div>
+              <div class="main-value">{{ summary?.lowStockCount ?? 0 }}</div>
               <div class="trend warning">
                 <i class="ph bi bi-exclamation-triangle"></i>
                 <span>Cần nhập</span>
@@ -87,19 +87,19 @@
         <div class="quick-actions-panel">
           <h3>Thao tác nhanh</h3>
           <div class="action-buttons">
-            <button class="action-btn">
+            <button class="action-btn" @click="$router.push('/admin/products')">
               <i class="ph bi bi-plus-circle"></i>
               <span>Thêm sản phẩm</span>
             </button>
-            <button class="action-btn">
+            <button class="action-btn" @click="$router.push('/admin/orders')">
               <i class="ph bi bi-cart3"></i>
               <span>Xem đơn hàng</span>
             </button>
-            <button class="action-btn">
+            <button class="action-btn" @click="$router.push('/admin/users')">
               <i class="ph bi bi-people"></i>
               <span>Quản lý khách hàng</span>
             </button>
-            <button class="action-btn">
+            <button class="action-btn" @click="$router.push('/admin/analytics')">
               <i class="ph bi bi-bar-chart"></i>
               <span>Báo cáo doanh thu</span>
             </button>
@@ -114,30 +114,30 @@
                 <i class="ph bi bi-exclamation-triangle"></i>
           </div>
               <div class="alert-content">
-                <div class="alert-title">5 đơn hàng chờ xác nhận</div>
-                <div class="alert-time">2 phút trước</div>
+                <div class="alert-title">{{ alerts?.pendingOrders ?? 0 }} đơn hàng chờ xác nhận</div>
+                <div class="alert-time">Cần xử lý</div>
         </div>
-              <button class="alert-action">Xem</button>
+              <button class="alert-action" @click="$router.push('/admin/orders?status=pending')">Xem</button>
       </div>
             <div class="alert-item warning">
               <div class="alert-icon">
                 <i class="ph bi bi-box"></i>
     </div>
               <div class="alert-content">
-                <div class="alert-title">12 sản phẩm sắp hết hàng</div>
-                <div class="alert-time">1 giờ trước</div>
+                <div class="alert-title">{{ alerts?.lowStockProducts ?? 0 }} sản phẩm sắp hết hàng</div>
+                <div class="alert-time">Cần nhập hàng</div>
               </div>
-              <button class="alert-action">Xem</button>
+              <button class="alert-action" @click="$router.push('/admin/inventory')">Xem</button>
             </div>
             <div class="alert-item info">
               <div class="alert-icon">
                 <i class="ph bi bi-clock"></i>
               </div>
               <div class="alert-content">
-                <div class="alert-title">8 đơn hàng cần giao</div>
-                <div class="alert-time">3 giờ trước</div>
+                <div class="alert-title">{{ alerts?.needShipping ?? 0 }} đơn hàng cần giao</div>
+                <div class="alert-time">Đang vận chuyển</div>
               </div>
-              <button class="alert-action">Xem</button>
+              <button class="alert-action" @click="$router.push('/admin/orders?status=shipping')">Xem</button>
             </div>
           </div>
         </div>
@@ -310,7 +310,13 @@
               <button class="view-all-btn">Xem tất cả</button>
         </div>
             <div class="products-list">
-              <div class="product-item" v-for="product in topProducts" :key="product.id">
+              <div v-if="isLoadingTopProducts" class="loading-state">
+                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
+              </div>
+              <div v-else-if="topProducts.length === 0" class="empty-state">
+                Chưa có dữ liệu sản phẩm
+              </div>
+              <div v-else class="product-item" v-for="product in topProducts" :key="product.id">
                 <div class="product-image">
                   <img :src="product.image" :alt="product.name">
           </div>
@@ -334,7 +340,7 @@
                 <i class="ph bi bi-clock"></i>
         </div>
               <div class="status-info">
-                <div class="status-count">23</div>
+                <div class="status-count">{{ orderStatusCounts?.pending ?? 0 }}</div>
                 <div class="status-label">Chờ xử lý</div>
               </div>
             </div>
@@ -343,7 +349,7 @@
                 <i class="ph bi bi-gear"></i>
               </div>
               <div class="status-info">
-                <div class="status-count">15</div>
+                <div class="status-count">{{ orderStatusCounts?.processing ?? 0 }}</div>
                 <div class="status-label">Đang xử lý</div>
               </div>
             </div>
@@ -352,7 +358,7 @@
                 <i class="ph bi bi-truck"></i>
               </div>
               <div class="status-info">
-                <div class="status-count">8</div>
+                <div class="status-count">{{ orderStatusCounts?.shipping ?? 0 }}</div>
                 <div class="status-label">Đang giao</div>
               </div>
             </div>
@@ -361,7 +367,7 @@
                 <i class="ph bi bi-check-circle"></i>
               </div>
               <div class="status-info">
-                <div class="status-count">156</div>
+                <div class="status-count">{{ orderStatusCounts?.completed ?? 0 }}</div>
                 <div class="status-label">Hoàn thành</div>
           </div>
         </div>
@@ -373,7 +379,13 @@
               <button class="view-all-btn">Xem tất cả</button>
         </div>
             <div class="orders-list">
-              <div class="order-item" v-for="order in recentOrders" :key="order.id">
+              <div v-if="isLoadingRecentOrders" class="loading-state">
+                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
+              </div>
+              <div v-else-if="recentOrders.length === 0" class="empty-state">
+                Chưa có đơn hàng nào
+              </div>
+              <div v-else class="order-item" v-for="order in recentOrders" :key="order.id">
                 <div class="order-info">
                   <div class="order-id">#{{ order.id }}</div>
                   <div class="customer-name">{{ order.customer }}</div>
@@ -402,7 +414,7 @@
                   <i class="ph bi bi-people"></i>
               </div>
                 <div class="stat-content">
-                  <div class="stat-value">2,456</div>
+                  <div class="stat-value">{{ customerSummary?.totalCustomers ?? 0 }}</div>
                   <div class="stat-label">Tổng khách hàng</div>
             </div>
               </div>
@@ -411,7 +423,7 @@
                   <i class="ph bi bi-person-plus"></i>
             </div>
                 <div class="stat-content">
-                  <div class="stat-value">89</div>
+                  <div class="stat-value">{{ customerSummary?.newCustomersToday ?? 0 }}</div>
                   <div class="stat-label">Khách hàng mới</div>
           </div>
         </div>
@@ -420,7 +432,7 @@
                   <i class="ph bi bi-arrow-repeat"></i>
       </div>
                 <div class="stat-content">
-                  <div class="stat-value">65%</div>
+                  <div class="stat-value">{{ customerSummary?.repeatRate ?? 0 }}%</div>
                   <div class="stat-label">Tỷ lệ quay lại</div>
     </div>
           </div>
@@ -429,7 +441,7 @@
                   <i class="ph bi bi-star"></i>
         </div>
                 <div class="stat-content">
-                  <div class="stat-value">4.8</div>
+                  <div class="stat-value">{{ customerSummary?.averageRating ?? 0 }}</div>
                   <div class="stat-label">Đánh giá trung bình</div>
                       </div>
                     </div>
@@ -441,7 +453,13 @@
               <h3>Hiệu suất danh mục</h3>
           </div>
             <div class="categories-list">
-              <div class="category-item" v-for="category in categoryPerformance" :key="category.id">
+              <div v-if="isLoadingCategoryPerformance" class="loading-state">
+                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
+              </div>
+              <div v-else-if="categoryPerformance.length === 0" class="empty-state">
+                Chưa có dữ liệu danh mục
+              </div>
+              <div v-else class="category-item" v-for="category in categoryPerformance" :key="category.id">
                 <div class="category-info">
                   <div class="category-name">{{ category.name }}</div>
                   <div class="category-sales">{{ category.sales }} sản phẩm</div>
@@ -460,171 +478,81 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import Chart from '@/components/admin/Chart.vue'
+import thongKeService from '@/services/thongKeService'
 
 // Reactive state
-const showQuickAdd = ref(false)
+const summary = ref(null)
+const alerts = ref(null)
+const isLoadingSummary = ref(false)
+const isLoadingAlerts = ref(false)
 
 // Chart enhancement state
 const selectedMetric = ref('revenue')
 const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000))
 const showComparisonDatePicker = ref(false)
 const chartTimeRange = ref('30days')
-const chartGranularity = ref('daily')
 
-// Chart display toggles
-const showRevenue = ref(true)
-const showOrders = ref(true)
-const showProfit = ref(false)
-const showComparison = ref(false)
-
-// Ecommerce Data
-const topProducts = ref([
-  {
-    id: 1,
-    name: 'Áo sơ mi nam cao cấp',
-    image: 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=AS',
-    sales: 156,
-    revenue: '12.5M₫'
-  },
-  {
-    id: 2,
-    name: 'Quần âu nam công sở',
-    image: 'https://via.placeholder.com/40x40/10b981/ffffff?text=QA',
-    sales: 134,
-    revenue: '8.9M₫'
-  },
-  {
-    id: 3,
-    name: 'Áo khoác nam dạ',
-    image: 'https://via.placeholder.com/40x40/f59e0b/ffffff?text=AK',
-    sales: 89,
-    revenue: '15.2M₫'
-  },
-  {
-    id: 4,
-    name: 'Vest nam công sở',
-    image: 'https://via.placeholder.com/40x40/ef4444/ffffff?text=VS',
-    sales: 67,
-    revenue: '18.7M₫'
-  }
-])
-
-const recentOrders = ref([
-  {
-    id: 'AURO-001',
-    customer: 'Nguyễn Văn An',
-    time: '5 phút trước',
-    amount: '1,250,000₫',
-    status: 'pending',
-    statusText: 'Chờ xử lý'
-  },
-  {
-    id: 'AURO-002',
-    customer: 'Trần Thị Bình',
-    time: '15 phút trước',
-    amount: '890,000₫',
-    status: 'processing',
-    statusText: 'Đang xử lý'
-  },
-  {
-    id: 'AURO-003',
-    customer: 'Lê Minh Cường',
-    time: '1 giờ trước',
-    amount: '2,450,000₫',
-    status: 'shipping',
-    statusText: 'Đang giao'
-  },
-  {
-    id: 'AURO-004',
-    customer: 'Phạm Thị Dung',
-    time: '2 giờ trước',
-    amount: '3,200,000₫',
-    status: 'completed',
-    statusText: 'Hoàn thành'
-  }
-])
-
-const categoryPerformance = ref([
-  {
-    id: 1,
-    name: 'Áo sơ mi',
-    sales: 456,
-    revenue: '25.4M₫',
-    change: '+12.5%',
-    trend: 'positive',
-    trendIcon: 'bi bi-graph-up'
-  },
-  {
-    id: 2,
-    name: 'Quần âu',
-    sales: 389,
-    revenue: '18.9M₫',
-    change: '+8.3%',
-    trend: 'positive',
-    trendIcon: 'bi bi-graph-up'
-  },
-  {
-    id: 3,
-    name: 'Áo khoác',
-    sales: 234,
-    revenue: '22.1M₫',
-    change: '+15.2%',
-    trend: 'positive',
-    trendIcon: 'bi bi-graph-up'
-  },
-  {
-    id: 4,
-    name: 'Vest',
-    sales: 167,
-    revenue: '28.7M₫',
-    change: '-3.1%',
-    trend: 'negative',
-    trendIcon: 'bi bi-graph-down'
-  }
-])
+// Real data from API
+const topProducts = ref([])
+const recentOrders = ref([])
+const categoryPerformance = ref([])
+const chartData = ref(null)
+const customerSummary = ref(null)
+const orderStatusCounts = ref(null)
+const isLoadingChart = ref(false)
+const isLoadingTopProducts = ref(false)
+const isLoadingRecentOrders = ref(false)
+const isLoadingCategoryPerformance = ref(false)
+const isLoadingCustomerSummary = ref(false)
+const isLoadingOrderStatusCounts = ref(false)
 
 
-// Enhanced chart data - Analytics style
+// Enhanced chart data - Analytics style with real API data
 const enhancedChartData = computed(() => {
-  const labels = generateLabels()
+  if (!chartData.value || !chartData.value.labels) {
+    return {
+      labels: [],
+      datasets: []
+    }
+  }
+
   const datasets = []
   
   // Main dataset based on selected metric
   if (selectedMetric.value === 'revenue') {
     datasets.push({
       label: 'Doanh thu (triệu VNĐ)',
-      data: getRevenueData(),
-      borderColor: '#ef4444', // Red like Analytics
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0, // Hidden points like Analytics
-      pointStyle: 'circle',
-      yAxisID: 'y'
-    })
-    
-    // Comparison line
-    datasets.push({
-      label: 'Doanh thu kỳ trước (triệu VNĐ)',
-      data: getComparisonData(),
-      borderColor: '#0ea5e9', // Blue like Analytics
+      data: chartData.value.current || [],
+      borderColor: '#ef4444',
       backgroundColor: 'transparent',
       borderWidth: 2,
       fill: false,
       tension: 0.3,
       pointRadius: 0,
       pointStyle: 'circle',
-      borderDash: [0, 0], // Solid line
+      yAxisID: 'y'
+    })
+    
+    datasets.push({
+      label: 'Doanh thu kỳ trước (triệu VNĐ)',
+      data: chartData.value.previous || [],
+      borderColor: '#0ea5e9',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0],
       yAxisID: 'y'
     })
   } else if (selectedMetric.value === 'orders') {
     datasets.push({
       label: 'Số đơn hàng',
-      data: getOrdersData(),
-      borderColor: '#ef4444', // Red like Analytics
+      data: chartData.value.current || [],
+      borderColor: '#ef4444',
       backgroundColor: 'transparent',
       borderWidth: 2,
       fill: false,
@@ -634,12 +562,10 @@ const enhancedChartData = computed(() => {
       yAxisID: 'y'
     })
     
-    // Comparison line
-    const comparisonOrders = getOrdersData().map(val => Math.floor(val * 0.85))
     datasets.push({
       label: 'Số đơn hàng kỳ trước',
-      data: comparisonOrders,
-      borderColor: '#0ea5e9', // Blue like Analytics
+      data: chartData.value.previous || [],
+      borderColor: '#0ea5e9',
       backgroundColor: 'transparent',
       borderWidth: 2,
       fill: false,
@@ -650,14 +576,11 @@ const enhancedChartData = computed(() => {
       yAxisID: 'y'
     })
   } else if (selectedMetric.value === 'customers') {
-    // Mock customer data
-    const customerData = [120, 135, 110, 145, 130, 160, 175, 155, 140, 165, 180, 170, 185, 195, 190, 205, 210, 200, 185, 175, 165, 180, 190, 200]
-    const comparisonCustomers = customerData.map(val => Math.floor(val * 0.85))
-    
+    // For customers, use orders data as proxy (can be enhanced later)
     datasets.push({
       label: 'Khách hàng mới',
-      data: customerData,
-      borderColor: '#ef4444', // Red like Analytics
+      data: chartData.value.current || [],
+      borderColor: '#ef4444',
       backgroundColor: 'transparent',
       borderWidth: 2,
       fill: false,
@@ -669,8 +592,8 @@ const enhancedChartData = computed(() => {
     
     datasets.push({
       label: 'Khách hàng kỳ trước',
-      data: comparisonCustomers,
-      borderColor: '#0ea5e9', // Blue like Analytics
+      data: chartData.value.previous || [],
+      borderColor: '#0ea5e9',
       backgroundColor: 'transparent',
       borderWidth: 2,
       fill: false,
@@ -683,40 +606,55 @@ const enhancedChartData = computed(() => {
   }
   
   return {
-    labels,
+    labels: chartData.value.labels || [],
     datasets
   }
 })
 
-// Computed insights
+// Computed insights from real data
 const growthRate = computed(() => {
-  if (selectedMetric.value === 'revenue') {
-    const current = getCurrentPeriodRevenue()
-    const previous = getPreviousPeriodRevenue()
-    return ((current - previous) / previous * 100).toFixed(1)
-  } else if (selectedMetric.value === 'orders') {
-    const current = getCurrentPeriodOrders()
-    const previous = getOrdersData().map(val => Math.floor(val * 0.85)).reduce((sum, val) => sum + val, 0)
-    return ((current - previous) / previous * 100).toFixed(1)
-  } else if (selectedMetric.value === 'customers') {
-    // Mock customer growth calculation
-    const current = 200
-    const previous = 170
-    return ((current - previous) / previous * 100).toFixed(1)
+  if (!chartData.value || !chartData.value.current || !chartData.value.previous) {
+    return '0.0'
   }
-  return '12.5'
+  
+  const currentTotal = chartData.value.current.reduce((sum, val) => sum + Number(val || 0), 0)
+  const previousTotal = chartData.value.previous.reduce((sum, val) => sum + Number(val || 0), 0)
+  
+  if (previousTotal === 0) return currentTotal > 0 ? '100.0' : '0.0'
+  return ((currentTotal - previousTotal) / previousTotal * 100).toFixed(1)
 })
 
 const averageOrderValue = computed(() => {
-  const revenue = getCurrentPeriodRevenue()
-  const orders = getCurrentPeriodOrders()
-  return (revenue / orders).toFixed(0) + 'k₫'
+  if (!summary.value || !summary.value.revenueToday || !summary.value.newOrders24h) {
+    return '0k₫'
+  }
+  
+  const revenue = Number(summary.value.revenueToday || 0)
+  const orders = Number(summary.value.newOrders24h || 1)
+  
+  if (orders === 0) return '0k₫'
+  return (revenue / orders / 1000).toFixed(0) + 'k₫'
 })
 
 const profitMargin = computed(() => {
-  const revenue = getCurrentPeriodRevenue()
-  const profit = getCurrentPeriodProfit()
-  return ((profit / revenue) * 100).toFixed(1)
+  // Mock profit margin (can be enhanced with real data later)
+  return '25.0'
+})
+
+// Growth rates for overview cards - from API
+const revenueGrowth = computed(() => {
+  if (!summary.value || summary.value.revenueGrowth === undefined) return null
+  return Number(summary.value.revenueGrowth)
+})
+
+const ordersGrowth = computed(() => {
+  if (!summary.value || summary.value.ordersGrowth === undefined) return null
+  return Number(summary.value.ordersGrowth)
+})
+
+const customersGrowth = computed(() => {
+  if (!summary.value || summary.value.customersGrowth === undefined) return null
+  return Number(summary.value.customersGrowth)
 })
 
 const enhancedChartOptions = computed(() => ({
@@ -841,24 +779,6 @@ const enhancedChartOptions = computed(() => ({
   }
 }))
 
-// Mini chart options for ecommerce
-const miniChartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: false
-    }
-  },
-  scales: {
-    x: {
-      display: false
-    },
-    y: {
-      display: false
-    }
-  }
-}))
 
 // Methods
 const formatDate = (date) => {
@@ -896,118 +816,186 @@ const selectQuickDate = (option) => {
   showComparisonDatePicker.value = false
 }
 
-const updateChartData = () => {
-  // Force chart re-render when data changes
-}
 
 const exportChartData = () => {
   // Export chart data functionality
 }
 
-// Data generation methods
-const generateLabels = () => {
-  const range = chartTimeRange.value
-  const granularity = chartGranularity.value
-  
-  if (range === '7days') {
-    return Array.from({length: 7}, (_, i) => {
-      const date = new Date()
-      date.setDate(date.getDate() - (6 - i))
-      return granularity === 'daily' ? 
-        `${date.getDate()}/${date.getMonth() + 1}` : 
-        `T${i + 1}`
+// Load chart data from API
+const loadChartData = async () => {
+  try {
+    isLoadingChart.value = true
+    const response = await thongKeService.getChart({
+      range: chartTimeRange.value,
+      metric: selectedMetric.value
     })
-  } else if (range === '30days') {
-    return Array.from({length: 30}, (_, i) => {
-      const date = new Date()
-      date.setDate(date.getDate() - (29 - i))
-      return granularity === 'daily' ? 
-        `${date.getDate()}/${date.getMonth() + 1}` : 
-        `T${i + 1}`
-    })
-  } else if (range === '3months') {
-    return ['T1', 'T2', 'T3']
-  } else if (range === 'year') {
-    return ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12']
+    chartData.value = response?.data ?? response
+  } catch (error) {
+    console.error('Error loading chart data:', error)
+    chartData.value = { labels: [], current: [], previous: [] }
+  } finally {
+    isLoadingChart.value = false
   }
-  
-  return ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12']
 }
 
-const getRevenueData = () => {
-  const range = chartTimeRange.value
-  if (range === '7days') {
-    return [15, 18, 12, 22, 19, 25, 28]
-  } else if (range === '30days') {
-    return Array.from({length: 30}, (_, i) => Math.floor(Math.random() * 20) + 10)
-  } else if (range === '3months') {
-    return [125, 142, 138]
+// Load top products from API
+const loadTopProducts = async () => {
+  try {
+    isLoadingTopProducts.value = true
+    const response = await thongKeService.getTopProducts({ limit: 4, rangeDays: 30 })
+    const data = response?.data ?? response
+    topProducts.value = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      image: product.image || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=SP',
+      sales: product.sales,
+      revenue: formatCurrency(product.revenue)
+    }))
+  } catch (error) {
+    console.error('Error loading top products:', error)
+    topProducts.value = []
+  } finally {
+    isLoadingTopProducts.value = false
   }
-  return [125, 142, 138, 161, 155, 168, 172, 165, 158, 163, 159, 175]
 }
 
-const getOrdersData = () => {
-  const range = chartTimeRange.value
-  if (range === '7days') {
-    return [45, 52, 38, 68, 55, 72, 78]
-  } else if (range === '30days') {
-    return Array.from({length: 30}, (_, i) => Math.floor(Math.random() * 30) + 20)
-  } else if (range === '3months') {
-    return [456, 520, 480]
+// Load recent orders from API
+const loadRecentOrders = async () => {
+  try {
+    isLoadingRecentOrders.value = true
+    const response = await thongKeService.getRecentOrders({ limit: 4 })
+    const data = response?.data ?? response
+    recentOrders.value = (data || []).map(order => ({
+      id: order.orderCode || order.id,
+      customer: order.customer,
+      time: order.time,
+      amount: formatCurrency(order.amount),
+      status: mapOrderStatus(order.status),
+      statusText: order.status
+    }))
+  } catch (error) {
+    console.error('Error loading recent orders:', error)
+    recentOrders.value = []
+  } finally {
+    isLoadingRecentOrders.value = false
   }
-  return [456, 520, 480, 580, 540, 620, 650, 600, 570, 590, 580, 620]
 }
 
-const getProfitData = () => {
-  const revenue = getRevenueData()
-  return revenue.map(val => Math.floor(val * 0.25)) // 25% profit margin
+// Load category performance from API
+const loadCategoryPerformance = async () => {
+  try {
+    isLoadingCategoryPerformance.value = true
+    const response = await thongKeService.getCategoryPerformance({ limit: 4, rangeDays: 30 })
+    const data = response?.data ?? response
+    categoryPerformance.value = (data || []).map(category => ({
+      id: category.id,
+      name: category.name,
+      sales: category.sales,
+      revenue: formatCurrency(category.revenue),
+      change: (category.change >= 0 ? '+' : '') + category.change + '%',
+      trend: category.trend,
+      trendIcon: category.trendIcon
+    }))
+  } catch (error) {
+    console.error('Error loading category performance:', error)
+    categoryPerformance.value = []
+  } finally {
+    isLoadingCategoryPerformance.value = false
+  }
 }
 
-const getComparisonData = () => {
-  const current = getRevenueData()
-  return current.map(val => Math.floor(val * 0.85)) // 85% of current period
+// Load customer summary from API
+const loadCustomerSummary = async () => {
+  try {
+    isLoadingCustomerSummary.value = true
+    const response = await thongKeService.getCustomerSummary()
+    customerSummary.value = response?.data ?? response
+  } catch (error) {
+    console.error('Error loading customer summary:', error)
+    customerSummary.value = null
+  } finally {
+    isLoadingCustomerSummary.value = false
+  }
 }
 
-const getCurrentPeriodRevenue = () => {
-  const data = getRevenueData()
-  return data.reduce((sum, val) => sum + val, 0)
+// Load order status counts from API
+const loadOrderStatusCounts = async () => {
+  try {
+    isLoadingOrderStatusCounts.value = true
+    const response = await thongKeService.getOrderStatusCounts()
+    orderStatusCounts.value = response?.data ?? response
+  } catch (error) {
+    console.error('Error loading order status counts:', error)
+    orderStatusCounts.value = null
+  } finally {
+    isLoadingOrderStatusCounts.value = false
+  }
 }
 
-const getCurrentPeriodOrders = () => {
-  const data = getOrdersData()
-  return data.reduce((sum, val) => sum + val, 0)
-}
-
-const getCurrentPeriodProfit = () => {
-  const data = getProfitData()
-  return data.reduce((sum, val) => sum + val, 0)
-}
-
-const getPreviousPeriodRevenue = () => {
-  const data = getComparisonData()
-  return data.reduce((sum, val) => sum + val, 0)
-}
-
-// Methods for ecommerce dashboard
+// Helper methods
 const formatCurrency = (amount) => {
+  if (!amount) return '0₫'
+  const num = Number(amount)
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M₫'
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(0) + 'k₫'
+  }
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND'
-  }).format(amount)
+  }).format(num)
 }
 
-const getOrderStatusColor = (status) => {
-  const colors = {
-    pending: '#f59e0b',
-    processing: '#3b82f6',
-    shipping: '#8b5cf6',
-    completed: '#10b981'
+const mapOrderStatus = (status) => {
+  const statusMap = {
+    'Chờ xác nhận': 'pending',
+    'Đã xác nhận': 'processing',
+    'Đang giao': 'shipping',
+    'Hoàn thành': 'completed',
+    'Đã hủy': 'cancelled'
   }
-  return colors[status] || '#6b7280'
+  return statusMap[status] || 'pending'
 }
 
-onMounted(() => {
-  // Initialize dashboard
+// Watch for metric and time range changes
+watch([selectedMetric, chartTimeRange], () => {
+  loadChartData()
+})
+
+// Initialize dashboard on mount
+onMounted(async () => {
+  // Load all data in parallel
+  await Promise.all([
+    (async () => {
+      try {
+        isLoadingSummary.value = true
+        const s = await thongKeService.getSummary({ lowStockThreshold: 10 })
+        summary.value = s?.data ?? s
+      } catch (error) {
+        console.error('Error loading summary:', error)
+      } finally {
+        isLoadingSummary.value = false
+      }
+    })(),
+    (async () => {
+      try {
+        isLoadingAlerts.value = true
+        const a = await thongKeService.getAlerts({ lowStockThreshold: 10 })
+        alerts.value = a?.data ?? a
+      } catch (error) {
+        console.error('Error loading alerts:', error)
+      } finally {
+        isLoadingAlerts.value = false
+      }
+    })(),
+    loadChartData(),
+    loadTopProducts(),
+    loadRecentOrders(),
+    loadCategoryPerformance(),
+    loadCustomerSummary(),
+    loadOrderStatusCounts()
+  ])
 })
 </script>
 
@@ -2311,5 +2299,39 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+/* Loading and Empty States */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.loading-state .spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-style: italic;
 }
 </style>

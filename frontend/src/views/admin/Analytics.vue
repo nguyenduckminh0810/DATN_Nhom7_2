@@ -526,7 +526,7 @@
             <div class="chart-content">
               <Chart
                 type="bar"
-                :data="customerAnalyticsData"
+                :data="customerAnalyticsChartData"
                 :options="customerAnalyticsOptions"
                 :height="200"
               />
@@ -595,8 +595,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Chart from '@/components/admin/Chart.vue'
+import thongKeService from '@/services/thongKeService'
 
 // Reactive data
 const showAdvancedFilters = ref(false)
@@ -608,16 +609,14 @@ const selectedRegion = ref('')
 const selectedCustomerType = ref('')
 const selectedAgeGroup = ref('')
 
-// Real-time state (moved to later section)
-
 const selectedMetric = ref('revenue')
 const chartType = ref('line')
 const orderDistributionType = ref('status')
 const customerAnalyticsType = ref('segments')
 
 // Comparison mode with date picker
-const comparisonMode = ref('yesterday') // Default to yesterday
-const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000)) // Yesterday
+const comparisonMode = ref('yesterday')
+const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000))
 const showComparisonDatePicker = ref(false)
 
 // Chart refs
@@ -625,128 +624,226 @@ const mainChart = ref(null)
 const orderDistributionChart = ref(null)
 const customerAnalyticsChart = ref(null)
 
-// Mock data
-const totalRevenue = ref(125000000)
-const totalOrders = ref(1250)
-const totalCustomers = ref(450)
-const totalProducts = ref(3200)
+// Loading states
+const isLoadingKpis = ref(false)
+const isLoadingHourlySales = ref(false)
+const isLoadingBusinessInsights = ref(false)
+const isLoadingPerformance = ref(false)
+const isLoadingTopProducts = ref(false)
 
-// Today's metrics (will be calculated from hourly data)
+// KPI Data - from API
+const totalRevenue = ref(0)
+const totalOrders = ref(0)
+const totalCustomers = ref(0)
+const totalProducts = ref(0)
+const revenueGrowth = ref(0)
+const ordersGrowth = ref(0)
+const customersGrowth = ref(0)
+const productsGrowth = ref(0)
 
-const averageOrderValue = ref(100000)
-const refundRate = ref(2.5)
-const profitMargin = ref(28.5)
-const returningCustomers = ref(35)
-const customerLifetimeValue = ref(850000)
-const averageRetentionDays = ref(120)
-const topSellingProduct = ref('Áo thun nam cao cấp')
-const topCategory = ref('Áo thun')
-const inventoryTurnover = ref(4.2)
-const cartConversionRate = ref(3.8)
-const cartAbandonmentRate = ref(68.5)
-const customerSatisfaction = ref(92.3)
+// Business Insights - from API
+const averageOrderValue = ref(0)
+const refundRate = ref(0)
+const profitMargin = ref(0)
+const returningCustomers = ref(0)
+const customerLifetimeValue = ref(0)
+const averageRetentionDays = ref(0)
+const topSellingProduct = ref('')
+const topCategory = ref('')
+const inventoryTurnover = ref(0)
 
-const growthRate = ref(12.5)
+// Performance Metrics - from API
+const cartConversionRate = ref(0)
+const cartAbandonmentRate = ref(0)
+const customerSatisfaction = ref(0)
 
-// Real-time metrics
+// Computed growth rate (use revenue growth as main indicator)
+const growthRate = computed(() => Math.abs(revenueGrowth.value).toFixed(1))
+
+// Real-time metrics - from API
 const todayRevenue = ref(0)
 const todayVisitors = ref(0)
 const todayClicks = ref(0)
 const todayOrders = ref(0)
 const todayProducts = ref(0)
 const todayBuyers = ref(0)
+const todayCustomers = ref(0)
 const conversionRate = ref(0)
 const lastUpdate = ref('')
 const isRealtimeActive = ref(true)
 const lastUpdated = ref(new Date())
 
-// Chart data
-// Real-time 24-hour data
-const hourlySales = ref(Array.from({ length: 24 }, (_, hour) => ({
-  hour: hour,
-  time: `${hour.toString().padStart(2, '0')}:00`,
-  revenue: Math.floor(Math.random() * 2000000) + 500000, // Random revenue 500k-2.5M
-  orders: Math.floor(Math.random() * 20) + 5, // Random orders 5-25
-  customers: Math.floor(Math.random() * 15) + 3 // Random customers 3-18
-})))
+// Chart data - from API
+const hourlySales = ref([])
+const topProducts = ref([])
+const orderStatusCounts = ref(null)
+const customerAnalyticsData = ref(null)
 
-// Generate realistic hourly patterns
-const generateRealisticHourlyData = () => {
-  hourlySales.value = Array.from({ length: 24 }, (_, hour) => {
-    let baseRevenue = 200000
-    
-    // Peak hours: 9-11, 14-16, 19-21
-    if (hour >= 9 && hour <= 11) baseRevenue = 1500000
-    else if (hour >= 14 && hour <= 16) baseRevenue = 1800000
-    else if (hour >= 19 && hour <= 21) baseRevenue = 2000000
-    else if (hour >= 22 || hour <= 6) baseRevenue = 100000 // Low traffic at night
-    
-    const revenue = baseRevenue + Math.floor(Math.random() * baseRevenue * 0.3)
-    const orders = Math.floor(revenue / 100000) + Math.floor(Math.random() * 5)
-    const customers = Math.floor(orders * 0.7) + Math.floor(Math.random() * 3)
-    
-    return {
-      hour: hour,
-      time: `${hour.toString().padStart(2, '0')}:00`,
-      revenue: revenue,
-      orders: orders,
-      customers: customers
-    }
-  })
-}
+// Computed properties for change indicators
+const revenueChange = computed(() => ({
+  type: revenueGrowth.value >= 0 ? 'positive' : 'negative',
+  icon: revenueGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
+  value: Math.abs(revenueGrowth.value).toFixed(1)
+}))
 
-// Initialize with realistic data
-generateRealisticHourlyData()
+const ordersChange = computed(() => ({
+  type: ordersGrowth.value >= 0 ? 'positive' : 'negative',
+  icon: ordersGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
+  value: Math.abs(ordersGrowth.value).toFixed(1)
+}))
 
-// Initialize real-time metrics
-todayRevenue.value = hourlySales.value.reduce((sum, hour) => sum + hour.revenue, 0)
-todayVisitors.value = hourlySales.value.reduce((sum, hour) => sum + hour.customers, 0) * 8
-todayClicks.value = hourlySales.value.reduce((sum, hour) => sum + hour.orders, 0) * 12
-todayOrders.value = hourlySales.value.reduce((sum, hour) => sum + hour.orders, 0)
-todayProducts.value = 49
-todayBuyers.value = hourlySales.value.reduce((sum, hour) => sum + hour.customers, 0)
-conversionRate.value = parseFloat((todayOrders.value / todayVisitors.value * 100).toFixed(2))
-lastUpdate.value = new Date().toLocaleString('vi-VN')
-lastUpdated.value = new Date()
+const customersChange = computed(() => ({
+  type: customersGrowth.value >= 0 ? 'positive' : 'negative',
+  icon: customersGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
+  value: Math.abs(customersGrowth.value).toFixed(1)
+}))
 
-// Real-time update function for hourly data
-const updateRealTimeData = () => {
-  // Simulate real-time data updates
-  const now = new Date()
-  const currentHour = now.getHours()
-  
-  // Update current hour with new random data
-  if (hourlySales.value[currentHour]) {
-    hourlySales.value[currentHour].revenue += Math.floor(Math.random() * 200000)
-    hourlySales.value[currentHour].orders += Math.floor(Math.random() * 2)
-    hourlySales.value[currentHour].customers += Math.floor(Math.random() * 1)
-  }
-  
-  // Update real-time metrics based on current hourly data
-  todayRevenue.value = hourlySales.value.reduce((sum, hour) => sum + hour.revenue, 0)
-  todayVisitors.value = hourlySales.value.reduce((sum, hour) => sum + hour.customers, 0) * 8
-  todayClicks.value = hourlySales.value.reduce((sum, hour) => sum + hour.orders, 0) * 12
-  todayOrders.value = hourlySales.value.reduce((sum, hour) => sum + hour.orders, 0)
-  todayProducts.value = 49
-  todayBuyers.value = hourlySales.value.reduce((sum, hour) => sum + hour.customers, 0)
-  conversionRate.value = parseFloat((todayOrders.value / todayVisitors.value * 100).toFixed(2))
-  
-  lastUpdate.value = new Date().toLocaleString('vi-VN')
-  lastUpdated.value = new Date()
-}
+const productsChange = computed(() => ({
+  type: productsGrowth.value >= 0 ? 'positive' : 'negative',
+  icon: productsGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
+  value: Math.abs(productsGrowth.value).toFixed(1)
+}))
 
 // Set up real-time updates every 30 seconds
 let realTimeInterval = null
 
-onMounted(() => {
-  // Initial data generation
-  generateRealisticHourlyData()
+// ==================== LOAD DATA METHODS ====================
+
+const loadKpis = async () => {
+  try {
+    isLoadingKpis.value = true
+    const response = await thongKeService.getAnalyticsKpis()
+    const data = response?.data ?? response
+    
+    totalRevenue.value = Number(data.totalRevenue || 0)
+    totalOrders.value = Number(data.totalOrders || 0)
+    totalCustomers.value = Number(data.totalCustomers || 0)
+    totalProducts.value = Number(data.totalProducts || 0)
+    
+    revenueGrowth.value = Number(data.revenueGrowth || 0)
+    ordersGrowth.value = Number(data.ordersGrowth || 0)
+    customersGrowth.value = Number(data.customersGrowth || 0)
+    productsGrowth.value = Number(data.productsGrowth || 0)
+  } catch (error) {
+    console.error('Error loading KPIs:', error)
+  } finally {
+    isLoadingKpis.value = false
+  }
+}
+
+const loadHourlySales = async () => {
+  try {
+    isLoadingHourlySales.value = true
+    const response = await thongKeService.getHourlySales()
+    const data = response?.data ?? response
+    hourlySales.value = data || []
+    
+    // Calculate today's totals
+    todayRevenue.value = hourlySales.value.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
+    todayOrders.value = hourlySales.value.reduce((sum, item) => sum + Number(item.orders || 0), 0)
+    todayCustomers.value = hourlySales.value.reduce((sum, item) => sum + Number(item.customers || 0), 0)
+    
+    lastUpdate.value = new Date().toLocaleString('vi-VN')
+    lastUpdated.value = new Date()
+  } catch (error) {
+    console.error('Error loading hourly sales:', error)
+  } finally {
+    isLoadingHourlySales.value = false
+  }
+}
+
+const loadBusinessInsights = async () => {
+  try {
+    isLoadingBusinessInsights.value = true
+    const response = await thongKeService.getBusinessInsights()
+    const data = response?.data ?? response
+    
+    averageOrderValue.value = Number(data.averageOrderValue || 0)
+    refundRate.value = Number(data.refundRate || 0)
+    profitMargin.value = Number(data.profitMargin || 0)
+    returningCustomers.value = Number(data.returningCustomersRate || 0)
+    customerLifetimeValue.value = Number(data.customerLifetimeValue || 0)
+    averageRetentionDays.value = Number(data.averageRetentionDays || 0)
+    topSellingProduct.value = data.topSellingProduct || ''
+    topCategory.value = data.topCategory || ''
+    inventoryTurnover.value = Number(data.inventoryTurnover || 0)
+  } catch (error) {
+    console.error('Error loading business insights:', error)
+  } finally {
+    isLoadingBusinessInsights.value = false
+  }
+}
+
+const loadPerformanceMetrics = async () => {
+  try {
+    isLoadingPerformance.value = true
+    const response = await thongKeService.getPerformanceMetrics()
+    const data = response?.data ?? response
+    
+    conversionRate.value = Number(data.conversionRate || 0)
+    cartAbandonmentRate.value = Number(data.cartAbandonmentRate || 0)
+    customerSatisfaction.value = Number(data.customerSatisfaction || 0)
+  } catch (error) {
+    console.error('Error loading performance metrics:', error)
+  } finally {
+    isLoadingPerformance.value = false
+  }
+}
+
+const loadTopProducts = async () => {
+  try {
+    isLoadingTopProducts.value = true
+    const response = await thongKeService.getTopProducts({ limit: 5, rangeDays: 30 })
+    const data = response?.data ?? response
+    topProducts.value = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      category: product.category || 'N/A',
+      sales: product.sales,
+      revenue: product.revenue,
+      image: product.image || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=SP'
+    }))
+  } catch (error) {
+    console.error('Error loading top products:', error)
+  } finally {
+    isLoadingTopProducts.value = false
+  }
+}
+
+const loadOrderStatusCounts = async () => {
+  try {
+    const response = await thongKeService.getOrderStatusCounts()
+    orderStatusCounts.value = response?.data ?? response
+  } catch (error) {
+    console.error('Error loading order status counts:', error)
+  }
+}
+
+const loadCustomerAnalytics = async () => {
+  try {
+    const response = await thongKeService.getCustomerAnalytics({ type: customerAnalyticsType.value })
+    customerAnalyticsData.value = response?.data ?? response
+  } catch (error) {
+    console.error('Error loading customer analytics:', error)
+  }
+}
+
+onMounted(async () => {
+  // Load all data
+  await Promise.all([
+    loadKpis(),
+    loadHourlySales(),
+    loadBusinessInsights(),
+    loadPerformanceMetrics(),
+    loadTopProducts(),
+    loadOrderStatusCounts(),
+    loadCustomerAnalytics()
+  ])
   
-  // Start real-time updates (always enabled)
-  realTimeInterval = setInterval(updateRealTimeData, 30000)
-  
-  // Initial update
-  updateRealTimeData()
+  // Start real-time updates (refresh every 5 minutes)
+  realTimeInterval = setInterval(async () => {
+    await loadHourlySales()
+  }, 300000) // 5 minutes
 })
 
 onUnmounted(() => {
@@ -754,14 +851,6 @@ onUnmounted(() => {
     clearInterval(realTimeInterval)
   }
 })
-
-const topProducts = ref([
-  { id: 1, name: 'Áo thun nam cao cấp', category: 'Áo thun', sales: 125, revenue: 12500000, image: '/images/products/ao-thun-1.jpg' },
-  { id: 2, name: 'Quần jean slim fit', category: 'Quần jean', sales: 98, revenue: 9800000, image: '/images/products/quan-jean-1.jpg' },
-  { id: 3, name: 'Áo sơ mi trắng', category: 'Áo sơ mi', sales: 87, revenue: 8700000, image: '/images/products/ao-so-mi-1.jpg' },
-  { id: 4, name: 'Quần short kaki', category: 'Quần short', sales: 76, revenue: 7600000, image: '/images/products/quan-short-1.jpg' },
-  { id: 5, name: 'Áo hoodie nam', category: 'Áo hoodie', sales: 65, revenue: 6500000, image: '/images/products/ao-hoodie-1.jpg' }
-])
 
 // Generate comparison data based on mode
 const getComparisonData = computed(() => {
@@ -837,30 +926,6 @@ const comparisonPercentage = computed(() => {
 })
 
 // Computed properties
-const revenueChange = computed(() => ({
-  type: 'positive',
-  icon: 'bi bi-graph-up',
-  value: '+12.5'
-}))
-
-const ordersChange = computed(() => ({
-  type: 'positive', 
-  icon: 'bi bi-graph-up',
-  value: '+8.3'
-}))
-
-const customersChange = computed(() => ({
-  type: 'positive',
-  icon: 'bi bi-graph-up', 
-  value: '+15.2'
-}))
-
-const productsChange = computed(() => ({
-  type: 'positive',
-  icon: 'bi bi-graph-up',
-  value: '+6.7'
-}))
-
 const metrics = computed(() => [
   { value: 'revenue', label: 'Doanh thu', icon: 'bi bi-currency-dollar' },
   { value: 'orders', label: 'Đơn hàng', icon: 'bi bi-bag' },
@@ -1090,34 +1155,55 @@ const mainChartOptions = computed(() => ({
 }))
 
 const orderDistributionData = computed(() => {
-  const baseData = {
-    status: {
-      labels: ['Đã giao', 'Đang giao', 'Đang xử lý', 'Chờ xử lý'],
-      data: [850, 320, 180, 95],
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444']
-    },
-    payment: {
-      labels: ['Đã thanh toán', 'Chưa thanh toán', 'Hoàn tiền'],
-      data: [1200, 350, 50],
-      colors: ['#10b981', '#f59e0b', '#ef4444']
-    },
-    shipping: {
-      labels: ['Giao thành công', 'Đang giao', 'Chờ lấy hàng'],
-      data: [780, 420, 350],
-      colors: ['#10b981', '#3b82f6', '#f59e0b']
+  if (!orderStatusCounts.value) {
+    return {
+      labels: [],
+      datasets: []
     }
   }
   
-  const currentData = baseData[orderDistributionType.value] || baseData.status
+  if (orderDistributionType.value === 'status') {
+    return {
+      labels: ['Chờ xử lý', 'Đang xử lý', 'Đang giao', 'Hoàn thành'],
+      datasets: [{
+        data: [
+          orderStatusCounts.value.pending || 0,
+          orderStatusCounts.value.processing || 0,
+          orderStatusCounts.value.shipping || 0,
+          orderStatusCounts.value.completed || 0
+        ],
+        backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    }
+  } else if (orderDistributionType.value === 'payment') {
+    // Mock data for payment - would need real API
+    return {
+      labels: ['COD', 'VNPay'],
+      datasets: [{
+        data: [650, 600],
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    }
+  } else if (orderDistributionType.value === 'shipping') {
+    // Mock data for shipping - would need real API
+    return {
+      labels: ['Giao thành công', 'Đang giao', 'Chờ lấy hàng'],
+      datasets: [{
+        data: [780, 420, 350],
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    }
+  }
   
   return {
-    labels: currentData.labels,
-    datasets: [{
-      data: currentData.data,
-      backgroundColor: currentData.colors,
-      borderWidth: 2,
-      borderColor: '#ffffff'
-    }]
+    labels: [],
+    datasets: []
   }
 })
 
@@ -1218,36 +1304,66 @@ const orderDistributionOptions = computed(() => ({
   }
 }))
 
-const customerAnalyticsData = computed(() => {
-  const baseData = {
-    segments: {
-      labels: ['VIP', 'Thường xuyên', 'Mới', 'Tiềm năng'],
-      data: [85, 240, 320, 180],
-      colors: ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6']
-    },
-    behavior: {
-      labels: ['Mua thường xuyên', 'Mua theo mùa', 'Mua một lần', 'Không hoạt động'],
-      data: [200, 350, 180, 95],
-      colors: ['#10b981', '#3b82f6', '#f59e0b', '#6b7280']
-    },
-    geography: {
-      labels: ['Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Khác'],
-      data: [280, 420, 150, 125],
-      colors: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6']
+const customerAnalyticsChartData = computed(() => {
+  if (!customerAnalyticsData.value) {
+    return {
+      labels: [],
+      datasets: []
     }
   }
   
-  const currentData = baseData[customerAnalyticsType.value] || baseData.segments
+  // Handle different types
+  if (customerAnalyticsType.value === 'segments') {
+    return {
+      labels: ['Khách mới', 'Khách cũ', 'VIP'],
+      datasets: [{
+        label: 'Số lượng khách hàng',
+        data: [
+          customerAnalyticsData.value.newCustomers || 0,
+          customerAnalyticsData.value.returningCustomers || 0,
+          customerAnalyticsData.value.vipCustomers || 0
+        ],
+        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+        borderWidth: 0,
+        borderRadius: 4
+      }]
+    }
+  } else if (customerAnalyticsType.value === 'age') {
+    return {
+      labels: ['18-24', '25-34', '35-44', '45+'],
+      datasets: [{
+        label: 'Số lượng khách hàng',
+        data: [
+          customerAnalyticsData.value.age18_24 || 0,
+          customerAnalyticsData.value.age25_34 || 0,
+          customerAnalyticsData.value.age35_44 || 0,
+          customerAnalyticsData.value.age45_plus || 0
+        ],
+        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
+        borderWidth: 0,
+        borderRadius: 4
+      }]
+    }
+  } else if (customerAnalyticsType.value === 'region') {
+    return {
+      labels: ['Miền Bắc', 'Miền Trung', 'Miền Nam'],
+      datasets: [{
+        label: 'Số lượng khách hàng',
+        data: [
+          customerAnalyticsData.value.north || 0,
+          customerAnalyticsData.value.central || 0,
+          customerAnalyticsData.value.south || 0
+        ],
+        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+        borderWidth: 0,
+        borderRadius: 4
+      }]
+    }
+  }
   
   return {
-    labels: currentData.labels,
-    datasets: [{
-      label: 'Số lượng khách hàng',
-      data: currentData.data,
-      backgroundColor: currentData.colors,
-      borderWidth: 0,
-      borderRadius: 4
-    }]
+    labels: [],
+    datasets: []
   }
 })
 
@@ -1354,6 +1470,40 @@ const customerAnalyticsOptions = computed(() => ({
   categoryPercentage: 0.8
 }))
 
+// Format helper functions
+const formatCurrency = (value) => {
+  if (!value || value === 0) return '0 ₫'
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND'
+  }).format(value)
+}
+
+const formatTime = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleString('vi-VN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const formatDate = (date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+const formatNumber = (value) => {
+  if (!value || value === 0) return '0'
+  return new Intl.NumberFormat('vi-VN').format(value)
+}
+
 // Methods
 const toggleAdvancedFilters = () => {
   showAdvancedFilters.value = !showAdvancedFilters.value
@@ -1378,9 +1528,18 @@ const exportReport = () => {
   // Export report functionality
 }
 
-const refreshData = () => {
+const refreshData = async () => {
   lastUpdated.value = new Date()
-  // Refresh data
+  // Reload all data
+  await Promise.all([
+    loadKpis(),
+    loadHourlySales(),
+    loadBusinessInsights(),
+    loadPerformanceMetrics(),
+    loadTopProducts(),
+    loadOrderStatusCounts(),
+    loadCustomerAnalytics()
+  ])
 }
 
 // Toggle function moved to later section
@@ -1393,32 +1552,6 @@ const toggleChartType = () => {
 
 const viewTopProducts = () => {
   // Navigate to all top products
-}
-
-// formatCurrency moved to later section
-
-const formatDate = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  }).format(date)
-}
-
-const formatTime = (date) => {
-  if (!date) return ''
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }).format(new Date(date))
-}
-
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(value)
 }
 
 // Real-time is always enabled - no toggle needed
