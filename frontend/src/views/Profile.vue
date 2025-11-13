@@ -50,17 +50,18 @@
               <router-link to="/orders" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
-              </a>
               <router-link to="/addresses" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
               </router-link>
               <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-credit-card me-2"></i>Phương thức thanh toán
-              </a>
-              <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bell me-2"></i>Thông báo
+              </a>
+              <a
+                href="#"
+                class="list-group-item list-group-item-action text-danger py-3"
+                @click.prevent="logout"
+              >
+                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
               </a>
             </div>
           </div>
@@ -232,8 +233,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // Reactive data
 const isSubmitting = ref(false)
@@ -348,6 +351,14 @@ const handleChangePassword = async () => {
 
 const resetForm = () => {
   loadUserData()
+}
+
+// Logout
+const logout = () => {
+  if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+    userStore.logout()
+    router.push('/')
+  }
 }
 
 // Lifecycle

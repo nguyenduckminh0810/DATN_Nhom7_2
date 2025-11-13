@@ -48,7 +48,7 @@
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
               <router-link
-                to="/profile/addresses"
+                to="/addresses"
                 class="list-group-item list-group-item-action py-3"
               >
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
