@@ -219,14 +219,14 @@
       <div class="categories-carousel-container">
         <button class="section-nav-btn prev" @click="scrollCategories('prev')">‹</button>
         <div class="section-list categories-grid" ref="categoriesGrid">
-          <template v-if="isLoading">
-            <SkeletonLoader
-              v-for="n in 5"
-              :key="`category-skeleton-${n}`"
-              variant="card"
-              class="category-item section-item"
-            />
-          </template>
+          <template v-if="isLoadingCategories">
+  <SkeletonLoader
+    v-for="n in 5"
+    :key="`category-skeleton-${n}`"
+    variant="card"
+    class="category-item section-item"
+  />
+</template>
           <template v-else>
             <div
               v-for="category in displayCategories"
@@ -253,15 +253,14 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import UspBar from '../components/home/UspBar.vue'
 import BestSellers from '../components/home/BestSellers.vue'
 import NewArrivals from '../components/home/NewArrivals.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
+import categoryService from '../services/categoryService'
 
 defineOptions({ name: 'HomeView' })
 
 const router = useRouter()
-const isLoading = ref(false)
 const carouselInterval = ref(null)
 const currentIndex = ref(1)
 const isAnimating = ref(false)
@@ -337,108 +336,113 @@ const onTransitionEnd = () => {
   if (currentIndex.value === 0) currentIndex.value = heroSlides.value.length
 }
 
-const categoryFilters = ref([
-  { id: 'ao', name: 'ÁO' },
-  { id: 'quan', name: 'QUẦN' },
-])
+// State cho categories
+const categoryFilters = ref([])
+const selectedFilter = ref(null)
+const allCategories = ref([])
+const isLoadingCategories = ref(false)
 
-const selectedFilter = ref('ao')
+const mapCategoryFromBE = (beCategory) => {
 
-const allCategories = ref([
-  {
-    id: 1,
-    name: 'ÁO THUN',
-    slug: 'ao-thun',
-    description: 'Áo thun nam cao cấp',
-    filter: 'ao',
-    image:
-      'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 2,
-    name: 'ÁO SƠ MI',
-    slug: 'ao-so-mi',
-    description: 'Áo sơ mi nam công sở',
-    filter: 'ao',
-    image:
-      'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 3,
-    name: 'ÁO KHOÁC',
-    slug: 'ao-khoac',
-    description: 'Áo khoác nam thời trang',
-    filter: 'ao',
-    image:
-      'https://images.unsplash.com/photo-1551028719-00167b16eac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 4,
-    name: 'ÁO POLO',
-    slug: 'ao-polo',
-    description: 'Áo polo nam cao cấp',
-    filter: 'ao',
-    image:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 5,
-    name: 'QUẦN ÂU',
-    slug: 'quan-au',
-    description: 'Quần âu nam công sở',
-    filter: 'quan',
-    image:
-      'https://images.unsplash.com/photo-1506629905607-1a5a1b1b1b1b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 6,
-    name: 'QUẦN JEAN',
-    slug: 'quan-jean',
-    description: 'Quần jean nam thời trang',
-    filter: 'quan',
-    image:
-      'https://images.unsplash.com/photo-1542272604-787c3835535d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 7,
-    name: 'QUẦN SHORT',
-    slug: 'quan-short',
-    description: 'Quần short nam thể thao',
-    filter: 'quan',
-    image:
-      'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 8,
-    name: 'ÁO HOODIE',
-    slug: 'ao-hoodie',
-    description: 'Áo hoodie nam thời trang',
-    filter: 'ao',
-    image:
-      'https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-  {
-    id: 9,
-    name: 'QUẦN JOGGER',
-    slug: 'quan-jogger',
-    description: 'Quần jogger nam thể thao',
-    filter: 'quan',
-    image:
-      'https://images.unsplash.com/photo-1591195853828-11db59a44f6b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-  },
-])
+  const tenLower = (beCategory.ten || '').toLowerCase()
+  const slugLower = (beCategory.slug || '').toLowerCase()
+  
+  let filter = null
+  if (tenLower.includes('áo') || slugLower.startsWith('ao') || slugLower.includes('ao-')) {
+    filter = 'ao'
+  } else if (tenLower.includes('quần') || slugLower.startsWith('quan') || slugLower.includes('quan-')) {
+    filter = 'quan'
+  }
 
-const filteredCategories = computed(() =>
-  allCategories.value.filter((c) => c.filter === selectedFilter.value),
-)
+  const description = `${beCategory.ten} nam cao cấp`
+
+  const defaultImage = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+  
+  return {
+    id: beCategory.id,
+    name: beCategory.ten,
+    slug: beCategory.slug,
+    description: description,
+    filter: filter,
+    image: defaultImage, 
+    idCha: beCategory.idCha,
+    thuTu: beCategory.thuTu,
+    hoatDong: beCategory.hoatDong,
+    productCount: beCategory.productCount || 0
+  }
+}
+
+const fetchCategories = async () => {
+  isLoadingCategories.value = true
+  try {
+    const response = await categoryService.getAll()
+    
+    if (response.success && response.data) {
+      const mappedCategories = response.data.map(mapCategoryFromBE)
+      
+      const activeCategories = mappedCategories.filter(cat => cat.hoatDong === 1)
+
+      const parentCategories = activeCategories.filter(cat => !cat.idCha)
+
+      if (parentCategories.length > 0) {
+        categoryFilters.value = parentCategories.map(cat => ({
+          id: cat.id,
+          name: cat.name
+        }))
+
+        if (categoryFilters.value.length > 0) {
+          selectedFilter.value = categoryFilters.value[0].id
+        }
+      } else {
+        const uniqueFilters = [...new Set(activeCategories.map(cat => cat.filter).filter(Boolean))]
+        if (uniqueFilters.length > 0) {
+          categoryFilters.value = uniqueFilters.map(filter => {
+            const filterNames = {
+              'ao': 'ÁO',
+              'quan': 'QUẦN'
+            }
+            return {
+              id: filter,
+              name: filterNames[filter] || filter.toUpperCase()
+            }
+          })
+          selectedFilter.value = categoryFilters.value[0].id
+        }
+      }
+
+      allCategories.value = activeCategories.filter(cat => cat.idCha !== null)
+      
+
+      allCategories.value.sort((a, b) => {
+        if (a.thuTu && b.thuTu) return a.thuTu - b.thuTu
+        return 0
+      })
+    }
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    categoryFilters.value = [
+      { id: 'ao', name: 'ÁO' },
+      { id: 'quan', name: 'QUẦN' },
+    ]
+    selectedFilter.value = 'ao'
+  } finally {
+    isLoadingCategories.value = false
+  }
+}
+
+const filteredCategories = computed(() => {
+  if (!selectedFilter.value) return []
+  return allCategories.value.filter((c) => c.idCha === selectedFilter.value)
+})
 
 const currentCategoryIndex = ref(0)
 const displayCategories = computed(() => {
-  if (filteredCategories.value.length === 0) return []
+  const list = filteredCategories.value
+  if (list.length <= 5) return list
   const result = []
   for (let i = 0; i < 5; i++) {
-    const index = (currentCategoryIndex.value + i) % filteredCategories.value.length
-    result.push(filteredCategories.value[index])
+    const index = (currentCategoryIndex.value + i) % list.length
+    result.push(list[index])
   }
   return result
 })
@@ -489,6 +493,7 @@ const stopCarousel = () => {
 
 onMounted(() => {
   startCarousel()
+  fetchCategories()
 })
 onUnmounted(() => {
   stopCarousel()

@@ -68,7 +68,7 @@ public class DonHang {
     private String paymentStatus; // pending, paid, failed
 
     @Column(name = "payment_method")
-    private String paymentMethod; // COD, BANK_TRANSFER, MOMO
+    private String paymentMethod; // COD, VNPAY
 
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DonHangChiTiet> chiTietList;
