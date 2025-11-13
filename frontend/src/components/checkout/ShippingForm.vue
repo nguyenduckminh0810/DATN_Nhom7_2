@@ -754,6 +754,74 @@ watch(
   },
   { immediate: false },
 )
+
+const syncProvinceInfo = () => {
+  if (!shippingInfo.value) {
+    return
+  }
+
+  const provinceId = selectedProvince.value
+  if (!provinceId) {
+    shippingInfo.value.province = ''
+    shippingInfo.value.provinceId = null
+    return
+  }
+
+  const province = provinces.value.find((p) => p.ProvinceID === provinceId)
+  if (province) {
+    shippingInfo.value.province = province.ProvinceName
+    shippingInfo.value.provinceId = province.ProvinceID
+  }
+}
+
+const syncDistrictInfo = () => {
+  if (!shippingInfo.value) {
+    return
+  }
+
+  const districtId = selectedDistrict.value
+  if (!districtId) {
+    shippingInfo.value.district = ''
+    shippingInfo.value.districtId = null
+    shippingInfo.value.ward = ''
+    shippingInfo.value.wardCode = null
+    return
+  }
+
+  const district = districts.value.find((d) => d.DistrictID === districtId)
+  if (district) {
+    shippingInfo.value.district = district.DistrictName
+    shippingInfo.value.districtId = district.DistrictID
+  }
+}
+
+const syncWardInfo = () => {
+  if (!shippingInfo.value) {
+    return
+  }
+
+  const wardCode = selectedWard.value
+  if (!wardCode) {
+    shippingInfo.value.ward = ''
+    shippingInfo.value.wardCode = null
+    return
+  }
+
+  const ward = wards.value.find((w) => w.WardCode === wardCode)
+  if (ward) {
+    shippingInfo.value.ward = ward.WardName
+    shippingInfo.value.wardCode = ward.WardCode
+  }
+}
+
+watch(selectedProvince, syncProvinceInfo)
+watch(provinces, syncProvinceInfo)
+
+watch(selectedDistrict, syncDistrictInfo)
+watch(districts, syncDistrictInfo)
+
+watch(selectedWard, syncWardInfo)
+watch(wards, syncWardInfo)
 </script>
 
 <style scoped>

@@ -368,6 +368,9 @@ import {
   getOrderStatusLabel,
 } from '@/utils/orderStatus'
 
+const REORDER_SNAPSHOT_KEY = 'auro_reorder_variant_labels'
+const REORDER_SNAPSHOT_TTL = 1000 * 60 * 30
+
 defineOptions({
   name: 'OrdersView',
 })
@@ -478,6 +481,96 @@ const computeOrderTotal = (order) => {
     return 0
   }
   return calculateOrderTotal(order.subtotal, order.shippingFee, order.discount)
+}
+
+const normalizeSnapshotKeyPart = (value) => {
+  if (value == null) {
+    return ''
+  }
+  return value.toString().trim().toLowerCase()
+}
+
+const buildSnapshotProductKey = (productId, color, size) => {
+  if (!productId) {
+    return null
+  }
+  return `${productId}|${normalizeSnapshotKeyPart(color)}|${normalizeSnapshotKeyPart(size)}`
+}
+
+const readReorderSnapshots = () => {
+  try {
+    const raw = localStorage.getItem(REORDER_SNAPSHOT_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const payload = JSON.parse(raw)
+    if (!payload || typeof payload !== 'object') {
+      localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+      return null
+    }
+
+    const createdAt = payload.createdAt || payload.timestamp
+    if (createdAt && Date.now() - createdAt > REORDER_SNAPSHOT_TTL) {
+      localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+      return null
+    }
+
+    return {
+      variants: payload.variants || {},
+      products: payload.products || {},
+    }
+  } catch (error) {
+    console.error('❌ [ORDERS] Không thể đọc snapshot reorder:', error)
+    localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+    return null
+  }
+}
+
+const applyReorderSnapshotsToOrderItems = (items, snapshots) => {
+  if (!Array.isArray(items) || items.length === 0 || !snapshots) {
+    return
+  }
+
+  const { variants = {}, products = {} } = snapshots
+
+  items.forEach((item) => {
+    if (!item) {
+      return
+    }
+
+    const variantId = item.variantId || item.bienTheId || item.chiTietId || null
+    const productId = item.sanPhamId || item.productId || null
+    const color = item.mauSacTen || item.color || item.mauSac || null
+    const size = item.kichCoTen || item.size || item.kichCo || null
+
+    let snapshot = null
+
+    if (variantId && variants[variantId]) {
+      snapshot = variants[variantId]
+    } else {
+      const productKey = buildSnapshotProductKey(productId, color, size)
+      if (productKey && products[productKey]) {
+        snapshot = products[productKey]
+      }
+    }
+
+    if (!snapshot) {
+      return
+    }
+
+    if (snapshot.displayName) {
+      item.name = snapshot.displayName
+    }
+
+    if (snapshot.color && !item.mauSacTen) {
+      item.mauSacTen = snapshot.color
+    }
+
+    if (snapshot.size && !item.kichCoTen) {
+      item.kichCoTen = snapshot.size
+    }
+  })
 }
 
 const getStatusCount = (statusCode) => {
@@ -716,6 +809,8 @@ const fetchOrders = async () => {
     console.log('📋 Order data length:', orderData.length)
     console.log('📋 Is array?:', Array.isArray(orderData))
 
+    const reorderSnapshots = readReorderSnapshots()
+
     // Map backend data to frontend structure
     orders.value = orderData.map((order) => {
       const statusInfo = normalizeOrderStatus(order.trangThai)
@@ -725,10 +820,13 @@ const fetchOrders = async () => {
           const unitPrice = parseAmount(item.donGia)
           const quantity = parseAmount(item.soLuong || 1)
           const lineTotal = unitPrice * quantity
+          const baseName = item.tenSanPham || 'Sản phẩm'
+          const variantLabel = [item.mauSacTen, item.kichCoTen].filter((part) => !!part).join(' - ')
+          const displayName = variantLabel ? `${baseName} | ${variantLabel}` : baseName
 
           return {
             id: item.id,
-            name: item.tenSanPham || 'Sản phẩm',
+            name: displayName,
             image:
               item.hinhAnh ||
               'https://via.placeholder.com/60x60/6c757d/ffffff?text=Product',
@@ -747,6 +845,8 @@ const fetchOrders = async () => {
             reviewCreatedAt: item.danhGiaTaoLuc || null,
           }
         }) || []
+
+      applyReorderSnapshotsToOrderItems(items, reorderSnapshots)
 
       const computedSubtotal = items.reduce((sum, item) => sum + parseAmount(item.subtotal), 0)
       const shippingFee = parseAmount(order.phiVanChuyen)

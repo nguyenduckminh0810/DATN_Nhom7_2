@@ -255,6 +255,9 @@ import {
   ORDER_STATUS_CODES,
 } from '@/utils/orderStatus'
 
+const REORDER_SNAPSHOT_KEY = 'auro_reorder_variant_labels'
+const REORDER_SNAPSHOT_TTL = 1000 * 60 * 30
+
 const route = useRoute()
 const router = useRouter()
 
@@ -290,17 +293,25 @@ const fetchOrderDetail = async () => {
 
     console.log('Order detail response:', response)
 
+    const reorderSnapshots = readReorderSnapshots()
+
     const mappedItems = (orderData?.chiTietList || []).map((item) => {
       const unitPrice = parseAmount(item.donGia)
       const quantity = parseAmount(item.soLuong || 1)
       const lineTotal = unitPrice * quantity
+      const enhancedItem = enhanceOrderItemWithVariantInfo(
+        {
+          ...item,
+          donGia: unitPrice,
+          soLuong: quantity,
+          lineTotal,
+        },
+        reorderSnapshots,
+      )
 
       return {
-        ...item,
-        donGia: unitPrice,
-        soLuong: quantity,
-        lineTotal,
-        moTaBienThe: item.moTaBienThe || createVariantText(item),
+        ...enhancedItem,
+        moTaBienThe: enhancedItem.moTaBienThe || createVariantText(enhancedItem),
       }
     })
 
@@ -378,6 +389,96 @@ const formatDate = (dateString) => {
 const formatAddress = (address) => {
   if (!address) return ''
   return address.replace(/\n/g, '<br>')
+}
+
+const normalizeSnapshotKeyPart = (value) => {
+  if (value == null) {
+    return ''
+  }
+  return value.toString().trim().toLowerCase()
+}
+
+const buildSnapshotProductKey = (productId, color, size) => {
+  if (!productId) {
+    return null
+  }
+  return `${productId}|${normalizeSnapshotKeyPart(color)}|${normalizeSnapshotKeyPart(size)}`
+}
+
+const readReorderSnapshots = () => {
+  try {
+    const raw = localStorage.getItem(REORDER_SNAPSHOT_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const payload = JSON.parse(raw)
+    if (!payload || typeof payload !== 'object') {
+      localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+      return null
+    }
+
+    const createdAt = payload.createdAt || payload.timestamp
+    if (createdAt && Date.now() - createdAt > REORDER_SNAPSHOT_TTL) {
+      localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+      return null
+    }
+
+    return {
+      variants: payload.variants || {},
+      products: payload.products || {},
+    }
+  } catch (error) {
+    console.error('❌ [ORDER DETAIL] Không thể đọc snapshot reorder:', error)
+    localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+    return null
+  }
+}
+
+const enhanceOrderItemWithVariantInfo = (item, snapshots) => {
+  if (!item) {
+    return item
+  }
+
+  const variantId = item.bienTheId || item.variantId || item.id || null
+  const productId = item.sanPhamId || item.productId || null
+  const initialColor = item.mauSacTen || item.color || item.mauSac || ''
+  const initialSize = item.kichCoTen || item.size || item.kichCo || ''
+
+  let snapshot = null
+  if (snapshots) {
+    const { variants = {}, products = {} } = snapshots
+
+    if (variantId && variants[variantId]) {
+      snapshot = variants[variantId]
+    } else {
+      const productKey = buildSnapshotProductKey(productId, initialColor, initialSize)
+      if (productKey && products[productKey]) {
+        snapshot = products[productKey]
+      }
+    }
+  }
+
+  const color = snapshot?.color || initialColor
+  const size = snapshot?.size || initialSize
+  const baseName = item.tenSanPham || snapshot?.displayName || 'Sản phẩm'
+  let name = baseName
+
+  if (snapshot?.displayName) {
+    name = snapshot.displayName
+  } else {
+    const variantLabel = [color, size].filter(Boolean).join(' - ')
+    if (variantLabel) {
+      name = `${baseName} | ${variantLabel}`
+    }
+  }
+
+  return {
+    ...item,
+    tenSanPham: name,
+    mauSacTen: color,
+    kichCoTen: size,
+  }
 }
 
 const createVariantText = (item) => {
