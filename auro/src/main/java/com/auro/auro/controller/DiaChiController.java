@@ -27,6 +27,29 @@ public class DiaChiController {
         private final KhachHangRepository khachHangRepository;
 
         /**
+         * Helper method: Lấy hoặc tạo mới KhachHang cho TaiKhoan
+         * Cho phép Admin/Staff cũng có thể quản lý địa chỉ giao hàng
+         */
+        private KhachHang getOrCreateKhachHang(TaiKhoan taiKhoan) {
+                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
+
+                // Nếu chưa có record KhachHang, tự động tạo mới
+                if (khachHang == null) {
+                        System.out.println("Auto-creating KhachHang for user: " + taiKhoan.getEmail());
+                        khachHang = new KhachHang();
+                        khachHang.setTaiKhoan(taiKhoan);
+                        if (taiKhoan.getEmail() != null) {
+                                khachHang.setEmail(taiKhoan.getEmail());
+                        }
+                        khachHang.setKieu("REGISTERED");
+                        khachHang = khachHangRepository.save(khachHang);
+                        System.out.println("Created KhachHang with ID: " + khachHang.getId());
+                }
+
+                return khachHang;
+        }
+
+        /**
          * Lấy tất cả địa chỉ của khách hàng đang đăng nhập
          */
         @GetMapping
@@ -39,23 +62,8 @@ public class DiaChiController {
                 System.out.println("Tai khoan ID: " + taiKhoan.getId());
                 System.out.println("Tai khoan email: " + taiKhoan.getEmail());
 
-                // Kiểm tra xem tài khoản có phải là khách hàng không
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                System.out.println("Khach hang found: " + (khachHang != null));
-                if (khachHang != null) {
-                        System.out.println("Khach hang ID: " + khachHang.getId());
-                }
-
-                // Nếu không phải khách hàng (ví dụ: Admin/Staff), trả về danh sách rỗng
-                if (khachHang == null) {
-                        System.out.println("Khach hang is NULL - returning empty list");
-                        return ResponseEntity.ok(ApiResponse.<List<DiaChiResponse>>builder()
-                                        .success(true)
-                                        .message("Tài khoản này không có địa chỉ giao hàng")
-                                        .data(List.of())
-                                        .build());
-                }
+                // Lấy hoặc tạo KhachHang
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 List<DiaChiResponse> diaChiList = diaChiService.getDiaChiByKhachHang(khachHangId);
@@ -76,17 +84,7 @@ public class DiaChiController {
         public ResponseEntity<ApiResponse<DiaChiResponse>> getDiaChiMacDinh(
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-                // Kiểm tra xem tài khoản có phải là khách hàng không
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                // Nếu không phải khách hàng, trả về null
-                if (khachHang == null) {
-                        return ResponseEntity.ok(ApiResponse.<DiaChiResponse>builder()
-                                        .success(false)
-                                        .message("Tài khoản này không có địa chỉ giao hàng")
-                                        .data(null)
-                                        .build());
-                }
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 DiaChiResponse diaChi = diaChiService.getDiaChiMacDinh(khachHangId);
@@ -106,15 +104,7 @@ public class DiaChiController {
                         @PathVariable Long id,
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                if (khachHang == null) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                        .body(ApiResponse.<DiaChiResponse>builder()
-                                                        .success(false)
-                                                        .message("Tài khoản này không có quyền truy cập địa chỉ")
-                                                        .build());
-                }
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 DiaChiResponse diaChi = diaChiService.getDiaChiById(khachHangId, id);
@@ -134,15 +124,7 @@ public class DiaChiController {
                         @Valid @RequestBody DiaChiRequest request,
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                if (khachHang == null) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                        .body(ApiResponse.<DiaChiResponse>builder()
-                                                        .success(false)
-                                                        .message("Chỉ khách hàng mới có thể thêm địa chỉ giao hàng")
-                                                        .build());
-                }
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 DiaChiResponse diaChi = diaChiService.themDiaChi(khachHangId, request);
@@ -164,15 +146,7 @@ public class DiaChiController {
                         @Valid @RequestBody DiaChiRequest request,
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                if (khachHang == null) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                        .body(ApiResponse.<DiaChiResponse>builder()
-                                                        .success(false)
-                                                        .message("Tài khoản này không có quyền cập nhật địa chỉ")
-                                                        .build());
-                }
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 DiaChiResponse diaChi = diaChiService.capNhatDiaChi(khachHangId, id, request);
@@ -192,15 +166,7 @@ public class DiaChiController {
                         @PathVariable Long id,
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                if (khachHang == null) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                        .body(ApiResponse.<DiaChiResponse>builder()
-                                                        .success(false)
-                                                        .message("Tài khoản này không có quyền thay đổi địa chỉ")
-                                                        .build());
-                }
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 DiaChiResponse diaChi = diaChiService.datMacDinh(khachHangId, id);
@@ -220,15 +186,7 @@ public class DiaChiController {
                         @PathVariable Long id,
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-                KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
-
-                if (khachHang == null) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                                        .body(ApiResponse.<Void>builder()
-                                                        .success(false)
-                                                        .message("Tài khoản này không có quyền xóa địa chỉ")
-                                                        .build());
-                }
+                KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 diaChiService.xoaDiaChi(khachHangId, id);
