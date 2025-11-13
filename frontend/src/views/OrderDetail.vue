@@ -63,26 +63,55 @@
                   <i class="bi bi-bag me-2"></i>Sản phẩm đã đặt
                 </h5>
               </div>
-              <div class="card-body">
+              <div class="card-body order-items">
                 <div v-for="item in order.chiTietList" :key="item.id" class="order-item">
                   <div class="row align-items-center">
                     <div class="col-md-2">
-                      <img 
-                        :src="item.hinhAnh || 'https://via.placeholder.com/80'" 
+                      <img
+                        :src="item.hinhAnh || 'https://via.placeholder.com/80'"
                         :alt="item.tenSanPham"
                         class="img-fluid rounded"
-                      >
+                      />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-5">
                       <h6 class="mb-1">{{ item.tenSanPham }}</h6>
-                      <p class="text-muted small mb-0">{{ item.moTaBienThe }}</p>
+                      <p class="text-muted small mb-0" v-if="item.moTaBienThe || buildVariantText(item)">
+                        {{ item.moTaBienThe || buildVariantText(item) }}
+                      </p>
                     </div>
                     <div class="col-md-2 text-center">
-                      <span class="text-muted">x{{ item.soLuong }}</span>
+                      <div class="text-muted small">Đơn giá</div>
+                      <strong>{{ formatPrice(item.donGia) }}</strong>
+                    </div>
+                    <div class="col-md-1 text-center">
+                      <div class="text-muted small">SL</div>
+                      <strong>x{{ item.soLuong }}</strong>
                     </div>
                     <div class="col-md-2 text-end">
-                      <strong>{{ formatPrice(item.donGia * item.soLuong) }}</strong>
+                      <div class="text-muted small">Thành tiền</div>
+                      <strong>{{ formatPrice(item.lineTotal || item.donGia * item.soLuong) }}</strong>
                     </div>
+                  </div>
+
+                  <div v-if="item.daDanhGia" class="order-item__review">
+                    <div class="order-item__review-header">
+                      <div class="order-item__review-stars">
+                        <i
+                          v-for="star in 5"
+                          :key="star"
+                          :class="[
+                            'bi',
+                            star <= (item.danhGiaSoSao || 0) ? 'bi-star-fill text-warning' : 'bi-star text-muted',
+                          ]"
+                        ></i>
+                      </div>
+                      <span class="order-item__review-date text-muted small" v-if="item.danhGiaTaoLuc">
+                        {{ formatReviewDate(item.danhGiaTaoLuc) }}
+                      </span>
+                    </div>
+                    <p class="order-item__review-content mb-0" v-if="item.danhGiaNoiDung">
+                      {{ item.danhGiaNoiDung }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -182,7 +211,14 @@
                 </div>
                 <div class="d-flex justify-content-between mb-2">
                   <span>Phí vận chuyển:</span>
-                  <strong>{{ formatPrice(order.tongThanhToan - order.tamTinh) }}</strong>
+                  <strong>{{ formatPrice(order.phiVanChuyen) }}</strong>
+                </div>
+                <div
+                  v-if="order.giamGiaTong > 0"
+                  class="d-flex justify-content-between mb-2 text-success"
+                >
+                  <span>Giảm giá:</span>
+                  <strong>-{{ formatPrice(order.giamGiaTong) }}</strong>
                 </div>
                 <hr>
                 <div class="d-flex justify-content-between">
@@ -219,6 +255,9 @@ import {
   ORDER_STATUS_CODES,
 } from '@/utils/orderStatus'
 
+const REORDER_SNAPSHOT_KEY = 'auro_reorder_variant_labels'
+const REORDER_SNAPSHOT_TTL = 1000 * 60 * 30
+
 const route = useRoute()
 const router = useRouter()
 
@@ -254,12 +293,44 @@ const fetchOrderDetail = async () => {
 
     console.log('Order detail response:', response)
 
+    const reorderSnapshots = readReorderSnapshots()
+
+    const mappedItems = (orderData?.chiTietList || []).map((item) => {
+      const unitPrice = parseAmount(item.donGia)
+      const quantity = parseAmount(item.soLuong || 1)
+      const lineTotal = unitPrice * quantity
+      const enhancedItem = enhanceOrderItemWithVariantInfo(
+        {
+          ...item,
+          donGia: unitPrice,
+          soLuong: quantity,
+          lineTotal,
+        },
+        reorderSnapshots,
+      )
+
+      return {
+        ...enhancedItem,
+        moTaBienThe: enhancedItem.moTaBienThe || createVariantText(enhancedItem),
+      }
+    })
+
+    const subtotal = mappedItems.reduce((sum, item) => sum + parseAmount(item.lineTotal), 0)
+    const shippingFee = parseAmount(orderData?.phiVanChuyen)
+    const discount = parseAmount(orderData?.giamGiaTong)
+    const total = subtotal - discount + shippingFee
+
     order.value = {
       ...orderData,
       rawStatus: orderData?.trangThai,
       statusCode: statusInfo.code,
       statusLabel: statusInfo.label,
       statusClass: statusInfo.badgeClass,
+      chiTietList: mappedItems,
+      tamTinh: subtotal,
+      phiVanChuyen: shippingFee,
+      giamGiaTong: discount,
+      tongThanhToan: total,
     }
     
   } catch (err) {
@@ -268,6 +339,11 @@ const fetchOrderDetail = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const parseAmount = (value) => {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : 0
 }
 
 const cancelOrder = async () => {
@@ -313,6 +389,112 @@ const formatDate = (dateString) => {
 const formatAddress = (address) => {
   if (!address) return ''
   return address.replace(/\n/g, '<br>')
+}
+
+const normalizeSnapshotKeyPart = (value) => {
+  if (value == null) {
+    return ''
+  }
+  return value.toString().trim().toLowerCase()
+}
+
+const buildSnapshotProductKey = (productId, color, size) => {
+  if (!productId) {
+    return null
+  }
+  return `${productId}|${normalizeSnapshotKeyPart(color)}|${normalizeSnapshotKeyPart(size)}`
+}
+
+const readReorderSnapshots = () => {
+  try {
+    const raw = localStorage.getItem(REORDER_SNAPSHOT_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const payload = JSON.parse(raw)
+    if (!payload || typeof payload !== 'object') {
+      localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+      return null
+    }
+
+    const createdAt = payload.createdAt || payload.timestamp
+    if (createdAt && Date.now() - createdAt > REORDER_SNAPSHOT_TTL) {
+      localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+      return null
+    }
+
+    return {
+      variants: payload.variants || {},
+      products: payload.products || {},
+    }
+  } catch (error) {
+    console.error('❌ [ORDER DETAIL] Không thể đọc snapshot reorder:', error)
+    localStorage.removeItem(REORDER_SNAPSHOT_KEY)
+    return null
+  }
+}
+
+const enhanceOrderItemWithVariantInfo = (item, snapshots) => {
+  if (!item) {
+    return item
+  }
+
+  const variantId = item.bienTheId || item.variantId || item.id || null
+  const productId = item.sanPhamId || item.productId || null
+  const initialColor = item.mauSacTen || item.color || item.mauSac || ''
+  const initialSize = item.kichCoTen || item.size || item.kichCo || ''
+
+  let snapshot = null
+  if (snapshots) {
+    const { variants = {}, products = {} } = snapshots
+
+    if (variantId && variants[variantId]) {
+      snapshot = variants[variantId]
+    } else {
+      const productKey = buildSnapshotProductKey(productId, initialColor, initialSize)
+      if (productKey && products[productKey]) {
+        snapshot = products[productKey]
+      }
+    }
+  }
+
+  const color = snapshot?.color || initialColor
+  const size = snapshot?.size || initialSize
+  const baseName = item.tenSanPham || snapshot?.displayName || 'Sản phẩm'
+  let name = baseName
+
+  if (snapshot?.displayName) {
+    name = snapshot.displayName
+  } else {
+    const variantLabel = [color, size].filter(Boolean).join(' - ')
+    if (variantLabel) {
+      name = `${baseName} | ${variantLabel}`
+    }
+  }
+
+  return {
+    ...item,
+    tenSanPham: name,
+    mauSacTen: color,
+    kichCoTen: size,
+  }
+}
+
+const createVariantText = (item) => {
+  const variantParts = [item.mauSacTen, item.kichCoTen].filter(Boolean)
+  if (variantParts.length === 0) {
+    return ''
+  }
+  return variantParts.join(' • ')
+}
+
+const buildVariantText = (item) => {
+  return item?.moTaBienThe || createVariantText(item)
+}
+
+const formatReviewDate = (dateString) => {
+  return formatDate(dateString)
 }
 
 const timelineStatuses = ORDER_STATUS_FLOW.filter((code) => code !== 'COMPLETED')
@@ -392,6 +574,34 @@ const getPaymentStatusText = (status) => {
 
 .order-item:last-child {
   border-bottom: none;
+}
+
+.order-item .text-muted.small {
+  display: block;
+}
+
+.order-item__review {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background-color: #f9fafb;
+}
+
+.order-item__review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.order-item__review-stars .bi {
+  font-size: 1rem;
+}
+
+.order-item__review-content {
+  font-size: 0.9rem;
+  color: #495057;
 }
 
 .timeline {

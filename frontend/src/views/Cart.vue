@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { computed, provide, ref, onMounted } from 'vue'
+import { provide, ref, onMounted } from 'vue'
 import { useCart } from '@/composables/useCart'
 import { useShipping } from '@/composables/useShipping'
 import cartService from '@/services/cartService'
@@ -71,6 +71,10 @@ import PaymentMethods from '@/components/checkout/PaymentMethods.vue'
 import CartItems from '@/components/checkout/CartItems.vue'
 import VoucherSection from '@/components/checkout/VoucherSection.vue'
 import OrderSummary from '@/components/checkout/OrderSummary.vue'
+
+defineOptions({
+  name: 'CartPage',
+})
 
 // Sử dụng cart store
 const { items, isEmpty, loadCartFromAPI } = useCart()
@@ -107,21 +111,21 @@ provide('selectedPaymentMethod', selectedPaymentMethod)
 // Load giỏ hàng từ API khi component mount (cho cả user và guest)
 onMounted(async () => {
   console.log('🛒 [CART] Component mounted')
-  
+
   // Đảm bảo user state được load trước (nếu chưa load)
   if (!userStore.user) {
     userStore.loadUserFromStorage()
   }
-  
+
+  // Luôn xóa local cart trước khi load từ backend để đồng bộ dữ liệu mới nhất
   console.log('🗑️ [CART] Clearing localStorage before loading from backend...')
-  // ✅ XÓA LOCALSTORAGE TRƯỚC ĐỂ ĐẢM BẢO LOAD DỮ LIỆU MỚI NHẤT TỪ BACKEND
   localStorage.removeItem('auro_cart_v1')
-  
+
   // Load giỏ hàng từ API (backend sẽ tự xử lý user/guest)
   console.log('📡 [CART] Loading cart from backend API...')
   await loadCartFromAPI()
   console.log('✅ [CART] Loaded', items.value?.length || 0, 'items from backend')
-  
+
   // Log chi tiết từng item để debug
   if (items.value && items.value.length > 0) {
     items.value.forEach((item, index) => {
@@ -137,7 +141,6 @@ onMounted(async () => {
   }
 
   // Nếu backend trả rỗng nhưng localStorage còn item → đồng bộ lên backend rồi load lại
-  // (Trường hợp này không nên xảy ra vì đã xóa localStorage ở trên)
   try {
     const localItems = JSON.parse(localStorage.getItem('auro_cart_v1') || '[]')
     if ((isEmpty.value || (items.value?.length || 0) === 0) && Array.isArray(localItems) && localItems.length > 0) {
