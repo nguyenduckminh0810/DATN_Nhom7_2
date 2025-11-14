@@ -24,4 +24,7 @@ public class NhanVien {
 
     @Column(name = "so_dien_thoai", columnDefinition = "NVARCHAR(20)")
     private String soDienThoai;
+
+    @Column(name = "avatar", columnDefinition = "NVARCHAR(500)")
+    private String avatar;
 }

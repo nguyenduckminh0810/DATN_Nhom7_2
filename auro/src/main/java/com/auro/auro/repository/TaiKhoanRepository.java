@@ -1,6 +1,7 @@
 package com.auro.auro.repository;
 
 import com.auro.auro.model.TaiKhoan;
+import com.auro.auro.model.VaiTro;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,4 +39,7 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
 
     @Query("SELECT COUNT(tk) FROM TaiKhoan tk WHERE tk.vaiTro.ma = 'CUS'")
     long countAllCustomers();
+
+    // Đếm số tài khoản theo vai trò
+    long countByVaiTro(VaiTro vaiTro);
 }
