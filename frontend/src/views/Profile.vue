@@ -24,9 +24,7 @@
             <div class="card-body text-center">
               <div class="profile-avatar mb-3">
                 <img
-                  :src="
-                    user.avatar || 'https://via.placeholder.com/100x100/6c757d/ffffff?text=Avatar'
-                  "
+                  :src="getAvatarUrl(user.avatar)"
                   alt="Avatar"
                   class="rounded-circle"
                   width="100"
@@ -35,7 +33,14 @@
               </div>
               <h5 class="mb-1">{{ user.name }}</h5>
               <p class="text-muted small mb-3">{{ user.email }}</p>
-              <button class="btn btn-outline-secondary btn-sm">
+              <input
+                ref="fileInput"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="handleAvatarUpload"
+              />
+              <button class="btn btn-outline-secondary btn-sm" @click="triggerFileUpload">
                 <i class="bi bi-camera me-1"></i>Đổi ảnh
               </button>
             </div>
@@ -94,22 +99,9 @@
                     <input v-model="form.phone" type="tel" class="form-control" required />
                   </div>
 
-                  <!-- Date of Birth -->
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Ngày sinh</label>
-                    <input v-model="form.dateOfBirth" type="date" class="form-control" />
-                  </div>
 
-                  <!-- Gender -->
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Giới tính</label>
-                    <select v-model="form.gender" class="form-select">
-                      <option value="">Chọn giới tính</option>
-                      <option value="male">Nam</option>
-                      <option value="female">Nữ</option>
-                      <option value="other">Khác</option>
-                    </select>
-                  </div>
+
+
 
                   <!-- Newsletter -->
                   <div class="col-md-6 mb-3">
@@ -134,9 +126,6 @@
                     <span v-if="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
                     <i v-else class="bi bi-check-circle me-2"></i>
                     {{ isSubmitting ? 'Đang cập nhật...' : 'Cập nhật thông tin' }}
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" @click="resetForm">
-                    <i class="bi bi-arrow-clockwise me-2"></i>Đặt lại
                   </button>
                 </div>
               </form>
@@ -234,6 +223,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import apiService from '@/services/api'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -244,6 +234,7 @@ const isChangingPassword = ref(false)
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
 const showConfirmPassword = ref(false)
+const fileInput = ref(null)
 
 const user = ref({
   id: 1,
@@ -269,17 +260,51 @@ const passwordForm = ref({
 })
 
 // Methods
-const loadUserData = () => {
-  const storedUser = localStorage.getItem('auro_user')
-  if (storedUser) {
-    user.value = JSON.parse(storedUser)
-    form.value = {
-      fullName: user.value.name || '',
-      email: user.value.email || '',
-      phone: user.value.phone || '',
-      dateOfBirth: user.value.dateOfBirth || '',
-      gender: user.value.gender || '',
-      subscribeNewsletter: user.value.subscribeNewsletter || false,
+const loadUserData = async () => {
+  try {
+    // Gọi API để lấy thông tin user mới nhất
+    const response = await apiService.auth.me()
+    
+    if (response.success && response.data) {
+      // Map data từ API response
+      const userData = {
+        id: response.data.id,
+        name: response.data.hoTen || response.data.name || response.data.email?.split('@')[0],
+        email: response.data.email,
+        phone: response.data.soDienThoai,
+        avatar: response.data.avatar,
+        role: response.data.vaiTro,
+      }
+      
+      user.value = userData
+      
+      // Cập nhật localStorage
+      localStorage.setItem('auro_user', JSON.stringify(userData))
+      
+      // Cập nhật form
+      form.value = {
+        fullName: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        dateOfBirth: user.value.dateOfBirth || '',
+        gender: user.value.gender || '',
+        subscribeNewsletter: user.value.subscribeNewsletter || false,
+      }
+    }
+  } catch (error) {
+    console.error('Load user data error:', error)
+    // Fallback to localStorage nếu API fail
+    const storedUser = localStorage.getItem('auro_user')
+    if (storedUser) {
+      user.value = JSON.parse(storedUser)
+      form.value = {
+        fullName: user.value.name || '',
+        email: user.value.email || '',
+        phone: user.value.phone || '',
+        dateOfBirth: user.value.dateOfBirth || '',
+        gender: user.value.gender || '',
+        subscribeNewsletter: user.value.subscribeNewsletter || false,
+      }
     }
   }
 }
@@ -351,6 +376,80 @@ const handleChangePassword = async () => {
 
 const resetForm = () => {
   loadUserData()
+}
+
+// Avatar upload
+const triggerFileUpload = () => {
+  fileInput.value?.click()
+}
+
+const getAvatarUrl = (avatar) => {
+  console.log('getAvatarUrl called with:', avatar)
+  if (!avatar) {
+    return 'https://via.placeholder.com/100x100/6c757d/ffffff?text=Avatar'
+  }
+  // Nếu avatar đã là URL đầy đủ thì trả về luôn
+  if (avatar.startsWith('http')) {
+    return avatar
+  }
+  // Nếu là đường dẫn tương đối thì thêm base URL
+  const baseURL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:8080'
+  const fullUrl = baseURL + avatar
+  console.log('Avatar URL:', fullUrl)
+  return fullUrl
+}
+
+const handleAvatarUpload = async (event) => {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  // Validate file type
+  if (!file.type.startsWith('image/')) {
+    alert('Vui lòng chọn file ảnh')
+    return
+  }
+
+  // Validate file size (max 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    alert('Kích thước ảnh không được vượt quá 5MB')
+    return
+  }
+
+  try {
+    console.log('Starting upload...')
+    // Upload to server
+    const response = await apiService.user.uploadAvatar(file)
+    console.log('Upload response:', response)
+    
+    if (response.success && response.data?.avatarUrl) {
+      console.log('Upload successful, fetching user info...')
+      // Lấy lại thông tin user từ server
+      const userResponse = await apiService.auth.me()
+      console.log('User info response:', userResponse)
+      
+      if (userResponse.success && userResponse.data) {
+        console.log('Avatar from server:', userResponse.data.avatar)
+        // Cập nhật avatar trong user object
+        user.value.avatar = userResponse.data.avatar
+        
+        // Cập nhật localStorage
+        const storedUser = JSON.parse(localStorage.getItem('auro_user') || '{}')
+        storedUser.avatar = userResponse.data.avatar
+        localStorage.setItem('auro_user', JSON.stringify(storedUser))
+        
+        console.log('Avatar updated, current user.value.avatar:', user.value.avatar)
+        alert('Cập nhật ảnh đại diện thành công!')
+      }
+    } else {
+      alert(response.message || 'Có lỗi xảy ra khi tải ảnh lên')
+    }
+  } catch (error) {
+    console.error('Upload avatar error:', error)
+    alert('Có lỗi xảy ra khi tải ảnh lên. Vui lòng thử lại!')
+  }
+
+  // Reset input
+  event.target.value = ''
 }
 
 // Logout

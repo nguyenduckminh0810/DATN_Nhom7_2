@@ -43,6 +43,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register").permitAll()
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/auth/logout").permitAll()
+                        .requestMatchers("/api/admin/register-first-admin").permitAll() // Tạo admin đầu tiên
                         // .requestMatchers("/api/auth/**").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/san-pham").permitAll()
@@ -54,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/mau-sac/**").permitAll() // ✅ Add this line
                         // Static uploaded files
                         .requestMatchers("/files/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
                         // Shipping API - GHN (public access)
                         .requestMatchers("/api/shipping/**").permitAll()
@@ -70,6 +72,7 @@ public class SecurityConfig {
 
                         // Customer endpoints - khách đã đăng ký
                         .requestMatchers("/api/auth/me").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers("/api/auth/upload-avatar").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers(HttpMethod.POST, "/api/don-hang").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers(HttpMethod.GET, "/api/don-hang/cua-toi").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers("/api/gio-hang/**").permitAll()

@@ -31,4 +31,7 @@ public class KhachHang {
 
     @Column(name = "kieu", columnDefinition = "NVARCHAR(50)")
     private String kieu;
+
+    @Column(name = "avatar", columnDefinition = "NVARCHAR(500)")
+    private String avatar;
 }

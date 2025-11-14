@@ -7,9 +7,6 @@ class ApiService {
       baseURL: this.baseURL,
       timeout: 10000,
       withCredentials: true, // ✅ Quan trọng: Gửi cookie session
-      headers: {
-        'Content-Type': 'application/json',
-      },
     })
     this.setupInterceptors()
   }
@@ -20,6 +17,16 @@ class ApiService {
       (config) => {
         const method = (config.method || 'get').toLowerCase()
         const url = config.url || ''
+        
+        // Chỉ set Content-Type nếu chưa được set và không phải FormData
+        if (!config.headers['Content-Type'] && !(config.data instanceof FormData)) {
+          config.headers['Content-Type'] = 'application/json'
+        }
+        
+        // Xóa Content-Type nếu là FormData để browser tự động thêm boundary
+        if (config.data instanceof FormData && config.headers['Content-Type']) {
+          delete config.headers['Content-Type']
+        }
         
         // Public endpoints không cần JWT token
         const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping', '/mau-sac']
@@ -249,7 +256,18 @@ class ApiService {
     getProfile: () => this.get('/auth/me'),
     updateProfile: (data) => this.put('/user/profile', data),
     changePassword: (data) => this.post('/user/change-password', data),
-    uploadAvatar: (file, onProgress) => this.upload('/user/avatar', file, onProgress),
+    uploadAvatar: async (file) => {
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      try {
+        // FormData sẽ được interceptor tự động xử lý
+        const response = await this.client.post('/auth/upload-avatar', formData)
+        return response.data
+      } catch (error) {
+        throw this.handleError(error)
+      }
+    },
     getAddresses: () => this.get('/user/addresses'),
     addAddress: (data) => this.post('/user/addresses', data),
     updateAddress: (id, data) => this.put(`/user/addresses/${id}`, data),
