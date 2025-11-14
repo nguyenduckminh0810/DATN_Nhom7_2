@@ -13,7 +13,7 @@
 
       <div class="row">
         <div class="col-12">
-          <h1 class="h2 fw-bold mb-4">Đơn hàng của tôi</h1>
+          <h1 class="orders-title h2 fw-bold mb-4">Đơn hàng của tôi</h1>
         </div>
       </div>
 
@@ -923,6 +923,32 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.orders {
+  background-color: #f8f9fa;
+  min-height: 100vh;
+  padding: 6.5rem 0 2rem;
+}
+
+.orders-title {
+  letter-spacing: 0.02em;
+}
+
+.orders .container {
+  padding-top: 0;
+}
+
+@media (max-width: 768px) {
+  .orders {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .orders {
+    padding: 4.5rem 0 1.5rem;
+  }
+}
+
 .profile-avatar img {
   object-fit: cover;
   border: 2px solid #ffc107;

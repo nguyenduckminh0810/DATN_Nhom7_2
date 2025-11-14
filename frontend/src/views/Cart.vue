@@ -165,7 +165,7 @@ onMounted(async () => {
   background-color: #f8f9fa;
   min-height: 100vh;
   width: 100%;
-  padding: 2rem 3rem;
+  padding: 6.5rem 3rem 2rem;
 }
 
 .checkout-layout {
@@ -259,13 +259,13 @@ onMounted(async () => {
 /* Responsive Design */
 @media (max-width: 1200px) {
   .checkout-page {
-    padding: 2rem 2rem;
+    padding: 6rem 2rem 1.5rem;
   }
 }
 
 @media (max-width: 992px) {
   .checkout-page {
-    padding: 1.5rem 1.5rem;
+    padding: 5.5rem 1.5rem 1.5rem;
   }
   
   .checkout-layout {
@@ -281,7 +281,7 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .checkout-page {
-    padding: 1rem 1rem;
+    padding: 5rem 1rem 1rem;
   }
   
   .checkout-layout {
@@ -331,7 +331,7 @@ onMounted(async () => {
 
 @media (max-width: 576px) {
   .checkout-page {
-    padding: 1rem 0.75rem;
+    padding: 4.5rem 0.75rem 1rem;
   }
   
   .cart-title,

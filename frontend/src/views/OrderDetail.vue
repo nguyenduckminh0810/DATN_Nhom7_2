@@ -246,7 +246,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import orderService from '@/services/orderService'
 import {
   normalizeOrderStatus,
@@ -259,7 +259,6 @@ const REORDER_SNAPSHOT_KEY = 'auro_reorder_variant_labels'
 const REORDER_SNAPSHOT_TTL = 1000 * 60 * 30
 
 const route = useRoute()
-const router = useRouter()
 
 const order = ref(null)
 const loading = ref(true)
@@ -552,6 +551,19 @@ const getPaymentStatusText = (status) => {
 .order-detail {
   min-height: 80vh;
   background-color: #f8f9fa;
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .order-detail {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .order-detail {
+    padding: 4.5rem 0 1.5rem;
+  }
 }
 
 .card {

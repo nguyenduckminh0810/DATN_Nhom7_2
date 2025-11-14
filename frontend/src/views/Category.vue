@@ -401,6 +401,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.category {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .category {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .category {
+    padding: 4.5rem 0 1.5rem;
+  }
+}
+
 /* Breadcrumb */
 .modern-breadcrumb {
   background: none;

@@ -510,7 +510,7 @@
             <!-- Order Info -->
             <div class="col-md-6">
               <h6>Thông tin đơn hàng</h6>
-              <table class="table table-sm">
+              <table class="table table-sm order-info-table">
                 <tbody>
                   <tr>
                     <td>Mã đơn hàng:</td>
@@ -551,7 +551,7 @@
             <!-- Shipping Info -->
             <div class="col-md-6">
               <h6>Thông tin giao hàng</h6>
-              <table class="table table-sm">
+              <table class="table table-sm order-info-table">
                 <tbody>
                   <tr>
                     <td>Địa chỉ:</td>
@@ -1615,11 +1615,34 @@ onMounted(() => {
 
 .status-badge,
 .payment-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
   font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  min-width: 110px;
+}
+
+.order-info-table td {
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+  border-top: none;
+}
+
+.order-info-table td:first-child {
+  width: 38%;
+  color: #6c757d;
   font-weight: 500;
-  color: white;
+  white-space: nowrap;
+}
+
+.order-info-table td:last-child {
+  width: 62%;
+  word-break: break-word;
 }
 
 .order-date {

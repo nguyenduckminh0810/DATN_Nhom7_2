@@ -301,6 +301,9 @@ watch(
 </script>
 
 <style scoped>
+.availability-list {
+  padding-left: 1.5rem;
+}
 .product-filters {
   background: white;
   border-radius: 16px;
