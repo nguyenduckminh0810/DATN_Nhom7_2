@@ -71,6 +71,23 @@
           <i class="bi bi-eye me-1"></i>
           Xem chi tiết
         </button>
+        <button 
+          v-if="isInStock"
+          class="btn-add-to-cart"
+          @click.stop="handleAddToCart"
+          :disabled="!isInStock"
+        >
+          <i class="bi bi-cart-plus me-1"></i>
+          {{ addToCartText }}
+        </button>
+        <button 
+          v-else
+          class="btn-add-to-cart"
+          disabled
+        >
+          <i class="bi bi-x-circle me-1"></i>
+          Hết hàng
+        </button>
       </div>
     </div>
 

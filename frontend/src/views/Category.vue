@@ -55,6 +55,7 @@ import ProductFilters from '../components/product/ProductFilters.vue'
 import ProductGrid from '../components/product/ProductGrid.vue'
 import { useSearchStore } from '../stores/search'
 import sanPhamService from '@/services/sanPhamService'
+import api from '@/services/api'
 const route = useRoute()
 const searchStore = useSearchStore()
 
@@ -87,6 +88,33 @@ const buildParams = () => {
   if (searchStore?.keyword && searchStore.keyword.trim()) {
     params.search = searchStore.keyword.trim()
   }
+  
+  // Xử lý query parameter sort từ URL
+  const sortParam = route.query.sort
+  if (sortParam) {
+    // Map các giá trị sort từ frontend sang backend
+    if (sortParam === 'sales') {
+      // Backend không có field "sales" trực tiếp, cần dùng endpoint best sellers
+      // Nhưng vì đang dùng endpoint page, ta sẽ sort theo created_at desc như fallback
+      // Hoặc có thể gọi endpoint best sellers riêng
+      params.sortBy = 'taoLuc'
+      params.sortOrder = 'desc'
+    } else if (sortParam === 'createdAt') {
+      params.sortBy = 'taoLuc'
+      params.sortOrder = 'desc'
+    } else if (sortParam === 'price-asc') {
+      params.sortBy = 'gia'
+      params.sortOrder = 'asc'
+    } else if (sortParam === 'price-desc') {
+      params.sortBy = 'gia'
+      params.sortOrder = 'desc'
+    } else {
+      // Mặc định
+      params.sortBy = sortParam
+      params.sortOrder = 'desc'
+    }
+  }
+  
   return params
 }
 
@@ -125,8 +153,27 @@ const fetchAllProducts = async () => {
   isLoading.value = true
   error.value = null
   try {
-    categoryName.value = 'TẤT CẢ SẢN PHẨM'
-    const resp = await sanPhamService.page(buildParams())
+    // Xác định category name dựa trên sort parameter
+    const sortParam = route.query.sort
+    let resp
+    
+    if (sortParam === 'sales') {
+      categoryName.value = 'SẢN PHẨM BÁN CHẠY'
+      // Gọi endpoint best sellers khi sort=sales
+      const params = {
+        page: Math.max(currentPage.value - 1, 0),
+        size: itemsPerPage,
+      }
+      resp = await api.get('/san-pham/ban-chay', { params })
+    } else {
+      if (sortParam === 'createdAt') {
+        categoryName.value = 'SẢN PHẨM MỚI'
+      } else {
+        categoryName.value = 'TẤT CẢ SẢN PHẨM'
+      }
+      resp = await sanPhamService.page(buildParams())
+    }
+    
     const payload = resp?.data ?? resp
     if (!payload) {
       console.error('fetchAllProducts: empty payload', resp)
@@ -393,6 +440,17 @@ watch(
   },
 )
 
+// Watch query parameters để reload khi sort thay đổi
+watch(
+  () => route.query.sort,
+  () => {
+    currentPage.value = 1
+    const slug = route.params.slug
+    if (slug) fetchProductsByCategory(slug)
+    else fetchAllProducts()
+  },
+)
+
 onMounted(() => {
   const slug = route.params.slug
   if (slug) fetchProductsByCategory(slug)
@@ -401,6 +459,24 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.category {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .category {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .category {
+    padding: 4.5rem 0 1.5rem;
+  }
+}
+
 /* Breadcrumb */
 .modern-breadcrumb {
   background: none;
