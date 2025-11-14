@@ -215,7 +215,6 @@ const availableColors = computed(() => {
   console.log('🎨 availableColors computed:', searchStore.availableColors)
   return searchStore.availableColors
 })
-const availableMaterials = computed(() => searchStore.availableMaterials)
 const priceRanges = computed(() => searchStore.priceRanges)
 
 // Methods
@@ -260,10 +259,6 @@ const toggleColor = (color) => {
   searchStore.toggleColor(color)
 }
 
-const toggleMaterial = (material) => {
-  searchStore.toggleMaterial(material)
-}
-
 const clearFilter = (filterType) => {
   searchStore.clearFilter(filterType)
 }
@@ -301,6 +296,9 @@ watch(
 </script>
 
 <style scoped>
+.availability-list {
+  padding-left: 1.5rem;
+}
 .product-filters {
   background: white;
   border-radius: 16px;

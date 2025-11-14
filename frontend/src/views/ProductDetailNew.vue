@@ -380,6 +380,19 @@ watch(() => route.params.id, (newId) => {
 .product-detail-page {
   min-height: 100vh;
   background: #f8f9fa;
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .product-detail-page {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .product-detail-page {
+    padding: 4.5rem 0 1.5rem;
+  }
 }
 
 .breadcrumb-nav {

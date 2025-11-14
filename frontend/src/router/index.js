@@ -39,6 +39,12 @@ const router = createRouter({
       meta: { title: 'Trang chủ - AURO' },
     },
     {
+      path: '/san-pham',
+      name: 'products',
+      component: Category,
+      meta: { title: 'Sản phẩm - AURO' },
+    },
+    {
       path: '/category/:slug?',
       name: 'category',
       component: Category,

@@ -572,6 +572,11 @@ body {
   cursor: pointer;
   transition: transform 0.2s ease;
 }
+
+/* Tránh ảnh hưởng đến product-card trong best-sellers */
+.best-sellers-section .section-item {
+  width: auto !important;
+}
 .section-item:hover {
   transform: translateY(-2px);
 }

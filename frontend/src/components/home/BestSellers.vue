@@ -328,6 +328,15 @@ onMounted(() => {
   width: calc((100vw - 40px - 80px) / 5) !important;
   max-width: calc((100vw - 40px - 80px) / 5) !important;
   min-width: calc((100vw - 40px - 80px) / 5) !important;
+  flex: 0 0 calc((100vw - 40px - 80px) / 5) !important;
+}
+
+/* Đảm bảo tất cả cards có cùng kích thước */
+.section-list :deep(.product-card.section-item) {
+  width: calc((100vw - 40px - 80px) / 5) !important;
+  max-width: calc((100vw - 40px - 80px) / 5) !important;
+  min-width: calc((100vw - 40px - 80px) / 5) !important;
+  flex: 0 0 calc((100vw - 40px - 80px) / 5) !important;
 }
 
 .section-list.centered {

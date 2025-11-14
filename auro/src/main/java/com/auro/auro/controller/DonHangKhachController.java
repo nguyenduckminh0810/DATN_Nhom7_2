@@ -4,6 +4,7 @@ import com.auro.auro.dto.request.DanhGiaDonHangRequest;
 import com.auro.auro.dto.request.GuestCheckoutRequest;
 import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
 import com.auro.auro.dto.response.DonHangChiTietResponse;
+import com.auro.auro.dto.response.DonHangPageResponse;
 import com.auro.auro.dto.response.DonHangResponse;
 import com.auro.auro.model.KhachHang;
 import com.auro.auro.model.TaiKhoan;
@@ -13,7 +14,6 @@ import com.auro.auro.service.DonHangService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -64,15 +64,19 @@ public class DonHangKhachController {
     // lấy đơn hàng của khách
     @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @GetMapping("/don-hang-cua-toi")
-    public ResponseEntity<Page<DonHangResponse>> layDonHangCuaToi(@RequestParam(defaultValue = "0") int trang,
-            @RequestParam(defaultValue = "10") int kichThuoc, Authentication auth) {
+    public ResponseEntity<DonHangPageResponse> layDonHangCuaToi(@RequestParam(defaultValue = "0") int trang,
+            @RequestParam(defaultValue = "10") int kichThuoc,
+            @RequestParam(name = "trangThai", required = false) String trangThai,
+            @RequestParam(name = "search", required = false) String keyword,
+            Authentication auth) {
         try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
             System.out.println("=== layDonHangCuaToi ===");
             System.out.println("KhachHang ID: " + khachHangId);
             System.out.println("Page: " + trang + ", Size: " + kichThuoc);
 
-            Page<DonHangResponse> dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc);
+            DonHangPageResponse dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc, trangThai,
+                    keyword);
             System.out.println("Found orders: " + dhs.getTotalElements());
 
             return ResponseEntity.ok(dhs);

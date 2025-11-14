@@ -276,6 +276,24 @@ watch(() => route.query.q, (newQuery) => {
 </script>
 
 <style scoped>
+.search-results {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .search-results {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .search-results {
+    padding: 4.5rem 0 1.5rem;
+  }
+}
+
 .search-input-container {
   max-width: 600px;
   margin: 0 auto;
