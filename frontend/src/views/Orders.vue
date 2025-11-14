@@ -104,7 +104,7 @@
                     :key="option.code"
                     class="nav-link status-tabs__button"
                     :class="{ active: activeTab === option.code }"
-                    @click="activeTab = option.code"
+                    @click="selectStatus(option.code)"
                   >
                     {{ option.label }} ({{ getStatusCount(option.code) }})
                   </button>
@@ -129,9 +129,27 @@
             </button>
           </div>
 
-          <!-- Orders List -->
-          <div v-else-if="filteredOrders.length > 0">
-            <div v-for="order in filteredOrders" :key="order.id" class="card mb-3">
+          <template v-else>
+            <div
+              v-if="totalItems > 0"
+              class="orders-meta d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2"
+            >
+              <div class="text-muted small">{{ pageRangeLabel }}</div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Hiển thị</span>
+                <select
+                  class="form-select form-select-sm page-size-select"
+                  v-model.number="pageSize"
+                >
+                  <option v-for="size in pageSizeOptions" :key="size" :value="size">
+                    {{ size }}/trang
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div v-if="displayedOrders.length > 0">
+              <div v-for="order in displayedOrders" :key="order.id" class="card mb-3">
               <div class="card-body">
                 <!-- Order Header -->
                 <div class="row align-items-center mb-3">
@@ -261,17 +279,42 @@
                 </div>
               </div>
             </div>
-          </div>
+            </div>
 
-          <!-- Empty State -->
-          <div v-else class="text-center py-5">
-            <i class="bi bi-bag display-1 text-muted"></i>
-            <h5 class="mt-3">Chưa có đơn hàng nào</h5>
-            <p class="text-muted">Bạn chưa có đơn hàng nào trong trạng thái này</p>
-            <router-link to="/category" class="btn btn-warning">
-              <i class="bi bi-arrow-left me-2"></i>Tiếp tục mua sắm
-            </router-link>
-          </div>
+            <div v-else class="text-center py-5">
+              <i class="bi bi-bag display-1 text-muted"></i>
+              <h5 class="mt-3">Chưa có đơn hàng nào</h5>
+              <p class="text-muted">Bạn chưa có đơn hàng nào trong trạng thái này</p>
+              <router-link to="/category" class="btn btn-warning">
+                <i class="bi bi-arrow-left me-2"></i>Tiếp tục mua sắm
+              </router-link>
+            </div>
+
+            <nav v-if="showPagination" class="orders-pagination mt-4">
+              <ul class="pagination justify-content-center mb-0">
+                <li class="page-item" :class="{ disabled: currentPage <= 1 }">
+                  <button class="page-link" type="button" @click="goToPreviousPage" aria-label="Trang trước">
+                    <span aria-hidden="true">&laquo;</span>
+                  </button>
+                </li>
+                <li
+                  v-for="page in paginationNumbers"
+                  :key="page"
+                  class="page-item"
+                  :class="{ active: page === currentPage }"
+                >
+                  <button class="page-link" type="button" @click="goToPage(page)">
+                    {{ page }}
+                  </button>
+                </li>
+                <li class="page-item" :class="{ disabled: currentPage >= totalPages }">
+                  <button class="page-link" type="button" @click="goToNextPage" aria-label="Trang sau">
+                    <span aria-hidden="true">&raquo;</span>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </template>
         </div>
       </div>
     </div>
@@ -357,7 +400,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import orderService from '@/services/orderService'
@@ -378,6 +421,13 @@ defineOptions({
 const router = useRouter()
 const userStore = useUserStore()
 const { reorderOrder, isOrderReordering } = useReorder()
+
+const currentPage = ref(1)
+const pageSizeOptions = [5, 10, 20]
+const pageSize = ref(10)
+const totalPages = ref(0)
+const totalItems = ref(0)
+const statusCounts = ref({})
 
 // Reactive data
 const statusTabs = ORDER_STATUS_FOR_CUSTOMER.slice().sort(
@@ -434,34 +484,9 @@ const user = computed(() => ({
 }))
 
 // Computed
-const filteredOrders = computed(() => {
-  const baseOrders =
-    activeTab.value === 'ALL' ? orders.value : getOrdersByStatus(activeTab.value)
-
-  const query = searchQuery.value.trim().toLowerCase()
-  if (!query) {
-    return baseOrders
-  }
-
-  return baseOrders.filter((order) => {
-    const searchableFields = [
-      order.orderNumber,
-      order.statusLabel || order.rawStatus || '',
-      order.orderDate ? new Date(order.orderDate).toLocaleDateString('vi-VN') : '',
-      order.items?.map((item) => item.name || '').join(' ') || '',
-    ]
-
-    return searchableFields.some((field) =>
-      (field || '').toString().toLowerCase().includes(query),
-    )
-  })
-})
+const displayedOrders = computed(() => orders.value)
 
 // Methods
-const getOrdersByStatus = (status) => {
-  return orders.value.filter((order) => order.status === status)
-}
-
 const parseAmount = (value) => {
   if (value == null) {
     return 0
@@ -575,10 +600,90 @@ const applyReorderSnapshotsToOrderItems = (items, snapshots) => {
 
 const getStatusCount = (statusCode) => {
   if (statusCode === 'ALL') {
-    return orders.value.length
+    return statusCounts.value?.ALL ?? totalItems.value ?? orders.value.length
   }
-  return getOrdersByStatus(statusCode).length
+  return statusCounts.value?.[statusCode] ?? 0
 }
+
+const pageRangeLabel = computed(() => {
+  if (totalItems.value === 0 || displayedOrders.value.length === 0) {
+    return 'Không có đơn hàng'
+  }
+  const current = Math.max(currentPage.value, 1)
+  const start = (current - 1) * pageSize.value + 1
+  const end = Math.min(start + displayedOrders.value.length - 1, totalItems.value)
+  return `Đang hiển thị ${start}-${end} trên ${totalItems.value} đơn`
+})
+
+const showPagination = computed(() => totalPages.value > 1)
+
+const paginationNumbers = computed(() => {
+  const total = totalPages.value
+  if (total <= 1) {
+    return [1]
+  }
+
+  const current = Math.min(Math.max(currentPage.value, 1), total)
+  const delta = 2
+  let start = Math.max(current - delta, 1)
+  let end = Math.min(current + delta, total)
+
+  if (current <= delta) {
+    end = Math.min(1 + delta * 2, total)
+  }
+
+  if (current + delta >= total) {
+    start = Math.max(total - delta * 2, 1)
+  }
+
+  const pages = []
+  for (let i = start; i <= end; i += 1) {
+    pages.push(i)
+  }
+
+  if (!pages.includes(1)) {
+    pages.unshift(1)
+  }
+
+  if (!pages.includes(total)) {
+    pages.push(total)
+  }
+
+  return [...new Set(pages)]
+})
+
+const selectStatus = (statusCode) => {
+  if (activeTab.value === statusCode) {
+    return
+  }
+  activeTab.value = statusCode
+  currentPage.value = 1
+  fetchOrders()
+}
+
+const goToPage = (page) => {
+  if (page < 1 || page > totalPages.value || page === currentPage.value) {
+    return
+  }
+  currentPage.value = page
+  fetchOrders()
+}
+
+const goToPreviousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value -= 1
+    fetchOrders()
+  }
+}
+
+const goToNextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value += 1
+    fetchOrders()
+  }
+}
+
+let searchDebounceTimeout = null
 
 const selectedRatingItem = computed(() => {
   return ratingItemOptions.value.find((item) => item.id === ratingForm.chiTietId) || null
@@ -783,31 +888,43 @@ const fetchOrders = async () => {
     loading.value = true
     error.value = null
 
-    console.log('🔄 Fetching orders...')
-    console.log('🔑 Current user:', userStore.user)
-    console.log('🔑 Token exists:', !!localStorage.getItem('auro_token'))
-
-    const response = await orderService.getMyOrders()
-    console.log('📦 Full API response:', response)
-    console.log('📦 Response type:', typeof response)
-    console.log('📦 Response keys:', response ? Object.keys(response) : 'null')
-    console.log('📦 Response.data:', response.data)
-    console.log('📦 Response.data type:', typeof response.data)
-    console.log('📦 Response.data.content:', response.data?.content)
-    console.log('📦 Response.data.totalElements:', response.data?.totalElements)
-
-    // Backend returns paginated data
-    let orderData = response.data?.content || response.data || []
-
-    // Check if response is the paginated object itself
-    if (response.content && Array.isArray(response.content)) {
-      console.log('⚠️ Response is paginated object itself, using response.content')
-      orderData = response.content
+    const params = {
+      trang: Math.max(currentPage.value - 1, 0),
+      kichThuoc: pageSize.value,
     }
 
-    console.log('📋 Order data array:', orderData)
-    console.log('📋 Order data length:', orderData.length)
-    console.log('📋 Is array?:', Array.isArray(orderData))
+    if (activeTab.value && activeTab.value !== 'ALL') {
+      params.trangThai = activeTab.value
+    }
+
+    if (searchQuery.value.trim()) {
+      params.search = searchQuery.value.trim()
+    }
+
+    const response = await orderService.getMyOrders(params)
+    const data = response?.data ?? response ?? {}
+
+    const orderData = Array.isArray(data.content) ? data.content : []
+
+    totalItems.value = data.totalElements ?? orderData.length
+    totalPages.value = data.totalPages ?? (totalItems.value > 0 ? Math.ceil(totalItems.value / pageSize.value) : 0)
+
+    const backendCurrentPage = data.currentPage ?? 0
+    if (totalItems.value === 0) {
+      currentPage.value = 1
+    } else if (backendCurrentPage > 0) {
+      currentPage.value = backendCurrentPage
+    } else if (totalPages.value > 0) {
+      currentPage.value = Math.min(currentPage.value, totalPages.value)
+    } else {
+      currentPage.value = 1
+    }
+
+    const counts = data.statusCounts ?? {}
+    if (counts.ALL == null) {
+      counts.ALL = totalItems.value
+    }
+    statusCounts.value = counts
 
     const reorderSnapshots = readReorderSnapshots()
 
@@ -873,47 +990,43 @@ const fetchOrders = async () => {
       }
     })
 
-    console.log('✅ Mapped orders:', orders.value)
-    console.log('📊 First order details:', orders.value[0])
-    if (orders.value.length > 0) {
-      console.log('💰 Shipping fee:', orders.value[0].shippingFee)
-      console.log('🖼️ First item image:', orders.value[0].items[0]?.image)
-    }
-
-    // Debug: Check if user actually has no orders
-    if (orders.value.length === 0) {
-      console.log('⚠️ No orders found for this user')
-      console.log('💡 Possible reasons:')
-      console.log('   1. No orders placed yet')
-      console.log('   2. Orders were placed as GUEST (different khachHangId)')
-      console.log('   3. User account not linked to KhachHang properly')
-      console.log('')
-      console.log('🔍 If you just placed an order via guest-checkout:')
-      console.log('   - The order was created with a new GUEST KhachHang record')
-      console.log("   - It won't show here because it's not linked to your logged-in account")
-      console.log('   - Need to use authenticated checkout endpoint instead')
-    }
   } catch (err) {
     console.error('❌ Error fetching orders:', err)
-    console.error('Error details:', {
-      message: err.message,
-      response: err.response,
-      status: err.status,
-      type: err.type,
-    })
-
-    // Show more detailed error message
-    if (err.status === 500) {
-      error.value =
-        'Lỗi server. Vui lòng kiểm tra: \n1. Bạn đã đăng nhập chưa? \n2. Tài khoản có liên kết với khách hàng không?'
-    } else {
-      error.value = err.message || 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.'
-    }
+    error.value =
+      err.response?.data?.message ||
+      err.message ||
+      'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.'
     orders.value = []
+    totalItems.value = 0
+    totalPages.value = 0
+    statusCounts.value = {}
   } finally {
     loading.value = false
   }
 }
+
+watch(pageSize, (newValue, oldValue) => {
+  if (newValue !== oldValue) {
+    currentPage.value = 1
+    fetchOrders()
+  }
+})
+
+watch(searchQuery, () => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
+  searchDebounceTimeout = setTimeout(() => {
+    currentPage.value = 1
+    fetchOrders()
+  }, 400)
+})
+
+onBeforeUnmount(() => {
+  if (searchDebounceTimeout) {
+    clearTimeout(searchDebounceTimeout)
+  }
+})
 
 // Map backend status to frontend status
 // Lifecycle
@@ -929,6 +1042,34 @@ onMounted(async () => {
   padding: 6.5rem 0 2rem;
 }
 
+.orders-meta {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.page-size-select {
+  width: auto;
+  min-width: 96px;
+}
+
+.orders-pagination .page-link {
+  color: #6c757d;
+  border-radius: 8px;
+  margin: 0 4px;
+}
+
+.orders-pagination .page-item.active .page-link {
+  background-color: #ffc107;
+  border-color: #ffc107;
+  color: #000;
+}
+
+.orders-pagination .page-item.disabled .page-link {
+  color: #ced4da;
+}
+
 .orders-title {
   letter-spacing: 0.02em;
 }
@@ -940,6 +1081,10 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .orders {
     padding: 5rem 0 1.5rem;
+  }
+
+  .orders-meta {
+    padding: 0.75rem;
   }
 }
 

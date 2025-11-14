@@ -3,9 +3,12 @@ package com.auro.auro.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.text.Normalizer;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.Set;
@@ -19,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.auro.auro.dto.response.DonHangChiTietResponse;
+import com.auro.auro.dto.response.DonHangPageResponse;
 import com.auro.auro.dto.response.DonHangResponse;
 import com.auro.auro.model.DanhGiaSanPham;
 import com.auro.auro.model.DonHang;
@@ -120,6 +124,7 @@ public class DonHangService {
 
         // Lưu trạng thái cũ để so sánh
         String trangThaiCu = donHang.getTrangThai();
+        String trangThaiCuKey = normalizeTrangThaiKey(trangThaiCu);
 
         // Cập nhật các field
         if (updates.containsKey("diaChiGiao")) {
@@ -141,7 +146,8 @@ public class DonHangService {
 
         // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
         String trangThaiMoi = donHang.getTrangThai();
-        if (!"Đang giao".equals(trangThaiCu) && "Đang giao".equals(trangThaiMoi)) {
+        String trangThaiMoiKey = normalizeTrangThaiKey(trangThaiMoi);
+        if (!"DANG_GIAO".equals(trangThaiCuKey) && "DANG_GIAO".equals(trangThaiMoiKey)) {
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
 
             for (DonHangChiTiet chiTiet : chiTietList) {
@@ -588,26 +594,44 @@ public class DonHangService {
     }
 
     // Lấy đơn hàng của khách
-    public Page<DonHangResponse> layDonHangCuaKhach(Long khachHangId, int trang, int kichThuoc) {
-        // Lấy tất cả đơn hàng với details (eager loaded)
+    public DonHangPageResponse layDonHangCuaKhach(Long khachHangId, int trang, int kichThuoc, String trangThai,
+            String keyword) {
+        if (kichThuoc <= 0) {
+            kichThuoc = 10;
+        }
+
         List<DonHang> allOrders = donHangRepository.findByKhachHang_IdWithDetails(khachHangId);
 
-        // Manual pagination
-        int start = trang * kichThuoc;
-        int end = Math.min(start + kichThuoc, allOrders.size());
-        List<DonHang> paginatedOrders = allOrders.subList(start, end);
+        List<DonHang> filteredOrders = allOrders.stream()
+                .filter(order -> matchesStatus(order, trangThai))
+                .filter(order -> matchesKeyword(order, keyword))
+                .collect(Collectors.toList());
 
-        // Convert to DTO
+        Map<String, Long> statusCounts = buildStatusCounts(filteredOrders);
+
+        int totalElements = filteredOrders.size();
+        int totalPages = kichThuoc <= 0 ? 0 : (int) Math.ceil((double) totalElements / (double) kichThuoc);
+
+        int safePage = Math.max(trang, 0);
+        int start = safePage * kichThuoc;
+        if (start >= totalElements) {
+            start = Math.max(totalElements - kichThuoc, 0);
+        }
+        int end = Math.min(start + kichThuoc, totalElements);
+        List<DonHang> paginatedOrders = filteredOrders.subList(start, end);
+
         List<DonHangResponse> responses = paginatedOrders.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
 
-        // Create Page object
-        Pageable pageable = PageRequest.of(trang, kichThuoc);
-        return new org.springframework.data.domain.PageImpl<>(
-                responses,
-                pageable,
-                allOrders.size());
+        return DonHangPageResponse.builder()
+                .content(responses)
+                .currentPage(totalElements == 0 ? 0 : Math.min(safePage + 1, Math.max(totalPages, 1)))
+                .pageSize(kichThuoc)
+                .totalElements(totalElements)
+                .totalPages(totalPages)
+                .statusCounts(statusCounts)
+                .build();
     } // Hủy đơn hàng
 
     @Transactional
@@ -660,6 +684,89 @@ public class DonHangService {
         danhGiaSanPhamRepository.save(danhGia);
 
         return mapChiTietToResponse(chiTiet);
+    }
+
+    private Map<String, Long> buildStatusCounts(List<DonHang> orders) {
+        Map<String, Long> counts = new LinkedHashMap<>();
+        counts.put("ALL", (long) orders.size());
+        for (String code : Arrays.asList("PENDING", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED")) {
+            counts.putIfAbsent(code, 0L);
+        }
+        for (DonHang order : orders) {
+            String code = normalizeTrangThaiCode(order.getTrangThai());
+            counts.merge(code, 1L, Long::sum);
+        }
+        return counts;
+    }
+
+    private boolean matchesStatus(DonHang order, String trangThai) {
+        if (trangThai == null || trangThai.trim().isEmpty() || "ALL".equalsIgnoreCase(trangThai.trim())) {
+            return true;
+        }
+        String orderCode = normalizeTrangThaiCode(order.getTrangThai());
+        return orderCode.equalsIgnoreCase(trangThai.trim());
+    }
+
+    private boolean matchesKeyword(DonHang order, String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return true;
+        }
+        String lower = keyword.trim().toLowerCase(Locale.ROOT);
+
+        if (order.getSoDonHang() != null && order.getSoDonHang().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        if (order.getTrangThai() != null && order.getTrangThai().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        if (order.getDiaChiGiao() != null && order.getDiaChiGiao().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        if (order.getGhiChu() != null && order.getGhiChu().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        if (order.getTaoLuc() != null && order.getTaoLuc().toString().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        if (order.getCapNhatLuc() != null
+                && order.getCapNhatLuc().toString().toLowerCase(Locale.ROOT).contains(lower)) {
+            return true;
+        }
+        if (order.getChiTietList() != null) {
+            for (DonHangChiTiet chiTiet : order.getChiTietList()) {
+                if (chiTiet.getTenHienThi() != null
+                        && chiTiet.getTenHienThi().toLowerCase(Locale.ROOT).contains(lower)) {
+                    return true;
+                }
+                if (chiTiet.getThuocTinh() != null
+                        && chiTiet.getThuocTinh().toLowerCase(Locale.ROOT).contains(lower)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private String normalizeTrangThaiCode(String value) {
+        String key = normalizeTrangThaiKey(value);
+        switch (key) {
+            case "CHO_XAC_NHAN":
+                return "PENDING";
+            case "DANG_XU_LY":
+                return "PROCESSING";
+            case "DANG_GIAO":
+                return "SHIPPING";
+            case "DA_GIAO":
+            case "DA_GIAO_HANG":
+                return "DELIVERED";
+            case "HOAN_TAT":
+            case "HOAN_THANH":
+                return "COMPLETED";
+            case "DA_HUY":
+                return "CANCELLED";
+            default:
+                return "PENDING";
+        }
     }
 
     private boolean coTheDanhGia(String trangThaiDonHang) {
