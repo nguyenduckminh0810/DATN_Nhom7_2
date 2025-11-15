@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import com.auro.auro.service.VoucherService;
 import com.auro.auro.service.VoucherValidationResult;
 import com.auro.auro.service.VoucherApplicationResult;
+import com.auro.auro.constants.OrderStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +60,7 @@ public class DonHangService {
         donHang.setCapNhatLuc(LocalDateTime.now());
 
         if (donHang.getTrangThai() == null || donHang.getTrangThai().trim().isEmpty()) {
-            donHang.setTrangThai("Chờ xác nhận");
+            donHang.setTrangThai(OrderStatus.CHO_XAC_NHAN);
         }
 
         // Tính toán tổng tiền
@@ -122,9 +123,9 @@ public class DonHangService {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
 
-        //TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
+        // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "SHIPPING"
         String trangThaiMoi = donHang.getTrangThai();
-        if (!"Đang giao".equals(trangThaiCu) && "Đang giao".equals(trangThaiMoi)) {
+        if (!OrderStatus.DANG_GIAO.equals(trangThaiCu) && OrderStatus.DANG_GIAO.equals(trangThaiMoi)) {
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
 
             for (DonHangChiTiet chiTiet : chiTietList) {
@@ -184,16 +185,16 @@ public class DonHangService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
 
         // Kiểm tra trạng thái có được phép hủy không
-        if ("Hoàn tất".equals(donHang.getTrangThai())) {
+        if (OrderStatus.HOAN_TAT.equals(donHang.getTrangThai())) {
             throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
         }
 
-        if ("Đã hủy".equals(donHang.getTrangThai())) {
+        if (OrderStatus.DA_HUY.equals(donHang.getTrangThai())) {
             throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
         }
 
         // Đổi trạng thái sang Đã hủy
-        donHang.setTrangThai("Đã hủy");
+        donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
     }
@@ -342,8 +343,8 @@ public class DonHangService {
         Voucher voucherFreeShip = null;
 
         // check guest không thể dùng vc
-        if(request.getVoucherId() != null || request.getFreeshipVoucherId() != null) {
-            if(khachHangId == null) {
+        if (request.getVoucherId() != null || request.getFreeshipVoucherId() != null) {
+            if (khachHangId == null) {
                 throw new RuntimeException("Bạn phải đăng nhập để sử dụng voucher");
             }
         }
@@ -364,11 +365,9 @@ public class DonHangService {
                     if ("FREESHIP".equals(loai)) {
                         log.warn("Voucher freeship phải áp dụng riêng - skip");
                         voucherGiamGia = null;
-                    } else if (
-                            !"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) &&
+                    } else if (!"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) &&
                             !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
-                            !"percent".equals(loai) && !"so_tien".equals(loai)
-                    ) {
+                            !"percent".equals(loai) && !"so_tien".equals(loai)) {
                         log.warn("Loại voucher không hợp lệ cho giảm giá: {}", loai);
                         voucherGiamGia = null;
                     } else {
@@ -465,7 +464,7 @@ public class DonHangService {
         DonHang donHang = new DonHang();
         donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         donHang.setKhachHang(khachHang);
-        donHang.setTrangThai("Chờ xác nhận");
+        donHang.setTrangThai(OrderStatus.CHO_XAC_NHAN);
         donHang.setTamTinh(tamTinh);
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
@@ -578,11 +577,11 @@ public class DonHangService {
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        if (!"Chờ xác nhận".equals(donHang.getTrangThai())) {
+        if (!OrderStatus.CHO_XAC_NHAN.equals(donHang.getTrangThai())) {
             throw new RuntimeException("Không thể hủy đơn hàng này");
         }
 
-        donHang.setTrangThai("Đã hủy");
+        donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang savedDonHang = donHangRepository.save(donHang);
 
@@ -710,15 +709,18 @@ public class DonHangService {
         log.info("🎫 Checking voucher - maVoucher from request: '{}'", request.getMaVoucher());
         if (request.getMaVoucher() != null && !request.getMaVoucher().trim().isEmpty()) {
             String code = request.getMaVoucher().trim();
-            System.out.println("🎫 Applying voucher: code=" + code + ", khachHangId=" + authenticatedKhachHangId + ", tamTinh=" + tamTinh);
-            log.info("🎫 Applying voucher: code={}, khachHangId={}, tamTinh={}", code, authenticatedKhachHangId, tamTinh);
+            System.out.println("🎫 Applying voucher: code=" + code + ", khachHangId=" + authenticatedKhachHangId
+                    + ", tamTinh=" + tamTinh);
+            log.info("🎫 Applying voucher: code={}, khachHangId={}, tamTinh={}", code, authenticatedKhachHangId,
+                    tamTinh);
             try {
                 // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
                 System.out.println("🔍 Searching for voucher with code: '" + code + "'");
                 log.info("🔍 Searching for voucher with code: '{}'", code);
                 Optional<Voucher> voucherOpt = voucherRepository.findByMa(code);
                 if (voucherOpt.isEmpty()) {
-                    System.out.println("🔍 Not found with original code, trying uppercase: '" + code.toUpperCase() + "'");
+                    System.out
+                            .println("🔍 Not found with original code, trying uppercase: '" + code.toUpperCase() + "'");
                     log.info("🔍 Not found with original code, trying uppercase: '{}'", code.toUpperCase());
                     voucherOpt = voucherRepository.findByMa(code.toUpperCase());
                 }
@@ -728,7 +730,8 @@ public class DonHangService {
                     voucherOpt = voucherRepository.findByMa(code.toLowerCase());
                 }
                 if (voucherOpt.isEmpty()) {
-                    System.out.println("⚠️ Voucher code '" + code + "' not found in database after trying all case variations");
+                    System.out.println(
+                            "⚠️ Voucher code '" + code + "' not found in database after trying all case variations");
                     log.warn("⚠️ Voucher code '{}' not found in database after trying all case variations", code);
                 }
                 Voucher voucher = voucherOpt.orElse(null);
@@ -736,11 +739,11 @@ public class DonHangService {
                     // Lấy mã voucher từ DB (đảm bảo đúng case)
                     String voucherMaFromDB = voucher.getMa();
                     String loai = voucher.getLoai();
-                    System.out.println("🎫 Found voucher: id=" + voucher.getId() + ", ma=" + voucherMaFromDB + 
-                            ", loai=" + loai + ", giaTri=" + voucher.getGiaTri() + 
+                    System.out.println("🎫 Found voucher: id=" + voucher.getId() + ", ma=" + voucherMaFromDB +
+                            ", loai=" + loai + ", giaTri=" + voucher.getGiaTri() +
                             ", giamToiDa=" + voucher.getGiamToiDa() + ", donToiThieu=" + voucher.getDonToiThieu());
-                    log.info("🎫 Found voucher: id={}, ma={}, loai={}, giaTri={}, giamToiDa={}, donToiThieu={}", 
-                            voucher.getId(), voucherMaFromDB, loai, voucher.getGiaTri(), 
+                    log.info("🎫 Found voucher: id={}, ma={}, loai={}, giaTri={}, giamToiDa={}, donToiThieu={}",
+                            voucher.getId(), voucherMaFromDB, loai, voucher.getGiaTri(),
                             voucher.getGiamToiDa(), voucher.getDonToiThieu());
                     if ("FREESHIP".equalsIgnoreCase(loai)) {
                         // Freeship: miễn phí ship
@@ -750,16 +753,18 @@ public class DonHangService {
                         log.info("✅ Applied FREESHIP voucher - shipping fee set to 0");
                     } else {
                         // Giảm giá: sử dụng service để tính đúng giamGiaTong
-                        // QUAN TRỌNG: Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request (code)
+                        // QUAN TRỌNG: Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request
+                        // (code)
                         // để đảm bảo tìm được voucher trong validateVoucher()
-                        System.out.println("🎫 Calling applyVoucher with: voucherMaFromDB=" + voucherMaFromDB + 
+                        System.out.println("🎫 Calling applyVoucher with: voucherMaFromDB=" + voucherMaFromDB +
                                 ", khachHangId=" + authenticatedKhachHangId + ", tamTinh=" + tamTinh);
-                        log.info("🎫 Calling applyVoucher with: voucherMaFromDB={}, khachHangId={}, tamTinh={}", 
+                        log.info("🎫 Calling applyVoucher with: voucherMaFromDB={}, khachHangId={}, tamTinh={}",
                                 voucherMaFromDB, authenticatedKhachHangId, tamTinh);
-                        VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB, authenticatedKhachHangId, tamTinh);
-                        System.out.println("🎫 Voucher apply result: success=" + result.isSuccess() + 
+                        VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB,
+                                authenticatedKhachHangId, tamTinh);
+                        System.out.println("🎫 Voucher apply result: success=" + result.isSuccess() +
                                 ", message=" + result.getMessage() + ", giamGia=" + result.getGiamGia());
-                        log.info("🎫 Voucher apply result: success={}, message={}, giamGia={}", 
+                        log.info("🎫 Voucher apply result: success={}, message={}, giamGia={}",
                                 result.isSuccess(), result.getMessage(), result.getGiamGia());
                         if (!result.isSuccess()) {
                             System.out.println("❌ Voucher apply failed: " + result.getMessage());
@@ -770,9 +775,9 @@ public class DonHangService {
                         } else {
                             giamGiaTong = result.getGiamGia();
                             appliedVoucher = result.getVoucher();
-                            System.out.println("✅ Applied discount voucher - giamGiaTong=" + giamGiaTong + 
+                            System.out.println("✅ Applied discount voucher - giamGiaTong=" + giamGiaTong +
                                     ", voucherId=" + (appliedVoucher != null ? appliedVoucher.getId() : "null"));
-                            log.info("✅ Applied discount voucher - giamGiaTong={}, voucherId={}", 
+                            log.info("✅ Applied discount voucher - giamGiaTong={}, voucherId={}",
                                     giamGiaTong, appliedVoucher != null ? appliedVoucher.getId() : "null");
                         }
                     }
@@ -782,7 +787,8 @@ public class DonHangService {
                     // Voucher không tìm thấy → cho phép đặt hàng tiếp tục (không có giảm giá)
                 }
             } catch (RuntimeException e) {
-                // Nếu là RuntimeException từ applyVoucher (voucher không hợp lệ, đã sử dụng, etc.)
+                // Nếu là RuntimeException từ applyVoucher (voucher không hợp lệ, đã sử dụng,
+                // etc.)
                 // thì throw ra ngoài để ngăn chặn đặt hàng
                 String errorMsg = e.getMessage();
                 System.out.println("❌ Voucher validation/application failed: " + errorMsg);
@@ -800,7 +806,8 @@ public class DonHangService {
             System.out.println("🎫 No voucher code provided in request");
             log.info("🎫 No voucher code provided in request");
         }
-        System.out.println("💰 Final pricing: tamTinh=" + tamTinh + ", giamGiaTong=" + giamGiaTong + ", phiVanChuyen=" + phiVanChuyen);
+        System.out.println("💰 Final pricing: tamTinh=" + tamTinh + ", giamGiaTong=" + giamGiaTong + ", phiVanChuyen="
+                + phiVanChuyen);
         System.out.println("=== VOUCHER PROCESSING END ===");
         log.info("💰 Final pricing: tamTinh={}, giamGiaTong={}, phiVanChuyen={}", tamTinh, giamGiaTong, phiVanChuyen);
 
@@ -906,13 +913,15 @@ public class DonHangService {
         }
 
         // Log trước khi convert để debug
-        log.info("📦 taoDonHangGuest completed - DonHang ID: {}, tamTinh: {}, giamGiaTong: {}, phiVanChuyen: {}, tongThanhToan: {}", 
-                savedDonHang.getId(), savedDonHang.getTamTinh(), savedDonHang.getGiamGiaTong(), 
+        log.info(
+                "📦 taoDonHangGuest completed - DonHang ID: {}, tamTinh: {}, giamGiaTong: {}, phiVanChuyen: {}, tongThanhToan: {}",
+                savedDonHang.getId(), savedDonHang.getTamTinh(), savedDonHang.getGiamGiaTong(),
                 savedDonHang.getPhiVanChuyen(), savedDonHang.getTongThanhToan());
-        
+
         DonHangResponse response = convertToDTO(savedDonHang);
-        log.info("📦 Response DTO - tongThanhToan: {}, giamGiaTong: {}", response.getTongThanhToan(), response.getGiamGiaTong());
-        
+        log.info("📦 Response DTO - tongThanhToan: {}, giamGiaTong: {}", response.getTongThanhToan(),
+                response.getGiamGiaTong());
+
         return response;
 
     }

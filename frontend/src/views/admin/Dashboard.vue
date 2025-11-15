@@ -10,8 +10,8 @@
                 <i class="ph bi bi-currency-dollar"></i>
         </div>
               <div class="card-info">
-                <h3>Doanh thu hôm nay</h3>
-                <p class="card-subtitle">So với hôm qua</p>
+                <h3>Tổng doanh thu</h3>
+                <p class="card-subtitle">Đơn hàng hoàn tất</p>
       </div>
             </div>
             <div class="card-content">
@@ -871,7 +871,7 @@ const loadRecentOrders = async () => {
       time: order.time,
       amount: formatCurrency(order.amount),
       status: mapOrderStatus(order.status),
-      statusText: order.status
+      statusText: getStatusDisplayName(order.status)
     }))
   } catch (error) {
     console.error('Error loading recent orders:', error)
@@ -948,14 +948,33 @@ const formatCurrency = (amount) => {
 }
 
 const mapOrderStatus = (status) => {
+  // Map English status from API to CSS class
   const statusMap = {
+    'PENDING': 'pending',
+    'CONFIRMED': 'processing',
+    'SHIPPING': 'shipping',
+    'COMPLETED': 'completed',
+    'CANCELLED': 'cancelled',
+    // Fallback for Vietnamese (backward compatibility)
     'Chờ xác nhận': 'pending',
     'Đã xác nhận': 'processing',
     'Đang giao': 'shipping',
-    'Hoàn thành': 'completed',
+    'Hoàn tất': 'completed',
     'Đã hủy': 'cancelled'
   }
   return statusMap[status] || 'pending'
+}
+
+// Get Vietnamese display name for status
+const getStatusDisplayName = (status) => {
+  const displayMap = {
+    'PENDING': 'Chờ xác nhận',
+    'CONFIRMED': 'Đã xác nhận',
+    'SHIPPING': 'Đang giao',
+    'COMPLETED': 'Hoàn tất',
+    'CANCELLED': 'Đã hủy'
+  }
+  return displayMap[status] || status
 }
 
 // Watch for metric and time range changes
@@ -965,6 +984,7 @@ watch([selectedMetric, chartTimeRange], () => {
 
 // Initialize dashboard on mount
 onMounted(async () => {
+  console.log('🚀 Dashboard mounting...')
   // Load all data in parallel
   await Promise.all([
     (async () => {
@@ -972,8 +992,9 @@ onMounted(async () => {
         isLoadingSummary.value = true
         const s = await thongKeService.getSummary({ lowStockThreshold: 10 })
         summary.value = s?.data ?? s
+        console.log('✅ Summary loaded:', summary.value)
       } catch (error) {
-        console.error('Error loading summary:', error)
+        console.error('❌ Error loading summary:', error)
       } finally {
         isLoadingSummary.value = false
       }

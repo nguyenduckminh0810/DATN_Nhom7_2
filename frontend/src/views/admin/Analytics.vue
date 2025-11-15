@@ -517,7 +517,7 @@
           <div class="chart-card">
             <div class="chart-header">
               <h6 class="chart-title">Phân tích khách hàng</h6>
-              <select v-model="customerAnalyticsType" class="form-control form-control-sm">
+              <select v-model="customerAnalyticsType" @change="loadCustomerAnalytics" class="form-control form-control-sm">
                 <option value="segments">Phân khúc</option>
                 <option value="behavior">Hành vi</option>
                 <option value="geography">Địa lý</option>
@@ -608,6 +608,63 @@ const selectedCategory = ref('')
 const selectedRegion = ref('')
 const selectedCustomerType = ref('')
 const selectedAgeGroup = ref('')
+
+// Computed date range for API calls
+const getDateRange = () => {
+  const now = new Date()
+  let startDate = ''
+  let endDate = now.toISOString().split('T')[0] // Today in YYYY-MM-DD format
+
+  if (selectedDateRange.value === 'custom' && customStartDate.value && customEndDate.value) {
+    startDate = customStartDate.value
+    endDate = customEndDate.value
+  } else {
+    switch (selectedDateRange.value) {
+      case 'today':
+        startDate = now.toISOString().split('T')[0]
+        break
+      case 'yesterday':
+        const yesterday = new Date(now)
+        yesterday.setDate(yesterday.getDate() - 1)
+        startDate = yesterday.toISOString().split('T')[0]
+        endDate = yesterday.toISOString().split('T')[0]
+        break
+      case '7days':
+        const sevenDaysAgo = new Date(now)
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+        startDate = sevenDaysAgo.toISOString().split('T')[0]
+        break
+      case '30days':
+        const thirtyDaysAgo = new Date(now)
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+        startDate = thirtyDaysAgo.toISOString().split('T')[0]
+        break
+      case '90days':
+        const ninetyDaysAgo = new Date(now)
+        ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+        startDate = ninetyDaysAgo.toISOString().split('T')[0]
+        break
+      case 'thisMonth':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+        break
+      case 'lastMonth':
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+        startDate = lastMonth.toISOString().split('T')[0]
+        endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+        break
+      case 'thisYear':
+        startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
+        break
+      default:
+        // Default to 30 days
+        const defaultStart = new Date(now)
+        defaultStart.setDate(defaultStart.getDate() - 30)
+        startDate = defaultStart.toISOString().split('T')[0]
+    }
+  }
+
+  return { startDate, endDate }
+}
 
 const selectedMetric = ref('revenue')
 const chartType = ref('line')
@@ -712,7 +769,8 @@ let realTimeInterval = null
 const loadKpis = async () => {
   try {
     isLoadingKpis.value = true
-    const response = await thongKeService.getAnalyticsKpis()
+    const { startDate, endDate } = getDateRange()
+    const response = await thongKeService.getAnalyticsKpis({ startDate, endDate })
     const data = response?.data ?? response
     
     totalRevenue.value = Number(data.totalRevenue || 0)
@@ -738,10 +796,8 @@ const loadHourlySales = async () => {
     const data = response?.data ?? response
     hourlySales.value = data || []
     
-    // Calculate today's totals
-    todayRevenue.value = hourlySales.value.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
-    todayOrders.value = hourlySales.value.reduce((sum, item) => sum + Number(item.orders || 0), 0)
-    todayCustomers.value = hourlySales.value.reduce((sum, item) => sum + Number(item.customers || 0), 0)
+    // Note: Today's metrics are now loaded from getBusinessInsights()
+    // Only use hourly sales for chart data
     
     lastUpdate.value = new Date().toLocaleString('vi-VN')
     lastUpdated.value = new Date()
@@ -755,7 +811,8 @@ const loadHourlySales = async () => {
 const loadBusinessInsights = async () => {
   try {
     isLoadingBusinessInsights.value = true
-    const response = await thongKeService.getBusinessInsights()
+    const { startDate, endDate } = getDateRange()
+    const response = await thongKeService.getBusinessInsights({ startDate, endDate })
     const data = response?.data ?? response
     
     averageOrderValue.value = Number(data.averageOrderValue || 0)
@@ -764,9 +821,14 @@ const loadBusinessInsights = async () => {
     returningCustomers.value = Number(data.returningCustomersRate || 0)
     customerLifetimeValue.value = Number(data.customerLifetimeValue || 0)
     averageRetentionDays.value = Number(data.averageRetentionDays || 0)
-    topSellingProduct.value = data.topSellingProduct || ''
-    topCategory.value = data.topCategory || ''
+    topSellingProduct.value = data.topSellingProduct || 'N/A'
+    topCategory.value = data.topCategory || 'N/A'
     inventoryTurnover.value = Number(data.inventoryTurnover || 0)
+    
+    // Load today's metrics from business insights
+    todayRevenue.value = Number(data.todayRevenue || 0)
+    todayOrders.value = Number(data.todayOrders || 0)
+    todayCustomers.value = Number(data.todayCustomers || 0)
   } catch (error) {
     console.error('Error loading business insights:', error)
   } finally {
@@ -777,7 +839,8 @@ const loadBusinessInsights = async () => {
 const loadPerformanceMetrics = async () => {
   try {
     isLoadingPerformance.value = true
-    const response = await thongKeService.getPerformanceMetrics()
+    const { startDate, endDate } = getDateRange()
+    const response = await thongKeService.getPerformanceMetrics({ startDate, endDate })
     const data = response?.data ?? response
     
     conversionRate.value = Number(data.conversionRate || 0)
@@ -793,7 +856,12 @@ const loadPerformanceMetrics = async () => {
 const loadTopProducts = async () => {
   try {
     isLoadingTopProducts.value = true
-    const response = await thongKeService.getTopProducts({ limit: 5, rangeDays: 30 })
+    const { startDate, endDate } = getDateRange()
+    // Calculate rangeDays from date range
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const rangeDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 30
+    const response = await thongKeService.getTopProducts({ limit: 5, rangeDays })
     const data = response?.data ?? response
     topProducts.value = (data || []).map(product => ({
       id: product.id,
@@ -823,8 +891,10 @@ const loadCustomerAnalytics = async () => {
   try {
     const response = await thongKeService.getCustomerAnalytics({ type: customerAnalyticsType.value })
     customerAnalyticsData.value = response?.data ?? response
+    console.log('Customer Analytics Data:', customerAnalyticsData.value)
   } catch (error) {
     console.error('Error loading customer analytics:', error)
+    customerAnalyticsData.value = null
   }
 }
 
@@ -1319,9 +1389,9 @@ const customerAnalyticsChartData = computed(() => {
       datasets: [{
         label: 'Số lượng khách hàng',
         data: [
-          customerAnalyticsData.value.newCustomers || 0,
-          customerAnalyticsData.value.returningCustomers || 0,
-          customerAnalyticsData.value.vipCustomers || 0
+          Number(customerAnalyticsData.value.newCustomers || 0),
+          Number(customerAnalyticsData.value.returningCustomers || 0),
+          Number(customerAnalyticsData.value.vipCustomers || 0)
         ],
         backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
         borderWidth: 0,
@@ -1334,10 +1404,10 @@ const customerAnalyticsChartData = computed(() => {
       datasets: [{
         label: 'Số lượng khách hàng',
         data: [
-          customerAnalyticsData.value.age18_24 || 0,
-          customerAnalyticsData.value.age25_34 || 0,
-          customerAnalyticsData.value.age35_44 || 0,
-          customerAnalyticsData.value.age45_plus || 0
+          Number(customerAnalyticsData.value.age18_24 || 0),
+          Number(customerAnalyticsData.value.age25_34 || 0),
+          Number(customerAnalyticsData.value.age35_44 || 0),
+          Number(customerAnalyticsData.value.age45_plus || 0)
         ],
         backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
         borderWidth: 0,
@@ -1350,9 +1420,9 @@ const customerAnalyticsChartData = computed(() => {
       datasets: [{
         label: 'Số lượng khách hàng',
         data: [
-          customerAnalyticsData.value.north || 0,
-          customerAnalyticsData.value.central || 0,
-          customerAnalyticsData.value.south || 0
+          Number(customerAnalyticsData.value.north || 0),
+          Number(customerAnalyticsData.value.central || 0),
+          Number(customerAnalyticsData.value.south || 0)
         ],
         backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
         borderWidth: 0,
@@ -1509,12 +1579,31 @@ const toggleAdvancedFilters = () => {
   showAdvancedFilters.value = !showAdvancedFilters.value
 }
 
-const applyDateRange = () => {
-  // Apply date range filter
+const applyDateRange = async () => {
+  // If custom is selected, show advanced filters panel
+  if (selectedDateRange.value === 'custom') {
+    showAdvancedFilters.value = true
+    return
+  }
+  
+  // Reload all data with new date range
+  await refreshData()
 }
 
-const applyFilters = () => {
-  // Apply filters
+const applyFilters = async () => {
+  // If custom date range is selected, ensure dates are set
+  if (selectedDateRange.value === 'custom') {
+    if (!customStartDate.value || !customEndDate.value) {
+      alert('Vui lòng chọn cả ngày bắt đầu và ngày kết thúc')
+      return
+    }
+  }
+  
+  // Close advanced filters panel
+  showAdvancedFilters.value = false
+  
+  // Reload all data with new filters
+  await refreshData()
 }
 
 const resetFilters = () => {
