@@ -199,7 +199,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
-import { useProductStore } from '../../stores/product'
 import SearchModal from '../common/SearchModal.vue'
 import LoginPopup from '../auth/LoginPopup.vue'
 import RegisterPopup from '../auth/RegisterPopup.vue'
@@ -211,7 +210,6 @@ import categoryService from '../../services/categoryService' // << added
 const router = useRouter()
 const userStore = useUserStore()
 const cartStore = useCartStore()
-const productStore = useProductStore()
 const { success, error } = useToast()
 
 // Login popup state
@@ -354,9 +352,15 @@ const scrollToNewProducts = async () => {
 
 // Search handler
 const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push(`/search?q=${encodeURIComponent(searchQuery.value.trim())}`)
+  const query = searchQuery.value.trim()
+  if (query) {
+    // Navigate to search page with query parameter
+    router.push(`/search?q=${encodeURIComponent(query)}`)
+    // Clear search input after navigation
     searchQuery.value = ''
+  } else {
+    // Optional: Show a message or focus the input if empty
+    // For now, just do nothing if query is empty
   }
 }
 
