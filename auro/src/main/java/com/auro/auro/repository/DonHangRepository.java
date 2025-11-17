@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.math.BigDecimal;
@@ -17,6 +18,10 @@ import java.math.BigDecimal;
 @Repository
 public interface DonHangRepository extends JpaRepository<DonHang, Long> {
   Optional<DonHang> findBySoDonHang(String soDonHang);
+
+  List<DonHang> findTop5ByKhachHang_SoDienThoaiOrderByDatLucDesc(String soDienThoai);
+
+  List<DonHang> findTop5ByKhachHang_SoDienThoaiInOrderByDatLucDesc(Collection<String> soDienThoais);
 
   Page<DonHang> findByKhachHang_Id(Long idKhachHang, Pageable pageable);
 

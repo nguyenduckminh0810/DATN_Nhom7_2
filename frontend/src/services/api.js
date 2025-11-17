@@ -321,6 +321,7 @@ class ApiService {
     update: (id, data) => this.put(`/orders/${id}`, data),
     cancel: (id) => this.post(`/orders/${id}/cancel`),
     getStatus: (id) => this.get(`/orders/${id}/status`),
+    track: (params = {}) => this.get('/don-hang/theo-doi', { params }),
   }
 
   // Payment endpoints

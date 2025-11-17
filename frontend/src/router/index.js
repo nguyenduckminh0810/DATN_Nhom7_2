@@ -107,6 +107,12 @@ const router = createRouter({
       meta: { title: 'Đặt hàng thành công - AURO' },
     },
     {
+      path: '/theo-doi-don-hang',
+      name: 'track-order',
+      component: () => import('../views/TrackOrder.vue'),
+      meta: { title: 'Theo dõi đơn hàng - AURO' },
+    },
+    {
       path: '/search',
       name: 'search',
       component: SearchResults,

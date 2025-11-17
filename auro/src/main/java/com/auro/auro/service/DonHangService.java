@@ -3,6 +3,7 @@ package com.auro.auro.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,6 +19,8 @@ import com.auro.auro.dto.request.GHNShippingFeeRequest;
 import com.auro.auro.dto.request.GuestCheckoutRequest;
 import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
 import com.auro.auro.dto.response.GHNShippingFeeResponse;
+import com.auro.auro.exception.BadRequestException;
+import com.auro.auro.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -119,6 +122,52 @@ public class DonHangService {
     // Lấy chi tiết đơn hàng theo ID đơn hàng
     public List<DonHangChiTiet> getChiTietByDonHangId(Long donHangId) {
         return donHangChiTietRepository.findByDonHang_Id(donHangId);
+    }
+
+    // Tra cứu đơn hàng cho khách vãng lai
+    @Transactional
+    public DonHangResponse traCuuDonHangTheoMa(String orderCode, String soDienThoai) {
+        if (orderCode == null || orderCode.trim().isEmpty()) {
+            throw new BadRequestException("Mã đơn hàng không được để trống");
+        }
+
+        DonHang donHang = donHangRepository.findBySoDonHang(orderCode.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng với mã đã nhập"));
+
+        if (soDienThoai != null && !soDienThoai.trim().isEmpty()) {
+            if (!isPhoneMatch(donHang, soDienThoai)) {
+                throw new BadRequestException("Số điện thoại không trùng khớp với đơn hàng");
+            }
+        }
+
+        return convertToDTO(donHang);
+    }
+
+    @Transactional
+    public DonHangPageResponse traCuuDonHangTheoSoDienThoai(String soDienThoai) {
+        if (soDienThoai == null || soDienThoai.trim().isEmpty()) {
+            throw new BadRequestException("Số điện thoại không được để trống");
+        }
+
+        List<String> phoneCandidates = buildPhoneCandidates(soDienThoai.trim());
+        List<DonHang> donHangs = donHangRepository
+                .findTop5ByKhachHang_SoDienThoaiInOrderByDatLucDesc(phoneCandidates);
+
+        if (donHangs.isEmpty()) {
+            throw new ResourceNotFoundException("Không tìm thấy đơn hàng với số điện thoại đã nhập");
+        }
+
+        List<DonHangResponse> content = donHangs.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        return DonHangPageResponse.builder()
+                .content(content)
+                .currentPage(0)
+                .pageSize(content.size())
+                .totalElements(content.size())
+                .totalPages(1)
+                .build();
     }
 
     // Cập nhật đơn hàng
@@ -305,6 +354,69 @@ public class DonHangService {
         }
 
         return dto;
+    }
+
+    private boolean isPhoneMatch(DonHang donHang, String phoneInput) {
+        if (donHang == null || phoneInput == null) {
+            return false;
+        }
+
+        KhachHang khachHang = donHang.getKhachHang();
+        if (khachHang == null || khachHang.getSoDienThoai() == null) {
+            return false;
+        }
+
+        String normalizedInput = normalizePhone(phoneInput);
+        String normalizedStored = normalizePhone(khachHang.getSoDienThoai());
+
+        if (normalizedInput.isEmpty() || normalizedStored.isEmpty()) {
+            return khachHang.getSoDienThoai().trim().equalsIgnoreCase(phoneInput.trim());
+        }
+
+        return normalizedInput.equals(normalizedStored);
+    }
+
+    private List<String> buildPhoneCandidates(String rawPhone) {
+        List<String> candidates = new ArrayList<>();
+        if (rawPhone == null || rawPhone.trim().isEmpty()) {
+            return candidates;
+        }
+
+        String trimmed = rawPhone.trim();
+        String normalized = normalizePhone(trimmed);
+
+        candidates.add(trimmed);
+        if (!normalized.isEmpty() && !candidates.contains(normalized)) {
+            candidates.add(normalized);
+        }
+
+        if (!normalized.isEmpty()) {
+            if (normalized.startsWith("0") && normalized.length() > 1) {
+                String international = "+84" + normalized.substring(1);
+                if (!candidates.contains(international)) {
+                    candidates.add(international);
+                }
+            } else if (normalized.startsWith("84") && normalized.length() > 2) {
+                String domestic = "0" + normalized.substring(2);
+                if (!candidates.contains(domestic)) {
+                    candidates.add(domestic);
+                }
+            }
+        }
+
+        return candidates;
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) {
+            return "";
+        }
+
+        String digitsOnly = phone.replaceAll("[^0-9]", "");
+        if (digitsOnly.startsWith("84") && digitsOnly.length() > 2) {
+            digitsOnly = "0" + digitsOnly.substring(2);
+        }
+        return digitsOnly;
     }
 
     private DonHangChiTietResponse mapChiTietToResponse(DonHangChiTiet ct) {
