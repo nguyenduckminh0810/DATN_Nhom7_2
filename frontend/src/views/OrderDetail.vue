@@ -126,18 +126,11 @@
               </div>
               <div class="card-body">
                 <div class="timeline">
-                  <div class="timeline-item active">
+                  <div class="timeline-item" :class="{ active: isStatusActive('PENDING') }">
                     <div class="timeline-marker"></div>
                     <div class="timeline-content">
                       <h6>Đơn hàng đã được tạo</h6>
                       <p class="text-muted small">{{ formatDate(order.taoLuc) }}</p>
-                    </div>
-                  </div>
-                  <div class="timeline-item" :class="{ active: isStatusActive('PROCESSING') }">
-                    <div class="timeline-marker"></div>
-                    <div class="timeline-content">
-                      <h6>Đang xử lý</h6>
-                      <p class="text-muted small">Đơn hàng đang được xử lý</p>
                     </div>
                   </div>
                   <div class="timeline-item" :class="{ active: isStatusActive('SHIPPING') }">
@@ -270,7 +263,7 @@ const canCancelOrder = computed(() => {
 
   const currentStatus = order.value.statusCode || getOrderStatusCode(order.value.rawStatus)
 
-  return [ORDER_STATUS_CODES.PENDING, ORDER_STATUS_CODES.PROCESSING].includes(currentStatus)
+  return ORDER_STATUS_CODES.PENDING === currentStatus
 })
 
 onMounted(async () => {

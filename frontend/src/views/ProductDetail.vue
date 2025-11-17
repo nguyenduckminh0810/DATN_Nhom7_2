@@ -195,6 +195,8 @@
                     class="quantity-input"
                     min="1"
                     :max="maxQuantity"
+                    @blur="validateQuantityInput"
+                    @keypress="handleKeyPress"
                   />
                   <button
                     class="qty-btn"
@@ -865,7 +867,7 @@ const currentStock = computed(() => {
 })
 
 const maxQuantity = computed(() => {
-  return Math.min(currentVariantStock.value, 10)
+  return currentVariantStock.value // Không giới hạn, cho phép đặt tối đa bằng số lượng tồn kho
 })
 
 const canAddToCart = computed(() => {
@@ -1034,6 +1036,41 @@ const decreaseQuantity = () => {
 const increaseQuantity = () => {
   if (quantity.value < maxQuantity.value) {
     quantity.value++
+  } else if (window.$toast) {
+    window.$toast.warning(`Chỉ còn ${maxQuantity.value} sản phẩm trong kho`, 'Vượt quá tồn kho')
+  }
+}
+
+// Validate quantity input when user types directly
+const validateQuantityInput = () => {
+  const maxStock = currentVariantStock.value
+  
+  if (!quantity.value || isNaN(quantity.value) || quantity.value < 1) {
+    quantity.value = 1
+  } else if (maxStock > 0 && quantity.value > maxStock) {
+    quantity.value = maxStock
+    if (window.$toast) {
+      window.$toast.warning(`Chỉ còn ${maxStock} sản phẩm trong kho`, 'Vượt quá tồn kho')
+    }
+  }
+}
+
+// Prevent non-numeric input
+const handleKeyPress = (event) => {
+  // Allow: backspace, delete, tab, escape, enter, decimal point
+  if ([46, 8, 9, 27, 13, 110, 190].includes(event.keyCode) ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (event.keyCode === 65 && event.ctrlKey === true) ||
+      (event.keyCode === 67 && event.ctrlKey === true) ||
+      (event.keyCode === 86 && event.ctrlKey === true) ||
+      (event.keyCode === 88 && event.ctrlKey === true) ||
+      // Allow: home, end, left, right
+      (event.keyCode >= 35 && event.keyCode <= 39)) {
+    return
+  }
+  // Ensure that it is a number and stop the keypress if not
+  if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && (event.keyCode < 96 || event.keyCode > 105)) {
+    event.preventDefault()
   }
 }
 
@@ -1503,12 +1540,31 @@ const handleLightboxClose = () => {
 }
 
 // Watch quantity changes
-watch(quantity, (newQty) => {
-  const maxStock = currentVariantStock.value || 10
-  if (newQty > maxStock) {
-    quantity.value = maxStock
-  } else if (newQty < 1) {
+watch(quantity, (newQty, oldQty) => {
+  const maxStock = currentVariantStock.value
+  
+  // Validate không để rỗng hoặc NaN
+  if (!newQty || isNaN(newQty)) {
     quantity.value = 1
+    return
+  }
+  
+  // Validate số lượng tối thiểu
+  if (newQty < 1) {
+    quantity.value = 1
+    if (window.$toast) {
+      window.$toast.warning('Số lượng tối thiểu là 1', 'Cảnh báo')
+    }
+    return
+  }
+  
+  // Validate số lượng tối đa (không vượt quá tồn kho)
+  if (maxStock > 0 && newQty > maxStock) {
+    quantity.value = maxStock
+    if (window.$toast && oldQty !== maxStock) {
+      window.$toast.warning(`Chỉ còn ${maxStock} sản phẩm trong kho`, 'Vượt quá tồn kho')
+    }
+    return
   }
 })
 

@@ -1234,15 +1234,14 @@ const orderDistributionData = computed(() => {
   
   if (orderDistributionType.value === 'status') {
     return {
-      labels: ['Chờ xử lý', 'Đang xử lý', 'Đang giao', 'Hoàn thành'],
+      labels: ['Chờ xử lý', 'Đang giao', 'Hoàn thành'],
       datasets: [{
         data: [
           orderStatusCounts.value.pending || 0,
-          orderStatusCounts.value.processing || 0,
           orderStatusCounts.value.shipping || 0,
           orderStatusCounts.value.completed || 0
         ],
-        backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981'],
+        backgroundColor: ['#f59e0b', '#8b5cf6', '#10b981'],
         borderWidth: 2,
         borderColor: '#ffffff'
       }]

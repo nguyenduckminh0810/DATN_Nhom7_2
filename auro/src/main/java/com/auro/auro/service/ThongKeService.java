@@ -266,7 +266,6 @@ public class ThongKeService {
     public Map<String, Object> getOrderStatusCounts() {
         Map<String, Object> statusCounts = new HashMap<>();
         statusCounts.put("pending", donHangRepository.countByTrangThai(OrderStatus.CHO_XAC_NHAN));
-        statusCounts.put("processing", donHangRepository.countByTrangThai(OrderStatus.DA_XAC_NHAN));
         statusCounts.put("shipping", donHangRepository.countByTrangThai(OrderStatus.DANG_GIAO));
         statusCounts.put("completed", donHangRepository.countByTrangThai(OrderStatus.HOAN_TAT));
         statusCounts.put("cancelled", donHangRepository.countByTrangThai(OrderStatus.DA_HUY));
@@ -363,22 +362,23 @@ public class ThongKeService {
         double profitMargin = 25.0; // TODO: Calculate from cost data
         BigDecimal customerLifetimeValue = averageOrderValue.multiply(BigDecimal.valueOf(2)); // Rough estimate
         int averageRetentionDays = 90; // TODO: Calculate from customer data
-        
+
         // Get top selling product
         String topSellingProduct = "N/A";
         List<Map<String, Object>> topProducts = getTopProducts(1, 30);
         if (!topProducts.isEmpty() && topProducts.get(0).get("name") != null) {
             topSellingProduct = (String) topProducts.get(0).get("name");
         }
-        
+
         // Get top category
         String topCategory = "N/A";
         List<Map<String, Object>> topCategories = getCategoryPerformance(1, 30);
         if (!topCategories.isEmpty() && topCategories.get(0).get("name") != null) {
             topCategory = (String) topCategories.get(0).get("name");
         }
-        
-        // Calculate inventory turnover (simplified: total sold quantity / total inventory)
+
+        // Calculate inventory turnover (simplified: total sold quantity / total
+        // inventory)
         double inventoryTurnover = 0.0;
         try {
             long totalSoldQuantity = donHangChiTietRepository.findTotalSoldQuantityBetween(
@@ -395,18 +395,19 @@ public class ThongKeService {
         // Get today's metrics
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
-        
+
         // Try to get orders by taoLuc first, if no results, fallback to datLuc
         long todayOrders = donHangRepository.countByTaoLucBetween(startOfToday, now);
         BigDecimal todayRevenue = donHangRepository.sumRevenueByTaoLucBetween(startOfToday, now);
         long todayCustomers = donHangRepository.countDistinctCustomersByTaoLucBetween(startOfToday, now);
-        
-        // Fallback: If no orders found by taoLuc, try datLuc (for orders that might not have taoLuc set)
+
+        // Fallback: If no orders found by taoLuc, try datLuc (for orders that might not
+        // have taoLuc set)
         if (todayOrders == 0 || (todayRevenue != null && todayRevenue.compareTo(BigDecimal.ZERO) == 0)) {
             long ordersByDatLuc = donHangRepository.countByDatLucBetween(startOfToday, now);
             BigDecimal revenueByDatLuc = donHangRepository.sumRevenueByDatLucBetween(startOfToday, now);
             long customersByDatLuc = donHangRepository.countDistinctCustomersByDatLucBetween(startOfToday, now);
-            
+
             // Use datLuc data if it has more orders
             if (ordersByDatLuc > todayOrders) {
                 todayOrders = ordersByDatLuc;
@@ -492,11 +493,12 @@ public class ThongKeService {
         long totalCarts = gioHangRepository.countByTaoLucBetween(startDate, endDate);
 
         // Calculate conversion rate: orders / carts * 100
-        // Cap at 100% if orders exceed carts (some orders may be created directly without cart)
-        double conversionRate = totalCarts > 0 
-            ? Math.min(100.0, (double) totalOrders / totalCarts * 100) 
-            : (totalOrders > 0 ? 100.0 : 0.0);
-        
+        // Cap at 100% if orders exceed carts (some orders may be created directly
+        // without cart)
+        double conversionRate = totalCarts > 0
+                ? Math.min(100.0, (double) totalOrders / totalCarts * 100)
+                : (totalOrders > 0 ? 100.0 : 0.0);
+
         // Calculate cart abandonment rate: (carts - orders) / carts * 100
         // Ensure it's between 0 and 100%
         double cartAbandonmentRate = 0.0;
@@ -515,11 +517,12 @@ public class ThongKeService {
 
         // Calculate completion rate
         double completionRate = totalOrders > 0 ? (double) completedOrders / totalOrders * 100 : 0.0;
-        
+
         // Calculate cancellation rate
         double cancellationRate = totalOrders > 0 ? (double) cancelledOrders / totalOrders * 100 : 0.0;
 
-        // Customer satisfaction: Use completion rate as proxy (completed orders indicate satisfaction)
+        // Customer satisfaction: Use completion rate as proxy (completed orders
+        // indicate satisfaction)
         // In a real system, this would come from reviews/ratings
         double customerSatisfaction = completionRate; // Simplified: assume satisfied if order completed
 
@@ -557,7 +560,8 @@ public class ThongKeService {
     public Map<String, Object> getCustomerAnalytics(String type, String startDateStr, String endDateStr) {
         // Note: startDate and endDate are parsed but not used in current implementation
         // They are reserved for future filtering by date range
-        // LocalDateTime startDate = parseDate(startDateStr, LocalDate.now().minusDays(30));
+        // LocalDateTime startDate = parseDate(startDateStr,
+        // LocalDate.now().minusDays(30));
         // LocalDateTime endDate = parseDate(endDateStr, LocalDate.now());
 
         Map<String, Object> analytics = new HashMap<>();
@@ -566,12 +570,13 @@ public class ThongKeService {
             long totalCustomers = khachHangRepository.count();
             long activeCustomers = donHangRepository.countCustomersWithCompletedOrders(OrderStatus.HOAN_TAT);
             long repeatCustomers = donHangRepository.countRepeatCustomers(OrderStatus.HOAN_TAT);
-            
+
             // Calculate new customers (customers who haven't made any orders yet)
             long newCustomers = totalCustomers - activeCustomers;
-            
+
             // Calculate VIP customers (customers with 3+ completed orders)
-            // For now, use repeat customers as proxy for VIP (customers with multiple orders)
+            // For now, use repeat customers as proxy for VIP (customers with multiple
+            // orders)
             long vipCustomers = repeatCustomers; // TODO: Implement proper VIP calculation based on order value/quantity
 
             analytics.put("total", totalCustomers);
