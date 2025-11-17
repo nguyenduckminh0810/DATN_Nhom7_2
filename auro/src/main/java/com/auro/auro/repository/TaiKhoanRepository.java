@@ -39,7 +39,4 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
 
     @Query("SELECT COUNT(tk) FROM TaiKhoan tk WHERE tk.vaiTro.ma = 'CUS'")
     long countAllCustomers();
-
-    // Đếm số tài khoản theo vai trò
-    long countByVaiTro(VaiTro vaiTro);
 }

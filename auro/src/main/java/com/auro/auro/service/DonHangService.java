@@ -41,6 +41,10 @@ import org.springframework.data.domain.PageRequest;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import com.auro.auro.service.VoucherService;
+import com.auro.auro.service.VoucherValidationResult;
+import com.auro.auro.service.VoucherApplicationResult;
+import com.auro.auro.constants.OrderStatus;
 
 @Service
 @RequiredArgsConstructor
@@ -80,7 +84,7 @@ public class DonHangService {
         donHang.setCapNhatLuc(LocalDateTime.now());
 
         if (donHang.getTrangThai() == null || donHang.getTrangThai().trim().isEmpty()) {
-            donHang.setTrangThai("Chờ xác nhận");
+            donHang.setTrangThai(OrderStatus.CHO_XAC_NHAN);
         }
 
         // Tính toán tổng tiền
@@ -144,10 +148,9 @@ public class DonHangService {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
 
-        // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "Đang giao"
+        // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "SHIPPING"
         String trangThaiMoi = donHang.getTrangThai();
-        String trangThaiMoiKey = normalizeTrangThaiKey(trangThaiMoi);
-        if (!"DANG_GIAO".equals(trangThaiCuKey) && "DANG_GIAO".equals(trangThaiMoiKey)) {
+        if (!OrderStatus.DANG_GIAO.equals(trangThaiCu) && OrderStatus.DANG_GIAO.equals(trangThaiMoi)) {
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
 
             for (DonHangChiTiet chiTiet : chiTietList) {
@@ -207,16 +210,16 @@ public class DonHangService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
 
         // Kiểm tra trạng thái có được phép hủy không
-        if ("Hoàn tất".equals(donHang.getTrangThai())) {
+        if (OrderStatus.HOAN_TAT.equals(donHang.getTrangThai())) {
             throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
         }
 
-        if ("Đã hủy".equals(donHang.getTrangThai())) {
+        if (OrderStatus.DA_HUY.equals(donHang.getTrangThai())) {
             throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
         }
 
         // Đổi trạng thái sang Đã hủy
-        donHang.setTrangThai("Đã hủy");
+        donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
     }
@@ -401,13 +404,40 @@ public class DonHangService {
 
         // vc giảm giá
         if (request.getVoucherId() != null) {
-            voucherGiamGia = voucherRepository.findById(request.getVoucherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
-            VoucherValidationResult validation = voucherService.validateVoucher(
-                    voucherGiamGia.getMa(), khachHangId, tamTinh);
+            try {
+                voucherGiamGia = voucherRepository.findById(request.getVoucherId())
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
+                VoucherValidationResult validation = voucherService.validateVoucher(
+                        voucherGiamGia.getMa(), khachHangId, tamTinh);
 
-            if (!validation.isValid()) {
-                throw new RuntimeException(validation.getMessage());
+                if (!validation.isValid()) {
+                    log.warn("Voucher invalid: {}", validation.getMessage());
+                    voucherGiamGia = null;
+                } else {
+                    String loai = voucherGiamGia.getLoai();
+                    if ("FREESHIP".equals(loai)) {
+                        log.warn("Voucher freeship phải áp dụng riêng - skip");
+                        voucherGiamGia = null;
+                    } else if (!"GIAM_PHAN_TRAM".equals(loai) && !"PHAN_TRAM".equals(loai) &&
+                            !"GIAM_SO_TIEN".equals(loai) && !"SO_TIEN".equals(loai) &&
+                            !"percent".equals(loai) && !"so_tien".equals(loai)) {
+                        log.warn("Loại voucher không hợp lệ cho giảm giá: {}", loai);
+                        voucherGiamGia = null;
+                    } else {
+                        VoucherApplicationResult result = voucherService.applyVoucher(
+                                voucherGiamGia.getMa(), khachHangId, tamTinh);
+                        if (!result.isSuccess()) {
+                            log.warn("Apply voucher failed: {}", result.getMessage());
+                            voucherGiamGia = null;
+                        } else {
+                            giamGiaTong = result.getGiamGia();
+                            voucherGiamGia = result.getVoucher();
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Lỗi xử lý voucher giảm giá: {}", e.getMessage());
+                voucherGiamGia = null;
             }
 
             // check loại voucher
@@ -508,7 +538,7 @@ public class DonHangService {
         DonHang donHang = new DonHang();
         donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         donHang.setKhachHang(khachHang);
-        donHang.setTrangThai("Chờ xác nhận");
+        donHang.setTrangThai(OrderStatus.CHO_XAC_NHAN);
         donHang.setTamTinh(tamTinh);
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
@@ -639,11 +669,11 @@ public class DonHangService {
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-        if (!"Chờ xác nhận".equals(donHang.getTrangThai())) {
+        if (!OrderStatus.CHO_XAC_NHAN.equals(donHang.getTrangThai())) {
             throw new RuntimeException("Không thể hủy đơn hàng này");
         }
 
-        donHang.setTrangThai("Đã hủy");
+        donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang savedDonHang = donHangRepository.save(donHang);
 
