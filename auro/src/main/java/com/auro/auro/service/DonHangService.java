@@ -128,7 +128,7 @@ public class DonHangService {
 
         // Lưu trạng thái cũ để so sánh
         String trangThaiCu = donHang.getTrangThai();
-        String trangThaiCuKey = normalizeTrangThaiKey(trangThaiCu);
+        String trangThaiCuNormalized = normalizeTrangThaiKey(trangThaiCu);
 
         // Cập nhật các field
         if (updates.containsKey("diaChiGiao")) {
@@ -150,16 +150,38 @@ public class DonHangService {
 
         // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "SHIPPING"
         String trangThaiMoi = donHang.getTrangThai();
-        if (!OrderStatus.DANG_GIAO.equals(trangThaiCu) && OrderStatus.DANG_GIAO.equals(trangThaiMoi)) {
+        String trangThaiMoiNormalized = normalizeTrangThaiKey(trangThaiMoi);
+
+        // So sánh normalized key để chắc chắn nhận diện đúng trạng thái SHIPPING
+        boolean wasDangGiao = "DANG_GIAO".equals(trangThaiCuNormalized);
+        boolean isDangGiao = "DANG_GIAO".equals(trangThaiMoiNormalized);
+
+        log.info("=== UPDATE ORDER STATUS ===");
+        log.info("Order ID: {}", id);
+        log.info("Old status: {} (normalized: {})", trangThaiCu, trangThaiCuNormalized);
+        log.info("New status: {} (normalized: {})", trangThaiMoi, trangThaiMoiNormalized);
+        log.info("wasDangGiao: {}, isDangGiao: {}", wasDangGiao, isDangGiao);
+
+        if (!wasDangGiao && isDangGiao) {
+            log.info(">>> TRIGGERING STOCK REDUCTION <<<");
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
+            log.info("Found {} order items to process", chiTietList.size());
 
             for (DonHangChiTiet chiTiet : chiTietList) {
                 BienTheSanPham bienThe = chiTiet.getBienThe();
                 int soLuongDat = chiTiet.getSoLuong();
                 int tonHienTai = bienThe.getSoLuongTon();
 
+                log.info("Processing variant ID: {}, Product: {}, Current stock: {}, Ordered: {}",
+                        bienThe.getId(),
+                        bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "N/A",
+                        tonHienTai,
+                        soLuongDat);
+
                 // Kiểm tra tồn kho trước khi trừ
                 if (tonHienTai < soLuongDat) {
+                    log.error("INSUFFICIENT STOCK! Variant ID: {}, Available: {}, Required: {}",
+                            bienThe.getId(), tonHienTai, soLuongDat);
                     throw new RuntimeException(
                             String.format("Không đủ hàng trong kho! Sản phẩm: %s, Màu: %s, Size: %s. " +
                                     "Tồn kho: %d, Yêu cầu: %d",
@@ -171,9 +193,15 @@ public class DonHangService {
                 }
 
                 // Trừ tồn kho
-                bienThe.setSoLuongTon(tonHienTai - soLuongDat);
+                int soLuongMoi = tonHienTai - soLuongDat;
+                bienThe.setSoLuongTon(soLuongMoi);
                 bienTheSanPhamRepository.save(bienThe);
+                log.info("Stock reduced! Variant ID: {}, Old stock: {}, New stock: {}",
+                        bienThe.getId(), tonHienTai, soLuongMoi);
             }
+            log.info(">>> STOCK REDUCTION COMPLETED <<<");
+        } else {
+            log.info("Stock reduction NOT triggered (status change not to SHIPPING or already SHIPPING)");
         }
 
         donHang.setCapNhatLuc(LocalDateTime.now());
@@ -719,7 +747,7 @@ public class DonHangService {
     private Map<String, Long> buildStatusCounts(List<DonHang> orders) {
         Map<String, Long> counts = new LinkedHashMap<>();
         counts.put("ALL", (long) orders.size());
-        for (String code : Arrays.asList("PENDING", "PROCESSING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED")) {
+        for (String code : Arrays.asList("PENDING", "SHIPPING", "DELIVERED", "COMPLETED", "CANCELLED")) {
             counts.putIfAbsent(code, 0L);
         }
         for (DonHang order : orders) {
@@ -782,8 +810,6 @@ public class DonHangService {
         switch (key) {
             case "CHO_XAC_NHAN":
                 return "PENDING";
-            case "DANG_XU_LY":
-                return "PROCESSING";
             case "DANG_GIAO":
                 return "SHIPPING";
             case "DA_GIAO":

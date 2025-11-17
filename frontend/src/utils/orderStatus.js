@@ -15,30 +15,11 @@ const STATUS_DEFINITIONS = [
     aliases: ['CHO_XAC_NHAN', 'Chờ xác nhận', 'CHỜ XÁC NHẬN', 'PENDING'],
   },
   {
-    code: 'PROCESSING',
-    label: 'Đang xử lý',
-    badgeClass: 'bg-info',
-    color: '#17a2b8',
-    sortOrder: 20,
-    forCustomer: true,
-    forAdmin: true,
-    forKanban: true,
-    aliases: [
-      'DANG_XU_LY',
-      'Đang xử lý',
-      'ĐANG XỬ LÝ',
-      'CONFIRMED',
-      'ĐÃ XÁC NHẬN',
-      'Đã xác nhận',
-      'PROCESSING',
-    ],
-  },
-  {
     code: 'SHIPPING',
     label: 'Đang giao',
     badgeClass: 'bg-primary',
     color: '#0d6efd',
-    sortOrder: 30,
+    sortOrder: 20,
     forCustomer: true,
     forAdmin: true,
     forKanban: true,
@@ -49,7 +30,7 @@ const STATUS_DEFINITIONS = [
     label: 'Đã giao',
     badgeClass: 'bg-success',
     color: '#20c997',
-    sortOrder: 40,
+    sortOrder: 30,
     forCustomer: true,
     forAdmin: true,
     forKanban: true,
@@ -60,7 +41,7 @@ const STATUS_DEFINITIONS = [
     label: 'Hoàn tất',
     badgeClass: 'bg-success',
     color: '#28a745',
-    sortOrder: 50,
+    sortOrder: 40,
     forCustomer: true,
     forAdmin: true,
     forKanban: true,
@@ -71,7 +52,7 @@ const STATUS_DEFINITIONS = [
     label: 'Đã hủy',
     badgeClass: 'bg-danger',
     color: '#dc3545',
-    sortOrder: 60,
+    sortOrder: 50,
     forCustomer: true,
     forAdmin: true,
     forKanban: true,
@@ -130,7 +111,7 @@ export const ORDER_STATUS_FOR_KANBAN = ORDER_STATUS_DEFINITIONS.filter(
 )
 
 export const ORDER_STATUS_FLOW = ORDER_STATUS_DEFINITIONS.filter((definition) =>
-  ['PENDING', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(definition.code),
+  ['PENDING', 'SHIPPING', 'DELIVERED', 'COMPLETED'].includes(definition.code),
 )
   .sort((a, b) => a.sortOrder - b.sortOrder)
   .map((definition) => definition.code)

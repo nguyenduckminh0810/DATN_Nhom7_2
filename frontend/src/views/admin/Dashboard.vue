@@ -344,15 +344,6 @@
                 <div class="status-label">Chờ xử lý</div>
               </div>
             </div>
-            <div class="status-card processing">
-              <div class="status-icon">
-                <i class="ph bi bi-gear"></i>
-              </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.processing ?? 0 }}</div>
-                <div class="status-label">Đang xử lý</div>
-              </div>
-            </div>
             <div class="status-card shipping">
               <div class="status-icon">
                 <i class="ph bi bi-truck"></i>
@@ -951,13 +942,11 @@ const mapOrderStatus = (status) => {
   // Map English status from API to CSS class
   const statusMap = {
     'PENDING': 'pending',
-    'CONFIRMED': 'processing',
     'SHIPPING': 'shipping',
     'COMPLETED': 'completed',
     'CANCELLED': 'cancelled',
     // Fallback for Vietnamese (backward compatibility)
     'Chờ xác nhận': 'pending',
-    'Đã xác nhận': 'processing',
     'Đang giao': 'shipping',
     'Hoàn tất': 'completed',
     'Đã hủy': 'cancelled'
@@ -969,7 +958,6 @@ const mapOrderStatus = (status) => {
 const getStatusDisplayName = (status) => {
   const displayMap = {
     'PENDING': 'Chờ xác nhận',
-    'CONFIRMED': 'Đã xác nhận',
     'SHIPPING': 'Đang giao',
     'COMPLETED': 'Hoàn tất',
     'CANCELLED': 'Đã hủy'
