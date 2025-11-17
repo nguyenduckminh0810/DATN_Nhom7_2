@@ -23,5 +23,6 @@ public class UserInfoResponse {
     // private LocalDateTime lanDangNhapCuoi;
 
     private String kieu;
+    private String avatar;
 
 }

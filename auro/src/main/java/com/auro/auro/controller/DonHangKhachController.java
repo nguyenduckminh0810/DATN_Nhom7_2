@@ -1,24 +1,27 @@
 package com.auro.auro.controller;
 
-import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
-import com.auro.auro.dto.response.DonHangResponse;
-import com.auro.auro.service.DonHangService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import com.auro.auro.dto.request.DanhGiaDonHangRequest;
 import com.auro.auro.dto.request.GuestCheckoutRequest;
-import jakarta.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.Map;
+import com.auro.auro.dto.request.TaoDonTuGioHangRequest;
+import com.auro.auro.dto.response.DonHangChiTietResponse;
+import com.auro.auro.dto.response.DonHangPageResponse;
+import com.auro.auro.dto.response.DonHangResponse;
 import com.auro.auro.model.KhachHang;
 import com.auro.auro.model.TaiKhoan;
 import com.auro.auro.repository.KhachHangRepository;
 import com.auro.auro.security.CustomUserDetails;
+import com.auro.auro.service.DonHangService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/khach-hang/don-hang")
@@ -61,15 +64,19 @@ public class DonHangKhachController {
     // lấy đơn hàng của khách
     @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @GetMapping("/don-hang-cua-toi")
-    public ResponseEntity<Page<DonHangResponse>> layDonHangCuaToi(@RequestParam(defaultValue = "0") int trang,
-            @RequestParam(defaultValue = "10") int kichThuoc, Authentication auth) {
+    public ResponseEntity<DonHangPageResponse> layDonHangCuaToi(@RequestParam(defaultValue = "0") int trang,
+            @RequestParam(defaultValue = "10") int kichThuoc,
+            @RequestParam(name = "trangThai", required = false) String trangThai,
+            @RequestParam(name = "search", required = false) String keyword,
+            Authentication auth) {
         try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
             System.out.println("=== layDonHangCuaToi ===");
             System.out.println("KhachHang ID: " + khachHangId);
             System.out.println("Page: " + trang + ", Size: " + kichThuoc);
 
-            Page<DonHangResponse> dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc);
+            DonHangPageResponse dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc, trangThai,
+                    keyword);
             System.out.println("Found orders: " + dhs.getTotalElements());
 
             return ResponseEntity.ok(dhs);
@@ -107,6 +114,46 @@ public class DonHangKhachController {
 
     }
 
+    @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
+    @PostMapping("/{donHangId}/danh-gia")
+    public ResponseEntity<?> danhGiaDonHang(@PathVariable Long donHangId,
+            @Valid @RequestBody DanhGiaDonHangRequest request,
+            Authentication auth) {
+
+        Long khachHangId = layKhachHangIdTuAuth(auth);
+        if (khachHangId == null) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Không xác định được khách hàng để gửi đánh giá.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+        }
+
+        try {
+            DonHangChiTietResponse response = donHangService.danhGiaDonHang(
+                    donHangId,
+                    request.getChiTietId(),
+                    khachHangId,
+                    request.getSoSao(),
+                    request.getNoiDung());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("message", "Đã lưu đánh giá.");
+            result.put("data", response);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException ex) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", ex.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        } catch (Exception ex) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Không thể lưu đánh giá: " + ex.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+
     @PostMapping("/guest-checkout")
     public ResponseEntity<?> guestCheckout(@RequestBody GuestCheckoutRequest request,
             HttpServletRequest httpRequest,
@@ -122,7 +169,8 @@ public class DonHangKhachController {
             System.out.println("Payment method: " + request.getPhuongThucThanhToan());
 
             // Tạo đơn và nhận lại thông tin để FE có id/tổng tiền cho VNPay
-            com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request, khachHangId);
+            com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request,
+                    khachHangId);
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "Đặt hàng thành công! Kiểm tra email xác nhận (nếu có).");

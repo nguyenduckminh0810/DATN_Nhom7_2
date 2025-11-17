@@ -1,6 +1,7 @@
 package com.auro.auro.repository;
 
 import com.auro.auro.model.TaiKhoan;
+import com.auro.auro.model.VaiTro;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

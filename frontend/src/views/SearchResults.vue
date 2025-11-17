@@ -83,69 +83,83 @@
         <p class="text-muted">Vui lòng chờ trong giây lát</p>
       </div>
 
-      <!-- No Results -->
-      <div v-else-if="searchQuery.trim() && !hasResults" class="no-results text-center py-5">
-        <div class="no-results-icon mb-4">
-          <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
-        </div>
-        <h4 class="mb-3">Không tìm thấy sản phẩm</h4>
-        <p class="text-muted mb-4">
-          Không có sản phẩm nào phù hợp với từ khóa <strong>"{{ searchQuery }}"</strong>
-        </p>
-        <div class="suggestions">
-          <h6 class="mb-3">Gợi ý:</h6>
-          <ul class="list-unstyled">
-            <li>• Kiểm tra chính tả từ khóa</li>
-            <li>• Thử từ khóa khác ngắn hơn</li>
-            <li>• Sử dụng từ khóa chung hơn</li>
-            <li>• Thử tìm kiếm với từ đồng nghĩa</li>
-          </ul>
-        </div>
-        <div class="mt-4">
-          <router-link to="/category" class="btn btn-auro-primary">
-            <i class="bi bi-grid-3x3-gap me-2"></i>Xem tất cả sản phẩm
-          </router-link>
-        </div>
-      </div>
-
       <!-- Search Results -->
-      <div v-else-if="hasResults" class="search-results-grid">
-        <div class="row g-4">
-          <div class="col-md-6 col-lg-4 col-xl-3" v-for="product in sortedResults" :key="product.id">
-            <div class="card product-card h-100 animate-on-scroll">
-              <div class="position-relative product-image-container">
-                <img :src="product.image" :alt="product.name" class="card-img-top">
-                <div class="position-absolute top-0 end-0 m-3">
-                  <span class="badge modern-discount-badge">-{{ product.discount }}%</span>
-                </div>
-                <div class="product-overlay">
-                  <button class="btn btn-auro-primary btn-sm" @click="addToCart(product)">
-                    <i class="bi bi-cart3 me-1"></i>Thêm vào giỏ
-                  </button>
-                </div>
-              </div>
-              <div class="card-body d-flex flex-column">
-                <h6 class="card-title fw-bold mb-2">{{ product.name }}</h6>
-                <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description }}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <span class="price h5 mb-0">{{ formatPrice(product.price) }}</span>
-                    <small class="text-muted text-decoration-line-through ms-2">
-                      {{ formatPrice(product.originalPrice) }}
-                    </small>
+      <div v-else-if="!isSearching && searchQuery.trim()">
+        <!-- Debug Info (remove in production) -->
+        <div v-if="false" class="alert alert-info">
+          Debug: hasResults={{ hasResults }}, resultCount={{ resultCount }}, sortedResults.length={{ sortedResults.length }}
+        </div>
+
+        <!-- No Results -->
+        <div v-if="!hasResults" class="no-results text-center py-5">
+          <div class="no-results-icon mb-4">
+            <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+          </div>
+          <h4 class="mb-3">Không tìm thấy sản phẩm</h4>
+          <p class="text-muted mb-4">
+            Không có sản phẩm nào phù hợp với từ khóa <strong>"{{ searchQuery }}"</strong>
+          </p>
+          <div class="suggestions">
+            <h6 class="mb-3">Gợi ý:</h6>
+            <ul class="list-unstyled">
+              <li>• Kiểm tra chính tả từ khóa</li>
+              <li>• Thử từ khóa khác ngắn hơn</li>
+              <li>• Sử dụng từ khóa chung hơn</li>
+              <li>• Thử tìm kiếm với từ đồng nghĩa</li>
+            </ul>
+          </div>
+          <div class="mt-4">
+            <router-link to="/category" class="btn btn-auro-primary">
+              <i class="bi bi-grid-3x3-gap me-2"></i>Xem tất cả sản phẩm
+            </router-link>
+          </div>
+        </div>
+
+        <!-- Has Results -->
+        <div v-else class="search-results-grid" style="min-height: 200px;">
+          <div class="row g-4">
+            <div class="col-md-6 col-lg-4 col-xl-3" v-for="product in sortedResults" :key="`product-${product.id}`">
+              <div class="card product-card h-100">
+                <div class="position-relative product-image-container">
+                  <img 
+                    :src="product.image || ''" 
+                    :alt="product.name || 'Sản phẩm'" 
+                    class="card-img-top"
+                    @error="handleImageError"
+                    style="width: 100%; height: 300px; object-fit: cover; background-color: #f8f9fa;"
+                  >
+                  <div v-if="product.discount > 0" class="position-absolute top-0 end-0 m-3">
+                    <span class="badge bg-danger">-{{ product.discount }}%</span>
                   </div>
-                  <div class="product-rating">
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star-fill text-warning"></i>
-                    <i class="bi bi-star text-warning"></i>
-                    <small class="ms-1 text-muted">(4.5)</small>
+                  <div class="product-overlay">
+                    <button class="btn btn-primary btn-sm" @click="addToCart(product)">
+                      <i class="bi bi-cart3 me-1"></i>Thêm vào giỏ
+                    </button>
                   </div>
                 </div>
-                <router-link :to="`/product/${product.id}`" class="btn btn-outline-primary mt-3">
-                  Xem chi tiết
-                </router-link>
+                <div class="card-body d-flex flex-column">
+                  <h6 class="card-title fw-bold mb-2">{{ product.name || 'Sản phẩm không có tên' }}</h6>
+                  <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description || '' }}</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="price h5 mb-0">{{ formatPrice(product.price || 0) }}</span>
+                      <small v-if="product.originalPrice > product.price" class="text-muted text-decoration-line-through ms-2">
+                        {{ formatPrice(product.originalPrice || product.price || 0) }}
+                      </small>
+                    </div>
+                    <div class="product-rating">
+                      <i class="bi bi-star-fill text-warning"></i>
+                      <i class="bi bi-star-fill text-warning"></i>
+                      <i class="bi bi-star-fill text-warning"></i>
+                      <i class="bi bi-star-fill text-warning"></i>
+                      <i class="bi bi-star text-warning"></i>
+                      <small class="ms-1 text-muted">(4.5)</small>
+                    </div>
+                  </div>
+                  <router-link :to="`/product/${product.id}`" class="btn btn-outline-primary mt-3">
+                    Xem chi tiết
+                  </router-link>
+                </div>
               </div>
             </div>
           </div>
@@ -256,10 +270,43 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
+const handleImageError = (event) => {
+  // Fallback to data URI placeholder if image fails to load
+  const placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U5ZWNlZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2Yzc1N2QiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
+  if (event.target.src !== placeholder) {
+    event.target.src = placeholder
+  }
+}
+
+// Debug: Watch search results
+watch(searchResults, (newResults) => {
+  console.log('🔍 SearchResults.vue - searchResults changed:', newResults.length, newResults)
+}, { immediate: true, deep: true })
+
+watch(hasResults, (newValue) => {
+  console.log('🔍 SearchResults.vue - hasResults:', newValue, 'isSearching:', isSearching.value, 'searchQuery:', searchQuery.value)
+}, { immediate: true })
+
+watch(resultCount, (newValue) => {
+  console.log('🔍 SearchResults.vue - resultCount:', newValue)
+}, { immediate: true })
+
+watch(sortedResults, (newValue) => {
+  console.log('🔍 SearchResults.vue - sortedResults:', newValue.length, newValue)
+  if (newValue.length > 0) {
+    console.log('🔍 First product:', newValue[0])
+  }
+}, { immediate: true, deep: true })
+
+watch(isSearching, (newValue) => {
+  console.log('🔍 SearchResults.vue - isSearching changed:', newValue)
+}, { immediate: true })
+
 // Lifecycle
 onMounted(() => {
   // Get search query from route params
   const query = route.query.q
+  console.log('🔍 SearchResults.vue - onMounted, query:', query)
   if (query) {
     searchQuery.value = query
     performSearch()
@@ -268,6 +315,7 @@ onMounted(() => {
 
 // Watch for route changes
 watch(() => route.query.q, (newQuery) => {
+  console.log('🔍 SearchResults.vue - route.query.q changed:', newQuery)
   if (newQuery && newQuery !== searchQuery.value) {
     searchQuery.value = newQuery
     performSearch()
@@ -276,6 +324,24 @@ watch(() => route.query.q, (newQuery) => {
 </script>
 
 <style scoped>
+.search-results {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .search-results {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .search-results {
+    padding: 4.5rem 0 1.5rem;
+  }
+}
+
 .search-input-container {
   max-width: 600px;
   margin: 0 auto;

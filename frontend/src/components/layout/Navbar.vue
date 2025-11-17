@@ -116,21 +116,14 @@
         </div>
 
         <!-- Right Menu -->
-        <ul class="navbar-nav">
+        <ul class="navbar-nav ms-3">
           <!-- Cart -->
-          <li class="nav-item">
-            <button
-              class="nav-link modern-nav-link position-relative cart-trigger"
-              @click="toggleMiniCart"
-            >
+          <li class="nav-item me-3">
+            <button class="nav-link modern-nav-link cart-trigger" @click="toggleMiniCart">
+              <i class="bi bi-cart3 cart-icon"></i>
               <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
                 {{ cartStore.itemCount }}
               </span>
-              <i class="bi bi-cart3">
-                <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
-                  {{ cartStore.itemCount }}
-                </span>
-              </i>
             </button>
           </li>
 
@@ -206,7 +199,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../../stores/cart'
-import { useProductStore } from '../../stores/product'
 import SearchModal from '../common/SearchModal.vue'
 import LoginPopup from '../auth/LoginPopup.vue'
 import RegisterPopup from '../auth/RegisterPopup.vue'
@@ -218,7 +210,6 @@ import categoryService from '../../services/categoryService' // << added
 const router = useRouter()
 const userStore = useUserStore()
 const cartStore = useCartStore()
-const productStore = useProductStore()
 const { success, error } = useToast()
 
 // Login popup state
@@ -361,9 +352,15 @@ const scrollToNewProducts = async () => {
 
 // Search handler
 const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    router.push(`/search?q=${encodeURIComponent(searchQuery.value.trim())}`)
+  const query = searchQuery.value.trim()
+  if (query) {
+    // Navigate to search page with query parameter
+    router.push(`/search?q=${encodeURIComponent(query)}`)
+    // Clear search input after navigation
     searchQuery.value = ''
+  } else {
+    // Optional: Show a message or focus the input if empty
+    // For now, just do nothing if query is empty
   }
 }
 
@@ -469,12 +466,12 @@ const isLoggedIn = computed(() => {
 .modern-navbar {
   background: white !important;
   border-bottom: 1px solid var(--auro-border);
-  padding: 0.5rem 0;
+  padding: 1.15rem 0;
   transition: all 0.3s ease;
   text-transform: uppercase;
   font-size: 0.8rem;
   font-weight: 500;
-  margin-top: 25px; /* Account for top bar */
+  margin-top: 34px; /* Account for top bar */
   transition: margin-top 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
 }
@@ -716,17 +713,20 @@ router-link:focus-visible {
   background: var(--auro-gradient-accent) !important;
   color: var(--auro-dark) !important;
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
-  min-width: 20px;
-  height: 20px;
+  min-width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  top: -5px;
-  right: -5px;
+  top: -6px;
+  right: -12px;
+  z-index: 1001;
+  pointer-events: none;
   box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+  border: 2px solid #fff;
 }
 
 /* Cart Trigger Button */
@@ -734,10 +734,35 @@ router-link:focus-visible {
   background: none;
   border: none;
   cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  overflow: visible;
+}
+
+.nav-item {
+  position: relative;
+  overflow: visible;
 }
 
 .cart-trigger:hover {
   color: var(--auro-accent) !important;
+}
+
+.cart-icon {
+  font-size: 1.45rem;
+  font-weight: 900 !important;
+  color: #212529 !important;
+  transition: all 0.3s ease;
+}
+
+.cart-trigger:hover .cart-icon {
+  color: #b8860b !important;
+  transform: scale(1.08);
 }
 
 /* Dropdown Hover */
@@ -856,6 +881,7 @@ router-link:focus-visible {
   backdrop-filter: blur(10px);
   background: rgba(255, 255, 255, 0.95) !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1.15rem 0;
 }
 
 .brand-container {
@@ -1010,20 +1036,21 @@ router-link:focus-visible {
 
 .modern-cart-badge {
   background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-  color: white !important;
-  border-radius: 50%;
+  color: #fff !important;
+  border-radius: 999px;
   font-size: 12px;
   font-weight: 700;
-  min-width: 22px;
-  height: 22px;
-  display: flex;
+  min-width: 26px;
+  height: 26px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  top: -6px;
-  right: -6px;
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-  border: 2px solid white;
+  top: -8px;
+  right: -8px;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.35);
+  border: 2px solid #fff;
+  padding: 0 6px;
 }
 /* Cart icon */
 .cart-trigger i {

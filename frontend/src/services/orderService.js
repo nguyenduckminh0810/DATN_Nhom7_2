@@ -101,6 +101,16 @@ const orderService = {
     }
   },
 
+  async submitReview(orderId, payload) {
+    try {
+      const response = await api.post(`/khach-hang/don-hang/${orderId}/danh-gia`, payload)
+      return response
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      throw error
+    }
+  },
+
   /**
    * Kiểm tra trạng thái thanh toán VNPay
    * GET /api/payment/vnpay-return

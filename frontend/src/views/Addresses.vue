@@ -45,9 +45,6 @@
               <router-link to="/orders" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bag me-2"></i>Đơn hàng của tôi
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-heart me-2"></i>Sản phẩm yêu thích
-              </a>
               <router-link
                 to="/addresses"
                 class="list-group-item list-group-item-action active py-3"
@@ -56,6 +53,13 @@
               </router-link>
               <a href="#" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-bell me-2"></i>Thông báo
+              </a>
+              <a
+                href="#"
+                class="list-group-item list-group-item-action text-danger py-3"
+                @click.prevent="logout"
+              >
+                <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
               </a>
             </div>
           </div>
@@ -309,12 +313,16 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import addressService from '@/services/addressService'
 import shippingService from '@/services/shippingService'
 import provinces from '@/data/provinces'
 import { Modal } from 'bootstrap'
 import { useToast } from '@/composables/useToast'
+import { useUserStore } from '@/stores/user'
 
+const router = useRouter()
+const userStore = useUserStore()
 const { success, error, warning, info } = useToast()
 
 const user = ref(null)
@@ -382,38 +390,43 @@ const loadUserData = () => {
   const storedUser = localStorage.getItem('auro_user')
   if (storedUser) {
     user.value = JSON.parse(storedUser)
+    const userRole = user.value.vaiTroMa || user.value.vaiTro || user.value.role
+    console.log('👤 [Addresses] User role:', userRole)
   }
 }
 
 // Load addresses
 const loadAddresses = async () => {
-  console.log('loadAddresses called') // Debug log
+  console.log('🔄 [Addresses] loadAddresses called')
   isLoading.value = true
   try {
-    console.log('Calling addressService.getAllAddresses()...') // Debug log
+    const token = localStorage.getItem('auro_token')
+    const storedUser = localStorage.getItem('auro_user')
+    console.log('🔑 [Addresses] Token exists:', !!token)
+    console.log('👤 [Addresses] User:', storedUser ? JSON.parse(storedUser) : null)
+    
+    console.log('📞 [Addresses] Calling addressService.getAllAddresses()')
     const response = await addressService.getAllAddresses()
-    console.log('getAllAddresses response:', response) // Debug log
+    console.log('✅ [Addresses] getAllAddresses response:', response)
 
     if (response.success) {
       addresses.value = response.data || []
-      console.log('Loaded addresses:', addresses.value.length) // Debug log
+      console.log('📦 [Addresses] Loaded addresses:', addresses.value.length)
     } else {
-      // Xử lý trường hợp không phải khách hàng (Admin/Staff)
       addresses.value = []
-      console.log('Not a customer:', response.message)
+      console.log('⚠️ [Addresses] Response not successful:', response.message)
     }
-  } catch (error) {
-    console.error('Error loading addresses:', error)
-    console.error('Error status:', error.response?.status) // Debug log
-    console.error('Error data:', error.response?.data) // Debug log
+  } catch (err) {
+    console.error('❌ [Addresses] Error loading addresses:', err)
+    console.error('📊 [Addresses] Error status:', err.response?.status)
+    console.error('📊 [Addresses] Error data:', err.response?.data)
 
-    // Nếu lỗi 403, có thể do tài khoản chưa có record khách hàng
-    if (error.response?.status === 403) {
-      console.warn('403 Forbidden - Tài khoản có thể chưa có record khách hàng')
-      console.warn('Error message:', error.response?.data?.message)
-      // Silent fail for 403 - user might be admin/staff
+    // Hiển thị lỗi cụ thể
+    if (err.response?.status === 403) {
+      console.warn('⛔ [Addresses] 403 Forbidden')
+      error('Không có quyền truy cập: ' + (err.response?.data?.message || 'Bạn không có quyền quản lý địa chỉ'))
     } else {
-      error('Có lỗi khi tải danh sách địa chỉ: ' + (error.response?.data?.message || error.message))
+      error('Có lỗi khi tải danh sách địa chỉ: ' + (err.response?.data?.message || err.message))
     }
     addresses.value = []
   } finally {
@@ -715,9 +728,18 @@ const deleteAddress = async (id) => {
   }
 }
 
+// Logout
+const logout = () => {
+  if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+    userStore.logout()
+    router.push('/')
+  }
+}
+
 onMounted(async () => {
+  console.log('🚀 [Addresses] Component mounted!')
   loadUserData()
-  loadAddresses()
+  await loadAddresses()
 
   // Load GHN provinces
   await loadGHNProvinces()
@@ -726,7 +748,7 @@ onMounted(async () => {
   const modalElement = document.getElementById('addressModal')
   if (modalElement) {
     addressModal = new Modal(modalElement)
-    console.log('Address modal initialized') // Debug log
+    console.log('✅ [Addresses] Address modal initialized') // Debug log
 
     // Reset form when modal is hidden
     modalElement.addEventListener('hidden.bs.modal', () => {
@@ -751,12 +773,30 @@ onMounted(async () => {
       ghnWards.value = []
     })
   } else {
-    console.error('Modal element not found!') // Debug log
+    console.error('❌ [Addresses] Modal element not found!') // Debug log
   }
 })
 </script>
 
 <style scoped>
+.addresses {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 6.5rem 0 2rem;
+}
+
+@media (max-width: 768px) {
+  .addresses {
+    padding: 5rem 0 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .addresses {
+    padding: 4.5rem 0 1.5rem;
+  }
+}
+
 .profile-avatar img {
   object-fit: cover;
   border: 2px solid #ffc107;

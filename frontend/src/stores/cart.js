@@ -2,6 +2,103 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import cartService from '../services/cartService'
 
+const SNAPSHOT_STORAGE_KEY = 'auro_reorder_variant_labels'
+const SNAPSHOT_STORAGE_TTL = 1000 * 60 * 30
+
+const normalizeKeyPart = (value) => {
+  if (value == null) {
+    return ''
+  }
+  return value.toString().trim().toLowerCase()
+}
+
+const buildProductKey = (productId, color, size) => {
+  if (!productId) {
+    return null
+  }
+  return `${productId}|${normalizeKeyPart(color)}|${normalizeKeyPart(size)}`
+}
+
+const readStoredSnapshots = () => {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return null
+  }
+
+  try {
+    const raw = window.localStorage.getItem(SNAPSHOT_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+
+    const payload = JSON.parse(raw)
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      (payload.createdAt && Date.now() - payload.createdAt > SNAPSHOT_STORAGE_TTL)
+    ) {
+      window.localStorage.removeItem(SNAPSHOT_STORAGE_KEY)
+      return null
+    }
+
+    return {
+      variants: payload.variants || {},
+      products: payload.products || {},
+    }
+  } catch (error) {
+    console.error('❌ [CART STORE] Không thể đọc snapshot mua lại:', error)
+    window.localStorage.removeItem(SNAPSHOT_STORAGE_KEY)
+    return null
+  }
+}
+
+const applyStoredSnapshotsToCart = (cartItems) => {
+  if (!Array.isArray(cartItems) || cartItems.length === 0) {
+    return
+  }
+
+  const stored = readStoredSnapshots()
+  if (!stored) {
+    return
+  }
+
+  const { variants = {}, products = {} } = stored
+
+  cartItems.forEach((item) => {
+    if (!item) {
+      return
+    }
+
+    const variantId = item.variantId || item.bienTheId || null
+    if (variantId && variants[variantId]) {
+      const snapshot = variants[variantId]
+      if (snapshot.displayName) {
+        item.name = snapshot.displayName
+      }
+      if (snapshot.color) {
+        item.color = snapshot.color
+      }
+      if (snapshot.size) {
+        item.size = snapshot.size
+      }
+      return
+    }
+
+    const productKey = buildProductKey(item.productId, item.color, item.size)
+    if (productKey && products[productKey]) {
+      const snapshot = products[productKey]
+      if (snapshot.displayName) {
+        item.name = snapshot.displayName
+      }
+      if (snapshot.color) {
+        item.color = snapshot.color
+      }
+      if (snapshot.size) {
+        item.size = snapshot.size
+      }
+    }
+  })
+}
+
 export const useCartStore = defineStore('cart', () => {
   // State - ✅ KHỞI TẠO RỖNG, KHÔNG LOAD TỪ LOCALSTORAGE
   // Vì backend là nguồn chân lý
@@ -20,7 +117,7 @@ export const useCartStore = defineStore('cart', () => {
     return items.value.reduce((total, item) => {
       const price = parseFloat(item.price) || 0
       const quantity = parseInt(item.quantity) || 0
-      return total + (price * quantity)
+      return total + price * quantity
     }, 0)
   })
 
@@ -38,16 +135,17 @@ export const useCartStore = defineStore('cart', () => {
       color: product.color || null,
       size: product.size || null,
       quantity: parseInt(product.quantity) || parseInt(quantity) || 1,
-      stock: parseInt(product.stock) || 1
+      stock: parseInt(product.stock) || 1,
     }
 
     // Create unique key for variant-based products
     const itemKey = sanitizedProduct.variantId || sanitizedProduct.id
-    const existingItem = items.value.find(item => 
-      item.itemKey === itemKey || 
-      (item.id === sanitizedProduct.id && !item.variantId && !sanitizedProduct.variantId)
+    const existingItem = items.value.find(
+      (item) =>
+        item.itemKey === itemKey ||
+        (item.id === sanitizedProduct.id && !item.variantId && !sanitizedProduct.variantId),
     )
-    
+
     if (existingItem) {
       existingItem.quantity += sanitizedProduct.quantity
       existingItem.price = sanitizedProduct.price // Update price in case it changed
@@ -62,93 +160,91 @@ export const useCartStore = defineStore('cart', () => {
         price: sanitizedProduct.price,
         image: sanitizedProduct.image,
         quantity: sanitizedProduct.quantity,
-        addedAt: new Date().toISOString()
+        addedAt: new Date().toISOString(),
       })
     }
-    
+
     saveToStorage()
   }
 
   const removeItem = async (itemKey) => {
     try {
       console.log('🗑️ [REMOVE ITEM] Removing item with itemKey:', itemKey)
-      
+
       // Tìm item để lấy ID (GioHangChiTiet.id)
-      const item = items.value.find(i => i.itemKey === itemKey)
-      
+      const item = items.value.find((i) => i.itemKey === itemKey)
+
       if (!item) {
         console.error('❌ [REMOVE ITEM] Item not found:', itemKey)
         return
       }
-      
+
       const cartItemId = item.id // GioHangChiTiet.id từ backend
       console.log('🗑️ [REMOVE ITEM] Calling API to remove item ID:', cartItemId)
-      
+
       // ✅ GỌI API BACKEND ĐỂ XÓA
       await cartService.removeFromCart(cartItemId)
       console.log('✅ [REMOVE ITEM] Removed from backend successfully')
-      
+
       // Sau khi xóa trên backend, reload lại giỏ hàng
       await loadCart()
       console.log('✅ [REMOVE ITEM] Reloaded cart from backend')
-      
     } catch (error) {
       console.error('❌ [REMOVE ITEM] Error:', error)
-      
+
       // Nếu lỗi API, vẫn xóa trên frontend (fallback)
-      const index = items.value.findIndex(item => item.itemKey === itemKey)
+      const index = items.value.findIndex((item) => item.itemKey === itemKey)
       if (index > -1) {
         items.value.splice(index, 1)
         saveToStorage()
       }
-      
+
       throw error
     }
   }
 
   const updateQuantity = async (itemKey, quantity) => {
     try {
-      const item = items.value.find(item => item.itemKey === itemKey)
-      
+      const item = items.value.find((item) => item.itemKey === itemKey)
+
       if (!item) {
         console.error('❌ [UPDATE QTY] Item not found:', itemKey)
         return
       }
-      
+
       if (quantity <= 0) {
         // Nếu quantity = 0, xóa item
         await removeItem(itemKey)
         return
       }
-      
+
       // KHÔNG GIỚI HẠN STOCK Ở ĐÂY - Frontend đã kiểm tra rồi
       const safeQuantity = Math.max(1, Math.min(quantity, 100)) // Chỉ giới hạn max 100
-      
+
       console.log('📝 [UPDATE QTY] Updating item:', {
         itemKey,
         cartItemId: item.id,
         oldQuantity: item.quantity,
-        newQuantity: safeQuantity
+        newQuantity: safeQuantity,
       })
-      
+
       // ✅ GỌI API BACKEND ĐỂ CẬP NHẬT SỐ LƯỢNG
       await cartService.updateQuantity(item.id, safeQuantity)
       console.log('✅ [UPDATE QTY] Updated on backend successfully')
-      
+
       // Sau khi update trên backend, reload lại giỏ hàng
       await loadCart()
       console.log('✅ [UPDATE QTY] Reloaded cart from backend')
-      
     } catch (error) {
       console.error('❌ [UPDATE QTY] Error:', error)
-      
+
       // Nếu lỗi API, vẫn update trên frontend (fallback)
-      const item = items.value.find(item => item.itemKey === itemKey)
+      const item = items.value.find((item) => item.itemKey === itemKey)
       if (item) {
         item.quantity = Math.max(1, Math.min(quantity, 100))
         saveToStorage()
       }
-      
+
       throw error
     }
   }
@@ -156,24 +252,23 @@ export const useCartStore = defineStore('cart', () => {
   const clearCart = async () => {
     try {
       console.log('🗑️ [CLEAR CART] Clearing entire cart...')
-      
+
       // ✅ GỌI API BACKEND ĐỂ XÓA TOÀN BỘ GIỎ HÀNG
       await cartService.clearCart()
       console.log('✅ [CLEAR CART] Cleared on backend successfully')
-      
+
       // Xóa trên frontend
       items.value = []
       saveToStorage()
-      
+
       console.log('✅ [CLEAR CART] Cart cleared completely')
-      
     } catch (error) {
       console.error('❌ [CLEAR CART] Error:', error)
-      
+
       // Nếu lỗi API, vẫn xóa trên frontend (fallback)
       items.value = []
       saveToStorage()
-      
+
       throw error
     }
   }
@@ -188,7 +283,7 @@ export const useCartStore = defineStore('cart', () => {
       try {
         items.value = JSON.parse(stored)
         // Ensure all items have itemKey for backward compatibility
-        items.value.forEach(item => {
+        items.value.forEach((item) => {
           if (!item.itemKey) {
             item.itemKey = item.variantId || item.id
           }
@@ -206,7 +301,7 @@ export const useCartStore = defineStore('cart', () => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
     }).format(numPrice)
   }
 
@@ -215,17 +310,17 @@ export const useCartStore = defineStore('cart', () => {
     try {
       isLoading.value = true
       console.log('🔄 [CART STORE] Loading cart from backend...')
-      
+
       const response = await cartService.getCart()
       console.log('📡 [CART STORE] Backend response:', response)
-      
+
       if (response && Array.isArray(response.chiTietList) && response.chiTietList.length > 0) {
         console.log('✅ [CART STORE] Received', response.chiTietList.length, 'items from backend')
-        
+
         // Map backend response to cart items format (only when backend has items)
-        items.value = response.chiTietList.map(item => {
+        items.value = response.chiTietList.map((item) => {
           console.log('🔍 [RAW ITEM FROM BACKEND]:', JSON.stringify(item, null, 2))
-          
+
           const mapped = {
             id: item.id, // GioHangChiTiet ID
             itemKey: item.id, // ✅ Dùng GioHangChiTiet.id làm itemKey (unique)
@@ -241,37 +336,39 @@ export const useCartStore = defineStore('cart', () => {
             size: item.size || extractSizeFromThuocTinh(item.thuocTinh),
             thuocTinh: item.thuocTinh || '',
             stock: parseInt(item.tonKho) || 999,
-            addedAt: new Date().toISOString()
+            addedAt: new Date().toISOString(),
           }
-          
+
           console.log('📦 [MAPPED ITEM] stock =', mapped.stock, ', tonKho =', item.tonKho)
           return mapped
         })
-        
+
+        applyStoredSnapshotsToCart(items.value)
+
         // ✅ Lưu vào localStorage SAU KHI map xong
         saveToStorage()
-        
+
         console.log('✅ [CART STORE] Successfully loaded and saved', items.value.length, 'items')
       } else {
         console.log('⚠️ [CART STORE] Backend returned empty cart')
-        
+
         // ✅ Backend giỏ rỗng → XÓA localStorage để đồng bộ
         // KHÔNG load từ localStorage vì backend là nguồn chân lý
         items.value = []
         saveToStorage()
       }
-      
+
       return response
     } catch (error) {
       console.error('❌ [CART STORE] Error loading cart from backend:', error)
-      
+
       // ✅ Nếu lỗi API → load từ localStorage (fallback)
       // Nhưng chỉ khi thực sự có lỗi network, không phải khi backend trả rỗng
       if (error.response?.status !== 200) {
         console.log('⚠️ [CART STORE] API error, loading from localStorage as fallback')
         loadFromStorage()
       }
-      
+
       throw error
     } finally {
       isLoading.value = false
@@ -299,12 +396,12 @@ export const useCartStore = defineStore('cart', () => {
     // State
     items,
     isLoading,
-    
+
     // Getters
     itemCount,
     totalPrice,
     isEmpty,
-    
+
     // Actions
     addItem,
     removeItem,
@@ -313,6 +410,6 @@ export const useCartStore = defineStore('cart', () => {
     saveToStorage,
     loadFromStorage,
     loadCart,
-    formatPrice
+    formatPrice,
   }
 })
