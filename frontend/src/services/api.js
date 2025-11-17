@@ -281,10 +281,10 @@ class ApiService {
     getByCategory: (categoryId, params = {}) =>
       this.get(`/san-pham/danh-muc/${categoryId}`, { params }),
     search: (query, params = {}) =>
-      this.get('/san-pham/search', { params: { q: query, ...params } }),
+      this.get('/san-pham', { params: { search: query, ...params } }),
     getFeatured: () => this.get('/san-pham/featured'),
     getBestSellers: (params = {}) => this.get('/san-pham/ban-chay', { params }),
-    getRelated: (id) => this.get(`/san-pham/${id}/related`),
+    getRelated: (id) => this.get(`/san-pham/id/${id}/related`),
     getReviews: (id) => this.get(`/san-pham/${id}/reviews`),
     addReview: (id, data) => this.post(`/san-pham/${id}/reviews`, data),
   }

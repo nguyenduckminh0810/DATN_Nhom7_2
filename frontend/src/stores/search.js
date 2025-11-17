@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '../services/api'
 import colorService from '../services/colorService'
+import productService from '../services/productService'
 
 export const useSearchStore = defineStore('search', () => {
   // Search State
@@ -381,6 +382,70 @@ export const useSearchStore = defineStore('search', () => {
     }
   }
 
+  // Normalize product from API format to display format
+  const normalizeProduct = (product) => {
+    if (!product || !product.id) {
+      console.warn('⚠️ Invalid product data:', product)
+      return null
+    }
+
+    try {
+      // Support both API format (ten, moTa, gia, etc.) and display format (name, description, price, etc.)
+      const name = product.ten || product.name || 'Sản phẩm không có tên'
+      const description = product.moTa || product.description || ''
+      
+      // Handle price - API returns BigDecimal which might be a number or string
+      const rawPrice = product.gia || product.price || 0
+      const price = typeof rawPrice === 'string' ? parseFloat(rawPrice) || 0 : Number(rawPrice) || 0
+      
+      // Handle original price - if not provided, use price
+      const rawOriginalPrice = product.giaGoc || product.originalPrice
+      const originalPrice = rawOriginalPrice 
+        ? (typeof rawOriginalPrice === 'string' ? parseFloat(rawOriginalPrice) || price : Number(rawOriginalPrice) || price)
+        : price
+      
+      // Handle image - use first image from bienThes if anhDaiDien is not available
+      let image = product.anhDaiDien || product.image || ''
+      if (!image && product.bienThes && Array.isArray(product.bienThes) && product.bienThes.length > 0) {
+        const firstVariant = product.bienThes.find(v => v.hinhAnh) || product.bienThes[0]
+        image = firstVariant?.hinhAnh || ''
+      }
+      // Fallback to data URI placeholder if still no image (to avoid network errors)
+      if (!image) {
+        // Use a simple SVG data URI as placeholder
+        image = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U5ZWNlZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2Yzc1N2QiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
+      }
+      
+      const stock = Number(product.tonKho || product.stock || 0)
+      const discount = Number(product.giamGia || product.discount || 0)
+
+      // Calculate discount percentage if not provided
+      let discountPercent = discount
+      if (!discountPercent && originalPrice > price && originalPrice > 0) {
+        discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100)
+      }
+
+      const normalized = {
+        id: product.id,
+        name: name,
+        description: description,
+        price: price,
+        originalPrice: originalPrice,
+        discount: discountPercent,
+        image: image,
+        stock: stock,
+        status: product.trangThai || product.status || 'active',
+        category: product.danhMucTen || product.category || '',
+        tags: product.tags || [],
+      }
+      
+      return normalized
+    } catch (error) {
+      console.error('❌ Error normalizing product:', product, error)
+      return null
+    }
+  }
+
   const searchProducts = async (query) => {
     if (!query.trim()) {
       searchResults.value = []
@@ -390,28 +455,88 @@ export const useSearchStore = defineStore('search', () => {
     isSearching.value = true
     searchQuery.value = query
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      // Call API to search products
+      const response = await productService.search(query.trim())
+      
+      console.log('🔍 Search API Response:', response)
 
-    // Search logic - support both API and mock data formats
-    const results = allProducts.value.filter((product) => {
+      if (response.success && response.data) {
+        // Handle different response formats
+        let products = []
+        
+        // API returns Spring Data Page object with structure:
+        // { content: [...], totalElements: number, totalPages: number, ... }
+        if (response.data.content && Array.isArray(response.data.content)) {
+          // Paginated response (Spring Data Page)
+          products = response.data.content
+          console.log('✅ Found products in content:', products.length)
+        } else if (Array.isArray(response.data)) {
+          // Direct array response
+          products = response.data
+          console.log('✅ Found products as array:', products.length)
+        } else if (response.data.products && Array.isArray(response.data.products)) {
+          // Nested products property
+          products = response.data.products
+          console.log('✅ Found products in products property:', products.length)
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          // Double nested data
+          products = response.data.data
+          console.log('✅ Found products in data.data:', products.length)
+        } else {
+          console.warn('⚠️ Unknown response format:', response.data)
+        }
+
+        // Normalize products to display format
+        if (products.length > 0) {
+          const normalized = products.map(normalizeProduct).filter(p => p !== null)
+          searchResults.value = normalized
+          console.log('✅ Normalized products:', normalized.length, 'out of', products.length)
+          if (normalized.length !== products.length) {
+            console.warn('⚠️ Some products failed to normalize')
+          }
+        } else {
+          searchResults.value = []
+          console.log('⚠️ No products found after processing')
+        }
+      } else {
+        // If API fails, fallback to mock data search
+        console.warn('API search failed, using fallback:', response.message)
+        const searchTerm = query.toLowerCase()
+        const results = allProducts.value.filter((product) => {
+          const productName = (product.ten || product.name || '').toLowerCase()
+          const productDesc = (product.moTa || product.description || '').toLowerCase()
+          const productTags = product.tags || []
+
+          return (
+            productName.includes(searchTerm) ||
+            productDesc.includes(searchTerm) ||
+            productTags.some((tag) => tag.toLowerCase().includes(searchTerm))
+          )
+        })
+        searchResults.value = results.map(normalizeProduct)
+      }
+    } catch (error) {
+      console.error('❌ Search error:', error)
+      // Fallback to mock data search on error
       const searchTerm = query.toLowerCase()
-      const productName = (product.ten || product.name || '').toLowerCase()
-      const productDesc = (product.moTa || product.description || '').toLowerCase()
-      const productTags = product.tags || []
+      const results = allProducts.value.filter((product) => {
+        const productName = (product.ten || product.name || '').toLowerCase()
+        const productDesc = (product.moTa || product.description || '').toLowerCase()
+        const productTags = product.tags || []
 
-      return (
-        productName.includes(searchTerm) ||
-        productDesc.includes(searchTerm) ||
-        productTags.some((tag) => tag.toLowerCase().includes(searchTerm))
-      )
-    })
-
-    searchResults.value = results
-    isSearching.value = false
-
-    // Add to search history
-    addToSearchHistory(query)
+        return (
+          productName.includes(searchTerm) ||
+          productDesc.includes(searchTerm) ||
+          productTags.some((tag) => tag.toLowerCase().includes(searchTerm))
+        )
+      })
+      searchResults.value = results.map(normalizeProduct)
+    } finally {
+      isSearching.value = false
+      // Add to search history
+      addToSearchHistory(query)
+    }
   }
 
   const addToSearchHistory = (query) => {
