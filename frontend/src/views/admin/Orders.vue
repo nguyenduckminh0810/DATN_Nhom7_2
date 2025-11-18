@@ -305,7 +305,7 @@
                   <span :class="['payment-badge', getPaymentClass(order.paymentStatus)]">
                     {{ getPaymentText(order.paymentStatus) }}
                   </span>
-                  <div class="payment-method">{{ order.paymentMethod }}</div>
+                  <div class="payment-method" style="text-align: center;">{{ order.paymentMethod }}</div>
                 </div>
               </td>
               <td>
