@@ -14,6 +14,8 @@ const SearchResults = () => import(/* webpackChunkName: "search" */ '../views/Se
 const NotFound = () => import(/* webpackChunkName: "common" */ '../views/NotFound.vue')
 const ShippingDemo = () => import(/* webpackChunkName: "demo" */ '../views/ShippingDemo.vue')
 const PaymentReturn = () => import(/* webpackChunkName: "payment" */ '../views/PaymentReturn.vue')
+const FirstAdminSetup = () =>
+  import(/* webpackChunkName: "admin" */ '../views/FirstAdminSetup.vue')
 
 // Admin routes - lazy loaded separately with admin chunk
 const AdminDashboard = () => import(/* webpackChunkName: "admin" */ '../views/admin/Dashboard.vue')
@@ -105,6 +107,12 @@ const router = createRouter({
       meta: { title: 'Đặt hàng thành công - AURO' },
     },
     {
+      path: '/theo-doi-don-hang',
+      name: 'track-order',
+      component: () => import('../views/TrackOrder.vue'),
+      meta: { title: 'Theo dõi đơn hàng - AURO' },
+    },
+    {
       path: '/search',
       name: 'search',
       component: SearchResults,
@@ -121,6 +129,12 @@ const router = createRouter({
       name: 'payment-return',
       component: PaymentReturn,
       meta: { title: 'Kết quả thanh toán - AURO' },
+    },
+    {
+      path: '/setup-admin',
+      name: 'first-admin-setup',
+      component: FirstAdminSetup,
+      meta: { title: 'Thiết lập Admin đầu tiên - AURO' },
     },
     {
       path: '/admin',
@@ -185,6 +199,12 @@ const router = createRouter({
           name: 'admin-promotions',
           component: AdminPromotions,
           meta: { title: 'Khuyến mãi & Voucher - AURO', requiresAuth: true, requiresAdmin: true },
+        },
+        {
+          path: 'register-staff',
+          name: 'admin-register-staff',
+          component: () => import('@/views/admin/RegisterStaff.vue'),
+          meta: { title: 'Đăng ký nhân viên - AURO', requiresAuth: true, requiresAdmin: true },
         },
       ],
     },

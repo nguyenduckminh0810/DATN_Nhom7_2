@@ -117,6 +117,12 @@
 
         <!-- Right Menu -->
         <ul class="navbar-nav ms-3">
+          <li class="nav-item me-3">
+            <router-link class="nav-link modern-nav-link track-order-link" to="/theo-doi-don-hang">
+              <i class="bi bi-search-heart me-1"></i>
+              Theo dõi đơn
+            </router-link>
+          </li>
           <!-- Cart -->
           <li class="nav-item me-3">
             <button class="nav-link modern-nav-link cart-trigger" @click="toggleMiniCart">
@@ -1091,5 +1097,16 @@ router-link:focus-visible {
   font-size: 1.5rem !important;
   color: #b8860b !important;
   transform: scale(1.1);
+}
+
+.track-order-link {
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.track-order-link .bi {
+  font-size: 1rem;
 }
 </style>

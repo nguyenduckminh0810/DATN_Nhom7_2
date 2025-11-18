@@ -154,7 +154,15 @@
                   >
                     <i class="bi bi-dash"></i>
                   </button>
-                  <span class="qty-display">{{ item.quantity }}</span>
+                  <input 
+                    type="number" 
+                    class="qty-input"
+                    v-model.number="item.quantity"
+                    @blur="validateAndUpdateQuantity(item)"
+                    @keypress="handleQuantityKeyPress"
+                    min="1"
+                    :max="getVariantStock(item)"
+                  />
                   <button 
                     class="qty-btn plus"
                     @click="increaseQuantity(item.itemKey)"
@@ -523,6 +531,60 @@ const decreaseQuantity = async (itemKey) => {
   await updateQuantity(itemKey, newQuantity)
 }
 
+// Validate and update quantity when user types directly
+const validateAndUpdateQuantity = async (item) => {
+  if (isUpdating.value) return
+  
+  const stock = getVariantStock(item)
+  let newQty = item.quantity
+  
+  // Validate empty or NaN
+  if (!newQty || isNaN(newQty)) {
+    newQty = 1
+  }
+  
+  // Validate minimum
+  if (newQty < 1) {
+    newQty = 1
+    if (window.$toast) {
+      window.$toast.warning('Số lượng tối thiểu là 1', 'Cảnh báo')
+    }
+  }
+  
+  // Validate maximum (stock)
+  if (stock > 0 && newQty > stock) {
+    newQty = stock
+    if (window.$toast) {
+      window.$toast.warning(`Chỉ còn ${stock} sản phẩm trong kho`, 'Vượt quá tồn kho')
+    }
+  }
+  
+  // Update if changed
+  if (newQty !== item.quantity) {
+    item.quantity = newQty
+    await updateQuantity(item.itemKey, newQty)
+  }
+}
+
+// Prevent non-numeric input
+const handleQuantityKeyPress = (event) => {
+  // Allow: backspace, delete, tab, escape, enter
+  if ([46, 8, 9, 27, 13].includes(event.keyCode) ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (event.keyCode === 65 && event.ctrlKey === true) ||
+      (event.keyCode === 67 && event.ctrlKey === true) ||
+      (event.keyCode === 86 && event.ctrlKey === true) ||
+      (event.keyCode === 88 && event.ctrlKey === true) ||
+      // Allow: home, end, left, right
+      (event.keyCode >= 35 && event.keyCode <= 39)) {
+    return
+  }
+  // Ensure that it is a number
+  if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && (event.keyCode < 96 || event.keyCode > 105)) {
+    event.preventDefault()
+  }
+}
+
 const clearAllItems = async () => {
   if (window.confirm('Bạn có chắc chắn muốn xóa tất cả sản phẩm khỏi giỏ hàng?')) {
     await clearCart()
@@ -866,6 +928,33 @@ const toggleSelectAll = () => {
 .qty-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.qty-input {
+  width: 50px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.qty-input:focus {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+}
+
+.qty-input::-webkit-inner-spin-button,
+.qty-input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.qty-input[type=number] {
+  -moz-appearance: textfield;
 }
 
 .qty-display {

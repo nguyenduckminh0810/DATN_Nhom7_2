@@ -118,22 +118,22 @@
                   <label class="variant-label">Màu sắc</label>
                   <div class="color-options">
                     <button
-                      v-for="color in availableColors"
-                      :key="color"
+                      v-for="colorName in availableColors"
+                      :key="colorName"
                       :class="[
                         'color-btn',
                         {
-                          selected: selectedColor === color,
-                          disabled: selectedSize && !isColorAvailableForSize(color),
+                          selected: selectedColor === colorName,
+                          disabled: selectedSize && !isColorAvailableForSize(colorName),
                         },
                       ]"
-                      :style="{ backgroundColor: color }"
-                      @click="selectColor(color)"
-                      :disabled="selectedSize && !isColorAvailableForSize(color)"
-                      :title="getColorName(color)"
-                      :aria-pressed="selectedColor === color"
+                      :style="{ backgroundColor: getColorHexByName(colorName) }"
+                      @click="selectColor(colorName)"
+                      :disabled="selectedSize && !isColorAvailableForSize(colorName)"
+                      :title="colorName"
+                      :aria-pressed="selectedColor === colorName"
                     >
-                      <i v-if="selectedColor === color" class="bi bi-check check-icon"></i>
+                      <i v-if="selectedColor === colorName" class="bi bi-check check-icon"></i>
                     </button>
                   </div>
                 </div>
@@ -169,7 +169,7 @@
                   <div class="variant-badge-content">
                     <i class="bi bi-info-circle me-2"></i>
                     <span class="variant-text">
-                      Đã chọn: <strong>{{ getColorName(selectedColor) }}</strong> -
+                      Đã chọn: <strong>{{ selectedColor }}</strong> -
                       <strong>{{ selectedSize }}</strong>
                       <span
                         v-if="currentVariant.price && currentVariant.price !== product?.price"
@@ -195,6 +195,8 @@
                     class="quantity-input"
                     min="1"
                     :max="maxQuantity"
+                    @blur="validateQuantityInput"
+                    @keypress="handleKeyPress"
                   />
                   <button
                     class="qty-btn"
@@ -723,7 +725,17 @@ const fetchRelatedProducts = async (productId) => {
 // Computed: Dynamic color-size mapping from variants (for compatibility)
 const colorSizeMapping = computed(() => {
   if (!product.value?.variants) return {}
-  return buildColorSizeMapping(product.value.variants)
+  // ✅ Build mapping theo colorName thay vì colorHex
+  const mapping = {}
+  product.value.variants.forEach(v => {
+    if (!mapping[v.colorName]) {
+      mapping[v.colorName] = []
+    }
+    if (v.stock > 0 && !mapping[v.colorName].includes(v.size)) {
+      mapping[v.colorName].push(v.size)
+    }
+  })
+  return mapping
 })
 
 // Computed: Available sizes for selected color (for compatibility)
@@ -750,8 +762,9 @@ const currentVariant = computed(() => {
     return null
   }
 
+  // ✅ Tìm variant theo colorName (mauSac) thay vì colorHex
   return product.value.variants.find(
-    (v) => v.color === selectedColor.value && v.size === selectedSize.value,
+    (v) => v.colorName === selectedColor.value && v.size === selectedSize.value,
   )
 })
 
@@ -760,7 +773,11 @@ const currentVariantStock = computed(() => {
   if (!selectedColor.value || !selectedSize.value || !product.value?.variants) {
     return getTotalStock(product.value?.variants || [])
   }
-  return getVariantStock(product.value.variants, selectedColor.value, selectedSize.value)
+  // ✅ Tìm stock theo colorName
+  const variant = product.value.variants.find(
+    v => v.colorName === selectedColor.value && v.size === selectedSize.value
+  )
+  return variant?.stock || 0
 })
 
 // Computed: Current variant price (use variant price if available, otherwise product price)
@@ -850,7 +867,7 @@ const currentStock = computed(() => {
 })
 
 const maxQuantity = computed(() => {
-  return Math.min(currentVariantStock.value, 10)
+  return currentVariantStock.value // Không giới hạn, cho phép đặt tối đa bằng số lượng tồn kho
 })
 
 const canAddToCart = computed(() => {
@@ -858,8 +875,9 @@ const canAddToCart = computed(() => {
 })
 
 const availableColors = computed(() => {
-  if (!product.value?.variants) return ['Đen', 'Trắng', 'Xám', 'Xanh navy']
-  return getAvailableColors(product.value.variants)
+  if (!product.value?.variants) return []
+  // ✅ Trả về danh sách colorName thay vì colorHex
+  return [...new Set(product.value.variants.filter(v => v.stock > 0).map(v => v.colorName))]
 })
 
 const availableSizes = computed(() => {
@@ -914,20 +932,27 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
+// ✅ Helper function: Lấy hex color từ colorName
+const getColorHexByName = (colorName) => {
+  const variant = product.value?.variants?.find(v => v.colorName === colorName)
+  return variant?.color || '#000000'
+}
+
 // New methods for Coolmate layout
-const selectColor = (color) => {
-  if (!isColorAvailable(color)) {
+const selectColor = (colorName) => {
+  if (!isColorAvailable(colorName)) {
     return
   }
 
   // Nếu click vào màu đã chọn thì bỏ chọn
-  if (selectedColor.value === color) {
+  if (selectedColor.value === colorName) {
     selectedColor.value = ''
     updateURL()
     return
   }
 
-  selectedColor.value = color
+  // ✅ Lưu colorName thay vì colorHex
+  selectedColor.value = colorName
 
   // Reset size if current size is not available for new color
   if (selectedSize.value && !availableSizesForColor.value.includes(selectedSize.value)) {
@@ -1011,6 +1036,41 @@ const decreaseQuantity = () => {
 const increaseQuantity = () => {
   if (quantity.value < maxQuantity.value) {
     quantity.value++
+  } else if (window.$toast) {
+    window.$toast.warning(`Chỉ còn ${maxQuantity.value} sản phẩm trong kho`, 'Vượt quá tồn kho')
+  }
+}
+
+// Validate quantity input when user types directly
+const validateQuantityInput = () => {
+  const maxStock = currentVariantStock.value
+  
+  if (!quantity.value || isNaN(quantity.value) || quantity.value < 1) {
+    quantity.value = 1
+  } else if (maxStock > 0 && quantity.value > maxStock) {
+    quantity.value = maxStock
+    if (window.$toast) {
+      window.$toast.warning(`Chỉ còn ${maxStock} sản phẩm trong kho`, 'Vượt quá tồn kho')
+    }
+  }
+}
+
+// Prevent non-numeric input
+const handleKeyPress = (event) => {
+  // Allow: backspace, delete, tab, escape, enter, decimal point
+  if ([46, 8, 9, 27, 13, 110, 190].includes(event.keyCode) ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (event.keyCode === 65 && event.ctrlKey === true) ||
+      (event.keyCode === 67 && event.ctrlKey === true) ||
+      (event.keyCode === 86 && event.ctrlKey === true) ||
+      (event.keyCode === 88 && event.ctrlKey === true) ||
+      // Allow: home, end, left, right
+      (event.keyCode >= 35 && event.keyCode <= 39)) {
+    return
+  }
+  // Ensure that it is a number and stop the keypress if not
+  if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && (event.keyCode < 96 || event.keyCode > 105)) {
+    event.preventDefault()
   }
 }
 
@@ -1031,17 +1091,26 @@ const handleAddToCart = async () => {
       return
     }
 
-    // Get selected variant
+    // Get selected variant - ✅ Tìm theo colorName
+    console.log('🔍 Looking for variant:', {
+      colorName: selectedColor.value,
+      size: selectedSize.value,
+      allVariants: product.value?.variants
+    })
+
     const selectedVariant = product.value?.variants?.find(
-      (v) => v.color === selectedColor.value && v.size === selectedSize.value,
+      (v) => v.colorName === selectedColor.value && v.size === selectedSize.value,
     )
 
     if (!selectedVariant || !selectedVariant.id) {
+      console.error('❌ No variant found!')
       if (window.$toast) {
         window.$toast.error('Không tìm thấy biến thể sản phẩm', 'Lỗi')
       }
       return
     }
+
+    console.log('✅ Found variant:', selectedVariant)
 
     // Check stock
     if (selectedVariant.stock <= 0) {
@@ -1080,7 +1149,7 @@ const handleAddToCart = async () => {
     // Show success message
     if (window.$toast) {
       window.$toast.success(
-        `${product.value.name} (${getColorName(selectedColor.value)} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
+        `${product.value.name} (${selectedColor.value} - ${selectedSize.value}) đã được thêm vào giỏ hàng`,
         'Thành công',
       )
     }
@@ -1125,14 +1194,14 @@ const handleBuyNow = async () => {
       return
     }
 
-    // Get selected variant with more detailed logging
+    // Get selected variant - ✅ Tìm theo colorName
     console.log('🔍 Looking for variant with:')
-    console.log('  - Color:', selectedColor.value)
+    console.log('  - ColorName:', selectedColor.value)
     console.log('  - Size:', selectedSize.value)
 
     const selectedVariant = product.value?.variants?.find((v) => {
-      console.log(`  Checking variant: color=${v.color}, size=${v.size}, id=${v.id}`)
-      return v.color === selectedColor.value && v.size === selectedSize.value
+      console.log(`  Checking variant: colorName=${v.colorName}, size=${v.size}, id=${v.id}`)
+      return v.colorName === selectedColor.value && v.size === selectedSize.value
     })
 
     if (!selectedVariant || !selectedVariant.id) {
@@ -1462,7 +1531,7 @@ const handleImageChange = (data) => {
   }
 }
 
-const handleLightboxOpen = (data) => {
+const handleLightboxOpen = () => {
   // Lightbox opened event - can be used for analytics
 }
 
@@ -1471,12 +1540,31 @@ const handleLightboxClose = () => {
 }
 
 // Watch quantity changes
-watch(quantity, (newQty) => {
-  const maxStock = currentVariantStock.value || 10
-  if (newQty > maxStock) {
-    quantity.value = maxStock
-  } else if (newQty < 1) {
+watch(quantity, (newQty, oldQty) => {
+  const maxStock = currentVariantStock.value
+  
+  // Validate không để rỗng hoặc NaN
+  if (!newQty || isNaN(newQty)) {
     quantity.value = 1
+    return
+  }
+  
+  // Validate số lượng tối thiểu
+  if (newQty < 1) {
+    quantity.value = 1
+    if (window.$toast) {
+      window.$toast.warning('Số lượng tối thiểu là 1', 'Cảnh báo')
+    }
+    return
+  }
+  
+  // Validate số lượng tối đa (không vượt quá tồn kho)
+  if (maxStock > 0 && newQty > maxStock) {
+    quantity.value = maxStock
+    if (window.$toast && oldQty !== maxStock) {
+      window.$toast.warning(`Chỉ còn ${maxStock} sản phẩm trong kho`, 'Vượt quá tồn kho')
+    }
+    return
   }
 })
 

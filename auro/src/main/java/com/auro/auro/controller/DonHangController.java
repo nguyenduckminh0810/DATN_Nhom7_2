@@ -24,6 +24,7 @@ import com.auro.auro.dto.request.CreateDonHangRequest;
 import com.auro.auro.dto.response.DonHangResponse;
 import com.auro.auro.model.DonHang;
 import com.auro.auro.model.DonHangChiTiet;
+import com.auro.auro.exception.BadRequestException;
 import com.auro.auro.service.DonHangService;
 
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,26 @@ public class DonHangController {
     @GetMapping("/{id}/chi-tiet")
     public ResponseEntity<List<DonHangChiTiet>> getChiTietDonHangById(@PathVariable Long id) {
         return ResponseEntity.ok(donHangService.getChiTietByDonHangId(id));
+    }
+
+    @GetMapping("/theo-doi")
+    public ResponseEntity<?> theoDoiDonHang(
+            @RequestParam(value = "maDon", required = false) String maDon,
+            @RequestParam(value = "soDienThoai", required = false) String soDienThoai) {
+
+        boolean hasMa = maDon != null && !maDon.trim().isEmpty();
+        boolean hasPhone = soDienThoai != null && !soDienThoai.trim().isEmpty();
+
+        if (!hasMa && !hasPhone) {
+            throw new BadRequestException("Vui lòng nhập mã đơn hàng hoặc số điện thoại");
+        }
+
+        if (hasMa) {
+            DonHangResponse donHang = donHangService.traCuuDonHangTheoMa(maDon, soDienThoai);
+            return ResponseEntity.ok(donHang);
+        }
+
+        return ResponseEntity.ok(donHangService.traCuuDonHangTheoSoDienThoai(soDienThoai));
     }
 
     // Cập nhật trạng thái đơn hàng

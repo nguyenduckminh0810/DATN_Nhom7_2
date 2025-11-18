@@ -1,10 +1,12 @@
 package com.auro.auro.repository;
 
 import com.auro.auro.model.TaiKhoan;
+import com.auro.auro.model.VaiTro;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
@@ -15,6 +17,8 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
     Optional<TaiKhoan> findBySoDienThoai(String soDienThoai);
 
     boolean existsBySoDienThoai(String soDienThoai);
+
+    long countByVaiTro(VaiTro vaiTro);
 
     // Tìm kiếm bằng email
     @Query("SELECT t FROM TaiKhoan t JOIN FETCH t.vaiTro WHERE t.email = :login AND t.trangThai = true")
@@ -31,4 +35,12 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
         }
         return findBySoDienThoaiAndTrangThaiTrue(login);
     }
+
+    @Query("SELECT COUNT(tk) FROM TaiKhoan tk WHERE tk.vaiTro.ma = 'CUS' AND tk.taoLuc BETWEEN :from AND :to")
+    long countNewCustomersBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT COUNT(tk) FROM TaiKhoan tk WHERE tk.vaiTro.ma = 'CUS'")
+    long countAllCustomers();
+
+    long countByVaiTro(VaiTro vaiTro);
 }

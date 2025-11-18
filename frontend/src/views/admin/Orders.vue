@@ -107,17 +107,6 @@
           </div>
         </div>
         <div class="col-md-3">
-          <div class="stat-card processing">
-            <div class="stat-icon">
-              <i class="bi bi-gear"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ orderStats.processing }}</div>
-              <div class="stat-label">Đang xử lý</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-3">
         <div class="stat-card shipping">
           <div class="stat-icon">
             <i class="bi bi-bicycle"></i>
@@ -321,17 +310,9 @@
                   </button>
                   <button 
                     v-if="order.statusCode === STATUS_CODES.PENDING"
-                    class="btn btn-sm btn-outline-success" 
-                    @click="quickUpdateStatus(order, STATUS_CODES.PROCESSING)"
-                    title="Xử lý đơn hàng"
-                  >
-                    <i class="bi bi-play"></i>
-                  </button>
-                  <button 
-                    v-if="order.statusCode === STATUS_CODES.PROCESSING"
-                    class="btn btn-sm btn-outline-info" 
+                    class="btn btn-sm btn-outline-primary" 
                     @click="quickUpdateStatus(order, STATUS_CODES.SHIPPING)"
-                    title="Bắt đầu giao hàng"
+                    title="Chuyển sang đang giao"
                   >
                     <i class="bi bi-bicycle"></i>
                   </button>
@@ -352,7 +333,7 @@
                     <i class="bi bi-check"></i>
                   </button>
                   <button 
-                    v-if="[STATUS_CODES.PENDING, STATUS_CODES.PROCESSING].includes(order.statusCode)"
+                    v-if="order.statusCode === STATUS_CODES.PENDING"
                     class="btn btn-sm btn-outline-danger" 
                     @click="quickUpdateStatus(order, STATUS_CODES.CANCELLED)"
                     title="Hủy đơn hàng"
@@ -360,7 +341,7 @@
                     <i class="bi bi-x"></i>
                   </button>
                   <button
-                    v-if="[STATUS_CODES.PENDING, STATUS_CODES.PROCESSING].includes(order.statusCode)"
+                    v-if="order.statusCode === STATUS_CODES.PENDING"
                     class="btn btn-sm btn-outline-warning"
                     @click="editOrder(order)"
                     title="Chỉnh sửa đơn hàng"
@@ -480,13 +461,13 @@
       <div class="bulk-actions-content">
         <span class="selected-count">{{ selectedOrders.length }} đơn hàng đã chọn</span>
         <div class="bulk-buttons">
-          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus(STATUS_CODES.PROCESSING)">
-            <i class="bi bi-check me-1"></i>Xử lý
+          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus(STATUS_CODES.SHIPPING)">
+            <i class="bi bi-bicycle me-1"></i>Đang giao
           </button>
-          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus(STATUS_CODES.DELIVERED)">
-            <i class="bi bi-truck me-1"></i>Giao hàng
+          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus(STATUS_CODES.DELIVERED)">
+            <i class="bi bi-truck me-1"></i>Đã giao
           </button>
-          <button class="btn btn-sm btn-outline-warning" @click="bulkUpdateStatus(STATUS_CODES.COMPLETED)">
+          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus(STATUS_CODES.COMPLETED)">
             <i class="bi bi-check-circle me-1"></i>Hoàn thành
           </button>
           <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus(STATUS_CODES.CANCELLED)">
@@ -859,7 +840,6 @@ const fetchOrders = async () => {
 const orderStats = computed(() => {
   const stats = {
     pending: 0,
-    processing: 0,
     shipping: 0,
     delivered: 0,
     completed: 0,
@@ -870,9 +850,6 @@ const orderStats = computed(() => {
     switch (order.statusCode) {
       case ORDER_STATUS_CODES.PENDING:
         stats.pending += 1;
-        break;
-      case ORDER_STATUS_CODES.PROCESSING:
-        stats.processing += 1;
         break;
       case ORDER_STATUS_CODES.SHIPPING:
         stats.shipping += 1;
@@ -1096,7 +1073,6 @@ const getOrdersByStatus = (statusCode) => {
 const canUpdateStatus = (status) => {
   return [
     STATUS_CODES.PENDING,
-    STATUS_CODES.PROCESSING,
     STATUS_CODES.SHIPPING,
     STATUS_CODES.DELIVERED,
   ].includes(status);
@@ -1104,8 +1080,7 @@ const canUpdateStatus = (status) => {
 
 const getNextStatus = (currentStatus) => {
   const statusFlow = {
-    [STATUS_CODES.PENDING]: STATUS_CODES.PROCESSING,
-    [STATUS_CODES.PROCESSING]: STATUS_CODES.SHIPPING,
+    [STATUS_CODES.PENDING]: STATUS_CODES.SHIPPING,
     [STATUS_CODES.SHIPPING]: STATUS_CODES.DELIVERED,
     [STATUS_CODES.DELIVERED]: STATUS_CODES.COMPLETED,
   };
@@ -1199,13 +1174,23 @@ const quickUpdateStatus = async (order, newStatusCode) => {
 
   if (confirm(`Cập nhật trạng thái đơn hàng #${order.soDonHang} sang "${statusLabel}"?`)) {
     try {
+      console.log('=== UPDATING ORDER STATUS ===');
+      console.log('Order ID:', order.id);
+      console.log('Order number:', order.soDonHang);
+      console.log('New status code:', newStatusCode);
+      console.log('Status label:', statusLabel);
+      console.log('Current status:', order.trangThai || order.rawStatus);
+      
       const updates = {
         diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
         ghiChu: order.ghiChu || '',
-        trangThai: statusLabel
+        trangThai: statusLabel  // Gửi label tiếng Việt, backend sẽ normalize
       };
+      
+      console.log('Sending updates:', updates);
 
-      await axios.put(`/api/don-hang/${order.id}`, updates);
+      const response = await axios.put(`/api/don-hang/${order.id}`, updates);
+      console.log('Response:', response.data);
 
       const index = orders.value.findIndex(o => o.id === order.id);
       if (index !== -1) {
@@ -1227,9 +1212,11 @@ const quickUpdateStatus = async (order, newStatusCode) => {
         }
       }
 
-      console.log(`Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${statusLabel}`);
+      console.log(`✅ Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${statusLabel}`);
+      alert(`✅ Đã cập nhật trạng thái đơn hàng thành công!`);
     } catch (err) {
-      console.error('Lỗi khi cập nhật trạng thái:', err);
+      console.error('❌ Lỗi khi cập nhật trạng thái:', err);
+      console.error('Error response:', err.response?.data);
       alert('Có lỗi khi cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
     }
   }
