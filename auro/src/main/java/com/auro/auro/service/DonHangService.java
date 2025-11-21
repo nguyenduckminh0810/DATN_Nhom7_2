@@ -187,7 +187,27 @@ public class DonHangService {
             donHang.setGhiChu((String) updates.get("ghiChu"));
         }
         if (updates.containsKey("trangThai")) {
-            donHang.setTrangThai((String) updates.get("trangThai"));
+            String newTrangThai = (String) updates.get("trangThai");
+            donHang.setTrangThai(newTrangThai);
+
+            // ✅ TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI THANH TOÁN KHI ĐƠN HÀNG HOÀN TẤT
+            // Nếu đơn hàng chuyển sang "Hoàn tất" và phương thức thanh toán là COD
+            // → Tự động đánh dấu đã thanh toán
+            String normalizedStatus = normalizeTrangThaiKey(newTrangThai);
+            log.info("Payment auto-update check - Status: {}, Normalized: {}, PaymentMethod: {}, PaymentStatus: {}",
+                    newTrangThai, normalizedStatus, donHang.getPaymentMethod(), donHang.getPaymentStatus());
+
+            // Check các trạng thái hoàn tất: HOAN_TAT, HOAN_THANH, DA_GIAO, DA_GIAO_HANG
+            if ("HOAN_TAT".equals(normalizedStatus) || "HOAN_THANH".equals(normalizedStatus) ||
+                    "DA_GIAO".equals(normalizedStatus) || "DA_GIAO_HANG".equals(normalizedStatus)) {
+                // Kiểm tra nếu là COD và chưa thanh toán
+                if ("COD".equalsIgnoreCase(donHang.getPaymentMethod()) &&
+                        ("PENDING".equalsIgnoreCase(donHang.getPaymentStatus()) ||
+                                "CHO_THANH_TOAN".equalsIgnoreCase(donHang.getPaymentStatus()))) {
+                    donHang.setPaymentStatus("PAID");
+                    log.info("✅ Auto-updated payment status to PAID for completed COD order");
+                }
+            }
         }
 
         if (updates.containsKey("paymentStatus")) {
@@ -197,10 +217,13 @@ public class DonHangService {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
 
-        // ✅ QUAN TRỌNG: CHỈ TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO" (SHIPPING)
+        // ✅ QUAN TRỌNG: CHỈ TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO"
+        // (SHIPPING)
         // Logic hoạt động:
-        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng không)
-        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác nhận")
+        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng
+        // không)
+        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác
+        // nhận")
         // 3. Khi admin chuyển trạng thái sang "Đang giao" → TRỪ TỒN KHO (code bên dưới)
         // Lý do: Tránh trường hợp khách thêm vào giỏ nhưng không mua, hoặc đơn bị hủy
         String trangThaiMoi = donHang.getTrangThai();
@@ -223,7 +246,7 @@ public class DonHangService {
 
             // ✅ BƯỚC 1: KIỂM TRA TẤT CẢ SẢN PHẨM TRƯỚC KHI TRỪ TỒN KHO
             List<String> outOfStockItems = new ArrayList<>();
-            
+
             for (DonHangChiTiet chiTiet : chiTietList) {
                 BienTheSanPham bienThe = chiTiet.getBienThe();
                 int soLuongDat = chiTiet.getSoLuong();
@@ -240,29 +263,29 @@ public class DonHangService {
                     String productName = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "N/A";
                     String color = bienThe.getMauSac() != null ? bienThe.getMauSac().getTen() : "N/A";
                     String size = bienThe.getKichCo() != null ? bienThe.getKichCo().getTen() : "N/A";
-                    
+
                     String itemInfo = String.format("  • %s (%s - %s): Cần %d, Còn %d → Thiếu %d",
                             productName, color, size, soLuongDat, tonHienTai, soLuongDat - tonHienTai);
-                    
+
                     outOfStockItems.add(itemInfo);
-                    
+
                     log.error("INSUFFICIENT STOCK! Variant ID: {}, Available: {}, Required: {}",
                             bienThe.getId(), tonHienTai, soLuongDat);
                 }
             }
-            
+
             // Nếu có sản phẩm thiếu hàng, throw exception với danh sách đầy đủ
             if (!outOfStockItems.isEmpty()) {
                 StringBuilder errorMessage = new StringBuilder();
                 errorMessage.append("⚠️ HẾT HÀNG - CẦN NHẬP THÊM!\n\n");
                 errorMessage.append(String.format("Đơn hàng có %d sản phẩm thiếu hàng:\n\n", outOfStockItems.size()));
-                
+
                 for (String item : outOfStockItems) {
                     errorMessage.append(item).append("\n");
                 }
-                
+
                 errorMessage.append("\n→ Vui lòng nhập thêm hàng trước khi chuyển đơn sang trạng thái \"Đang giao\".");
-                
+
                 throw new RuntimeException(errorMessage.toString());
             }
 
@@ -271,16 +294,16 @@ public class DonHangService {
                 BienTheSanPham bienThe = chiTiet.getBienThe();
                 int soLuongDat = chiTiet.getSoLuong();
                 int tonHienTai = bienThe.getSoLuongTon();
-                
+
                 // Trừ tồn kho
                 int soLuongMoi = tonHienTai - soLuongDat;
                 bienThe.setSoLuongTon(soLuongMoi);
                 bienTheSanPhamRepository.save(bienThe);
-                
+
                 log.info("Stock reduced! Variant ID: {}, Old stock: {}, New stock: {}",
                         bienThe.getId(), tonHienTai, soLuongMoi);
             }
-            
+
             log.info(">>> STOCK REDUCTION COMPLETED - All {} items processed <<<", chiTietList.size());
         } else {
             log.info("Stock reduction NOT triggered (status change not to SHIPPING or already SHIPPING)");
