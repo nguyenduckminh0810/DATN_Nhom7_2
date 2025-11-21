@@ -18,10 +18,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RestController
 @RequestMapping("/api/khach-hang/don-hang")
@@ -33,10 +35,15 @@ public class DonHangKhachController {
     @Autowired
     private KhachHangRepository khachHangRepository;
 
+    // Track last order timestamp per logged-in customer (across sessions)
+    private static final ConcurrentHashMap<Long, Long> lastOrderByKhachHang = new ConcurrentHashMap<>();
+
     // tạo đơn hàng từ giỏ hàng
     @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @PostMapping("/tao-tu-gio-hang")
+    @Transactional
     public ResponseEntity<DonHangResponse> taoDonTuGioHang(@RequestBody TaoDonTuGioHangRequest request,
+            HttpServletRequest httpRequest,
             Authentication auth) {
         try {
             System.out.println("=== DEBUG ENDPOINT tao-tu-gio-hang ===");
@@ -50,6 +57,38 @@ public class DonHangKhachController {
 
             if (khachHangId == null) {
                 throw new RuntimeException("Không thể xác định khách hàng");
+            }
+
+            // Duplicate protection: prefer per-customer blocking (10s) when logged-in,
+            // otherwise use session-level blocking (10s)
+            try {
+                long now = System.currentTimeMillis();
+                if (khachHangId != null) {
+                    Long last = lastOrderByKhachHang.get(khachHangId);
+                    if (last != null && now - last < 10000) {
+                        Map<String, Object> error = new HashMap<>();
+                        error.put("success", false);
+                        error.put("message",
+                                "Bạn đã gửi yêu cầu đặt hàng gần đây. Vui lòng chờ vài giây trước khi thử lại.");
+                        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(null);
+                    }
+                    lastOrderByKhachHang.put(khachHangId, now);
+                } else {
+                    Object lastObj = httpRequest.getSession().getAttribute("lastOrderTs");
+                    if (lastObj instanceof Long) {
+                        long last = (Long) lastObj;
+                        if (now - last < 10000) {
+                            Map<String, Object> error = new HashMap<>();
+                            error.put("success", false);
+                            error.put("message",
+                                    "Bạn đã gửi yêu cầu đặt hàng gần đây. Vui lòng chờ vài giây trước khi thử lại.");
+                            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(null);
+                        }
+                    }
+                    httpRequest.getSession().setAttribute("lastOrderTs", now);
+                }
+            } catch (Exception ex) {
+                // ignore session/map errors
             }
 
             DonHangResponse dh = donHangService.taoDonTuGioHang(request, khachHangId);
@@ -155,6 +194,7 @@ public class DonHangKhachController {
     }
 
     @PostMapping("/guest-checkout")
+    @Transactional
     public ResponseEntity<?> guestCheckout(@RequestBody GuestCheckoutRequest request,
             HttpServletRequest httpRequest,
             Authentication auth) {
@@ -168,6 +208,26 @@ public class DonHangKhachController {
             System.out.println("MaVoucher from request: '" + request.getMaVoucher() + "'");
             System.out.println("Payment method: " + request.getPhuongThucThanhToan());
 
+            // Simple session-level duplicate protection: block orders from same session
+            // within 5 seconds
+            try {
+                long now = System.currentTimeMillis();
+                Object lastObj = httpRequest.getSession().getAttribute("lastOrderTs");
+                if (lastObj instanceof Long) {
+                    long last = (Long) lastObj;
+                    if (now - last < 5000) {
+                        Map<String, Object> error = new HashMap<>();
+                        error.put("success", false);
+                        error.put("message",
+                                "Bạn đã gửi yêu cầu đặt hàng gần đây. Vui lòng chờ vài giây trước khi thử lại.");
+                        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
+                    }
+                }
+                httpRequest.getSession().setAttribute("lastOrderTs", now);
+            } catch (Exception ex) {
+                // ignore session errors
+            }
+
             // Tạo đơn và nhận lại thông tin để FE có id/tổng tiền cho VNPay
             com.auro.auro.dto.response.DonHangResponse dh = donHangService.taoDonHangGuest(sessionId, request,
                     khachHangId);
@@ -180,6 +240,7 @@ public class DonHangKhachController {
                 result.put("tamTinh", dh.getTamTinh());
                 result.put("giamGiaTong", dh.getGiamGiaTong());
                 result.put("phiVanChuyen", dh.getPhiVanChuyen());
+
                 System.out.println("=== Guest Checkout Response ===");
                 System.out.println("DonHang ID: " + dh.getId());
                 System.out.println("TamTinh: " + dh.getTamTinh());
@@ -193,13 +254,10 @@ public class DonHangKhachController {
             e.printStackTrace();
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
-            // Lấy message từ exception, nếu có chứa "Voucher" thì giữ nguyên message
             String errorMessage = e.getMessage();
             if (errorMessage != null && errorMessage.contains("Voucher")) {
-                // Message đã rõ ràng (ví dụ: "Voucher không hợp lệ: Bạn đã sử dụng voucher này rồi")
                 error.put("message", errorMessage);
             } else {
-                // Các lỗi khác
                 error.put("message", "Lỗi khi đặt hàng: " + (errorMessage != null ? errorMessage : "Vui lòng thử lại"));
             }
             return ResponseEntity.badRequest().body(error);
