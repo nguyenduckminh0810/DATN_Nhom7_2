@@ -105,7 +105,7 @@ const cartService = {
   },
 
   /**
-   * Tạo đơn hàng từ giỏ hàng (cho người dùng đã đăng nhập)
+   * Tạo đơn hàng từ giỏ hàng
    * POST /api/khach-hang/don-hang/tao-tu-gio-hang
    * @param {Object} payload - Thông tin đơn hàng
    */

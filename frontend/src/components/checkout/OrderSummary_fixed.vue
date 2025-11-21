@@ -288,14 +288,15 @@ const handleCheckout = async () => {
     console.log('⚠️ Already processing')
     return
   }
+  // Mark processing immediately to prevent multiple handlers passing validation
+  isProcessing.value = true
 
   // Validate dữ liệu
   if (!validateCheckoutData()) {
     console.log('❌ Validation failed')
+    isProcessing.value = false
     return
   }
-
-  isProcessing.value = true
 
   try {
     // Lấy các sản phẩm đã chọn
