@@ -54,17 +54,11 @@ public class BienTheService {
         // Lấy danh sách các biến thể hiện tại
         List<BienTheSanPham> existingVariants = bienTheSanPhamRepository.findBySanPham_Id(sanPhamId);
 
-        // Xóa tất cả hình ảnh của các biến thể trước
-        for (BienTheSanPham variant : existingVariants) {
-            hinhAnhRepository.deleteByBienThe_Id(variant.getId());
-        }
-        hinhAnhRepository.flush();
-
-        // Xóa các biến thể cũ
-        bienTheSanPhamRepository.deleteBySanPham_Id(sanPhamId);
-        bienTheSanPhamRepository.flush();
+        // ❌ KHÔNG XÓA BIẾN THỂ CŨ - VÌ CÓ THỂ ĐANG ĐƯỢC THAM CHIẾU BỞI GIỎ HÀNG
+        // Thay vào đó, sẽ cập nhật biến thể hiện có hoặc tạo mới nếu chưa có
 
         List<BienTheSanPham> savedVariants = new ArrayList<>();
+        List<Long> processedVariantIds = new ArrayList<>();
 
         // Lấy hoặc tạo chất liệu nếu có
         ChatLieu chatLieu = null;
@@ -78,15 +72,12 @@ public class BienTheService {
             chatLieuRepository.flush();
         }
 
-        // Tạo các biến thể mới
+        // Tạo hoặc cập nhật các biến thể
         for (VariantUpsertRequest.VariantItem item : request.getVariants()) {
             // Bỏ qua nếu stock = 0 hoặc null
             if (item.getStock() == null || item.getStock() <= 0) {
                 continue;
             }
-
-            BienTheSanPham variant = new BienTheSanPham();
-            variant.setSanPham(sanPham);
 
             // Xử lý màu sắc
             MauSac mauSac = null;
@@ -100,7 +91,6 @@ public class BienTheService {
                             mauSacRepository.flush();
                             return saved;
                         });
-                variant.setMauSac(mauSac);
             }
 
             // Xử lý kích cỡ
@@ -114,19 +104,44 @@ public class BienTheService {
                             kichCoRepository.flush();
                             return saved;
                         });
-                variant.setKichCo(kichCo);
             }
 
-            // Gán chất liệu
+            // ✅ TÌM BIẾN THỂ HIỆN CÓ THEO: sản phẩm, màu, size, chất liệu
+            Long mauSacId = (mauSac != null) ? mauSac.getId() : null;
+            Long kichCoId = (kichCo != null) ? kichCo.getId() : null;
+            Long chatLieuId = (chatLieu != null) ? chatLieu.getId() : null;
+            
+            BienTheSanPham variant = existingVariants.stream()
+                    .filter(v -> {
+                        Long vMauSacId = (v.getMauSac() != null) ? v.getMauSac().getId() : null;
+                        Long vKichCoId = (v.getKichCo() != null) ? v.getKichCo().getId() : null;
+                        Long vChatLieuId = (v.getChatLieu() != null) ? v.getChatLieu().getId() : null;
+                        
+                        return java.util.Objects.equals(vMauSacId, mauSacId) &&
+                               java.util.Objects.equals(vKichCoId, kichCoId) &&
+                               java.util.Objects.equals(vChatLieuId, chatLieuId);
+                    })
+                    .findFirst()
+                    .orElse(null);
+
+            boolean isNewVariant = (variant == null);
+            
+            if (isNewVariant) {
+                // Tạo mới biến thể
+                variant = new BienTheSanPham();
+                variant.setSanPham(sanPham);
+                
+                // Generate unique SKU
+                String sku = generateUniqueSku(sanPham.getId(), item.getSize(), item.getColor(), mauSac, kichCo);
+                variant.setSku(sku);
+            }
+            
+            // Cập nhật các thuộc tính
+            variant.setMauSac(mauSac);
+            variant.setKichCo(kichCo);
             variant.setChatLieu(chatLieu);
-
-            // Generate unique SKU
-            String sku = generateUniqueSku(sanPham.getId(), item.getSize(), item.getColor(), mauSac, kichCo);
-            variant.setSku(sku);
-
-            // Gán số lượng tồn
             variant.setSoLuongTon(item.getStock());
-
+            
             // Giá của biến thể (có thể null, sẽ dùng giá của sản phẩm)
             if (item.getPrice() != null) {
                 variant.setGia(item.getPrice());
@@ -136,9 +151,15 @@ public class BienTheService {
 
             BienTheSanPham saved = bienTheSanPhamRepository.save(variant);
             bienTheSanPhamRepository.flush();
+            
+            processedVariantIds.add(saved.getId());
 
             // Xử lý hình ảnh nếu có imageUrl
             if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+                // Xóa hình ảnh cũ của biến thể này
+                hinhAnhRepository.deleteByBienThe_Id(saved.getId());
+                hinhAnhRepository.flush();
+                
                 // Tạo hình ảnh mới
                 HinhAnh hinhAnh = new HinhAnh();
                 hinhAnh.setBienThe(saved);
@@ -149,6 +170,25 @@ public class BienTheService {
             }
 
             savedVariants.add(saved);
+        }
+        
+        // ✅ XÓA CÁC BIẾN THỂ KHÔNG CÒN TRONG DANH SÁCH MỚI
+        // (Chỉ xóa nếu không có trong giỏ hàng hoặc đơn hàng)
+        for (BienTheSanPham existingVariant : existingVariants) {
+            if (!processedVariantIds.contains(existingVariant.getId())) {
+                try {
+                    // Xóa hình ảnh trước
+                    hinhAnhRepository.deleteByBienThe_Id(existingVariant.getId());
+                    hinhAnhRepository.flush();
+                    
+                    // Xóa biến thể
+                    bienTheSanPhamRepository.deleteById(existingVariant.getId());
+                } catch (Exception e) {
+                    // Nếu không xóa được (do có tham chiếu), bỏ qua
+                    System.out.println("⚠️ Cannot delete variant ID " + existingVariant.getId() + 
+                            " (may be referenced by cart or order): " + e.getMessage());
+                }
+            }
         }
 
         hinhAnhRepository.flush();

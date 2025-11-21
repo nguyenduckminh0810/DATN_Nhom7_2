@@ -234,17 +234,21 @@ public class GioHangController {
                 if (bienThe.getSoLuongTon() < soLuongMoi) {
                     Map<String, Object> error = new HashMap<>();
                     error.put("success", false);
-                    error.put("message", "Tổng số lượng vượt quá tồn kho");
+                    error.put("message", "Sản phẩm chỉ còn " + bienThe.getSoLuongTon() + " trong kho");
                     return ResponseEntity.badRequest().body(error);
                 }
 
                 existingItem.setSoLuong(soLuongMoi);
                 existingItem.setCapNhatLuc(LocalDateTime.now());
-                GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(existingItem); // ⚡ Dùng saveAndFlush để commit
-                                                                                      // ngay
+                GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(existingItem);
+
+                // ❌ KHÔNG TRỪ TỒN KHO KHI THÊM VÀO GIỎ
+                // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+
                 System.out.println("✅ [ADD TO CART] Updated existing item ID: " + saved.getId() +
                         " | BienThe ID: " + saved.getBienThe().getId() +
-                        " | New Quantity: " + saved.getSoLuong());
+                        " | New Quantity: " + saved.getSoLuong() +
+                        " | Stock NOT reduced (will be reduced when order status changes to SHIPPING)");
             } else {
                 // ✅ Tạo mới nếu chưa có biến thể này
                 GioHangChiTiet itemMoi = new GioHangChiTiet();
@@ -261,10 +265,15 @@ public class GioHangController {
                 itemMoi.setTaoLuc(LocalDateTime.now());
                 itemMoi.setCapNhatLuc(LocalDateTime.now());
 
-                GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(itemMoi); // ⚡ Dùng saveAndFlush để commit ngay
+                GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(itemMoi);
+
+                // ❌ KHÔNG TRỪ TỒN KHO KHI THÊM VÀO GIỎ
+                // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+
                 System.out.println("✅ [ADD TO CART] Created new item ID: " + saved.getId() +
                         " | BienThe ID: " + saved.getBienThe().getId() +
-                        " | Quantity: " + saved.getSoLuong());
+                        " | Quantity: " + saved.getSoLuong() +
+                        " | Stock NOT reduced (will be reduced when order status changes to SHIPPING)");
             }
 
             Map<String, Object> result = new HashMap<>();
@@ -318,16 +327,26 @@ public class GioHangController {
                 }
             }
 
-            if (chiTiet.getBienThe().getSoLuongTon() < soLuong) {
+            BienTheSanPham bienThe = chiTiet.getBienThe();
+            int soLuongCu = chiTiet.getSoLuong();
+
+            // Kiểm tra tồn kho trước khi cập nhật
+            if (bienThe.getSoLuongTon() < soLuong) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
-                error.put("message", "Số lượng vượt quá tồn kho");
+                error.put("message", "Sản phẩm chỉ còn " + bienThe.getSoLuongTon() + " trong kho");
                 return ResponseEntity.badRequest().body(error);
             }
 
+            // ❌ KHÔNG TRỪ/HOÀN TỒN KHO KHI CẬP NHẬT GIỎ HÀNG
+            // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+            
             chiTiet.setSoLuong(soLuong);
             chiTiet.setCapNhatLuc(LocalDateTime.now());
             gioHangChiTietRepo.save(chiTiet);
+            
+            System.out.println("✅ [UPDATE CART] Updated quantity from " + soLuongCu + " to " + soLuong + 
+                    " | Stock NOT changed (will be reduced when order status changes to SHIPPING)");
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -373,6 +392,12 @@ public class GioHangController {
                     return ResponseEntity.status(403).body(error);
                 }
             }
+
+            // ❌ KHÔNG HOÀN LẠI TỒN KHO KHI XÓA KHỎI GIỎ
+            // Vì khi thêm vào giỏ không trừ tồn kho nên khi xóa cũng không cần hoàn lại
+            
+            System.out.println("✅ [DELETE FROM CART] Deleted item with " + chiTiet.getSoLuong() + 
+                    " quantity | Stock NOT changed (stock was never reduced)");
 
             gioHangChiTietRepo.delete(chiTiet);
 

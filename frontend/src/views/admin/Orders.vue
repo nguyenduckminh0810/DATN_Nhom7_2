@@ -1070,10 +1070,17 @@ const bulkUpdateStatus = async (statusCode) => {
       selectedOrders.value = [];
       selectAll.value = false;
       
-      alert(`Đã cập nhật trạng thái cho ${updatePromises.length} đơn hàng`);
+      alert(`✅ Đã cập nhật trạng thái cho ${updatePromises.length} đơn hàng`);
     } catch (err) {
       console.error('Lỗi khi cập nhật hàng loạt:', err);
-      alert('Có lỗi khi cập nhật trạng thái hàng loạt');
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
+      
+      if (errorMessage.includes('\n')) {
+        alert(errorMessage);
+      } else {
+        alert('❌ Có lỗi khi cập nhật trạng thái hàng loạt:\n\n' + errorMessage);
+      }
     }
   }
 };
@@ -1173,10 +1180,18 @@ const saveOrderChanges = async () => {
     }
 
     closeEditModal();
-    alert('Cập nhật đơn hàng thành công!');
+    alert('✅ Cập nhật đơn hàng thành công!');
   } catch (err) {
     console.error('Lỗi cập nhật:', err);
-    alert('Có lỗi khi cập nhật đơn hàng: ' + (err.response?.data?.message || err.message));
+    
+    const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
+    
+    // Hiển thị thông báo lỗi chi tiết
+    if (errorMessage.includes('\n')) {
+      alert(errorMessage);
+    } else {
+      alert('❌ Có lỗi khi cập nhật đơn hàng:\n\n' + errorMessage);
+    }
   }
 };
 
@@ -1229,7 +1244,17 @@ const quickUpdateStatus = async (order, newStatusCode) => {
     } catch (err) {
       console.error('❌ Lỗi khi cập nhật trạng thái:', err);
       console.error('Error response:', err.response?.data);
-      alert('Có lỗi khi cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
+      
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định';
+      
+      // Hiển thị thông báo lỗi chi tiết với xuống dòng
+      if (errorMessage.includes('\n')) {
+        // Nếu thông báo có nhiều dòng (như thông báo hết hàng)
+        alert(errorMessage);
+      } else {
+        // Thông báo lỗi thông thường
+        alert('❌ Có lỗi khi cập nhật trạng thái:\n\n' + errorMessage);
+      }
     }
   }
 };
