@@ -18,8 +18,6 @@ public interface TaiKhoanRepository extends JpaRepository<TaiKhoan, Long> {
 
     boolean existsBySoDienThoai(String soDienThoai);
 
-    long countByVaiTro(VaiTro vaiTro);
-
     // Tìm kiếm bằng email
     @Query("SELECT t FROM TaiKhoan t JOIN FETCH t.vaiTro WHERE t.email = :login AND t.trangThai = true")
     Optional<TaiKhoan> findByEmailAndTrangThaiTrue(@Param("login") String login);

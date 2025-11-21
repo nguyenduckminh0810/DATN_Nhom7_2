@@ -197,7 +197,12 @@ public class DonHangService {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
 
-        // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "SHIPPING"
+        // ✅ QUAN TRỌNG: CHỈ TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO" (SHIPPING)
+        // Logic hoạt động:
+        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng không)
+        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác nhận")
+        // 3. Khi admin chuyển trạng thái sang "Đang giao" → TRỪ TỒN KHO (code bên dưới)
+        // Lý do: Tránh trường hợp khách thêm vào giỏ nhưng không mua, hoặc đơn bị hủy
         String trangThaiMoi = donHang.getTrangThai();
         String trangThaiMoiNormalized = normalizeTrangThaiKey(trangThaiMoi);
 
@@ -212,43 +217,71 @@ public class DonHangService {
         log.info("wasDangGiao: {}, isDangGiao: {}", wasDangGiao, isDangGiao);
 
         if (!wasDangGiao && isDangGiao) {
-            log.info(">>> TRIGGERING STOCK REDUCTION <<<");
+            log.info(">>> TRIGGERING STOCK REDUCTION (Order status changed to SHIPPING) <<<");
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
             log.info("Found {} order items to process", chiTietList.size());
 
+            // ✅ BƯỚC 1: KIỂM TRA TẤT CẢ SẢN PHẨM TRƯỚC KHI TRỪ TỒN KHO
+            List<String> outOfStockItems = new ArrayList<>();
+            
             for (DonHangChiTiet chiTiet : chiTietList) {
                 BienTheSanPham bienThe = chiTiet.getBienThe();
                 int soLuongDat = chiTiet.getSoLuong();
                 int tonHienTai = bienThe.getSoLuongTon();
 
-                log.info("Processing variant ID: {}, Product: {}, Current stock: {}, Ordered: {}",
+                log.info("Checking stock - Variant ID: {}, Product: {}, Current stock: {}, Ordered: {}",
                         bienThe.getId(),
                         bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "N/A",
                         tonHienTai,
                         soLuongDat);
 
-                // Kiểm tra tồn kho trước khi trừ
+                // Thu thập danh sách sản phẩm thiếu hàng
                 if (tonHienTai < soLuongDat) {
+                    String productName = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "N/A";
+                    String color = bienThe.getMauSac() != null ? bienThe.getMauSac().getTen() : "N/A";
+                    String size = bienThe.getKichCo() != null ? bienThe.getKichCo().getTen() : "N/A";
+                    
+                    String itemInfo = String.format("  • %s (%s - %s): Cần %d, Còn %d → Thiếu %d",
+                            productName, color, size, soLuongDat, tonHienTai, soLuongDat - tonHienTai);
+                    
+                    outOfStockItems.add(itemInfo);
+                    
                     log.error("INSUFFICIENT STOCK! Variant ID: {}, Available: {}, Required: {}",
                             bienThe.getId(), tonHienTai, soLuongDat);
-                    throw new RuntimeException(
-                            String.format("Không đủ hàng trong kho! Sản phẩm: %s, Màu: %s, Size: %s. " +
-                                    "Tồn kho: %d, Yêu cầu: %d",
-                                    bienThe.getSanPham().getTen(),
-                                    bienThe.getMauSac() != null ? bienThe.getMauSac().getTen() : "N/A",
-                                    bienThe.getKichCo() != null ? bienThe.getKichCo().getTen() : "N/A",
-                                    tonHienTai,
-                                    soLuongDat));
                 }
+            }
+            
+            // Nếu có sản phẩm thiếu hàng, throw exception với danh sách đầy đủ
+            if (!outOfStockItems.isEmpty()) {
+                StringBuilder errorMessage = new StringBuilder();
+                errorMessage.append("⚠️ HẾT HÀNG - CẦN NHẬP THÊM!\n\n");
+                errorMessage.append(String.format("Đơn hàng có %d sản phẩm thiếu hàng:\n\n", outOfStockItems.size()));
+                
+                for (String item : outOfStockItems) {
+                    errorMessage.append(item).append("\n");
+                }
+                
+                errorMessage.append("\n→ Vui lòng nhập thêm hàng trước khi chuyển đơn sang trạng thái \"Đang giao\".");
+                
+                throw new RuntimeException(errorMessage.toString());
+            }
 
+            // ✅ BƯỚC 2: NẾU ĐỦ HÀNG, TRỪ TỒN KHO CHO TẤT CẢ SẢN PHẨM
+            for (DonHangChiTiet chiTiet : chiTietList) {
+                BienTheSanPham bienThe = chiTiet.getBienThe();
+                int soLuongDat = chiTiet.getSoLuong();
+                int tonHienTai = bienThe.getSoLuongTon();
+                
                 // Trừ tồn kho
                 int soLuongMoi = tonHienTai - soLuongDat;
                 bienThe.setSoLuongTon(soLuongMoi);
                 bienTheSanPhamRepository.save(bienThe);
+                
                 log.info("Stock reduced! Variant ID: {}, Old stock: {}, New stock: {}",
                         bienThe.getId(), tonHienTai, soLuongMoi);
             }
-            log.info(">>> STOCK REDUCTION COMPLETED <<<");
+            
+            log.info(">>> STOCK REDUCTION COMPLETED - All {} items processed <<<", chiTietList.size());
         } else {
             log.info("Stock reduction NOT triggered (status change not to SHIPPING or already SHIPPING)");
         }
