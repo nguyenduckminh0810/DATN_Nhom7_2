@@ -294,7 +294,7 @@
                   <span :class="['payment-badge', getPaymentClass(order.paymentStatus)]">
                     {{ getPaymentText(order.paymentStatus) }}
                   </span>
-                  <div class="payment-method">{{ order.paymentMethod }}</div>
+                  <div class="payment-method" style="text-align: center;">{{ order.paymentMethod }}</div>
                 </div>
               </td>
               <td>
@@ -559,6 +559,7 @@
                 <thead>
                   <tr>
                     <th>Sản phẩm</th>
+                    <th>Màu sắc / Size</th>
                     <th>Số lượng</th>
                     <th>Đơn giá</th>
                     <th>Thành tiền</th>
@@ -571,6 +572,17 @@
                         <div class="item-name">{{ item.tenSanPham }}</div>
                         <div class="item-variant text-muted">{{ item.tenHienThi }}</div>
                       </div>
+                    </td>
+                    <td>
+                      <div v-if="item.mauSacTen || item.kichCoTen">
+                        <span v-if="item.mauSacTen" class="badge bg-light text-dark me-1">
+                          Màu: {{ item.mauSacTen }}
+                        </span>
+                        <span v-if="item.kichCoTen" class="badge bg-light text-dark">
+                          Size: {{ item.kichCoTen }}
+                        </span>
+                      </div>
+                      <span v-else class="text-muted">-</span>
                     </td>
                     <td>{{ item.soLuong }}</td>
                     <td>{{ formatCurrency(item.donGia) }}</td>

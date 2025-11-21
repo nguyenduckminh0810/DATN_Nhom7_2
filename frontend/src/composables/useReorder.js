@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import cartService from '@/services/cartService'
+import variantService from '@/services/variantService'
 import { useCartStore } from '@/stores/cart'
 
 const SNAPSHOT_STORAGE_KEY = 'auro_reorder_variant_labels'
@@ -273,30 +274,107 @@ export function useReorder() {
     setReorderingState(orderId, true)
 
     const failedItems = []
+    const outOfStockItems = []
+    const insufficientStockItems = []
     const snapshots = []
     let successCount = 0
 
     try {
+      // Kiểm tra tồn kho trước khi thêm vào giỏ hàng
       for (const item of itemsToReorder) {
         const quantity = ensurePositiveInteger(item.quantity || item.soLuong, 1)
+        const variantId = item.bienTheId
 
         try {
-          await cartService.addToCart({
-            bienTheId: item.bienTheId,
-            soLuong: quantity,
-          })
-          successCount += 1
+          // Lấy thông tin biến thể để kiểm tra tồn kho
+          const variantResponse = await variantService.getById(variantId)
+          const variant = variantResponse?.data || variantResponse
+
+          if (!variant) {
+            console.warn('⚠️ [REORDER] Không tìm thấy thông tin biến thể:', variantId)
+            failedItems.push({ ...item, reason: 'Không tìm thấy sản phẩm' })
+            continue
+          }
+
+          const stock = variant.stock || 0
+          const available = variant.available !== false && stock > 0
+
+          // Kiểm tra tồn kho
+          if (!available || stock <= 0) {
+            outOfStockItems.push({ ...item, stock: 0 })
+            continue
+          }
+
+          if (quantity > stock) {
+            insufficientStockItems.push({ ...item, stock, requestedQuantity: quantity })
+            // Thêm với số lượng tối đa có thể
+            try {
+              await cartService.addToCart({
+                bienTheId: variantId,
+                soLuong: stock,
+              })
+              successCount += 1
+              const snapshot = createOrderItemSnapshot(item)
+              if (snapshot) {
+                snapshots.push(snapshot)
+              }
+            } catch (error) {
+              console.error('❌ [REORDER] Lỗi khi thêm sản phẩm với số lượng giảm:', {
+                item,
+                error,
+              })
+              failedItems.push({ ...item, reason: 'Lỗi khi thêm vào giỏ hàng' })
+            }
+            continue
+          }
+
+          // Sản phẩm có đủ hàng, thêm vào giỏ hàng
+          try {
+            await cartService.addToCart({
+              bienTheId: variantId,
+              soLuong: quantity,
+            })
+            successCount += 1
+            const snapshot = createOrderItemSnapshot(item)
+            if (snapshot) {
+              snapshots.push(snapshot)
+            }
+          } catch (error) {
+            console.error('❌ [REORDER] Lỗi khi thêm sản phẩm vào giỏ hàng:', {
+              item,
+              error,
+            })
+            const errorMessage = error.response?.data?.message || error.message || ''
+            if (errorMessage.includes('tồn kho') || errorMessage.includes('hết hàng') || errorMessage.includes('stock')) {
+              outOfStockItems.push({ ...item, stock: 0 })
+            } else {
+              failedItems.push({ ...item, reason: errorMessage || 'Lỗi không xác định' })
+            }
+          }
         } catch (error) {
-          console.error('❌ [REORDER] Lỗi khi thêm sản phẩm vào giỏ hàng:', {
+          console.error('❌ [REORDER] Lỗi khi kiểm tra tồn kho:', {
             item,
             error,
           })
-          failedItems.push(item)
-        }
-
-        const snapshot = createOrderItemSnapshot(item)
-        if (snapshot) {
-          snapshots.push(snapshot)
+          // Nếu không lấy được thông tin biến thể, vẫn thử thêm vào giỏ hàng
+          // Backend sẽ kiểm tra lại
+          try {
+            await cartService.addToCart({
+              bienTheId: variantId,
+              soLuong: quantity,
+            })
+            successCount += 1
+            const snapshot = createOrderItemSnapshot(item)
+            if (snapshot) {
+              snapshots.push(snapshot)
+            }
+          } catch (addError) {
+            console.error('❌ [REORDER] Lỗi khi thêm sản phẩm vào giỏ hàng:', {
+              item,
+              error: addError,
+            })
+            failedItems.push({ ...item, reason: 'Lỗi khi thêm vào giỏ hàng' })
+          }
         }
       }
 
@@ -311,18 +389,48 @@ export function useReorder() {
         }
       }
 
-      if (successCount === 0) {
-        alert('Không thể thêm sản phẩm nào vào giỏ hàng. Vui lòng thử lại sau.')
-        return
+      // Tạo thông báo chi tiết
+      const messages = []
+
+      if (successCount > 0) {
+        messages.push(`Đã thêm ${successCount} sản phẩm vào giỏ hàng.`)
+      }
+
+      if (outOfStockItems.length > 0) {
+        const outOfStockNames = outOfStockItems.map((item) => item.name || 'Sản phẩm').join(', ')
+        messages.push(`Sản phẩm đã hết hàng: ${outOfStockNames}`)
+      }
+
+      if (insufficientStockItems.length > 0) {
+        const insufficientDetails = insufficientStockItems
+          .map((item) => {
+            const name = item.name || 'Sản phẩm'
+            return `${name} (chỉ còn ${item.stock} sản phẩm, đã thêm ${item.stock} thay vì ${item.requestedQuantity})`
+          })
+          .join('; ')
+        messages.push(`Số lượng không đủ: ${insufficientDetails}`)
       }
 
       if (failedItems.length > 0) {
         const failedNames = failedItems.map((item) => item.name || 'Sản phẩm').join(', ')
-        alert(
-          `Một số sản phẩm không thể thêm vào giỏ hàng: ${failedNames}. Các sản phẩm còn lại đã được thêm.`,
-        )
-      } else {
-        alert('Đã thêm tất cả sản phẩm vào giỏ hàng. Vui lòng kiểm tra giỏ hàng của bạn.')
+        messages.push(`Không thể thêm: ${failedNames}`)
+      }
+
+      if (successCount === 0) {
+        if (outOfStockItems.length > 0 || insufficientStockItems.length > 0) {
+          alert(
+            'Không thể thêm sản phẩm vào giỏ hàng do vấn đề về tồn kho:\n\n' +
+              messages.filter((m) => !m.includes('Đã thêm')).join('\n'),
+          )
+        } else {
+          alert('Không thể thêm sản phẩm nào vào giỏ hàng. Vui lòng thử lại sau.')
+        }
+        return
+      }
+
+      // Hiển thị thông báo tổng hợp
+      if (messages.length > 0) {
+        alert(messages.join('\n\n'))
       }
 
       try {
