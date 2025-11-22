@@ -1110,7 +1110,11 @@ const bulkUpdateStatus = async (statusCode) => {
             ghiChu: order.ghiChu || '',
             trangThai: statusLabel,
           }
-          await axios.put(`/api/don-hang/${orderId}`, updates)
+          const response = await axios.put(`/api/don-hang/${orderId}`, updates)
+          
+          // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
+          const responseData = response.data?.data || response.data
+          const updatedPaymentStatus = responseData?.paymentStatus || order.paymentStatus
 
           const index = orders.value.findIndex((o) => o.id === orderId)
           if (index !== -1) {
@@ -1122,13 +1126,19 @@ const bulkUpdateStatus = async (statusCode) => {
               statusClass: statusInfo.badgeClass,
               statusColor: statusInfo.color,
               rawStatus: statusLabel,
+              // ✅ Cập nhật payment status từ response nếu có
+              paymentStatus: updatedPaymentStatus,
               capNhatLuc: new Date().toISOString(),
             }
 
             orders.value[index] = updatedOrder
 
             if (selectedOrder.value?.id === orderId) {
-              selectedOrder.value = updatedOrder
+              selectedOrder.value = {
+                ...updatedOrder,
+                // Đảm bảo selectedOrder cũng có payment status mới nhất
+                paymentStatus: updatedPaymentStatus
+              }
             }
           }
         }
@@ -1219,7 +1229,11 @@ const saveOrderChanges = async () => {
       trangThai: statusLabel,
     }
 
-    await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates)
+    const response = await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates)
+    
+    // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
+    const responseData = response.data?.data || response.data
+    const updatedPaymentStatus = responseData?.paymentStatus || editingOrder.value.paymentStatus
 
     const index = orders.value.findIndex((o) => o.id === editingOrder.value.id)
     if (index !== -1) {
@@ -1234,14 +1248,22 @@ const saveOrderChanges = async () => {
         statusClass: statusInfo.badgeClass,
         statusColor: statusInfo.color,
         rawStatus: statusLabel,
+        // ✅ Cập nhật payment status từ response nếu có
+        paymentStatus: updatedPaymentStatus,
         capNhatLuc: new Date().toISOString(),
       }
 
       orders.value[index] = updatedOrder
 
       if (selectedOrder.value?.id === editingOrder.value.id) {
-        selectedOrder.value = updatedOrder
+        selectedOrder.value = {
+          ...updatedOrder,
+          // Đảm bảo selectedOrder cũng có payment status mới nhất
+          paymentStatus: updatedPaymentStatus
+        }
       }
+      
+      console.log('✅ Updated order payment status:', updatedPaymentStatus)
     }
 
     closeEditModal()
@@ -1283,6 +1305,10 @@ const quickUpdateStatus = async (order, newStatusCode) => {
 
       const response = await axios.put(`/api/don-hang/${order.id}`, updates)
       console.log('Response:', response.data)
+      
+      // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
+      const responseData = response.data?.data || response.data
+      const updatedPaymentStatus = responseData?.paymentStatus || order.paymentStatus
 
       const index = orders.value.findIndex((o) => o.id === order.id)
       if (index !== -1) {
@@ -1294,14 +1320,22 @@ const quickUpdateStatus = async (order, newStatusCode) => {
           statusClass: statusInfo.badgeClass,
           statusColor: statusInfo.color,
           rawStatus: statusLabel,
+          // ✅ Cập nhật payment status từ response nếu có
+          paymentStatus: updatedPaymentStatus,
           capNhatLuc: new Date().toISOString(),
         }
 
         orders.value[index] = updatedOrder
 
         if (selectedOrder.value?.id === order.id) {
-          selectedOrder.value = updatedOrder
+          selectedOrder.value = {
+            ...updatedOrder,
+            // Đảm bảo selectedOrder cũng có payment status mới nhất
+            paymentStatus: updatedPaymentStatus
+          }
         }
+        
+        console.log('✅ Updated order payment status:', updatedPaymentStatus)
       }
 
       console.log(`✅ Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${statusLabel}`)

@@ -194,53 +194,145 @@ public class DonHangService {
             // Nếu đơn hàng chuyển sang "Hoàn tất" và phương thức thanh toán là COD
             // → Tự động đánh dấu đã thanh toán
             String normalizedStatus = normalizeTrangThaiKey(newTrangThai);
+            String currentPaymentStatus = donHang.getPaymentStatus() != null ? 
+                    donHang.getPaymentStatus().trim().toUpperCase() : "";
+            String currentPaymentMethod = donHang.getPaymentMethod() != null ? 
+                    donHang.getPaymentMethod().trim().toUpperCase() : "";
+            
             log.info("Payment auto-update check - Status: {}, Normalized: {}, PaymentMethod: {}, PaymentStatus: {}",
-                    newTrangThai, normalizedStatus, donHang.getPaymentMethod(), donHang.getPaymentStatus());
+                    newTrangThai, normalizedStatus, currentPaymentMethod, currentPaymentStatus);
 
-            // Check các trạng thái hoàn tất: HOAN_TAT, HOAN_THANH, DA_GIAO, DA_GIAO_HANG
-            if ("HOAN_TAT".equals(normalizedStatus) || "HOAN_THANH".equals(normalizedStatus) ||
-                    "DA_GIAO".equals(normalizedStatus) || "DA_GIAO_HANG".equals(normalizedStatus)) {
+            // Check các trạng thái hoàn tất: HOAN_TAT, HOAN_THANH, COMPLETED
+            boolean isCompleted = "HOAN_TAT".equals(normalizedStatus) || 
+                                  "HOAN_THANH".equals(normalizedStatus) ||
+                                  "COMPLETED".equals(normalizedStatus) ||
+                                  "HOANTAT".equals(normalizedStatus) ||
+                                  "HOANTHANH".equals(normalizedStatus);
+            
+            if (isCompleted) {
                 // Kiểm tra nếu là COD và chưa thanh toán
-                if ("COD".equalsIgnoreCase(donHang.getPaymentMethod()) &&
-                        ("PENDING".equalsIgnoreCase(donHang.getPaymentStatus()) ||
-                                "CHO_THANH_TOAN".equalsIgnoreCase(donHang.getPaymentStatus()))) {
+                // Payment method có thể là: COD, cod, COD_CASH, v.v.
+                boolean isCOD = "COD".equals(currentPaymentMethod) ||
+                               currentPaymentMethod.startsWith("COD") ||
+                               currentPaymentMethod.contains("COD");
+                
+                // Payment status có thể là: pending, PENDING, CHO_THANH_TOAN, cho_thanh_toan
+                boolean isNotPaid = "PENDING".equals(currentPaymentStatus) ||
+                                   "CHO_THANH_TOAN".equals(currentPaymentStatus) ||
+                                   currentPaymentStatus.isEmpty() ||
+                                   (!"PAID".equals(currentPaymentStatus) && 
+                                    !"DA_THANH_TOAN".equals(currentPaymentStatus));
+                
+                if (isCOD && isNotPaid) {
                     donHang.setPaymentStatus("PAID");
-                    log.info("✅ Auto-updated payment status to PAID for completed COD order");
+                    log.info("✅ Auto-updated payment status to PAID for completed COD order #{}", donHang.getSoDonHang());
+                    System.out.println("✅ Auto-updated payment status to PAID for completed COD order #" + donHang.getSoDonHang());
                 }
             }
         }
 
-        if (updates.containsKey("paymentStatus")) {
-            donHang.setPaymentStatus((String) updates.get("paymentStatus"));
-        }
         if (updates.containsKey("paymentMethod")) {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
+        
+        // Nếu payment status được set thủ công trong updates, cập nhật trước
+        if (updates.containsKey("paymentStatus")) {
+            donHang.setPaymentStatus((String) updates.get("paymentStatus"));
+        }
+        
+        // ✅ XỬ LÝ PAYMENT STATUS SAU KHI ĐÃ CẬP NHẬT TẤT CẢ
+        // Nếu đơn hàng đã hoàn tất và là COD, tự động set payment status = PAID
+        // (chạy sau khi tất cả updates đã được xử lý để đảm bảo logic đúng)
+        String finalTrangThai = donHang.getTrangThai();
+        String finalNormalizedStatus = normalizeTrangThaiKey(finalTrangThai);
+        String finalPaymentMethod = donHang.getPaymentMethod() != null ? 
+                donHang.getPaymentMethod().trim().toUpperCase() : "";
+        String finalPaymentStatus = donHang.getPaymentStatus() != null ? 
+                donHang.getPaymentStatus().trim().toUpperCase() : "";
+        
+        boolean isCompletedFinal = "HOAN_TAT".equals(finalNormalizedStatus) || 
+                                   "HOAN_THANH".equals(finalNormalizedStatus) ||
+                                   "COMPLETED".equals(finalNormalizedStatus) ||
+                                   "HOANTAT".equals(finalNormalizedStatus) ||
+                                   "HOANTHANH".equals(finalNormalizedStatus);
+        
+        if (isCompletedFinal) {
+            boolean isCODFinal = "COD".equals(finalPaymentMethod) ||
+                               finalPaymentMethod.startsWith("COD") ||
+                               finalPaymentMethod.contains("COD");
+            
+            boolean isNotPaidFinal = "PENDING".equals(finalPaymentStatus) ||
+                                   "CHO_THANH_TOAN".equals(finalPaymentStatus) ||
+                                   finalPaymentStatus.isEmpty() ||
+                                   (!"PAID".equals(finalPaymentStatus) && 
+                                    !"DA_THANH_TOAN".equals(finalPaymentStatus));
+            
+            // ✅ Nếu là COD và chưa thanh toán, tự động set thành PAID
+            // Override payment status nếu nó vẫn là pending (kể cả khi admin set thủ công)
+            if (isCODFinal && isNotPaidFinal) {
+                donHang.setPaymentStatus("PAID");
+                log.info("✅ Auto-updated payment status to PAID for completed COD order #{} (overriding pending status)", donHang.getSoDonHang());
+                System.out.println("✅ Auto-updated payment status to PAID for completed COD order #" + donHang.getSoDonHang() + " (overriding pending status)");
+            }
+        }
 
-        // ✅ QUAN TRỌNG: CHỈ TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO"
-        // (SHIPPING)
+        // ✅ QUAN TRỌNG: TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO", "ĐÃ GIAO", HOẶC "HOÀN TẤT"
         // Logic hoạt động:
-        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng
-        // không)
-        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác
-        // nhận")
-        // 3. Khi admin chuyển trạng thái sang "Đang giao" → TRỪ TỒN KHO (code bên dưới)
+        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng không)
+        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác nhận")
+        // 3. Khi admin chuyển trạng thái sang "Đang giao", "Đã giao", hoặc "Hoàn tất" → TRỪ TỒN KHO
+        //    - Nếu từ PENDING → SHIPPING/DELIVERED/COMPLETED: TRỪ TỒN KHO
+        //    - Nếu đã ở SHIPPING/DELIVERED/COMPLETED: KHÔNG trừ lại (đã trừ rồi)
         // Lý do: Tránh trường hợp khách thêm vào giỏ nhưng không mua, hoặc đơn bị hủy
         String trangThaiMoi = donHang.getTrangThai();
         String trangThaiMoiNormalized = normalizeTrangThaiKey(trangThaiMoi);
 
-        // So sánh normalized key để chắc chắn nhận diện đúng trạng thái SHIPPING
-        boolean wasDangGiao = "DANG_GIAO".equals(trangThaiCuNormalized);
-        boolean isDangGiao = "DANG_GIAO".equals(trangThaiMoiNormalized);
+        // Kiểm tra trạng thái cũ và mới
+        boolean wasPending = "CHO_XAC_NHAN".equals(trangThaiCuNormalized) || 
+                            "PENDING".equals(trangThaiCuNormalized);
+        boolean wasDangGiao = "DANG_GIAO".equals(trangThaiCuNormalized) ||
+                             "SHIPPING".equals(trangThaiCuNormalized);
+        boolean wasDaGiaoOrCompleted = "DA_GIAO".equals(trangThaiCuNormalized) ||
+                                      "DA_GIAO_HANG".equals(trangThaiCuNormalized) ||
+                                      "DELIVERED".equals(trangThaiCuNormalized) ||
+                                      "HOAN_TAT".equals(trangThaiCuNormalized) ||
+                                      "HOAN_THANH".equals(trangThaiCuNormalized) ||
+                                      "COMPLETED".equals(trangThaiCuNormalized) ||
+                                      "HOANTAT".equals(trangThaiCuNormalized) ||
+                                      "HOANTHANH".equals(trangThaiCuNormalized);
+        
+        // Trạng thái cũ chưa từng được xử lý (chưa trừ tồn kho)
+        boolean wasNotProcessed = wasPending || 
+                                  (!wasDangGiao && !wasDaGiaoOrCompleted);
+        
+        // Trạng thái mới cần trừ tồn kho
+        boolean isDangGiao = "DANG_GIAO".equals(trangThaiMoiNormalized) ||
+                            "SHIPPING".equals(trangThaiMoiNormalized);
+        boolean isDaGiao = "DA_GIAO".equals(trangThaiMoiNormalized) ||
+                          "DA_GIAO_HANG".equals(trangThaiMoiNormalized) ||
+                          "DELIVERED".equals(trangThaiMoiNormalized);
+        boolean isCompleted = "HOAN_TAT".equals(trangThaiMoiNormalized) ||
+                             "HOAN_THANH".equals(trangThaiMoiNormalized) ||
+                             "COMPLETED".equals(trangThaiMoiNormalized) ||
+                             "HOANTAT".equals(trangThaiMoiNormalized) ||
+                             "HOANTHANH".equals(trangThaiMoiNormalized);
+        
+        boolean needsStockReduction = wasNotProcessed && (isDangGiao || isDaGiao || isCompleted);
 
         log.info("=== UPDATE ORDER STATUS ===");
         log.info("Order ID: {}", id);
         log.info("Old status: {} (normalized: {})", trangThaiCu, trangThaiCuNormalized);
         log.info("New status: {} (normalized: {})", trangThaiMoi, trangThaiMoiNormalized);
-        log.info("wasDangGiao: {}, isDangGiao: {}", wasDangGiao, isDangGiao);
+        log.info("wasPending: {}, wasDangGiao: {}, wasDaGiaoOrCompleted: {}, wasNotProcessed: {}", 
+                wasPending, wasDangGiao, wasDaGiaoOrCompleted, wasNotProcessed);
+        log.info("isDangGiao: {}, isDaGiao: {}, isCompleted: {}, needsStockReduction: {}", 
+                isDangGiao, isDaGiao, isCompleted, needsStockReduction);
 
-        if (!wasDangGiao && isDangGiao) {
-            log.info(">>> TRIGGERING STOCK REDUCTION (Order status changed to SHIPPING) <<<");
+        if (needsStockReduction) {
+            // Xác định tên trạng thái để log
+            String targetStatusName = isDangGiao ? "SHIPPING (Đang giao)" : 
+                                    (isDaGiao ? "DELIVERED (Đã giao)" : "COMPLETED (Hoàn tất)");
+            log.info(">>> TRIGGERING STOCK REDUCTION (Order status changed to {}) <<<", targetStatusName);
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
             log.info("Found {} order items to process", chiTietList.size());
 
@@ -284,7 +376,10 @@ public class DonHangService {
                     errorMessage.append(item).append("\n");
                 }
 
-                errorMessage.append("\n→ Vui lòng nhập thêm hàng trước khi chuyển đơn sang trạng thái \"Đang giao\".");
+                // Xác định tên trạng thái để hiển thị trong thông báo lỗi
+                String statusName = isDangGiao ? "\"Đang giao\"" : 
+                                   (isDaGiao ? "\"Đã giao\"" : "\"Hoàn tất\"");
+                errorMessage.append("\n→ Vui lòng nhập thêm hàng trước khi chuyển đơn sang trạng thái ").append(statusName).append(".");
 
                 throw new RuntimeException(errorMessage.toString());
             }
@@ -306,7 +401,11 @@ public class DonHangService {
 
             log.info(">>> STOCK REDUCTION COMPLETED - All {} items processed <<<", chiTietList.size());
         } else {
-            log.info("Stock reduction NOT triggered (status change not to SHIPPING or already SHIPPING)");
+            if (wasDangGiao || wasDaGiaoOrCompleted) {
+                log.info("Stock reduction NOT triggered (order already processed - was in SHIPPING/DELIVERED/COMPLETED status)");
+            } else {
+                log.info("Stock reduction NOT triggered (status change not to SHIPPING/DELIVERED/COMPLETED)");
+            }
         }
 
         donHang.setCapNhatLuc(LocalDateTime.now());
