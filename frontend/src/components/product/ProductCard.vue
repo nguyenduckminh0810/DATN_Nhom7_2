@@ -40,6 +40,22 @@
     <div class="product-info-section">
       <!-- Clickable Product Name for Navigation -->
       <h3 class="product-name" itemprop="name" @click="navigateToDetail">{{ name }}</h3>
+      
+      <!-- Rating Stars -->
+      <div v-if="rating !== null && rating !== undefined" class="product-rating">
+        <div class="stars">
+          <i 
+            v-for="star in 5" 
+            :key="star" 
+            :class="star <= Math.round(rating) ? 'bi bi-star-fill' : 'bi bi-star'"
+            class="star-icon"
+          ></i>
+        </div>
+        <span v-if="reviewCount !== null && reviewCount !== undefined" class="rating-count">
+          ({{ reviewCount }})
+        </span>
+      </div>
+      
       <div class="product-price">
         <span class="price-current" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
           <span itemprop="price" :content="priceNow">{{ formatPrice(priceNow) }}</span>
@@ -166,6 +182,14 @@ const props = defineProps({
   bienThes: {
     type: Array,
     default: () => []
+  },
+  rating: {
+    type: Number,
+    default: null
+  },
+  reviewCount: {
+    type: Number,
+    default: null
   }
 })
 
@@ -523,6 +547,32 @@ const handleGlobalMouseLeave = (event) => {
   font-weight: 600;
   color: #212529;
   margin-bottom: 0; /* Bỏ margin vì đã có gap */
+}
+
+.product-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.product-rating .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.product-rating .star-icon {
+  font-size: 0.875rem;
+  color: #ffc107;
+}
+
+.product-rating .star-icon.bi-star {
+  color: #e0e0e0;
+}
+
+.product-rating .rating-count {
+  font-size: 0.75rem;
+  color: #6c757d;
   line-height: 1.3; /* Giảm line-height */
   display: -webkit-box;
   -webkit-line-clamp: 2;

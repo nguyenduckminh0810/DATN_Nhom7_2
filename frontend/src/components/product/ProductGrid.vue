@@ -76,6 +76,8 @@
           :sizes="product.sizes || product.kichCo"
           :view-mode="viewMode"
           :loading="loading"
+          :rating="product.danhGia !== null && product.danhGia !== undefined ? product.danhGia : null"
+          :review-count="product.soLuongDanhGia !== null && product.soLuongDanhGia !== undefined ? product.soLuongDanhGia : null"
         />
       </div>
     </div>

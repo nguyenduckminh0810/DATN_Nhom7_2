@@ -147,13 +147,18 @@
                         {{ formatPrice(product.originalPrice || product.price || 0) }}
                       </small>
                     </div>
-                    <div class="product-rating">
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star-fill text-warning"></i>
-                      <i class="bi bi-star text-warning"></i>
-                      <small class="ms-1 text-muted">(4.5)</small>
+                    <div v-if="product.danhGia || product.rating" class="product-rating">
+                      <i 
+                        v-for="star in 5" 
+                        :key="star"
+                        :class="star <= Math.round(product.danhGia || product.rating || 0) ? 'bi bi-star-fill text-warning' : 'bi bi-star text-warning'"
+                      ></i>
+                      <small class="ms-1 text-muted">
+                        ({{ (product.danhGia || product.rating || 0).toFixed(1) }})
+                        <span v-if="product.soLuongDanhGia || product.reviewCount">
+                          - {{ product.soLuongDanhGia || product.reviewCount }} đánh giá
+                        </span>
+                      </small>
                     </div>
                   </div>
                   <router-link :to="`/product/${product.id}`" class="btn btn-outline-primary mt-3">

@@ -350,6 +350,28 @@ public class SanPhamService {
       }
     } catch (Exception ignored) {
     }
+
+    // Tính toán rating và số lượng đánh giá
+    try {
+      List<DanhGiaSanPham> danhGias = danhGiaSanPhamRepository.findBySanPham_IdOrderByTaoLucDesc(sp.getId());
+      if (danhGias != null && !danhGias.isEmpty()) {
+        int soLuongDanhGia = danhGias.size();
+        double tongSao = danhGias.stream()
+            .filter(dg -> dg.getSoSao() != null)
+            .mapToInt(DanhGiaSanPham::getSoSao)
+            .sum();
+        double danhGiaTrungBinh = soLuongDanhGia > 0 ? tongSao / soLuongDanhGia : 0.0;
+        res.setSoLuongDanhGia(soLuongDanhGia);
+        res.setDanhGia(Math.round(danhGiaTrungBinh * 10.0) / 10.0); // Làm tròn 1 chữ số thập phân
+      } else {
+        res.setSoLuongDanhGia(0);
+        res.setDanhGia(0.0);
+      }
+    } catch (Exception ignored) {
+      res.setSoLuongDanhGia(0);
+      res.setDanhGia(0.0);
+    }
+
     return res;
   }
 

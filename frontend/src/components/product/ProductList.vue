@@ -55,11 +55,20 @@ onMounted(load)
     <div v-else>
       <div v-if="items.length" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <!-- mỗi sản phẩm 1 card -->
-        <!-- truyền object product vào component -->
         <ProductCard
           v-for="p in items"
           :key="p.id || p._id"
-          :product="p"
+          :id="p.id"
+          :name="p.ten || p.name"
+          :img="p.anhDaiDien || p.image"
+          :price-now="p.gia || p.price"
+          :price-old="p.giaGoc || p.originalPrice"
+          :discount="p.giamGia || p.discount"
+          :promotional-badge="p.promotionalBadge"
+          :color-options="p.colorOptions || p.mauSac"
+          :sizes="p.sizes || p.kichCo"
+          :rating="p.danhGia !== null && p.danhGia !== undefined ? p.danhGia : null"
+          :review-count="p.soLuongDanhGia !== null && p.soLuongDanhGia !== undefined ? p.soLuongDanhGia : null"
         />
       </div>
 

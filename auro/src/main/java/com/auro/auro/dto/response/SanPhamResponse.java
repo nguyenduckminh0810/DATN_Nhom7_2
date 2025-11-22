@@ -24,6 +24,8 @@ public class SanPhamResponse {
     private LocalDateTime capNhatLuc;
     private String anhDaiDien;
     private Integer tonKho;
+    private Double danhGia; // Rating trung bình
+    private Integer soLuongDanhGia; // Số lượng đánh giá
     private List<BienTheInfo> bienThes;
 
     @Data
