@@ -366,8 +366,6 @@ const handleCheckout = async () => {
     }
 
     // **QUAN TRỌNG**: Đồng bộ giỏ hàng với backend trước khi checkout
-    console.log('🔄 Syncing cart with backend before checkout...')
-    
     // Nếu là guest (không có token), không cần sync cart với backend
     if (!token) {
       console.log('� Guest user - skipping backend cart sync')
@@ -423,7 +421,6 @@ const handleCheckout = async () => {
         }
       }
     } catch (error) {
-      console.error('❌ Failed to load backend cart:', error)
       if (window.$toast) {
         window.$toast.error('Không thể tải giỏ hàng. Vui lòng thử lại.')
       }
@@ -435,11 +432,6 @@ const handleCheckout = async () => {
 
     if (token && isAuthenticated.value) {
       const maVoucherValue = selectedVoucher.value?.ma || manualVoucherCode.value || null
-      console.log('🎫 FE - Voucher info:', {
-        selectedVoucher: selectedVoucher.value,
-        manualVoucherCode: manualVoucherCode.value,
-        maVoucher: maVoucherValue
-      })
       const orderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -466,17 +458,16 @@ const handleCheckout = async () => {
           window.$toast.success('Đặt hàng thành công!', 'Cảm ơn bạn đã mua hàng')
         }
       } catch (error) {
-        console.error('❌ Order creation failed:', error)
+        // Xử lý lỗi voucher từ backend
+        const errorMessage = error?.data?.message || error?.message || 'Có lỗi xảy ra khi đặt hàng'
+        if (window.$toast) {
+          window.$toast.error(errorMessage, 'Đặt hàng thất bại')
+        }
         throw error
       }
     } else {
       // Guest checkout (không có token)
       const maVoucherValue = selectedVoucher.value?.ma || manualVoucherCode.value || null
-      console.log('🎫 FE - Voucher info (guest):', {
-        selectedVoucher: selectedVoucher.value,
-        manualVoucherCode: manualVoucherCode.value,
-        maVoucher: maVoucherValue
-      })
       const guestOrderData = {
         hoTen: shippingFormData.value.fullName,
         email: shippingFormData.value.email,
@@ -496,10 +487,19 @@ const handleCheckout = async () => {
         serviceId: shipping?.selectedService?.value || null
       }
       
-      response = await orderService.guestCheckout(guestOrderData)
-      
-      if (window.$toast) {
-        window.$toast.success('Đặt hàng thành công!', 'Kiểm tra email để xác nhận')
+      try {
+        response = await orderService.guestCheckout(guestOrderData)
+        
+        if (window.$toast) {
+          window.$toast.success('Đặt hàng thành công!', 'Kiểm tra email để xác nhận')
+        }
+      } catch (error) {
+        // Xử lý lỗi voucher từ backend
+        const errorMessage = error?.data?.message || error?.message || 'Có lỗi xảy ra khi đặt hàng'
+        if (window.$toast) {
+          window.$toast.error(errorMessage, 'Đặt hàng thất bại')
+        }
+        throw error
       }
     }
 
@@ -535,7 +535,7 @@ if (!donHangId && token && isAuthenticated.value) {
       }
     }
   } catch (e) {
-    console.warn('Không lấy được đơn mới nhất:', e)
+    // Ignore error when fetching latest order
   }
 }
 
@@ -565,7 +565,6 @@ if ((selectedPaymentMethod.value || '').toString().toUpperCase() === 'VNPAY') {
       return
     }
   } catch (e) {
-    console.error('Lỗi tạo URL VNPay:', e)
     if (window.$toast) {
       window.$toast.error('Không thể tạo URL thanh toán VNPay')
     }
@@ -576,27 +575,16 @@ if ((selectedPaymentMethod.value || '').toString().toUpperCase() === 'VNPAY') {
 // ✅ Backend đã tự động xóa các chi tiết giỏ hàng đã được đặt hàng
 // Chỉ cần reload lại giỏ hàng để đồng bộ với backend
 try {
-  console.log('🔄 [CHECKOUT] Reloading cart from backend to sync...')
   const { useCartStore } = await import('@/stores/cart')
   const cartStore = useCartStore()
   await cartStore.loadCart()
-  console.log('✅ [CHECKOUT] Cart reloaded, backend has already removed selected items')
 } catch (error) {
-  console.error('❌ [CHECKOUT] Error reloading cart:', error)
   // Không throw error, vẫn chuyển đến trang thành công
 }
 
 router.push({ name: 'order-success', query: { orderId: donHangId } })
 
   } catch (error) {
-    console.error('❌ Checkout error:', error)
-    console.error('Error details:', {
-      message: error.message,
-      status: error.status,
-      data: error.data,
-      response: error.response
-    })
-    
     // Restore token nếu có (đã tạm xóa để chuyển sang session cart)
     if (window._tempAuthToken) {
       localStorage.setItem('auro_token', window._tempAuthToken)

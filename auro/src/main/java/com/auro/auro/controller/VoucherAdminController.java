@@ -104,6 +104,23 @@ public class VoucherAdminController {
         return ResponseEntity.ok(ApiResponse.success(null,"Xóa voucher thành công"));
     }
 
+    // Tái kích hoạt voucher
+    @PostMapping("/{id}/reactivate")
+    public ResponseEntity<ApiResponse<VoucherResponse>> reactivateVoucher(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer soNgayGiaHan) {
+        try {
+            Voucher voucher = voucherService.reactivateVoucher(id, soNgayGiaHan);
+            VoucherResponse response = convertToResponse(voucher);
+            return ResponseEntity.ok(ApiResponse.success(response, "Tái kích hoạt voucher thành công"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
+        }
+    }
+
 
 
     private VoucherResponse convertToResponse(Voucher voucher) {
@@ -117,6 +134,7 @@ public class VoucherAdminController {
             .batDauLuc(voucher.getBatDauLuc())
             .ketThucLuc(voucher.getKetThucLuc())
             .gioiHanSuDung(voucher.getGioiHanSuDung())
+            .trangThai(voucher.getTrangThai())
             .build();
     }
 }
