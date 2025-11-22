@@ -14,12 +14,9 @@ const orderService = {
    */
   async createOrderFromCart(orderData) {
     try {
-      console.log('📦 Creating order from cart:', orderData)
       const response = await cartService.createOrderFromCart(orderData)
-      console.log('✅ Order created:', response)
       return response
     } catch (error) {
-      console.error('❌ Error creating order:', error)
       throw error
     }
   },
@@ -32,12 +29,9 @@ const orderService = {
    */
   async guestCheckout(guestOrderData) {
     try {
-      console.log('📦 Guest checkout:', guestOrderData)
       const response = await cartService.guestCheckout(guestOrderData)
-      console.log('✅ Guest order created:', response)
       return response
     } catch (error) {
-      console.error('❌ Error guest checkout:', error)
       throw error
     }
   },
@@ -53,7 +47,6 @@ const orderService = {
       const response = await api.get('/khach-hang/don-hang/don-hang-cua-toi', { params })
       return response
     } catch (error) {
-      console.error('Error fetching orders:', error)
       throw error
     }
   },
@@ -79,7 +72,6 @@ const orderService = {
       const response = await api.get(`/khach-hang/don-hang/${orderId}`)
       return response
     } catch (error) {
-      console.error('Error fetching order details:', error)
       throw error
     }
   },
@@ -96,7 +88,6 @@ const orderService = {
       const response = await api.put(`/khach-hang/don-hang/${orderId}/huy`, { reason })
       return response
     } catch (error) {
-      console.error('Error canceling order:', error)
       throw error
     }
   },
@@ -106,7 +97,6 @@ const orderService = {
       const response = await api.post(`/khach-hang/don-hang/${orderId}/danh-gia`, payload)
       return response
     } catch (error) {
-      console.error('Error submitting review:', error)
       throw error
     }
   },
@@ -122,7 +112,6 @@ const orderService = {
       const response = await api.get('/payment/vnpay-return', { params })
       return response
     } catch (error) {
-      console.error('Error checking VNPay payment:', error)
       throw error
     }
   }

@@ -20,6 +20,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RestController
 @RequestMapping("/api/khach-hang/don-hang")
 public class DonHangKhachController {
+    private static final Logger log = LoggerFactory.getLogger(DonHangKhachController.class);
 
     @Autowired
     private DonHangService donHangService;
@@ -46,14 +49,7 @@ public class DonHangKhachController {
             HttpServletRequest httpRequest,
             Authentication auth) {
         try {
-            System.out.println("=== DEBUG ENDPOINT tao-tu-gio-hang ===");
-            System.out.println("Authentication: " + auth);
-            System.out.println("Authorities: " + (auth != null ? auth.getAuthorities() : "null"));
-            System.out.println("Principal: " + (auth != null ? auth.getPrincipal() : "null"));
-
             Long khachHangId = layKhachHangIdTuAuth(auth);
-            System.out.println("KhachHangId: " + khachHangId);
-            System.out.println("Request data: " + request);
 
             if (khachHangId == null) {
                 throw new RuntimeException("Không thể xác định khách hàng");
@@ -94,8 +90,7 @@ public class DonHangKhachController {
             DonHangResponse dh = donHangService.taoDonTuGioHang(request, khachHangId);
             return ResponseEntity.ok(dh);
         } catch (Exception e) {
-            System.out.println("ERROR in taoDonTuGioHang: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error in taoDonTuGioHang: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -110,18 +105,11 @@ public class DonHangKhachController {
             Authentication auth) {
         try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
-            System.out.println("=== layDonHangCuaToi ===");
-            System.out.println("KhachHang ID: " + khachHangId);
-            System.out.println("Page: " + trang + ", Size: " + kichThuoc);
-
             DonHangPageResponse dhs = donHangService.layDonHangCuaKhach(khachHangId, trang, kichThuoc, trangThai,
                     keyword);
-            System.out.println("Found orders: " + dhs.getTotalElements());
-
             return ResponseEntity.ok(dhs);
         } catch (Exception e) {
-            System.out.println("ERROR in layDonHangCuaToi: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error in layDonHangCuaToi: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -202,12 +190,6 @@ public class DonHangKhachController {
             String sessionId = httpRequest.getSession().getId();
             Long khachHangId = layKhachHangIdTuAuth(auth);
 
-            System.out.println("=== Guest Checkout ===");
-            System.out.println("Session ID: " + sessionId);
-            System.out.println("Authenticated khachHangId: " + khachHangId);
-            System.out.println("MaVoucher from request: '" + request.getMaVoucher() + "'");
-            System.out.println("Payment method: " + request.getPhuongThucThanhToan());
-
             // Simple session-level duplicate protection: block orders from same session
             // within 5 seconds
             try {
@@ -240,18 +222,10 @@ public class DonHangKhachController {
                 result.put("tamTinh", dh.getTamTinh());
                 result.put("giamGiaTong", dh.getGiamGiaTong());
                 result.put("phiVanChuyen", dh.getPhiVanChuyen());
-
-                System.out.println("=== Guest Checkout Response ===");
-                System.out.println("DonHang ID: " + dh.getId());
-                System.out.println("TamTinh: " + dh.getTamTinh());
-                System.out.println("GiamGiaTong: " + dh.getGiamGiaTong());
-                System.out.println("PhiVanChuyen: " + dh.getPhiVanChuyen());
-                System.out.println("TongThanhToan: " + dh.getTongThanhToan());
             }
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            System.out.println("ERROR Guest checkout: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error in guest checkout: {}", e.getMessage(), e);
             Map<String, Object> error = new HashMap<>();
             error.put("success", false);
             String errorMessage = e.getMessage();
@@ -272,15 +246,9 @@ public class DonHangKhachController {
             CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
             TaiKhoan taiKhoan = userDetails.getTaiKhoan();
 
-            System.out.println("=== layKhachHangIdTuAuth ===");
-            System.out.println("TaiKhoan ID: " + taiKhoan.getId());
-            System.out.println("VaiTro: " + taiKhoan.getVaiTro().getMa());
-
             // Nếu là admin hoặc staff, tạo/tìm KhachHang record
             String roleMa = taiKhoan.getVaiTro().getMa();
             if ("ADM".equals(roleMa) || "STF".equals(roleMa)) {
-                System.out.println("Admin/Staff detected - finding or creating KhachHang record");
-
                 // Tìm KhachHang theo tài khoản
                 KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
 
@@ -291,7 +259,6 @@ public class DonHangKhachController {
                     khachHang.setHoTen(taiKhoan.getEmail() != null ? taiKhoan.getEmail() : "Admin/Staff");
                     khachHang.setKieu("ONLINE");
                     khachHang = khachHangRepository.save(khachHang);
-                    System.out.println("Created new KhachHang for Admin/Staff with ID: " + khachHang.getId());
                 }
 
                 return khachHang.getId();
@@ -301,8 +268,7 @@ public class DonHangKhachController {
             KhachHang khachHang = khachHangRepository.findByTaiKhoan(taiKhoan).orElse(null);
             return (khachHang != null) ? khachHang.getId() : null;
         } catch (Exception e) {
-            System.out.println("ERROR in layKhachHangIdTuAuth: " + e.getMessage());
-            e.printStackTrace();
+            log.error("Error in layKhachHangIdTuAuth: {}", e.getMessage(), e);
             return null;
         }
     }

@@ -219,6 +219,14 @@
               title="Chạy ngay">
               <i class="bi bi-play"></i>
             </button>
+            <button 
+              v-if="getVoucherStatus(promotion) === 'expired' || getVoucherStatus(promotion) === 'cancelled'" 
+              class="btn btn-sm btn-success" 
+              @click="reactivateVoucher(promotion)" 
+              title="Bật lại">
+              <i class="bi bi-arrow-clockwise"></i>
+              Bật lại
+            </button>
             <button class="btn btn-sm btn-outline-primary" @click="viewPromotion(promotion)" title="Xem chi tiết">
               <i class="bi bi-eye"></i>
             </button>
@@ -557,7 +565,11 @@ const { isAdmin } = useUserStore()
 // Computed
 const activePromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'active'))
 const scheduledPromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'scheduled'))
-const expiredPromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'expired'))
+// Đã kết thúc: bao gồm cả voucher hết hạn và đã hủy
+const expiredPromotions = computed(() => promotions.value.filter(p => {
+  const status = getVoucherStatus(p)
+  return status === 'expired' || status === 'cancelled'
+}))
 
 const totalVoucherUsed = computed(() => {
   return promotions.value.reduce((sum, p) => sum + p.usedCount, 0)
@@ -573,7 +585,17 @@ const filteredPromotions = computed(() => {
 
   // Tab filter
   if (activeTab.value !== 'all') {
-    filtered = filtered.filter(p => p.status === activeTab.value)
+    if (activeTab.value === 'expired') {
+      // Tab "Đã kết thúc" bao gồm cả expired và cancelled
+      filtered = filtered.filter(p => {
+        const status = getVoucherStatus(p)
+        return status === 'expired' || status === 'cancelled'
+      })
+    } else if (activeTab.value === 'active') {
+      filtered = filtered.filter(p => getVoucherStatus(p) === 'active')
+    } else if (activeTab.value === 'scheduled') {
+      filtered = filtered.filter(p => getVoucherStatus(p) === 'scheduled')
+    }
   }
 
   // Search
@@ -639,9 +661,10 @@ const getValueDisplay = (promotion) => {
 
 const getStatusText = (status) => {
   const statuses = {
-    active: 'Đang chạy',
+    active: 'Đang diễn ra',
     scheduled: 'Sắp diễn ra',
-    expired: 'Đã kết thúc',
+    expired: 'Hết hạn',
+    cancelled: 'Đã hủy',
     paused: 'Tạm dừng'
   }
   return statuses[status] || status
@@ -797,35 +820,50 @@ const startPromotion = async (promotion) => {
   }
 }
 
-// Helper function để xác định status của voucher
+// Helper function để xác định status của voucher dựa trên trangThai và thời gian
 const getVoucherStatus = (voucher) => {
-  console.log('Getting voucher status for:', voucher)
-  console.log('batDauLuc:', voucher.batDauLuc, 'ketThucLuc:', voucher.ketThucLuc)
+  if (!voucher) return 'unknown'
   
   const now = new Date()
-  const startDate = new Date(voucher.batDauLuc)
-  const endDate = new Date(voucher.ketThucLuc)
+  const endDate = voucher.ketThucLuc ? new Date(voucher.ketThucLuc) : null
   
-  console.log('now:', now, 'startDate:', startDate, 'endDate:', endDate)
+  // Nếu trangThai == 0: Đã hủy
+  if (voucher.trangThai === 0) {
+    return 'cancelled'
+  }
   
-  if (now < startDate) {
-    console.log('Status: scheduled')
-    return 'scheduled'
+  // Nếu trangThai == 1: Kiểm tra thời gian
+  if (voucher.trangThai === 1) {
+    if (endDate && now > endDate) {
+      return 'expired' // Hết hạn
+    }
+    if (endDate && now <= endDate) {
+      return 'active' // Đang diễn ra
+    }
   }
-  if (now > endDate) {
-    console.log('Status: expired')
-    return 'expired'
+  
+  // Fallback: kiểm tra theo thời gian nếu không có trangThai
+  if (voucher.batDauLuc && voucher.ketThucLuc) {
+    const startDate = new Date(voucher.batDauLuc)
+    if (now < startDate) {
+      return 'scheduled'
+    }
+    if (now > endDate) {
+      return 'expired'
+    }
+    return 'active'
   }
-  console.log('Status: active')
-  return 'active'
+  
+  return 'unknown'
 }
 
 const getVoucherStatusText = (promotion) => {
   const status = getVoucherStatus(promotion)
   switch (status) {
-    case 'active': return 'Đang chạy'
+    case 'active': return 'Đang diễn ra'
     case 'scheduled': return 'Sắp diễn ra'
-    case 'expired': return 'Đã kết thúc'
+    case 'expired': return 'Hết hạn'
+    case 'cancelled': return 'Đã hủy'
     default: return 'Không xác định'
   }
 }
@@ -1018,6 +1056,35 @@ const deleteVoucher = async (id) => {
     } catch (err) {
       error.value = 'Không thể xóa voucher'
       console.error('Lỗi khi xóa voucher:', err)
+    } finally {
+      loading.value = false
+    }
+  }
+}
+
+// Tái kích hoạt voucher
+const reactivateVoucher = async (promotion) => {
+  const soNgayGiaHan = prompt('Nhập số ngày gia hạn (để trống = mặc định 7 ngày):', '7')
+  const days = soNgayGiaHan ? parseInt(soNgayGiaHan) : null
+  
+  if (soNgayGiaHan !== null && (days === null || days > 0)) {
+    try {
+      loading.value = true
+      error.value = null
+      
+      const response = await apiService.adminVoucher.reactivate(promotion.id, days)
+      
+      // Cập nhật voucher trong danh sách
+      const index = promotions.value.findIndex(p => p.id === promotion.id)
+      if (index > -1) {
+        promotions.value[index] = response.data
+      }
+      
+      alert('Tái kích hoạt voucher thành công!')
+    } catch (err) {
+      error.value = 'Không thể tái kích hoạt voucher: ' + (err.message || 'Lỗi không xác định')
+      console.error('Lỗi khi tái kích hoạt voucher:', err)
+      alert(error.value)
     } finally {
       loading.value = false
     }
@@ -1304,7 +1371,12 @@ onMounted(() => {
 
 .promotion-card.promotion-expired {
   opacity: 0.7;
-  border-left: 4px solid #94a3b8;
+  border-left: 4px solid #f59e0b;
+}
+
+.promotion-card.promotion-cancelled {
+  opacity: 0.7;
+  border-left: 4px solid #ef4444;
 }
 
 .promotion-header {
@@ -1406,7 +1478,13 @@ onMounted(() => {
 }
 
 .status-expired {
-  background: #94a3b8;
+  background: #f59e0b;
+  color: white;
+}
+
+.status-cancelled {
+  background: #ef4444;
+  color: white;
 }
 
 .status-paused {
@@ -1738,6 +1816,11 @@ onMounted(() => {
 }
 
 .voucher-status.expired {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.voucher-status.cancelled {
   background: #fee2e2;
   color: #991b1b;
 }

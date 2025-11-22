@@ -155,23 +155,21 @@ onMounted(() => {
   loadVouchers()
 })
 
-// 🔥 FIX: Watch store trực tiếp để đảm bảo reactivity khi user login
+// Watch store trực tiếp để đảm bảo reactivity khi user login
 watch(
   () => userStore.isAuthenticated,
-  (isAuthenticated, wasAuthenticated) => {
-    console.log('🔑 [VOUCHER] Authentication state changed:', { isAuthenticated, wasAuthenticated })
+  () => {
     // Reload vouchers khi authentication state thay đổi
     loadVouchers()
   },
   { immediate: false }
 )
 
-// 🔥 FIX: Watch user data để reload khi user info thay đổi
+// Watch user data để reload khi user info thay đổi
 watch(
   () => userStore.user,
   (newUser, oldUser) => {
     if (newUser && newUser !== oldUser) {
-      console.log('👤 [VOUCHER] User data updated, reloading vouchers...')
       loadVouchers()
     }
   },
@@ -240,12 +238,32 @@ const handleApplyVoucher = async () => {
       type: 'error',
       text: 'Vui lòng đăng nhập để sử dụng voucher'
     }
+    if (window.$toast) {
+      window.$toast.error('Vui lòng đăng nhập để sử dụng voucher')
+    }
     return
   }
   
-  // 🔥 FIX: Sử dụng userStore trực tiếp
-  const khachHangId = userStore.user?.id || null
-  await applyVoucher(khachHangId, subtotal.value, shippingFee.value || 0)
+  try {
+    const khachHangId = userStore.user?.id || null
+    await applyVoucher(khachHangId, subtotal.value, shippingFee.value || 0)
+    
+    // Hiển thị toast nếu có lỗi từ store
+    if (voucherMessage.value?.type === 'error' && window.$toast) {
+      window.$toast.error(voucherMessage.value.text, 'Voucher không hợp lệ')
+    } else if (voucherMessage.value?.type === 'success' && window.$toast) {
+      window.$toast.success(voucherMessage.value.text, 'Voucher đã được áp dụng')
+    }
+  } catch (error) {
+    const errorMessage = error?.data?.message || error?.message || 'Lỗi khi áp dụng voucher'
+    voucherMessage.value = {
+      type: 'error',
+      text: errorMessage
+    }
+    if (window.$toast) {
+      window.$toast.error(errorMessage, 'Voucher không hợp lệ')
+    }
+  }
 }
 
 // Helper functions
