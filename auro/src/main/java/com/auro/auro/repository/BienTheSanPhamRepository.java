@@ -36,6 +36,8 @@ public interface BienTheSanPhamRepository extends JpaRepository<BienTheSanPham, 
     Optional<BienTheSanPham> findBySanPham_IdAndMauSac_IdAndKichCo_IdAndChatLieu_Id(
             Long idSanPham, Long idMauSac, Long idKichCo, Long idChatLieu);
 
+    long countByChatLieu_Id(Long idChatLieu);
+
     @Query(value = """
         SELECT COALESCE(SUM(so_luong_ton), 0)
         FROM bien_the_san_pham

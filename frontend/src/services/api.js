@@ -29,7 +29,7 @@ class ApiService {
         }
         
         // Public endpoints không cần JWT token
-        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping', '/mau-sac']
+        const publicGetPrefixes = ['/san-pham', '/danh-muc', '/phieu-giam-gia/co-san', '/hinh-anh', '/shipping', '/mau-sac', '/chat-lieu']
         const publicPrefixes = ['/shipping'] // Public cho tất cả methods (GET, POST, etc.)
         
         const isPublicGet = method === 'get' && publicGetPrefixes.some((p) => url.startsWith(p))
@@ -379,6 +379,15 @@ class ApiService {
     getServices: (toDistrictId) => this.get('/shipping/services', { params: { toDistrictId } }),
     calculate: (data) => this.post('/shipping/calculate', data),
     calculateFull: (data) => this.post('/shipping/calculate-full', data),
+  }
+
+  // Material (Chất liệu) endpoints
+  materials = {
+    getAll: () => this.get('/chat-lieu'),
+    getById: (id) => this.get(`/chat-lieu/${id}`),
+    create: (data) => this.post('/chat-lieu', data),
+    update: (id, data) => this.put(`/chat-lieu/${id}`, data),
+    delete: (id) => this.delete(`/chat-lieu/${id}`),
   }
 }
 
