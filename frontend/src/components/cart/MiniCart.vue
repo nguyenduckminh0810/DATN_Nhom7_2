@@ -101,9 +101,6 @@
             <span>Tạm tính:</span>
             <span class="total-amount">{{ cartStore.formatPrice(cartStore.totalPrice) }}</span>
           </div>
-          <div class="total-note">
-            <small>Miễn phí vận chuyển cho đơn từ 500.000₫</small>
-          </div>
         </div>
 
         <!-- Action Buttons -->
