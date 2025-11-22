@@ -801,7 +801,9 @@ public class DonHangService {
             // bienTheSanPhamRepository.save(bienThe);
         }
         // Xóa giỏ hàng
-        gioHangService.xoaGioHang(khachHangId);
+        // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
+        // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
+        gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
 
         // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
         try {
@@ -1056,10 +1058,27 @@ public class DonHangService {
             gioHang = gioHangService.layGioHangTheoSession(sessionId);
         }
 
-        // Lấy chi tiết giỏ hàng
-        List<GioHangChiTiet> gioHangItems = gioHangService.layChiTietGioHang(gioHang.getId());
+        // ✅ Lấy CHỈ các chi tiết giỏ hàng đã được chọn (nếu có danh sách ID)
+        // Nếu không có danh sách ID, lấy toàn bộ giỏ hàng (tương thích ngược)
+        List<GioHangChiTiet> allItems = gioHangService.layChiTietGioHang(gioHang.getId());
+        List<GioHangChiTiet> gioHangItems;
+        
+        if (request.getSelectedCartItemIds() != null && !request.getSelectedCartItemIds().isEmpty()) {
+            // Chỉ lấy các chi tiết giỏ hàng đã được chọn
+            gioHangItems = allItems.stream()
+                    .filter(item -> request.getSelectedCartItemIds().contains(item.getId()))
+                    .collect(java.util.stream.Collectors.toList());
+            System.out.println("✅ [CHECKOUT] Only selected items: " + gioHangItems.size() + " / " + allItems.size());
+            log.info("✅ [CHECKOUT] Only selected items: {} / {}", gioHangItems.size(), allItems.size());
+        } else {
+            // Fallback: lấy toàn bộ giỏ hàng (tương thích ngược)
+            gioHangItems = allItems;
+            System.out.println("⚠️ [CHECKOUT] No selectedCartItemIds provided, using all cart items");
+            log.warn("⚠️ [CHECKOUT] No selectedCartItemIds provided, using all cart items");
+        }
+        
         if (gioHangItems == null || gioHangItems.isEmpty()) {
-            throw new RuntimeException("Giỏ hàng trống");
+            throw new RuntimeException("Giỏ hàng trống hoặc không có sản phẩm được chọn");
         }
 
         BigDecimal tamTinh = BigDecimal.ZERO;
@@ -1315,14 +1334,9 @@ public class DonHangService {
             // bienTheSanPhamRepository.save(bienThe);
         }
 
-        // Xóa giỏ hàng sau khi tạo đơn thành công
-        if (authenticatedKhachHangId != null) {
-            // Xóa giỏ hàng của user đã đăng nhập theo khachHangId
-            gioHangService.xoaGioHang(authenticatedKhachHangId);
-        } else {
-            // Xóa giỏ hàng guest theo sessionId
-            gioHangService.xoaGioHangTheoSession(sessionId);
-        }
+        // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
+        // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
+        gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
 
         // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
         try {
