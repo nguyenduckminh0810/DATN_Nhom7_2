@@ -561,16 +561,28 @@ body {
 }
 .section-list {
   display: flex;
-  gap: 1rem;
+  gap: 0.25rem; /* Giảm khoảng cách giữa các items xuống tối thiểu */
   justify-content: space-between;
 }
+
+/* Khoảng cách cho categories grid giống với BestSellers */
+.section-list.categories-grid {
+  gap: 20px !important; /* Giống với BestSellers.vue - dùng !important để override */
+  justify-content: center !important; /* Căn giữa cả khối */
+}
+
 .section-item {
-  width: calc(20% - 0.8rem);
+  width: calc(20% - 0.2rem); /* Điều chỉnh width theo gap mới (0.25rem * 4 gaps / 5 items ≈ 0.2rem) */
   position: relative;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease;
+}
+
+/* Điều chỉnh width cho categories items */
+.categories-grid .section-item {
+  width: calc(20% - 16px); /* Điều chỉnh theo gap 20px (20px * 4 gaps / 5 items ≈ 16px) */
 }
 
 /* Tránh ảnh hưởng đến product-card trong best-sellers */

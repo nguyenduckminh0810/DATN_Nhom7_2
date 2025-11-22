@@ -94,6 +94,11 @@
                   </div>
 
                   <div v-if="item.daDanhGia" class="order-item__review">
+                    <div class="order-item__review-label mb-2">
+                      <span class="badge bg-warning text-dark">
+                        <i class="bi bi-star-fill me-1"></i>Đánh giá của bạn
+                      </span>
+                    </div>
                     <div class="order-item__review-header">
                       <div class="order-item__review-stars">
                         <i
@@ -761,6 +766,16 @@ const submitRating = async () => {
   padding: 0.75rem;
   border-radius: 8px;
   background-color: #f9fafb;
+}
+
+.order-item__review-label {
+  margin-bottom: 0.5rem;
+}
+
+.order-item__review-label .badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  font-weight: 600;
 }
 
 .order-item__review-header {
