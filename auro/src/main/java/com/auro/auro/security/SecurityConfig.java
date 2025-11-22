@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/hinh-anh/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/kich-co/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/mau-sac/**").permitAll() // ✅ Add this line
+                        .requestMatchers(HttpMethod.GET, "/api/chat-lieu/**").permitAll() // ✅ Add this line for materials
                         // Static uploaded files
                         .requestMatchers("/files/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
