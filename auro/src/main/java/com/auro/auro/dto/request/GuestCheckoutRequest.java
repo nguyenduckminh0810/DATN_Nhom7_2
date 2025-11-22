@@ -1,5 +1,7 @@
 package com.auro.auro.dto.request;
 
+import java.util.List;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -39,6 +41,9 @@ public class GuestCheckoutRequest {
 
     // Mã voucher (giảm giá hoặc freeship) từ FE
     private String maVoucher;
+
+    // ✅ Danh sách ID các chi tiết giỏ hàng đã được chọn để thanh toán
+    private List<Long> selectedCartItemIds;
 
     public GuestCheckoutRequest() {
     }
@@ -159,6 +164,14 @@ public class GuestCheckoutRequest {
 
     public void setMaVoucher(String maVoucher) {
         this.maVoucher = maVoucher;
+    }
+
+    public List<Long> getSelectedCartItemIds() {
+        return selectedCartItemIds;
+    }
+
+    public void setSelectedCartItemIds(List<Long> selectedCartItemIds) {
+        this.selectedCartItemIds = selectedCartItemIds;
     }
 
 }

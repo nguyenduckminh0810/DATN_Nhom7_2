@@ -311,6 +311,29 @@ export const useCartStore = defineStore('cart', () => {
       isLoading.value = true
       console.log('🔄 [CART STORE] Loading cart from backend...')
 
+      // ✅ Load selected state từ localStorage trước để preserve khi reload
+      const previousCart = localStorage.getItem('auro_cart_v1')
+      const previousItems = previousCart ? JSON.parse(previousCart) : []
+      const selectedStateMap = new Map()
+      
+      // Tạo map để lưu selected state theo itemKey (hoặc id, bienTheId)
+      previousItems.forEach((prevItem) => {
+        if (prevItem.selected !== undefined) {
+          // Lưu theo itemKey (ưu tiên)
+          if (prevItem.itemKey) {
+            selectedStateMap.set(prevItem.itemKey, prevItem.selected)
+          }
+          // Lưu theo id (fallback)
+          if (prevItem.id) {
+            selectedStateMap.set(prevItem.id, prevItem.selected)
+          }
+          // Lưu theo bienTheId (fallback thứ 2)
+          if (prevItem.bienTheId) {
+            selectedStateMap.set(prevItem.bienTheId, prevItem.selected)
+          }
+        }
+      })
+
       const response = await cartService.getCart()
       console.log('📡 [CART STORE] Backend response:', response)
 
@@ -339,7 +362,14 @@ export const useCartStore = defineStore('cart', () => {
             addedAt: new Date().toISOString(),
           }
 
-          console.log('📦 [MAPPED ITEM] stock =', mapped.stock, ', tonKho =', item.tonKho)
+          // ✅ Restore selected state từ localStorage nếu có, nếu không thì mặc định = true
+          const preservedSelected = selectedStateMap.get(mapped.id) || 
+                                   selectedStateMap.get(mapped.itemKey) || 
+                                   selectedStateMap.get(mapped.bienTheId) || 
+                                   true // Mặc định tất cả items được chọn
+          mapped.selected = preservedSelected
+
+          console.log('📦 [MAPPED ITEM] stock =', mapped.stock, ', tonKho =', item.tonKho, ', selected =', mapped.selected)
           return mapped
         })
 
