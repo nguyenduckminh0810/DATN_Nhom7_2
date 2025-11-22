@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NguoiDungService {
     private final TaiKhoanRepository taiKhoanRepository;
+    private final com.auro.auro.repository.DonHangRepository donHangRepository;
+    private final com.auro.auro.repository.KhachHangRepository khachHangRepository;
 
     public Page<UserAdminResponse> listUsers(Integer page, Integer size, String vaiTroMa, Boolean trangThai,
             String search) {
@@ -50,6 +52,18 @@ public class NguoiDungService {
     }
 
     private UserAdminResponse toResponse(TaiKhoan tk) {
+        // Calculate order count and total spent for customers
+        Integer orderCount = 0;
+        Double totalSpent = 0.0;
+
+        // Find KhachHang by TaiKhoan
+        var khachHangOpt = khachHangRepository.findByTaiKhoan(tk);
+        if (khachHangOpt.isPresent()) {
+            Long khachHangId = khachHangOpt.get().getId();
+            orderCount = donHangRepository.countByKhachHangId(khachHangId);
+            totalSpent = donHangRepository.sumTotalSpentByKhachHangId(khachHangId);
+        }
+
         return UserAdminResponse.builder()
                 .id(tk.getId())
                 .email(tk.getEmail())
@@ -59,6 +73,8 @@ public class NguoiDungService {
                 .trangThai(tk.getTrangThai())
                 .taoLuc(tk.getTaoLuc())
                 .capNhatLuc(tk.getCapNhatLuc())
+                .orderCount(orderCount)
+                .totalSpent(totalSpent)
                 .build();
     }
 

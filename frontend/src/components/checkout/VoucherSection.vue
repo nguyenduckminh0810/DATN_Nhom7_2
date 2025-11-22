@@ -136,14 +136,16 @@ const {
 } = useVoucher()
 
 const { items, formatPrice } = useCart()
-const { user, isAuthenticated } = useUserStore()
+// 🔥 FIX: Sử dụng store trực tiếp để giữ reactivity
+const userStore = useUserStore()
 const { shippingFee } = useShipping()
 
 const voucherScroll = ref(null)
 
 // Guest nếu chưa xác thực; fallback vào token để tránh "guest giả" khi store chưa hydrate
 const isGuest = computed(() => {
-  if (isAuthenticated.value) return false
+  // Sử dụng store trực tiếp để đảm bảo reactivity
+  if (userStore.isAuthenticated) return false
   const hasToken = !!localStorage.getItem('auro_token')
   return !hasToken
 })
@@ -153,10 +155,28 @@ onMounted(() => {
   loadVouchers()
 })
 
-// Reload vouchers mỗi khi login/logout để đảm bảo luôn hiển thị đúng
-watch(isAuthenticated, () => {
-  loadVouchers()
-})
+// 🔥 FIX: Watch store trực tiếp để đảm bảo reactivity khi user login
+watch(
+  () => userStore.isAuthenticated,
+  (isAuthenticated, wasAuthenticated) => {
+    console.log('🔑 [VOUCHER] Authentication state changed:', { isAuthenticated, wasAuthenticated })
+    // Reload vouchers khi authentication state thay đổi
+    loadVouchers()
+  },
+  { immediate: false }
+)
+
+// 🔥 FIX: Watch user data để reload khi user info thay đổi
+watch(
+  () => userStore.user,
+  (newUser, oldUser) => {
+    if (newUser && newUser !== oldUser) {
+      console.log('👤 [VOUCHER] User data updated, reloading vouchers...')
+      loadVouchers()
+    }
+  },
+  { immediate: false }
+)
 
 // Tính subtotal để kiểm tra điều kiện voucher
 const subtotal = computed(() => {
@@ -223,7 +243,8 @@ const handleApplyVoucher = async () => {
     return
   }
   
-  const khachHangId = user.value?.id || null
+  // 🔥 FIX: Sử dụng userStore trực tiếp
+  const khachHangId = userStore.user?.id || null
   await applyVoucher(khachHangId, subtotal.value, shippingFee.value || 0)
 }
 

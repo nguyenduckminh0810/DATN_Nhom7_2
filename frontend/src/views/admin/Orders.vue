@@ -45,49 +45,55 @@
       <!-- Advanced Filters -->
       <div v-if="showAdvancedFilters" class="advanced-filters">
         <div class="row g-3">
-            <div class="col-md-2">
-              <label class="form-label">Trạng thái</label>
-              <select class="form-select" v-model="selectedStatus">
-                <option value="">Tất cả trạng thái</option>
-                <option
-                  v-for="status in adminStatuses"
-                  :key="status.code"
-                  :value="status.code"
-                >
-                  {{ status.label }}
-                </option>
-              </select>
+          <div class="col-md-2">
+            <label class="form-label">Trạng thái</label>
+            <select class="form-select" v-model="selectedStatus">
+              <option value="">Tất cả trạng thái</option>
+              <option v-for="status in adminStatuses" :key="status.code" :value="status.code">
+                {{ status.label }}
+              </option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Thanh toán</label>
+            <select class="form-select" v-model="selectedPayment">
+              <option value="">Tất cả thanh toán</option>
+              <option value="pending">Chờ thanh toán</option>
+              <option value="paid">Đã thanh toán</option>
+              <option value="failed">Thanh toán thất bại</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Ngày đặt</label>
+            <input type="date" class="form-control" v-model="selectedDate" />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Khoảng tiền</label>
+            <div class="amount-range">
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Từ"
+                v-model.number="amountRange.min"
+              />
+              <span class="range-separator">-</span>
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Đến"
+                v-model.number="amountRange.max"
+              />
             </div>
-            <div class="col-md-2">
-              <label class="form-label">Thanh toán</label>
-              <select class="form-select" v-model="selectedPayment">
-                <option value="">Tất cả thanh toán</option>
-                <option value="pending">Chờ thanh toán</option>
-                <option value="paid">Đã thanh toán</option>
-                <option value="failed">Thanh toán thất bại</option>
-              </select>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Ngày đặt</label>
-              <input type="date" class="form-control" v-model="selectedDate">
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Khoảng tiền</label>
-              <div class="amount-range">
-                <input type="number" class="form-control" placeholder="Từ" v-model.number="amountRange.min">
-                <span class="range-separator">-</span>
-                <input type="number" class="form-control" placeholder="Đến" v-model.number="amountRange.max">
-              </div>
-            </div>
-            <div class="col-md-2">
-              <label class="form-label">Sắp xếp</label>
-              <select class="form-select" v-model="sortBy">
-                <option value="newest">Mới nhất</option>
-                <option value="oldest">Cũ nhất</option>
-                <option value="amount-high">Giá cao nhất</option>
-                <option value="amount-low">Giá thấp nhất</option>
-              </select>
-            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Sắp xếp</label>
+            <select class="form-select" v-model="sortBy">
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="amount-high">Giá cao nhất</option>
+              <option value="amount-low">Giá thấp nhất</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -107,16 +113,16 @@
           </div>
         </div>
         <div class="col-md-3">
-        <div class="stat-card shipping">
-          <div class="stat-icon">
-            <i class="bi bi-bicycle"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">{{ orderStats.shipping }}</div>
-            <div class="stat-label">Đang giao</div>
+          <div class="stat-card shipping">
+            <div class="stat-icon">
+              <i class="bi bi-bicycle"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ orderStats.shipping }}</div>
+              <div class="stat-label">Đang giao</div>
+            </div>
           </div>
         </div>
-      </div>
         <div class="col-md-3">
           <div class="stat-card shipped">
             <div class="stat-icon">
@@ -128,40 +134,40 @@
             </div>
           </div>
         </div>
-        <div  class="row g-3 mt-2">
+        <div class="row g-3 mt-2">
           <div class="col-md-4">
-          <div class="stat-card delivered">
-            <div class="stat-icon">
-              <i class="bi bi-check-circle"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ orderStats.completed }}</div>
-              <div class="stat-label">Hoàn thành</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-4">
-          <div class="stat-card payment-pending">
-            <div class="stat-icon">
-              <i class="bi bi-credit-card"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ paymentStats.pending }}</div>
-              <div class="stat-label">Chờ thanh toán</div>
+            <div class="stat-card delivered">
+              <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ orderStats.completed }}</div>
+                <div class="stat-label">Hoàn thành</div>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="col-md-4">
-          <div class="stat-card payment-paid">
-            <div class="stat-icon">
-              <i class="bi bi-check-circle"></i>
-            </div>
-            <div class="stat-content">
-              <div class="stat-value">{{ paymentStats.paid }}</div>
-              <div class="stat-label">Đã thanh toán</div>
+          <div class="col-md-4">
+            <div class="stat-card payment-pending">
+              <div class="stat-icon">
+                <i class="bi bi-credit-card"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ paymentStats.pending }}</div>
+                <div class="stat-label">Chờ thanh toán</div>
+              </div>
             </div>
           </div>
-        </div>
+          <div class="col-md-4">
+            <div class="stat-card payment-paid">
+              <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ paymentStats.paid }}</div>
+                <div class="stat-label">Đã thanh toán</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -172,14 +178,14 @@
       <div class="table-actions">
         <div class="view-options">
           <span class="view-label">Hiển thị:</span>
-          <button 
+          <button
             :class="['view-btn', { active: viewMode === 'table' }]"
             @click="viewMode = 'table'"
             title="Dạng bảng"
           >
             <i class="bi bi-table"></i>
           </button>
-          <button 
+          <button
             :class="['view-btn', { active: viewMode === 'kanban' }]"
             @click="viewMode = 'kanban'"
             title="Kanban Board"
@@ -208,7 +214,12 @@
           <thead>
             <tr>
               <th>
-                <input type="checkbox" class="form-check-input" v-model="selectAll" @change="toggleSelectAll">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  v-model="selectAll"
+                  @change="toggleSelectAll"
+                />
               </th>
               <th>
                 <button class="sort-btn" @click="sortTable('soDonHang')">
@@ -238,13 +249,21 @@
           <tbody>
             <tr v-for="order in filteredOrders" :key="order.id">
               <td>
-                <input type="checkbox" class="form-check-input" v-model="selectedOrders" :value="order.id">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  v-model="selectedOrders"
+                  :value="order.id"
+                />
               </td>
               <td>
                 <div class="order-code">
                   <strong>#{{ order.soDonHang }}</strong>
                   <div class="order-meta">
-                    <div class="order-id">ID: {{ order.id }}</div>
+                    <!-- <div class="order-id">ID: {{ order.id }}</div> -->
+                    <div class="payment-method-label">
+                      <span class="badge bg-info">{{ order.paymentMethod }}</span>
+                    </div>
                     <div v-if="order.ghiChu" class="order-note text-muted">
                       <small>{{ order.ghiChu }}</small>
                     </div>
@@ -260,8 +279,8 @@
                 <div class="order-items">
                   <div class="item-count">{{ order.chiTietList?.length || 0 }} sản phẩm</div>
                   <div class="item-preview">
-                    <span 
-                      v-for="item in (order.chiTietList || []).slice(0, 3)" 
+                    <span
+                      v-for="item in (order.chiTietList || []).slice(0, 3)"
                       :key="item.id"
                       class="item-badge"
                       :title="item.tenSanPham"
@@ -276,7 +295,9 @@
               </td>
               <td>
                 <div class="order-amount">
-                  <div class="total-amount">{{ formatCurrency(order.tongThanhToan || order.tamTinh) }}</div>
+                  <div class="total-amount">
+                    {{ formatCurrency(order.tongThanhToan || order.tamTinh) }}
+                  </div>
                   <div class="subtotal-amount text-muted">
                     Tạm tính: {{ formatCurrency(order.tamTinh) }}
                   </div>
@@ -294,7 +315,6 @@
                   <span :class="['payment-badge', getPaymentClass(order.paymentStatus)]">
                     {{ getPaymentText(order.paymentStatus) }}
                   </span>
-                  <div class="payment-method" style="text-align: center;">{{ order.paymentMethod }}</div>
                 </div>
               </td>
               <td>
@@ -305,36 +325,40 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <button class="btn btn-sm btn-outline-primary" @click="viewOrder(order)" title="Xem chi tiết">
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    @click="viewOrder(order)"
+                    title="Xem chi tiết"
+                  >
                     <i class="bi bi-eye"></i>
                   </button>
-                  <button 
+                  <button
                     v-if="order.statusCode === STATUS_CODES.PENDING"
-                    class="btn btn-sm btn-outline-primary" 
+                    class="btn btn-sm btn-outline-primary"
                     @click="quickUpdateStatus(order, STATUS_CODES.SHIPPING)"
                     title="Chuyển sang đang giao"
                   >
                     <i class="bi bi-bicycle"></i>
                   </button>
-                  <button 
+                  <button
                     v-if="order.statusCode === STATUS_CODES.SHIPPING"
-                    class="btn btn-sm btn-outline-success" 
+                    class="btn btn-sm btn-outline-success"
                     @click="quickUpdateStatus(order, STATUS_CODES.DELIVERED)"
                     title="Xác nhận đã giao"
                   >
                     <i class="bi bi-check-circle"></i>
                   </button>
-                  <button 
+                  <button
                     v-if="order.statusCode === STATUS_CODES.DELIVERED"
-                    class="btn btn-sm btn-outline-success" 
+                    class="btn btn-sm btn-outline-success"
                     @click="quickUpdateStatus(order, STATUS_CODES.COMPLETED)"
                     title="Hoàn thành"
                   >
                     <i class="bi bi-check"></i>
                   </button>
-                  <button 
+                  <button
                     v-if="order.statusCode === STATUS_CODES.PENDING"
-                    class="btn btn-sm btn-outline-danger" 
+                    class="btn btn-sm btn-outline-danger"
                     @click="quickUpdateStatus(order, STATUS_CODES.CANCELLED)"
                     title="Hủy đơn hàng"
                   >
@@ -374,8 +398,8 @@
               <span class="column-count">{{ getOrdersByStatus(status.code).length }}</span>
             </div>
             <div class="column-content">
-              <div 
-                v-for="order in getOrdersByStatus(status.code)" 
+              <div
+                v-for="order in getOrdersByStatus(status.code)"
                 :key="order.id"
                 class="kanban-card"
                 @click="viewOrder(order)"
@@ -393,8 +417,8 @@
                   <div class="order-items">
                     <div class="item-count">{{ order.chiTietList?.length || 0 }} sản phẩm</div>
                     <div class="item-preview">
-                      <span 
-                        v-for="item in (order.chiTietList || []).slice(0, 2)" 
+                      <span
+                        v-for="item in (order.chiTietList || []).slice(0, 2)"
                         :key="item.id"
                         class="item-badge"
                       >
@@ -405,7 +429,9 @@
                       </span>
                     </div>
                   </div>
-                  <div class="order-amount">{{ formatCurrency(order.tongThanhToan || order.tamTinh) }}</div>
+                  <div class="order-amount">
+                    {{ formatCurrency(order.tongThanhToan || order.tamTinh) }}
+                  </div>
                 </div>
                 <div class="card-footer">
                   <div class="order-date">{{ formatDate(order.taoLuc) }}</div>
@@ -413,9 +439,9 @@
                     <button class="btn btn-sm btn-outline-primary" @click.stop="viewOrder(order)">
                       <i class="bi bi-eye"></i>
                     </button>
-                    <button 
+                    <button
                       v-if="canUpdateStatus(order.statusCode)"
-                      class="btn btn-sm btn-outline-success" 
+                      class="btn btn-sm btn-outline-success"
                       @click.stop="updateOrderStatus(order, getNextStatus(order.statusCode))"
                     >
                       <i class="bi bi-arrow-right"></i>
@@ -434,8 +460,9 @@
       <div class="row align-items-center">
         <div class="col-md-6">
           <div class="pagination-info">
-            Hiển thị {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalItems) }} 
-            trong tổng số {{ totalItems }} đơn hàng
+            Hiển thị {{ (currentPage - 1) * pageSize + 1 }} -
+            {{ Math.min(currentPage * pageSize, totalItems) }} trong tổng số {{ totalItems }} đơn
+            hàng
           </div>
         </div>
         <div class="col-md-6">
@@ -444,7 +471,12 @@
               <li class="page-item" :class="{ disabled: currentPage === 1 }">
                 <a class="page-link" href="#" @click.prevent="changePage(currentPage - 1)">Trước</a>
               </li>
-              <li class="page-item" v-for="page in visiblePages" :key="page" :class="{ active: currentPage === page }">
+              <li
+                class="page-item"
+                v-for="page in visiblePages"
+                :key="page"
+                :class="{ active: currentPage === page }"
+              >
                 <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
               </li>
               <li class="page-item" :class="{ disabled: currentPage === totalPages }">
@@ -461,16 +493,28 @@
       <div class="bulk-actions-content">
         <span class="selected-count">{{ selectedOrders.length }} đơn hàng đã chọn</span>
         <div class="bulk-buttons">
-          <button class="btn btn-sm btn-outline-primary" @click="bulkUpdateStatus(STATUS_CODES.SHIPPING)">
+          <button
+            class="btn btn-sm btn-outline-primary"
+            @click="bulkUpdateStatus(STATUS_CODES.SHIPPING)"
+          >
             <i class="bi bi-bicycle me-1"></i>Đang giao
           </button>
-          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus(STATUS_CODES.DELIVERED)">
+          <button
+            class="btn btn-sm btn-outline-success"
+            @click="bulkUpdateStatus(STATUS_CODES.DELIVERED)"
+          >
             <i class="bi bi-truck me-1"></i>Đã giao
           </button>
-          <button class="btn btn-sm btn-outline-success" @click="bulkUpdateStatus(STATUS_CODES.COMPLETED)">
+          <button
+            class="btn btn-sm btn-outline-success"
+            @click="bulkUpdateStatus(STATUS_CODES.COMPLETED)"
+          >
             <i class="bi bi-check-circle me-1"></i>Hoàn thành
           </button>
-          <button class="btn btn-sm btn-outline-danger" @click="bulkUpdateStatus(STATUS_CODES.CANCELLED)">
+          <button
+            class="btn btn-sm btn-outline-danger"
+            @click="bulkUpdateStatus(STATUS_CODES.CANCELLED)"
+          >
             <i class="bi bi-x me-1"></i>Hủy
           </button>
         </div>
@@ -495,7 +539,9 @@
                 <tbody>
                   <tr>
                     <td>Mã đơn hàng:</td>
-                    <td><strong>#{{ selectedOrder.soDonHang }}</strong></td>
+                    <td>
+                      <strong>#{{ selectedOrder.soDonHang }}</strong>
+                    </td>
                   </tr>
                   <tr>
                     <td>Ngày đặt:</td>
@@ -516,7 +562,9 @@
                   <tr>
                     <td>Thanh toán:</td>
                     <td>
-                      <span :class="['payment-badge', getPaymentClass(selectedOrder.paymentStatus)]">
+                      <span
+                        :class="['payment-badge', getPaymentClass(selectedOrder.paymentStatus)]"
+                      >
                         {{ getPaymentText(selectedOrder.paymentStatus) }}
                       </span>
                     </td>
@@ -586,7 +634,9 @@
                     </td>
                     <td>{{ item.soLuong }}</td>
                     <td>{{ formatCurrency(item.donGia) }}</td>
-                    <td><strong>{{ formatCurrency(item.thanhTien) }}</strong></td>
+                    <td>
+                      <strong>{{ formatCurrency(item.thanhTien) }}</strong>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -605,7 +655,11 @@
                   </tr>
                   <tr class="table-active">
                     <td><strong>Tổng cộng:</strong></td>
-                    <td><strong>{{ formatCurrency(selectedOrder.tongThanhToan || selectedOrder.tamTinh) }}</strong></td>
+                    <td>
+                      <strong>{{
+                        formatCurrency(selectedOrder.tongThanhToan || selectedOrder.tamTinh)
+                      }}</strong>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -634,10 +688,22 @@
           <!-- Tab Navigation -->
           <ul class="nav nav-tabs">
             <li class="nav-item">
-              <button class="nav-link" :class="{ active: activeTab === 'info' }" @click="activeTab = 'info'">Thông tin</button>
+              <button
+                class="nav-link"
+                :class="{ active: activeTab === 'info' }"
+                @click="activeTab = 'info'"
+              >
+                Thông tin
+              </button>
             </li>
             <li class="nav-item">
-              <button class="nav-link" :class="{ active: activeTab === 'status' }" @click="activeTab = 'status'">Trạng thái</button>
+              <button
+                class="nav-link"
+                :class="{ active: activeTab === 'status' }"
+                @click="activeTab = 'status'"
+              >
+                Trạng thái
+              </button>
             </li>
           </ul>
 
@@ -648,21 +714,23 @@
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
-                    <label class="form-label">Địa chỉ giao hàng <span class="text-danger">*</span></label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
+                    <label class="form-label"
+                      >Địa chỉ giao hàng <span class="text-danger">*</span></label
+                    >
+                    <input
+                      type="text"
+                      class="form-control"
                       v-model="editingOrder.diaChiGiao"
                       placeholder="Nhập địa chỉ giao hàng"
-                    >
+                    />
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="mb-3">
                     <label class="form-label">Ghi chú</label>
-                    <textarea 
-                      class="form-control" 
-                      v-model="editingOrder.ghiChu" 
+                    <textarea
+                      class="form-control"
+                      v-model="editingOrder.ghiChu"
                       rows="3"
                       placeholder="Ghi chú xử lý đơn hàng"
                     ></textarea>
@@ -676,11 +744,7 @@
               <div class="mb-3">
                 <label class="form-label">Trạng thái</label>
                 <select class="form-select" v-model="editingOrder.trangThai">
-                  <option
-                    v-for="status in adminStatuses"
-                    :key="status.code"
-                    :value="status.code"
-                  >
+                  <option v-for="status in adminStatuses" :key="status.code" :value="status.code">
                     {{ status.label }}
                   </option>
                 </select>
@@ -704,119 +768,117 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import axios from "axios";
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import {
   ORDER_STATUS_FOR_ADMIN,
   ORDER_STATUS_FOR_KANBAN,
   normalizeOrderStatus,
   getOrderStatusLabel,
   ORDER_STATUS_CODES,
-} from "@/utils/orderStatus";
+} from '@/utils/orderStatus'
 
 defineOptions({
-  name: "AdminOrdersView",
-});
+  name: 'AdminOrdersView',
+})
 
 // ======= STATE =======
-const orders = ref([]);
-const loading = ref(false);
+const orders = ref([])
+const loading = ref(false)
 
-const currentPage = ref(1);
-const pageSize = ref(10);
-const totalPages = ref(1);
-const totalItems = ref(0);
+const currentPage = ref(1)
+const pageSize = ref(10)
+const totalPages = ref(1)
+const totalItems = ref(0)
 
-const searchQuery = ref("");
-const selectedStatus = ref("");
-const selectedPayment = ref("");
-const selectedDate = ref("");
-const amountRange = ref({ min: null, max: null });
-const sortBy = ref("newest");
-const sortDir = ref("desc");
+const searchQuery = ref('')
+const selectedStatus = ref('')
+const selectedPayment = ref('')
+const selectedDate = ref('')
+const amountRange = ref({ min: null, max: null })
+const sortBy = ref('newest')
+const sortDir = ref('desc')
 
 // UI state
-const showAdvancedFilters = ref(false);
-const viewMode = ref("table");
+const showAdvancedFilters = ref(false)
+const viewMode = ref('table')
 
 // UI state cho modal chỉnh sửa
-const showEditModal = ref(false);
-const editingOrder = ref(null);
-const activeTab = ref('info');
+const showEditModal = ref(false)
+const editingOrder = ref(null)
+const activeTab = ref('info')
 
 // modal & selection
-const showOrderModal = ref(false);
-const selectedOrder = ref(null);
-const selectAll = ref(false);
-const selectedOrders = ref([]);
+const showOrderModal = ref(false)
+const selectedOrder = ref(null)
+const selectAll = ref(false)
+const selectedOrders = ref([])
 
 // ======= CONSTANTS =======
-const adminStatuses = ORDER_STATUS_FOR_ADMIN.slice().sort(
-  (a, b) => a.sortOrder - b.sortOrder,
-);
+const adminStatuses = ORDER_STATUS_FOR_ADMIN.slice().sort((a, b) => a.sortOrder - b.sortOrder)
 
-const kanbanStatuses = ORDER_STATUS_FOR_KANBAN.slice().sort(
-  (a, b) => a.sortOrder - b.sortOrder,
-);
+const kanbanStatuses = ORDER_STATUS_FOR_KANBAN.slice().sort((a, b) => a.sortOrder - b.sortOrder)
 
-const STATUS_CODES = ORDER_STATUS_CODES;
+const STATUS_CODES = ORDER_STATUS_CODES
 
 // ======= UTILS =======
-const toDate = (value) => (value ? new Date(value) : null);
+const toDate = (value) => (value ? new Date(value) : null)
 
 const formatCurrency = (amount) => {
-  if (!amount) return '0 ₫';
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(amount);
-};
+  if (!amount) return '0 ₫'
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+  }).format(amount)
+}
 
 const formatDate = (date) => {
-  const d = toDate(date);
-  return d ? new Intl.DateTimeFormat("vi-VN").format(d) : "";
-};
+  const d = toDate(date)
+  return d ? new Intl.DateTimeFormat('vi-VN').format(d) : ''
+}
 
 const formatTime = (date) => {
-  const d = toDate(date);
-  return d ? new Intl.DateTimeFormat("vi-VN", {
-    hour: '2-digit',
-    minute: '2-digit'
-  }).format(d) : "";
-};
+  const d = toDate(date)
+  return d
+    ? new Intl.DateTimeFormat('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(d)
+    : ''
+}
 
 const formatDateTime = (date) => {
-  const d = toDate(date);
+  const d = toDate(date)
   return d
-    ? new Intl.DateTimeFormat("vi-VN", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
+    ? new Intl.DateTimeFormat('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
       }).format(d)
-    : "";
-};
+    : ''
+}
 
 // ======= API CALL =======
 const fetchOrders = async () => {
-  loading.value = true;
+  loading.value = true
   try {
-    const pageToSend = Math.max(0, currentPage.value - 1);
-    const response = await axios.get("/api/don-hang/phan-trang", {
+    const pageToSend = Math.max(0, currentPage.value - 1)
+    const response = await axios.get('/api/don-hang/phan-trang', {
       params: {
         page: pageToSend,
         size: pageSize.value,
-        sortBy: "id",
+        sortBy: 'id',
         sortDir: sortDir.value,
       },
-    });
+    })
 
-    const data = response.data;
-    console.log('API Response:', data);
-    
-    orders.value = (data.content || []).map(order => {
-      const statusInfo = normalizeOrderStatus(order.trangThai);
+    const data = response.data
+    console.log('API Response:', data)
+
+    orders.value = (data.content || []).map((order) => {
+      const statusInfo = normalizeOrderStatus(order.trangThai)
 
       return {
         ...order,
@@ -827,25 +889,24 @@ const fetchOrders = async () => {
         statusColor: statusInfo.color,
         rawStatus: order.trangThai,
         paymentStatus: order.paymentStatus || 'pending',
-        paymentMethod: order.paymentMethod || 'COD'
-      };
-    });
-    
-    totalPages.value = data.totalPages || 1;
-    totalItems.value = data.totalItems || orders.value.length;
-    
-    console.log('Processed orders:', orders.value);
-    
+        paymentMethod: order.paymentMethod || 'COD',
+      }
+    })
+
+    totalPages.value = data.totalPages || 1
+    totalItems.value = data.totalItems || orders.value.length
+
+    console.log('Processed orders:', orders.value)
   } catch (err) {
-    console.error("Lỗi khi tải đơn hàng:", err);
+    console.error('Lỗi khi tải đơn hàng:', err)
     if (err.response) {
-      console.error("Response error:", err.response.data);
-      console.error("Status:", err.response.status);
+      console.error('Response error:', err.response.data)
+      console.error('Status:', err.response.status)
     }
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // ======= COMPUTED =======
 
@@ -856,194 +917,206 @@ const orderStats = computed(() => {
     delivered: 0,
     completed: 0,
     cancelled: 0,
-  };
+  }
 
   orders.value.forEach((order) => {
     switch (order.statusCode) {
       case ORDER_STATUS_CODES.PENDING:
-        stats.pending += 1;
-        break;
+        stats.pending += 1
+        break
       case ORDER_STATUS_CODES.SHIPPING:
-        stats.shipping += 1;
-        break;
+        stats.shipping += 1
+        break
       case ORDER_STATUS_CODES.DELIVERED:
-        stats.delivered += 1;
-        break;
+        stats.delivered += 1
+        break
       case ORDER_STATUS_CODES.COMPLETED:
-        stats.completed += 1;
-        break;
+        stats.completed += 1
+        break
       case ORDER_STATUS_CODES.CANCELLED:
-        stats.cancelled += 1;
-        break;
+        stats.cancelled += 1
+        break
       default:
-        break;
+        break
     }
-  });
+  })
 
-  return stats;
-});
+  return stats
+})
 
 const paymentStats = computed(() => ({
-  pending: orders.value.filter((o) => o.paymentStatus === "pending").length,
-  paid: orders.value.filter((o) => o.paymentStatus === "paid").length,
-  failed: orders.value.filter((o) => o.paymentStatus === "failed").length,
-}));
+  pending: orders.value.filter((o) => o.paymentStatus === 'pending').length,
+  paid: orders.value.filter((o) => o.paymentStatus === 'paid' || o.paymentStatus === 'PAID').length,
+  failed: orders.value.filter((o) => o.paymentStatus === 'failed').length,
+}))
 
-const totalOrders = computed(() => orders.value.length);
-const pendingOrders = computed(() => orderStats.value.pending);
+const totalOrders = computed(() => orders.value.length)
+const pendingOrders = computed(() => orderStats.value.pending)
 
 const filteredOrders = computed(() => {
-  let filtered = orders.value.slice();
+  let filtered = orders.value.slice()
 
   if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
+    const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(
       (o) =>
-        String(o.soDonHang || "").toLowerCase().includes(query) ||
-        String(o.diaChiGiaoSnapshot || "").toLowerCase().includes(query) ||
-        String(o.ghiChu || "").toLowerCase().includes(query)
-    );
+        String(o.soDonHang || '')
+          .toLowerCase()
+          .includes(query) ||
+        String(o.diaChiGiaoSnapshot || '')
+          .toLowerCase()
+          .includes(query) ||
+        String(o.ghiChu || '')
+          .toLowerCase()
+          .includes(query),
+    )
   }
 
   if (selectedStatus.value) {
-    filtered = filtered.filter(
-      (o) => o.statusCode === selectedStatus.value
-    );
+    filtered = filtered.filter((o) => o.statusCode === selectedStatus.value)
   }
 
   if (selectedPayment.value) {
-    filtered = filtered.filter(
-      (o) => o.paymentStatus === selectedPayment.value
-    );
+    filtered = filtered.filter((o) => o.paymentStatus === selectedPayment.value)
   }
 
   if (selectedDate.value) {
     filtered = filtered.filter((o) => {
-      const orderDate = new Date(o.taoLuc);
-      const selectedDateObj = new Date(selectedDate.value);
-      return orderDate.toDateString() === selectedDateObj.toDateString();
-    });
+      const orderDate = new Date(o.taoLuc)
+      const selectedDateObj = new Date(selectedDate.value)
+      return orderDate.toDateString() === selectedDateObj.toDateString()
+    })
   }
 
   if (amountRange.value.min !== null || amountRange.value.max !== null) {
     filtered = filtered.filter((o) => {
-      const amount = o.tongThanhToan ?? o.tamTinh ?? 0;
-      const min = amountRange.value.min ?? 0;
-      const max = amountRange.value.max ?? Infinity;
-      return amount >= min && amount <= max;
-    });
+      const amount = o.tongThanhToan ?? o.tamTinh ?? 0
+      const min = amountRange.value.min ?? 0
+      const max = amountRange.value.max ?? Infinity
+      return amount >= min && amount <= max
+    })
   }
 
   filtered.sort((a, b) => {
     switch (sortBy.value) {
-      case "oldest":
-        return new Date(a.taoLuc) - new Date(b.taoLuc);
-      case "amount-high":
-        return (b.tongThanhToan ?? b.tamTinh ?? 0) - (a.tongThanhToan ?? a.tamTinh ?? 0);
-      case "amount-low":
-        return (a.tongThanhToan ?? a.tamTinh ?? 0) - (b.tongThanhToan ?? b.tamTinh ?? 0);
-      case "newest":
+      case 'oldest':
+        return new Date(a.taoLuc) - new Date(b.taoLuc)
+      case 'amount-high':
+        return (b.tongThanhToan ?? b.tamTinh ?? 0) - (a.tongThanhToan ?? a.tamTinh ?? 0)
+      case 'amount-low':
+        return (a.tongThanhToan ?? a.tamTinh ?? 0) - (b.tongThanhToan ?? b.tamTinh ?? 0)
+      case 'newest':
       default:
-        return new Date(b.taoLuc) - new Date(a.taoLuc);
+        return new Date(b.taoLuc) - new Date(a.taoLuc)
     }
-  });
+  })
 
-  return filtered;
-});
+  return filtered
+})
 
 const visiblePages = computed(() => {
-  const pages = [];
-  const start = Math.max(1, currentPage.value - 2);
-  const end = Math.min(totalPages.value, start + 4);
-  for (let i = start; i <= end; i++) pages.push(i);
-  return pages;
-});
+  const pages = []
+  const start = Math.max(1, currentPage.value - 2)
+  const end = Math.min(totalPages.value, start + 4)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
 
 const getPaymentText = (status) => {
   const map = {
-    pending: "Chờ thanh toán",
-    paid: "Đã thanh toán",
-    failed: "Thanh toán thất bại",
-  };
-  return map[status] || status;
-};
+    pending: 'Chờ thanh toán',
+    paid: 'Đã thanh toán',
+    PAID: 'Đã thanh toán',
+    failed: 'Thanh toán thất bại',
+  }
+  return map[status] || status
+}
 
 const getPaymentClass = (status) => {
   const map = {
-    pending: "bg-warning",
-    paid: "bg-success",
-    failed: "bg-danger",
-  };
-  return map[status] || "bg-secondary";
-};
+    pending: 'bg-warning',
+    paid: 'bg-success',
+    PAID: 'bg-success',
+    failed: 'bg-danger',
+  }
+  return map[status] || 'bg-secondary'
+}
 
-const getSortIcon = () => 'bi bi-arrow-down';
+const getSortIcon = () => 'bi bi-arrow-down'
 
 const sortTable = (field) => {
   if (sortBy.value === field) {
-      sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
-    } else {
-      sortBy.value = field;
-      sortDir.value = 'asc';
-    }
-    console.log(`Sorting by ${field} in ${sortDir.value} order`);
-};
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortBy.value = field
+    sortDir.value = 'asc'
+  }
+  console.log(`Sorting by ${field} in ${sortDir.value} order`)
+}
 
 const changePage = (page) => {
   if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-    fetchOrders();
+    currentPage.value = page
+    fetchOrders()
   }
-};
+}
 
 const toggleAdvancedFilters = () => {
-  showAdvancedFilters.value = !showAdvancedFilters.value;
-};
+  showAdvancedFilters.value = !showAdvancedFilters.value
+}
 
 const clearFilters = () => {
-  searchQuery.value = "";
-  selectedStatus.value = "";
-  selectedPayment.value = "";
-  selectedDate.value = "";
-  amountRange.value = { min: null, max: null };
-  sortBy.value = "newest";
-};
+  searchQuery.value = ''
+  selectedStatus.value = ''
+  selectedPayment.value = ''
+  selectedDate.value = ''
+  amountRange.value = { min: null, max: null }
+  sortBy.value = 'newest'
+}
 
 const viewOrder = (order) => {
-  selectedOrder.value = order;
-  showOrderModal.value = true;
-};
+  selectedOrder.value = order
+  showOrderModal.value = true
+}
 
 const closeOrderModal = () => {
-  showOrderModal.value = false;
-  selectedOrder.value = null;
-};
+  showOrderModal.value = false
+  selectedOrder.value = null
+}
 
 const toggleSelectAll = () => {
   if (selectAll.value) {
-    selectedOrders.value = filteredOrders.value.map((o) => o.id);
+    selectedOrders.value = filteredOrders.value.map((o) => o.id)
   } else {
-    selectedOrders.value = [];
+    selectedOrders.value = []
   }
-};
+}
 
 const bulkUpdateStatus = async (statusCode) => {
-  if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`)) {
+  if (
+    confirm(
+      `Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedOrders.value.length} đơn hàng?`,
+    )
+  ) {
     try {
       const updatePromises = selectedOrders.value.map(async (orderId) => {
-        const order = orders.value.find((o) => o.id === orderId);
+        const order = orders.value.find((o) => o.id === orderId)
         if (order) {
-          const statusLabel = getOrderStatusLabel(statusCode);
-          const statusInfo = normalizeOrderStatus(statusCode);
+          const statusLabel = getOrderStatusLabel(statusCode)
+          const statusInfo = normalizeOrderStatus(statusCode)
 
           const updates = {
             diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
             ghiChu: order.ghiChu || '',
-            trangThai: statusLabel
-          };
-          await axios.put(`/api/don-hang/${orderId}`, updates);
+            trangThai: statusLabel,
+          }
+          const response = await axios.put(`/api/don-hang/${orderId}`, updates)
           
-          const index = orders.value.findIndex(o => o.id === orderId);
+          // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
+          const responseData = response.data?.data || response.data
+          const updatedPaymentStatus = responseData?.paymentStatus || order.paymentStatus
+
+          const index = orders.value.findIndex((o) => o.id === orderId)
           if (index !== -1) {
             const updatedOrder = {
               ...orders.value[index],
@@ -1053,59 +1126,68 @@ const bulkUpdateStatus = async (statusCode) => {
               statusClass: statusInfo.badgeClass,
               statusColor: statusInfo.color,
               rawStatus: statusLabel,
-              capNhatLuc: new Date().toISOString()
-            };
+              // ✅ Cập nhật payment status từ response nếu có
+              paymentStatus: updatedPaymentStatus,
+              capNhatLuc: new Date().toISOString(),
+            }
 
-            orders.value[index] = updatedOrder;
+            orders.value[index] = updatedOrder
 
             if (selectedOrder.value?.id === orderId) {
-              selectedOrder.value = updatedOrder;
+              selectedOrder.value = {
+                ...updatedOrder,
+                // Đảm bảo selectedOrder cũng có payment status mới nhất
+                paymentStatus: updatedPaymentStatus
+              }
             }
           }
         }
-      });
-      
-      await Promise.all(updatePromises);
-      
-      selectedOrders.value = [];
-      selectAll.value = false;
-      
-      alert(`Đã cập nhật trạng thái cho ${updatePromises.length} đơn hàng`);
+      })
+
+      await Promise.all(updatePromises)
+
+      selectedOrders.value = []
+      selectAll.value = false
+
+      alert(`✅ Đã cập nhật trạng thái cho ${updatePromises.length} đơn hàng`)
     } catch (err) {
-      console.error('Lỗi khi cập nhật hàng loạt:', err);
-      alert('Có lỗi khi cập nhật trạng thái hàng loạt');
+      console.error('Lỗi khi cập nhật hàng loạt:', err)
+
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định'
+
+      if (errorMessage.includes('\n')) {
+        alert(errorMessage)
+      } else {
+        alert('❌ Có lỗi khi cập nhật trạng thái hàng loạt:\n\n' + errorMessage)
+      }
     }
   }
-};
+}
 
 const getOrdersByStatus = (statusCode) => {
-  return filteredOrders.value.filter(order => order.statusCode === statusCode);
-};
+  return filteredOrders.value.filter((order) => order.statusCode === statusCode)
+}
 
 const canUpdateStatus = (status) => {
-  return [
-    STATUS_CODES.PENDING,
-    STATUS_CODES.SHIPPING,
-    STATUS_CODES.DELIVERED,
-  ].includes(status);
-};
+  return [STATUS_CODES.PENDING, STATUS_CODES.SHIPPING, STATUS_CODES.DELIVERED].includes(status)
+}
 
 const getNextStatus = (currentStatus) => {
   const statusFlow = {
     [STATUS_CODES.PENDING]: STATUS_CODES.SHIPPING,
     [STATUS_CODES.SHIPPING]: STATUS_CODES.DELIVERED,
     [STATUS_CODES.DELIVERED]: STATUS_CODES.COMPLETED,
-  };
-  return statusFlow[currentStatus] || currentStatus;
-};
+  }
+  return statusFlow[currentStatus] || currentStatus
+}
 
 const updateOrderStatus = async (order, newStatus) => {
-  await quickUpdateStatus(order, newStatus);
-};
+  await quickUpdateStatus(order, newStatus)
+}
 
 const printOrder = () => {
-  window.print();
-};
+  window.print()
+}
 
 const editOrder = (order) => {
   editingOrder.value = {
@@ -1113,43 +1195,47 @@ const editOrder = (order) => {
     soDonHang: order.soDonHang,
     diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot || '',
     ghiChu: order.ghiChu || '',
-    trangThai: order.statusCode || STATUS_CODES.PENDING
-  };
+    trangThai: order.statusCode || STATUS_CODES.PENDING,
+  }
 
-   showEditModal.value = true;
-  activeTab.value = 'info';
-};
+  showEditModal.value = true
+  activeTab.value = 'info'
+}
 
 const closeEditModal = () => {
-  showEditModal.value = false;
-  editingOrder.value = null;
-  activeTab.value = 'info';
-};
+  showEditModal.value = false
+  editingOrder.value = null
+  activeTab.value = 'info'
+}
 
 const saveOrderChanges = async () => {
   if (!editingOrder.value) {
-    alert('Không có dữ liệu để lưu!');
-    return;
+    alert('Không có dữ liệu để lưu!')
+    return
   }
 
   if (!editingOrder.value.diaChiGiao?.trim()) {
-    alert('Vui lòng nhập địa chỉ giao hàng!');
-    return;
+    alert('Vui lòng nhập địa chỉ giao hàng!')
+    return
   }
 
   try {
-    const statusLabel = getOrderStatusLabel(editingOrder.value.trangThai);
-    const statusInfo = normalizeOrderStatus(editingOrder.value.trangThai);
+    const statusLabel = getOrderStatusLabel(editingOrder.value.trangThai)
+    const statusInfo = normalizeOrderStatus(editingOrder.value.trangThai)
 
     const updates = {
       diaChiGiao: editingOrder.value.diaChiGiao.trim(),
       ghiChu: editingOrder.value.ghiChu?.trim() || '',
-      trangThai: statusLabel
-    };
+      trangThai: statusLabel,
+    }
 
-    await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates);
+    const response = await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates)
+    
+    // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
+    const responseData = response.data?.data || response.data
+    const updatedPaymentStatus = responseData?.paymentStatus || editingOrder.value.paymentStatus
 
-    const index = orders.value.findIndex(o => o.id === editingOrder.value.id);
+    const index = orders.value.findIndex((o) => o.id === editingOrder.value.id)
     if (index !== -1) {
       const updatedOrder = {
         ...orders.value[index],
@@ -1162,49 +1248,69 @@ const saveOrderChanges = async () => {
         statusClass: statusInfo.badgeClass,
         statusColor: statusInfo.color,
         rawStatus: statusLabel,
-        capNhatLuc: new Date().toISOString()
-      };
+        // ✅ Cập nhật payment status từ response nếu có
+        paymentStatus: updatedPaymentStatus,
+        capNhatLuc: new Date().toISOString(),
+      }
 
-      orders.value[index] = updatedOrder;
+      orders.value[index] = updatedOrder
 
       if (selectedOrder.value?.id === editingOrder.value.id) {
-        selectedOrder.value = updatedOrder;
+        selectedOrder.value = {
+          ...updatedOrder,
+          // Đảm bảo selectedOrder cũng có payment status mới nhất
+          paymentStatus: updatedPaymentStatus
+        }
       }
+      
+      console.log('✅ Updated order payment status:', updatedPaymentStatus)
     }
 
-    closeEditModal();
-    alert('Cập nhật đơn hàng thành công!');
+    closeEditModal()
+    alert('✅ Cập nhật đơn hàng thành công!')
   } catch (err) {
-    console.error('Lỗi cập nhật:', err);
-    alert('Có lỗi khi cập nhật đơn hàng: ' + (err.response?.data?.message || err.message));
+    console.error('Lỗi cập nhật:', err)
+
+    const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định'
+
+    // Hiển thị thông báo lỗi chi tiết
+    if (errorMessage.includes('\n')) {
+      alert(errorMessage)
+    } else {
+      alert('❌ Có lỗi khi cập nhật đơn hàng:\n\n' + errorMessage)
+    }
   }
-};
+}
 
 const quickUpdateStatus = async (order, newStatusCode) => {
-  const statusLabel = getOrderStatusLabel(newStatusCode);
-  const statusInfo = normalizeOrderStatus(newStatusCode);
+  const statusLabel = getOrderStatusLabel(newStatusCode)
+  const statusInfo = normalizeOrderStatus(newStatusCode)
 
   if (confirm(`Cập nhật trạng thái đơn hàng #${order.soDonHang} sang "${statusLabel}"?`)) {
     try {
-      console.log('=== UPDATING ORDER STATUS ===');
-      console.log('Order ID:', order.id);
-      console.log('Order number:', order.soDonHang);
-      console.log('New status code:', newStatusCode);
-      console.log('Status label:', statusLabel);
-      console.log('Current status:', order.trangThai || order.rawStatus);
-      
+      console.log('=== UPDATING ORDER STATUS ===')
+      console.log('Order ID:', order.id)
+      console.log('Order number:', order.soDonHang)
+      console.log('New status code:', newStatusCode)
+      console.log('Status label:', statusLabel)
+      console.log('Current status:', order.trangThai || order.rawStatus)
+
       const updates = {
         diaChiGiao: order.diaChiGiao || order.diaChiGiaoSnapshot,
         ghiChu: order.ghiChu || '',
-        trangThai: statusLabel  // Gửi label tiếng Việt, backend sẽ normalize
-      };
+        trangThai: statusLabel, // Gửi label tiếng Việt, backend sẽ normalize
+      }
+
+      console.log('Sending updates:', updates)
+
+      const response = await axios.put(`/api/don-hang/${order.id}`, updates)
+      console.log('Response:', response.data)
       
-      console.log('Sending updates:', updates);
+      // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
+      const responseData = response.data?.data || response.data
+      const updatedPaymentStatus = responseData?.paymentStatus || order.paymentStatus
 
-      const response = await axios.put(`/api/don-hang/${order.id}`, updates);
-      console.log('Response:', response.data);
-
-      const index = orders.value.findIndex(o => o.id === order.id);
+      const index = orders.value.findIndex((o) => o.id === order.id)
       if (index !== -1) {
         const updatedOrder = {
           ...orders.value[index],
@@ -1214,30 +1320,48 @@ const quickUpdateStatus = async (order, newStatusCode) => {
           statusClass: statusInfo.badgeClass,
           statusColor: statusInfo.color,
           rawStatus: statusLabel,
-          capNhatLuc: new Date().toISOString()
-        };
+          // ✅ Cập nhật payment status từ response nếu có
+          paymentStatus: updatedPaymentStatus,
+          capNhatLuc: new Date().toISOString(),
+        }
 
-        orders.value[index] = updatedOrder;
+        orders.value[index] = updatedOrder
 
         if (selectedOrder.value?.id === order.id) {
-          selectedOrder.value = updatedOrder;
+          selectedOrder.value = {
+            ...updatedOrder,
+            // Đảm bảo selectedOrder cũng có payment status mới nhất
+            paymentStatus: updatedPaymentStatus
+          }
         }
+        
+        console.log('✅ Updated order payment status:', updatedPaymentStatus)
       }
 
-      console.log(`✅ Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${statusLabel}`);
-      alert(`✅ Đã cập nhật trạng thái đơn hàng thành công!`);
+      console.log(`✅ Đã cập nhật trạng thái đơn hàng #${order.soDonHang} sang ${statusLabel}`)
+      alert(`✅ Đã cập nhật trạng thái đơn hàng thành công!`)
     } catch (err) {
-      console.error('❌ Lỗi khi cập nhật trạng thái:', err);
-      console.error('Error response:', err.response?.data);
-      alert('Có lỗi khi cập nhật trạng thái: ' + (err.response?.data?.message || err.message));
+      console.error('❌ Lỗi khi cập nhật trạng thái:', err)
+      console.error('Error response:', err.response?.data)
+
+      const errorMessage = err.response?.data?.message || err.message || 'Lỗi không xác định'
+
+      // Hiển thị thông báo lỗi chi tiết với xuống dòng
+      if (errorMessage.includes('\n')) {
+        // Nếu thông báo có nhiều dòng (như thông báo hết hàng)
+        alert(errorMessage)
+      } else {
+        // Thông báo lỗi thông thường
+        alert('❌ Có lỗi khi cập nhật trạng thái:\n\n' + errorMessage)
+      }
     }
   }
-};
+}
 
 // ======= LIFECYCLE =======
 onMounted(() => {
-  fetchOrders();
-});
+  fetchOrders()
+})
 </script>
 
 <style scoped>
@@ -1940,40 +2064,40 @@ onMounted(() => {
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .header-stats {
     width: 100%;
     justify-content: space-around;
   }
-  
+
   .orders-table {
     padding: 1rem;
   }
-  
+
   .table-responsive {
     font-size: 0.9rem;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .bulk-actions {
     left: 1rem;
     right: 1rem;
     transform: none;
   }
-  
+
   .bulk-actions-content {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .bulk-buttons {
     width: 100%;
     justify-content: space-between;
   }
-  
+
   .modal-content {
     width: 95%;
     margin: 1rem;

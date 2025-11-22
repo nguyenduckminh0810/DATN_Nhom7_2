@@ -161,4 +161,19 @@ public class GioHangService {
         }
     }
 
+    // ✅ Xóa chỉ các chi tiết giỏ hàng đã được đặt hàng (không xóa toàn bộ giỏ hàng)
+    @Transactional
+    public void xoaChiTietGioHangDaDat(List<GioHangChiTiet> chiTietDaDat) {
+        if (chiTietDaDat == null || chiTietDaDat.isEmpty()) {
+            return;
+        }
+        
+        // Xóa từng chi tiết đã được đặt hàng
+        for (GioHangChiTiet chiTiet : chiTietDaDat) {
+            if (chiTiet.getId() != null) {
+                gioHangChiTietRepo.deleteById(chiTiet.getId());
+            }
+        }
+    }
+
 }

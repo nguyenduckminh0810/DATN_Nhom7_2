@@ -207,12 +207,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useCart } from '@/composables/useCart'
+import { useCartStore } from '@/stores/cart'
 import sanPhamService from '@/services/sanPhamService'
 import cartService from '@/services/cartService'
 
 const { items, updateQuantity, removeItem, clearCart, formatPrice } = useCart()
+const cartStore = useCartStore()
 
 // Store product variants data
 const productVariantsMap = ref(new Map())
@@ -233,17 +235,39 @@ if (items.value && items.value.length > 0) {
       quantity: item.quantity,
       productId: item.productId,
       bienTheId: item.bienTheId,
-      variantId: item.variantId
+      variantId: item.variantId,
+      selected: item.selected
     })
   })
 }
 
 // Ensure all items have selected property - MẶC ĐỊNH LÀ TRUE (đã chọn)
-items.value.forEach(item => {
-  if (item.selected === undefined) {
-    item.selected = true  // Mặc định tất cả sản phẩm được chọn
+// Sử dụng watch để đảm bảo luôn có selected property khi items thay đổi
+const ensureSelectedProperty = () => {
+  if (!items.value || items.value.length === 0) return
+  
+  let hasChanged = false
+  items.value.forEach(item => {
+    if (item.selected === undefined || item.selected === null) {
+      item.selected = true  // Mặc định tất cả sản phẩm được chọn
+      hasChanged = true
+    }
+  })
+  
+  // Nếu có thay đổi, lưu lại vào store để persist
+  if (hasChanged) {
+    cartStore.saveToStorage()
   }
-})
+}
+
+// Watch items để đảm bảo selected property luôn được set khi items thay đổi
+// và lưu state vào localStorage khi có thay đổi
+watch(items, () => {
+  ensureSelectedProperty()
+  
+  // Lưu state vào localStorage khi items thay đổi (bao gồm cả selected property)
+  cartStore.saveToStorage()
+}, { deep: true, immediate: false })
 
 // Load product variants for all cart items
 const loadProductVariants = async () => {
@@ -443,8 +467,11 @@ const changeVariant = async (item, type, value) => {
   }
 }
 
-// Load variants when component mounts
+// Load variants when component mounts và đảm bảo selected property
 onMounted(async () => {
+  // Đảm bảo selected property được set trước
+  ensureSelectedProperty()
+  // Load product variants
   await loadProductVariants()
 })
 
@@ -601,13 +628,16 @@ const allItemsSelected = computed(() => {
   return items.value.every(item => item.selected !== false)
 })
 
-const toggleSelectAll = () => {
+const toggleSelectAll = async () => {
   if (!items.value || items.value.length === 0) return
   
   const shouldSelectAll = !allItemsSelected.value
   items.value.forEach(item => {
     item.selected = shouldSelectAll
   })
+  
+  // ✅ Lưu state vào localStorage sau khi toggle
+  cartStore.saveToStorage()
   
   if (window.$toast) {
     const message = shouldSelectAll ? 'Đã chọn tất cả sản phẩm' : 'Đã bỏ chọn tất cả sản phẩm'

@@ -139,12 +139,33 @@ public class GlobalExceptionHandler {
     }
 
 
+    /**
+     * Xử lý RuntimeException - GIỮ NGUYÊN MESSAGE GỐC
+     * (Dùng cho các exception business logic như hết hàng, thiếu dữ liệu, etc.)
+     */
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRuntimeException(
+            RuntimeException ex, WebRequest request) {
+        
+        log.error("Runtime Exception: {} - URL: {}", ex.getMessage(), request.getDescription(false), ex);
+        
+        // ✅ GIỮ NGUYÊN MESSAGE GỐC từ service để hiển thị chi tiết cho user
+        ApiResponse<Object> response = ApiResponse.error(ex.getMessage());
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+
+    /**
+     * Xử lý các exception chung chung khác (không phải RuntimeException)
+     */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGenericException(
             Exception ex, WebRequest request) {
         
         log.error("Unexpected Error: {} - URL: {}", ex.getMessage(), request.getDescription(false), ex);
         
+        // Với các exception không mong đợi, hiển thị message chung
         String message = "Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau.";
         ApiResponse<Object> response = ApiResponse.error(message);
         

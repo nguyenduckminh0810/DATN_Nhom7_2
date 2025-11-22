@@ -92,9 +92,9 @@ class ProductService {
   }
 
   // Lấy đánh giá sản phẩm
-  async getReviews(id) {
+  async getReviews(id, params = {}) {
     try {
-      const response = await apiService.products.getReviews(id)
+      const response = await apiService.products.getReviews(id, params)
       return {
         success: true,
         data: response.data || response,
