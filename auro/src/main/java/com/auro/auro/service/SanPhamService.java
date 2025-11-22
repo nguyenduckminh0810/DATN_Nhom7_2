@@ -3,16 +3,19 @@ package com.auro.auro.service;
 import com.auro.auro.dto.request.SanPhamRequest;
 import com.auro.auro.dto.response.SanPhamResponse;
 import com.auro.auro.dto.response.SanPhamDetailResponse;
+import com.auro.auro.dto.response.DanhGiaSanPhamResponse;
 import com.auro.auro.exception.BadRequestException;
 import com.auro.auro.exception.ResourceNotFoundException;
 import com.auro.auro.model.DanhMuc;
 import com.auro.auro.model.SanPham;
+import com.auro.auro.model.DanhGiaSanPham;
 import com.auro.auro.repository.BienTheSanPhamRepository;
 import com.auro.auro.repository.DanhMucRepository;
 import com.auro.auro.repository.SanPhamRepository;
 import com.auro.auro.repository.HinhAnhRepository;
 import com.auro.auro.repository.GioHangChiTietRepository;
 import com.auro.auro.repository.DonHangChiTietRepository;
+import com.auro.auro.repository.DanhGiaSanPhamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,6 +41,7 @@ public class SanPhamService {
   private final BienTheSanPhamRepository bienTheSanPhamRepository;
   private final GioHangChiTietRepository gioHangChiTietRepository;
   private final DonHangChiTietRepository donHangChiTietRepository;
+  private final DanhGiaSanPhamRepository danhGiaSanPhamRepository;
 
   public Page<SanPhamResponse> getPageByCategorySlugIncludingChildren(
       String slug, String search, Pageable pageable) {
@@ -428,6 +432,28 @@ public class SanPhamService {
     } catch (Exception ignored) {
     }
 
+    // Tính toán rating và số lượng đánh giá
+    try {
+      List<DanhGiaSanPham> danhGias = danhGiaSanPhamRepository.findBySanPham_IdOrderByTaoLucDesc(sp.getId());
+      if (danhGias != null && !danhGias.isEmpty()) {
+        int soLuongDanhGia = danhGias.size();
+        double tongSao = danhGias.stream()
+            .filter(dg -> dg.getSoSao() != null)
+            .mapToInt(DanhGiaSanPham::getSoSao)
+            .sum();
+        double danhGiaTrungBinh = soLuongDanhGia > 0 ? tongSao / soLuongDanhGia : 0.0;
+        
+        res.setSoLuongDanhGia(soLuongDanhGia);
+        res.setDanhGia(Math.round(danhGiaTrungBinh * 10.0) / 10.0); // Làm tròn 1 chữ số thập phân
+      } else {
+        res.setSoLuongDanhGia(0);
+        res.setDanhGia(0.0);
+      }
+    } catch (Exception ignored) {
+      res.setSoLuongDanhGia(0);
+      res.setDanhGia(0.0);
+    }
+
     return res;
   }
 
@@ -501,5 +527,35 @@ public class SanPhamService {
       Page<SanPham> fallbackPage = sanPhamRepository.findByTrangThai("active", pageable);
       return fallbackPage.map(this::mapToResponse);
     }
+  }
+
+  // Lấy đánh giá sản phẩm
+  @Transactional(readOnly = true)
+  public Page<DanhGiaSanPhamResponse> getReviewsByProductId(Long productId, Pageable pageable) {
+    Page<DanhGiaSanPham> reviewsPage = danhGiaSanPhamRepository.findBySanPham_IdOrderByTaoLucDesc(productId, pageable);
+    return reviewsPage.map(this::mapToReviewResponse);
+  }
+
+  private DanhGiaSanPhamResponse mapToReviewResponse(DanhGiaSanPham danhGia) {
+    DanhGiaSanPhamResponse response = new DanhGiaSanPhamResponse();
+    response.setId(danhGia.getId());
+    
+    if (danhGia.getSanPham() != null) {
+      response.setSanPhamId(danhGia.getSanPham().getId());
+      response.setSanPhamTen(danhGia.getSanPham().getTen());
+    }
+    
+    if (danhGia.getKhachHang() != null) {
+      response.setKhachHangId(danhGia.getKhachHang().getId());
+      response.setKhachHangTen(danhGia.getKhachHang().getHoTen());
+      response.setKhachHangAvatar(danhGia.getKhachHang().getAvatar());
+    }
+    
+    response.setSoSao(danhGia.getSoSao());
+    response.setNoiDung(danhGia.getNoiDung());
+    response.setTaoLuc(danhGia.getTaoLuc());
+    response.setCapNhatLuc(danhGia.getCapNhatLuc());
+    
+    return response;
   }
 }

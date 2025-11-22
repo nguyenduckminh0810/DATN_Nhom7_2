@@ -3,13 +3,13 @@
     <div class="reviews-header">
       <div class="rating-summary">
         <div class="rating-score">
-          <span class="score">{{ product.rating || 4.5 }}</span>
+          <span class="score">{{ computedRating }}</span>
           <div class="stars">
             <i v-for="star in 5" :key="star" 
-               :class="star <= (product.rating || 4.5) ? 'bi bi-star-fill' : 'bi bi-star'"
+               :class="star <= Math.round(computedRating) ? 'bi bi-star-fill' : 'bi bi-star'"
                class="star-icon"></i>
           </div>
-          <span class="review-count">Dựa trên {{ product.reviewCount || 0 }} đánh giá</span>
+          <span class="review-count">Dựa trên {{ computedReviewCount }} đánh giá</span>
         </div>
       </div>
       
@@ -52,7 +52,13 @@
     </div>
 
     <div class="reviews-list">
-      <div v-if="filteredReviews.length === 0" class="no-reviews">
+      <div v-if="loading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <p class="mt-2 text-muted">Đang tải đánh giá...</p>
+      </div>
+      <div v-else-if="filteredReviews.length === 0" class="no-reviews">
         <i class="bi bi-chat-dots"></i>
         <h4>Chưa có đánh giá nào</h4>
         <p>Hãy là người đầu tiên đánh giá sản phẩm này!</p>
@@ -110,13 +116,19 @@
         
         <div v-if="totalPages > 1" class="pagination">
           <button 
-            v-for="page in totalPages" 
-            :key="page"
             class="page-btn"
-            :class="{ active: currentPage === page }"
-            @click="currentPage = page"
+            :disabled="currentPage === 1"
+            @click="currentPage = Math.max(1, currentPage - 1); loadReviews()"
           >
-            {{ page }}
+            Trước
+          </button>
+          <span class="page-info">Trang {{ currentPage }} / {{ totalPages }}</span>
+          <button 
+            class="page-btn"
+            :disabled="currentPage >= totalPages"
+            @click="currentPage = Math.min(totalPages, currentPage + 1); loadReviews()"
+          >
+            Sau
           </button>
         </div>
       </div>
@@ -185,8 +197,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useToast } from '../../composables/useToast'
+import productService from '../../services/productService'
 
 const props = defineProps({
   product: {
@@ -199,10 +212,13 @@ const { showToast } = useToast()
 
 // Reactive data
 const reviews = ref([])
+const loading = ref(false)
 const sortBy = ref('newest')
 const selectedRating = ref(null)
 const currentPage = ref(1)
 const itemsPerPage = 10
+const totalPages = ref(1)
+const totalItems = ref(0)
 const showWriteReview = ref(false)
 const showImageModal = ref(false)
 const selectedImage = ref('')
@@ -240,49 +256,77 @@ const filteredReviews = computed(() => {
 })
 
 const paginatedReviews = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredReviews.value.slice(start, end)
+  return filteredReviews.value
 })
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredReviews.value.length / itemsPerPage)
+// Tính toán rating và reviewCount từ reviews thực tế hoặc từ product prop
+const computedRating = computed(() => {
+  if (reviews.value.length > 0) {
+    const totalRating = reviews.value.reduce((sum, review) => sum + (review.rating || 0), 0)
+    const avgRating = totalRating / reviews.value.length
+    return Math.round(avgRating * 10) / 10 // Làm tròn 1 chữ số thập phân
+  }
+  // Fallback về product.rating từ prop nếu chưa load reviews
+  return props.product?.rating != null ? Number(props.product.rating) : 0
+})
+
+const computedReviewCount = computed(() => {
+  // Ưu tiên dùng số lượng reviews đã load (từ totalItems hoặc reviews.length)
+  if (totalItems.value > 0) {
+    return totalItems.value
+  }
+  if (reviews.value.length > 0) {
+    return reviews.value.length
+  }
+  // Fallback về product.reviewCount từ prop
+  return props.product?.reviewCount != null ? Number(props.product.reviewCount) : 0
 })
 
 // Methods
-const loadMockReviews = () => {
-  reviews.value = [
-    {
-      id: 1,
-      name: 'Nguyễn Văn A',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-      rating: 5,
-      comment: 'Sản phẩm rất đẹp, chất liệu tốt. Tôi rất hài lòng với chất lượng.',
-      date: '2024-01-15',
-      helpfulCount: 12,
-      images: ['https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=200&h=200&fit=crop']
-    },
-    {
-      id: 2,
-      name: 'Trần Thị B',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=50&h=50&fit=crop&crop=face',
-      rating: 4,
-      comment: 'Chất lượng tốt, form dáng đẹp. Chỉ hơi nhỏ so với size thường.',
-      date: '2024-01-12',
-      helpfulCount: 8,
-      images: []
-    },
-    {
-      id: 3,
-      name: 'Lê Văn C',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=50&h=50&fit=crop&crop=face',
-      rating: 5,
-      comment: 'Rất hài lòng với sản phẩm. Giao hàng nhanh, đóng gói cẩn thận.',
-      date: '2024-01-10',
-      helpfulCount: 15,
-      images: ['https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=200&h=200&fit=crop']
+const loadReviews = async () => {
+  if (!props.product?.id) {
+    return
+  }
+
+  try {
+    loading.value = true
+    const response = await productService.getReviews(props.product.id, {
+      page: currentPage.value - 1,
+      size: itemsPerPage
+    })
+
+    if (response.success && response.data) {
+      const data = response.data
+      const content = Array.isArray(data.content) ? data.content : (Array.isArray(data) ? data : [])
+      
+      reviews.value = content.map(review => ({
+        id: review.id,
+        name: review.khachHangTen || 'Khách hàng',
+        avatar: review.khachHangAvatar || 'https://via.placeholder.com/50/6c757d/ffffff?text=U',
+        rating: review.soSao || 0,
+        comment: review.noiDung || '',
+        date: review.taoLuc || review.capNhatLuc || new Date().toISOString(),
+        helpfulCount: 0,
+        images: []
+      }))
+
+      if (data.totalPages !== undefined) {
+        totalPages.value = data.totalPages
+        totalItems.value = data.totalElements || content.length
+      } else {
+        totalPages.value = 1
+        totalItems.value = content.length
+      }
+    } else {
+      reviews.value = []
     }
-  ]
+  } catch (error) {
+    console.error('Error loading reviews:', error)
+    reviews.value = []
+    showToast('Không thể tải đánh giá', 'error')
+  } finally {
+    loading.value = false
+  }
 }
 
 const getRatingPercentage = (rating) => {
@@ -332,7 +376,7 @@ const handleImageUpload = (event) => {
   newReview.value.images = Array.from(files)
 }
 
-const submitReview = () => {
+const submitReview = async () => {
   if (newReview.value.rating === 0) {
     showToast('Vui lòng chọn đánh giá', 'warning')
     return
@@ -343,29 +387,10 @@ const submitReview = () => {
     return
   }
   
-  // Add new review
-  const review = {
-    id: reviews.value.length + 1,
-    name: 'Bạn',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-    rating: newReview.value.rating,
-    comment: newReview.value.comment,
-    date: new Date().toISOString().split('T')[0],
-    helpfulCount: 0,
-    images: newReview.value.images
-  }
-  
-  reviews.value.unshift(review)
-  
-  // Reset form
-  newReview.value = {
-    rating: 0,
-    comment: '',
-    images: []
-  }
-  
+  // Note: Đánh giá sản phẩm chỉ có thể thực hiện từ đơn hàng
+  // Component này chỉ hiển thị đánh giá, không cho phép tạo mới
+  showToast('Vui lòng đánh giá sản phẩm từ trang đơn hàng của bạn', 'info')
   closeWriteReview()
-  showToast('Đánh giá đã được gửi thành công!', 'success')
 }
 
 const closeWriteReview = () => {
@@ -377,9 +402,19 @@ const closeWriteReview = () => {
   }
 }
 
+// Watch for product changes
+watch(() => props.product?.id, (newId) => {
+  if (newId) {
+    currentPage.value = 1
+    loadReviews()
+  }
+}, { immediate: true })
+
 // Lifecycle
 onMounted(() => {
-  loadMockReviews()
+  if (props.product?.id) {
+    loadReviews()
+  }
 })
 </script>
 
@@ -463,6 +498,12 @@ onMounted(() => {
   text-align: right;
   font-size: 0.9rem;
   color: #495057;
+}
+
+.page-info {
+  padding: 0 1rem;
+  color: #495057;
+  font-size: 0.9rem;
 }
 
 .reviews-filters {

@@ -113,6 +113,14 @@
                       {{ item.danhGiaNoiDung }}
                     </p>
                   </div>
+                  <div v-else-if="canReviewOrder" class="order-item__review-actions mt-2">
+                    <button
+                      class="btn btn-sm btn-outline-warning"
+                      @click="openRatingModal(order, item)"
+                    >
+                      <i class="bi bi-star me-1"></i>Đánh giá sản phẩm
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -234,11 +242,78 @@
         </div>
       </div>
     </div>
+
+    <!-- Rating Modal -->
+    <div v-if="ratingModalVisible" class="rating-modal">
+      <div class="rating-modal__overlay" @click="closeRatingModal"></div>
+      <div class="rating-modal__content">
+        <div class="rating-modal__header">
+          <h5 class="mb-0">Đánh giá sản phẩm</h5>
+          <button type="button" class="btn-close" @click="closeRatingModal"></button>
+        </div>
+
+        <div class="rating-modal__body">
+          <div class="mb-3">
+            <label class="form-label">Sản phẩm</label>
+            <div class="form-control" style="background-color: #f8f9fa;">
+              <strong>{{ selectedRatingItem?.tenSanPham }}</strong>
+              <div v-if="selectedRatingItem?.mauSacTen || selectedRatingItem?.kichCoTen" class="text-muted small">
+                <span v-if="selectedRatingItem?.mauSacTen">Màu: {{ selectedRatingItem.mauSacTen }}</span>
+                <span v-if="selectedRatingItem?.mauSacTen && selectedRatingItem?.kichCoTen">, </span>
+                <span v-if="selectedRatingItem?.kichCoTen">Size: {{ selectedRatingItem.kichCoTen }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Số sao <span class="text-danger">*</span></label>
+            <div class="rating-stars" @mouseleave="setHoverRating(0)">
+              <button
+                v-for="star in 5"
+                :key="star"
+                type="button"
+                class="rating-star"
+                :class="{ active: star <= (hoverRating || ratingForm.rating) }"
+                @click="setRatingValue(star)"
+                @mouseenter="setHoverRating(star)"
+              >
+                ★
+              </button>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nhận xét</label>
+            <textarea
+              v-model="ratingForm.comment"
+              rows="4"
+              class="form-control"
+              placeholder="Chia sẻ trải nghiệm của bạn về sản phẩm"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="rating-modal__footer">
+          <button type="button" class="btn btn-outline-secondary" @click="closeRatingModal">
+            Hủy
+          </button>
+          <button
+            type="button"
+            class="btn btn-warning"
+            :disabled="ratingSubmitting || !ratingForm.rating"
+            @click="submitRating"
+          >
+            <span v-if="ratingSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            Gửi đánh giá
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import { useRoute } from 'vue-router'
 import orderService from '@/services/orderService'
 import {
@@ -258,12 +333,32 @@ const loading = ref(true)
 const error = ref(null)
 const isNewOrder = ref(false)
 
+// Rating modal state
+const ratingModalVisible = ref(false)
+const ratingSubmitting = ref(false)
+const selectedRatingItem = ref(null)
+const ratingForm = reactive({
+  orderId: null,
+  chiTietId: null,
+  rating: 0,
+  comment: '',
+})
+const hoverRating = ref(0)
+
 const canCancelOrder = computed(() => {
   if (!order.value) return false
 
   const currentStatus = order.value.statusCode || getOrderStatusCode(order.value.rawStatus)
 
   return ORDER_STATUS_CODES.PENDING === currentStatus
+})
+
+const canReviewOrder = computed(() => {
+  if (!order.value) return false
+
+  const currentStatus = order.value.statusCode || getOrderStatusCode(order.value.rawStatus)
+
+  return [ORDER_STATUS_CODES.DELIVERED, ORDER_STATUS_CODES.COMPLETED].includes(currentStatus)
 })
 
 onMounted(async () => {
@@ -537,6 +632,83 @@ const getPaymentStatusText = (status) => {
   }
   return statusMap[status] || status
 }
+
+// Rating functions
+const openRatingModal = (orderData, item) => {
+  if (!orderData || !item) return
+  
+  selectedRatingItem.value = item
+  ratingForm.orderId = orderData.id
+  ratingForm.chiTietId = item.id
+  ratingForm.rating = item.danhGiaSoSao || 0
+  ratingForm.comment = item.danhGiaNoiDung || ''
+  hoverRating.value = 0
+  ratingModalVisible.value = true
+}
+
+const closeRatingModal = () => {
+  ratingModalVisible.value = false
+  selectedRatingItem.value = null
+  ratingForm.orderId = null
+  ratingForm.chiTietId = null
+  ratingForm.rating = 0
+  ratingForm.comment = ''
+  hoverRating.value = 0
+}
+
+const setRatingValue = (value) => {
+  ratingForm.rating = value
+  hoverRating.value = 0
+}
+
+const setHoverRating = (value) => {
+  hoverRating.value = value
+}
+
+const submitRating = async () => {
+  if (!ratingForm.orderId || !ratingForm.chiTietId) {
+    alert('Vui lòng chọn sản phẩm để đánh giá.')
+    return
+  }
+
+  if (!ratingForm.rating) {
+    alert('Vui lòng chọn số sao đánh giá.')
+    return
+  }
+
+  try {
+    ratingSubmitting.value = true
+    const response = await orderService.submitReview(ratingForm.orderId, {
+      chiTietId: ratingForm.chiTietId,
+      soSao: ratingForm.rating,
+      noiDung: ratingForm.comment,
+    })
+
+    const payload = response?.data?.data ?? response?.data ?? response ?? {}
+    
+    // Update order item with new review
+    if (order.value && order.value.chiTietList) {
+      const itemIndex = order.value.chiTietList.findIndex(item => item.id === ratingForm.chiTietId)
+      if (itemIndex !== -1) {
+        order.value.chiTietList[itemIndex].daDanhGia = true
+        order.value.chiTietList[itemIndex].danhGiaSoSao = payload.danhGiaSoSao ?? ratingForm.rating
+        order.value.chiTietList[itemIndex].danhGiaNoiDung = payload.danhGiaNoiDung ?? ratingForm.comment
+        order.value.chiTietList[itemIndex].danhGiaTaoLuc = payload.danhGiaTaoLuc || new Date().toISOString()
+      }
+    }
+
+    alert('Đã gửi đánh giá thành công!')
+    closeRatingModal()
+    
+    // Refresh order detail
+    await fetchOrderDetail()
+  } catch (err) {
+    console.error('Error rating order:', err)
+    alert('Lỗi khi gửi đánh giá: ' + (err.response?.data?.message || err.message))
+  } finally {
+    ratingSubmitting.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -606,6 +778,72 @@ const getPaymentStatusText = (status) => {
 .order-item__review-content {
   font-size: 0.9rem;
   color: #495057;
+}
+
+.order-item__review-actions {
+  padding-top: 0.5rem;
+}
+
+.rating-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.rating-modal__content {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  z-index: 1;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+}
+
+.rating-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.rating-modal__body {
+  margin-bottom: 1.5rem;
+}
+
+.rating-modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rating-star {
+  border: none;
+  background: transparent;
+  font-size: 1.75rem;
+  cursor: pointer;
+  color: #ced4da;
+  transition: color 0.2s ease;
+}
+
+.rating-star.active,
+.rating-star:hover {
+  color: #ffc107;
 }
 
 .timeline {
