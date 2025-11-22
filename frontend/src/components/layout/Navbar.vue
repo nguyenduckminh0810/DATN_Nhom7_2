@@ -1104,9 +1104,13 @@ router-link:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  white-space: nowrap; /* Ngăn chữ bị vỡ xuống dòng */
+  padding: 0.5rem 1rem; /* Tăng padding để có đủ không gian */
+  min-width: fit-content; /* Đảm bảo đủ rộng cho nội dung */
 }
 
 .track-order-link .bi {
   font-size: 1rem;
+  flex-shrink: 0; /* Ngăn icon bị co lại */
 }
 </style>

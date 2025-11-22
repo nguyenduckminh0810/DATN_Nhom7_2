@@ -434,7 +434,7 @@ const statusTabs = ORDER_STATUS_FOR_CUSTOMER.slice().sort(
   (a, b) => a.sortOrder - b.sortOrder,
 )
 
-const STATUS_PER_ROW = 4
+const STATUS_PER_ROW = 3 // 3 items mỗi hàng (hàng trên 3, hàng dưới 3)
 
 const statusOptions = computed(() => [
   {
