@@ -822,6 +822,77 @@ watch(districts, syncDistrictInfo)
 
 watch(selectedWard, syncWardInfo)
 watch(wards, syncWardInfo)
+
+// 🔥 FIX: Watch for authentication state changes
+// Khi user login tại trang Checkout, tự động load addresses và auto-fill
+watch(
+  () => userStore.isAuthenticated,
+  async (isAuthenticated, wasAuthenticated) => {
+    // Chỉ xử lý khi chuyển từ false -> true (user vừa login)
+    if (isAuthenticated && !wasAuthenticated) {
+      console.log('🔑 [SHIPPING FORM] User just logged in, loading addresses...')
+      
+      try {
+        // Đảm bảo provinces đã được load trước khi load addresses
+        // (vì selectAddress cần provinces để map địa chỉ)
+        if (provinces.value.length === 0) {
+          console.log('📍 [SHIPPING FORM] Provinces not loaded yet, loading first...')
+          await loadProvinces()
+        }
+        
+        // Load saved addresses (sẽ tự động chọn địa chỉ mặc định nếu có)
+        await loadSavedAddresses()
+        
+        // Auto-fill user info nếu chưa có địa chỉ được chọn
+        // (loadSavedAddresses đã tự động chọn default address nếu có)
+        if (!selectedAddressId.value && !reorderPrefilled.value) {
+          console.log('🔑 [SHIPPING FORM] No default address found, auto-filling basic user info...')
+          
+          // Fill basic user info
+          if (!shippingInfo.value.fullName && userStore.userName) {
+            shippingInfo.value.fullName = userStore.userName
+          }
+          if (!shippingInfo.value.email && userStore.userEmail) {
+            shippingInfo.value.email = userStore.userEmail
+          }
+          if (!shippingInfo.value.phone && userStore.userPhone) {
+            shippingInfo.value.phone = userStore.userPhone
+          }
+          
+          console.log('✅ [SHIPPING FORM] Auto-filled after login:', {
+            fullName: shippingInfo.value.fullName,
+            email: shippingInfo.value.email,
+            phone: shippingInfo.value.phone,
+          })
+        } else if (selectedAddressId.value) {
+          console.log('✅ [SHIPPING FORM] Default address auto-selected after login')
+        }
+      } catch (error) {
+        console.error('❌ [SHIPPING FORM] Error handling post-login:', error)
+      }
+    }
+  },
+  { immediate: false }
+)
+
+// 🔥 FIX: Watch for user data changes (khi user info được update)
+watch(
+  () => userStore.user,
+  (newUser, oldUser) => {
+    // Chỉ xử lý khi user data thay đổi và user đã authenticated
+    if (newUser && userStore.isAuthenticated && newUser !== oldUser) {
+      console.log('👤 [SHIPPING FORM] User data updated, refreshing addresses...')
+      
+      // Reload addresses để đảm bảo có data mới nhất
+      if (userStore.isAuthenticated) {
+        loadSavedAddresses().catch(error => {
+          console.error('❌ [SHIPPING FORM] Error reloading addresses:', error)
+        })
+      }
+    }
+  },
+  { immediate: false }
+)
 </script>
 
 <style scoped>
