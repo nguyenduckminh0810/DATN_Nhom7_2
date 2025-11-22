@@ -79,18 +79,21 @@
               <h1 class="product-title">{{ product?.name || 'Đang tải...' }}</h1>
 
               <!-- Product Rating -->
-              <div class="product-rating mb-3">
+              <div class="product-rating mb-3" v-if="product?.reviewCount > 0">
                 <div class="stars">
                   <i
                     v-for="i in 5"
                     :key="i"
-                    :class="['bi', i <= Math.floor(product?.rating) ? 'bi-star-fill' : 'bi-star']"
+                    :class="['bi', i <= Math.round(product?.rating || 0) ? 'bi-star-fill text-warning' : 'bi-star text-muted']"
                   ></i>
                 </div>
                 <span class="rating-text">
-                  <strong>{{ product?.rating }}</strong>
-                  <span class="rating-count">({{ product?.reviewCount }} đánh giá)</span>
+                  <strong>{{ formatRating(product?.rating) }}</strong>
+                  <span class="rating-count">({{ product?.reviewCount || 0 }} đánh giá)</span>
                 </span>
+              </div>
+              <div v-else class="product-rating mb-3 text-muted">
+                <small>Chưa có đánh giá</small>
               </div>
 
               <!-- Product Price -->
@@ -376,39 +379,7 @@
           <h2>Đánh giá sản phẩm</h2>
         </div>
         <div class="section-content">
-          <div class="reviews-summary">
-            <div class="rating-overview">
-              <div class="rating-score">
-                <span class="score">{{ product?.rating }}</span>
-                <div class="stars">
-                  <i
-                    v-for="i in 5"
-                    :key="i"
-                    :class="['bi', i <= Math.floor(product?.rating) ? 'bi-star-fill' : 'bi-star']"
-                  ></i>
-                </div>
-                <p>{{ product?.reviewCount }} đánh giá</p>
-              </div>
-            </div>
-          </div>
-          <div class="reviews-list">
-            <div class="review-item">
-              <div class="review-header">
-                <div class="reviewer-info">
-                  <span class="reviewer-name">Nguyễn Văn A</span>
-                  <div class="review-rating">
-                    <i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star-fill"></i>
-                    <i class="bi bi-star"></i>
-                  </div>
-                </div>
-                <span class="review-date">15/12/2024</span>
-              </div>
-              <p class="review-content">Sản phẩm chất lượng tốt, vừa size, giao hàng nhanh.</p>
-            </div>
-          </div>
+          <ProductReviews :product="product" />
         </div>
       </div>
     </section>
@@ -529,6 +500,7 @@ import { useUserStore } from '../stores/user'
 import cartService from '../services/cartService'
 import ImageGallery from '../components/common/ImageGallery.vue'
 import LazyImage from '../components/common/LazyImage.vue'
+import ProductReviews from '../components/product/ProductReviews.vue'
 import { config } from '../config/env'
 import {
   getColorName,
@@ -620,8 +592,8 @@ const fetchProductDetail = async (productId) => {
       images: productImages,
       category: productData.danhMucTen || '',
       brand: 'AURO',
-      rating: productData.danhGia || 4.5,
-      reviewCount: productData.soLuongDanhGia || 0,
+      rating: productData.danhGia != null ? Number(productData.danhGia) : 0,
+      reviewCount: productData.soLuongDanhGia != null ? Number(productData.soLuongDanhGia) : 0,
       inStock: productData.trangThai === 'active',
       tags: productData.tags || [],
       sku: productData.sku || '',
@@ -925,6 +897,11 @@ const isColorAvailableForSize = (color) => {
 }
 
 // Methods
+const formatRating = (rating) => {
+  if (!rating || rating === 0) return '0.0'
+  return Number(rating).toFixed(1)
+}
+
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',

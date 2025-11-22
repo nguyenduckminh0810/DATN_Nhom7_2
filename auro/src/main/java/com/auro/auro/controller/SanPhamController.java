@@ -3,6 +3,7 @@ package com.auro.auro.controller;
 import com.auro.auro.dto.request.SanPhamRequest;
 import com.auro.auro.dto.response.SanPhamResponse;
 import com.auro.auro.dto.response.SanPhamDetailResponse;
+import com.auro.auro.dto.response.DanhGiaSanPhamResponse;
 import com.auro.auro.service.SanPhamService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -117,5 +118,15 @@ public class SanPhamController {
             @RequestParam(value = "size", defaultValue = "6") int size) {
         Page<SanPhamResponse> p = sanPhamService.getRelatedProducts(id, PageRequest.of(page, size));
         return ResponseEntity.ok(p);
+    }
+
+    // Lấy đánh giá sản phẩm
+    @GetMapping("/id/{id}/reviews")
+    public ResponseEntity<Page<DanhGiaSanPhamResponse>> getReviews(
+            @PathVariable Long id,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        Page<DanhGiaSanPhamResponse> reviews = sanPhamService.getReviewsByProductId(id, PageRequest.of(page, size));
+        return ResponseEntity.ok(reviews);
     }
 }
