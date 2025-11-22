@@ -16,4 +16,6 @@ public class UserAdminResponse {
     private Boolean trangThai;
     private LocalDateTime taoLuc;
     private LocalDateTime capNhatLuc;
+    private Integer orderCount;
+    private Double totalSpent;
 }

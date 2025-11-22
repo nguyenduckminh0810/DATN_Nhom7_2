@@ -1017,6 +1017,12 @@ const fetchUsers = async () => {
         const email = u.email || ''
         const baseName = email ? email.split('@')[0] || 'Người dùng' : u.soDienThoai || 'Người dùng'
         const roleMap = { ADM: 'admin', STF: 'staff', CUS: 'customer', GST: 'customer' }
+
+        // Lấy orderCount và totalSpent từ backend
+        const orderCount = u.orderCount || 0
+        const totalSpent = u.totalSpent || 0
+        const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0
+
         return {
           id: u.id,
           name: baseName,
@@ -1028,14 +1034,14 @@ const fetchUsers = async () => {
           role: roleMap[u.vaiTroMa] || 'customer',
           status: u.trangThai ? 'active' : 'inactive',
           avatar: null,
-          orderCount: 0,
-          totalSpent: 0,
-          avgOrderValue: 0,
+          orderCount: orderCount,
+          totalSpent: totalSpent,
+          avgOrderValue: avgOrderValue,
           createdAt: u.taoLuc ? new Date(u.taoLuc) : new Date(),
           lastLogin: null,
-          isVip: false,
+          isVip: totalSpent > 10000000, // VIP nếu chi tiêu > 10 triệu
           isNew: false,
-          isHighValue: false,
+          isHighValue: totalSpent > 5000000, // High value nếu chi tiêu > 5 triệu
           orders: [],
           activities: [],
         }
