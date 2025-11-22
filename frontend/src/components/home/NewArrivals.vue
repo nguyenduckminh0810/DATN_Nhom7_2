@@ -39,6 +39,8 @@
           :sizes="product.sizes"
           :available-sizes="product.availableSizes"
           :color-size-mapping="product.colorSizeMapping"
+          :rating="product.rating"
+          :review-count="product.reviewCount"
         />
       </div>
 
@@ -123,6 +125,8 @@ const fetchNewArrivals = async () => {
             '#8B4513': ['M', 'L', 'XL'],
             '#2F4F4F': ['L', 'XL'],
           },
+          rating: product.danhGia !== null && product.danhGia !== undefined ? product.danhGia : null,
+          reviewCount: product.soLuongDanhGia !== null && product.soLuongDanhGia !== undefined ? product.soLuongDanhGia : null,
         }
       })
 

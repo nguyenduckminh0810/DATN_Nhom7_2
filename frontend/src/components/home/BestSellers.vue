@@ -52,6 +52,8 @@
           :available-sizes="getAvailableSizes(product)"
           :color-size-mapping="getColorSizeMapping(product)"
           :stock="product.tonKho || 0"
+          :rating="getRating(product)"
+          :review-count="getReviewCount(product)"
         />
       </div>
       
@@ -216,6 +218,16 @@ const getColorSizeMapping = (product) => {
     }
   })
   return mapping
+}
+
+const getRating = (product) => {
+  // Lấy rating từ product (backend trả về danhGia)
+  return product.danhGia !== null && product.danhGia !== undefined ? product.danhGia : null
+}
+
+const getReviewCount = (product) => {
+  // Lấy số lượng đánh giá từ product (backend trả về soLuongDanhGia)
+  return product.soLuongDanhGia !== null && product.soLuongDanhGia !== undefined ? product.soLuongDanhGia : null
 }
 
 onMounted(() => {
