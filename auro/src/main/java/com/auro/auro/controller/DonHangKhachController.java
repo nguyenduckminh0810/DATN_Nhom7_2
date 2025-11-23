@@ -300,6 +300,7 @@ public class DonHangKhachController {
                     khachHang.setTaiKhoan(taiKhoan);
                     khachHang.setHoTen(taiKhoan.getEmail() != null ? taiKhoan.getEmail() : "Admin/Staff");
                     khachHang.setKieu("ONLINE");
+                    khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
                     khachHang = khachHangRepository.save(khachHang);
                     System.out.println("Created new KhachHang for Admin/Staff with ID: " + khachHang.getId());
                 }

@@ -2,14 +2,12 @@ package com.auro.auro.controller;
 
 import com.auro.auro.model.DonHang;
 import com.auro.auro.repository.DonHangRepository;
-import com.auro.auro.repository.KhachHangRepository;
+import com.auro.auro.service.ThongKeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,48 +18,21 @@ import java.util.stream.Collectors;
 public class DonHangThongKeController {
 
     private final DonHangRepository donHangRepository;
-    private final KhachHangRepository khachHangRepository;
+    private final ThongKeService thongKeService;
 
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
-    public ResponseEntity<Map<String, Object>> getSummary() {
-        Map<String, Object> result = new HashMap<>();
-
-        // Tổng số đơn hàng
-        long totalOrders = donHangRepository.count();
-
-        // Tổng số khách hàng
-        long totalCustomers = khachHangRepository.count();
-
-        // Doanh thu hôm nay
-        LocalDateTime startOfToday = LocalDateTime.now().toLocalDate().atStartOfDay();
-        LocalDateTime endOfToday = LocalDateTime.now();
-        BigDecimal revenueToday = donHangRepository.sumRevenueByTaoLucBetween(startOfToday, endOfToday);
-
-        // Đơn hàng mới 24h
-        LocalDateTime last24h = LocalDateTime.now().minusHours(24);
-        long newOrders24h = donHangRepository.countByTaoLucAfter(last24h);
-
-        result.put("totalOrders", totalOrders);
-        result.put("totalCustomers", totalCustomers);
-        result.put("revenueToday", revenueToday != null ? revenueToday.doubleValue() : 0.0);
-        result.put("newOrders24h", newOrders24h);
-        result.put("newCustomersToday", 0); // Placeholder
-        result.put("lowStockCount", 0); // Placeholder
-
+    public ResponseEntity<Map<String, Object>> getSummary(
+            @RequestParam(name = "lowStockThreshold", required = false) Integer lowStockThreshold) {
+        // Sử dụng ThongKeService để có logic đầy đủ
+        Map<String, Object> result = thongKeService.getSummary(lowStockThreshold);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/customers/summary")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<Map<String, Object>> getCustomerSummary() {
-        Map<String, Object> result = new HashMap<>();
-        long totalCustomers = khachHangRepository.count();
-
-        result.put("totalCustomers", totalCustomers);
-        result.put("activeCustomers", totalCustomers);
-        result.put("newCustomers", 0);
-
+        Map<String, Object> result = thongKeService.getCustomerSummary();
         return ResponseEntity.ok(result);
     }
 
@@ -77,7 +48,73 @@ public class DonHangThongKeController {
                         dh -> dh.getTrangThai() != null ? dh.getTrangThai() : "UNKNOWN",
                         Collectors.counting()));
 
-        result.put("statusCounts", statusCounts);
+        System.out.println("📊 [ORDER STATUS COUNTS DEBUG]");
+        System.out.println("  - Total Orders: " + allOrders.size());
+        System.out.println("  - Status Counts Map: " + statusCounts);
+
+        // Map các trạng thái về format chuẩn cho frontend
+        long pending = 0;
+        long shipping = 0;
+        long delivered = 0;
+        long completed = 0;
+        long cancelled = 0;
+
+        for (Map.Entry<String, Long> entry : statusCounts.entrySet()) {
+            String status = entry.getKey();
+            Long count = entry.getValue();
+            
+            System.out.println("  - Processing status: '" + status + "' with count: " + count);
+            
+            // Normalize status để so sánh (loại bỏ khoảng trắng, chuyển về uppercase)
+            String normalizedStatus = (status != null && !status.trim().isEmpty()) 
+                    ? status.trim().toUpperCase() : "";
+            
+            // Hỗ trợ cả tiếng Anh và tiếng Việt - kiểm tra exact match trước, sau đó mới dùng contains
+            if (status != null && (status.equals("PENDING") || status.equals("Chờ xác nhận") || 
+                status.equals("CHO_XAC_NHAN") || normalizedStatus.equals("PENDING") ||
+                (normalizedStatus.contains("CHỜ") || normalizedStatus.contains("CHO")))) {
+                pending += count;
+                System.out.println("    → Mapped to PENDING");
+            } else if (status != null && (status.equals("SHIPPING") || status.equals("Đang giao") || 
+                      status.equals("DANG_GIAO") || normalizedStatus.equals("SHIPPING") ||
+                      (normalizedStatus.contains("ĐANG") || normalizedStatus.contains("DANG")))) {
+                shipping += count;
+                System.out.println("    → Mapped to SHIPPING");
+            } else if (status != null && (status.equals("DELIVERED") || status.equals("Đã giao") || 
+                      status.equals("DA_GIAO") || status.equals("Đã giao hàng") ||
+                      status.equals("DA_GIAO_HANG") || normalizedStatus.equals("DELIVERED") ||
+                      (normalizedStatus.contains("ĐÃ GIAO") && !normalizedStatus.contains("HOÀN")))) {
+                delivered += count;
+                System.out.println("    → Mapped to DELIVERED");
+            } else if (status != null && (status.equals("COMPLETED") || status.equals("Hoàn tất") || 
+                      status.equals("HOAN_TAT") || status.equals("HOAN_THANH") ||
+                      status.equals("Hoàn thành") || normalizedStatus.equals("COMPLETED") ||
+                      (normalizedStatus.contains("HOÀN") || normalizedStatus.contains("HOAN")))) {
+                completed += count;
+                System.out.println("    → Mapped to COMPLETED");
+            } else if (status != null && (status.equals("CANCELLED") || status.equals("Đã hủy") || 
+                      status.equals("DA_HUY") || normalizedStatus.equals("CANCELLED") ||
+                      (normalizedStatus.contains("HỦY") || normalizedStatus.contains("HUY")))) {
+                cancelled += count;
+                System.out.println("    → Mapped to CANCELLED");
+            } else {
+                System.out.println("    → UNMAPPED STATUS: " + status);
+            }
+        }
+        
+        System.out.println("  - Final counts:");
+        System.out.println("    PENDING: " + pending);
+        System.out.println("    SHIPPING: " + shipping);
+        System.out.println("    DELIVERED: " + delivered);
+        System.out.println("    COMPLETED: " + completed);
+        System.out.println("    CANCELLED: " + cancelled);
+
+        result.put("pending", pending);
+        result.put("shipping", shipping);
+        result.put("delivered", delivered);
+        result.put("completed", completed);
+        result.put("cancelled", cancelled);
+        result.put("statusCounts", statusCounts); // Giữ lại để debug
         result.put("total", allOrders.size());
 
         return ResponseEntity.ok(result);
@@ -85,10 +122,10 @@ public class DonHangThongKeController {
 
     @GetMapping("/alerts")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
-    public ResponseEntity<Map<String, Object>> getAlerts() {
-        Map<String, Object> result = new HashMap<>();
-        result.put("lowStockProducts", Collections.emptyList());
-        result.put("pendingOrders", donHangRepository.countByTrangThai("CHO_XAC_NHAN"));
+    public ResponseEntity<Map<String, Object>> getAlerts(
+            @RequestParam(name = "lowStockThreshold", required = false) Integer lowStockThreshold) {
+        // Sử dụng ThongKeService để có logic đầy đủ
+        Map<String, Object> result = thongKeService.getAlerts(lowStockThreshold);
         return ResponseEntity.ok(result);
     }
 
@@ -97,28 +134,34 @@ public class DonHangThongKeController {
     public ResponseEntity<Map<String, Object>> getChart(
             @RequestParam(defaultValue = "30days") String range,
             @RequestParam(defaultValue = "revenue") String metric) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("labels", Arrays.asList("Day 1", "Day 2", "Day 3"));
-        result.put("data", Arrays.asList(100, 200, 150));
+        Map<String, Object> result = thongKeService.getChart(range, metric);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/top-products")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
-    public ResponseEntity<List<Map<String, Object>>> getTopProducts() {
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<Map<String, Object>>> getTopProducts(
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "rangeDays", required = false) Integer rangeDays) {
+        List<Map<String, Object>> result = thongKeService.getTopProducts(limit, rangeDays);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/recent-orders")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
-    public ResponseEntity<List<Map<String, Object>>> getRecentOrders() {
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<Map<String, Object>>> getRecentOrders(
+            @RequestParam(name = "limit", required = false) Integer limit) {
+        List<Map<String, Object>> result = thongKeService.getRecentOrders(limit);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/categories/performance")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
-    public ResponseEntity<List<Map<String, Object>>> getCategoryPerformance() {
-        return ResponseEntity.ok(Collections.emptyList());
+    public ResponseEntity<List<Map<String, Object>>> getCategoryPerformance(
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(name = "rangeDays", required = false) Integer rangeDays) {
+        List<Map<String, Object>> result = thongKeService.getCategoryPerformance(limit, rangeDays);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/analytics/kpis")

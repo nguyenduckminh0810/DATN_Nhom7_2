@@ -17,6 +17,28 @@ public interface BienTheSanPhamRepository extends JpaRepository<BienTheSanPham, 
 
     long countBySoLuongTonLessThanEqual(Integer threshold);
 
+    // Đếm biến thể sắp hết (còn hàng nhưng <= threshold, loại trừ hết hàng)
+    // Xử lý cả trường hợp soLuongTon có thể null
+    @Query("SELECT COUNT(b) FROM BienTheSanPham b WHERE b.soLuongTon IS NOT NULL AND b.soLuongTon > 0 AND b.soLuongTon <= :threshold")
+    long countLowStockVariants(@Param("threshold") Integer threshold);
+
+    // Đếm số sản phẩm (distinct) có ít nhất 1 biến thể sắp hết hoặc hết hàng (<= threshold, bao gồm cả 0)
+    // Sử dụng native query để đảm bảo chính xác
+    @Query(value = """
+        SELECT COUNT(DISTINCT id_san_pham)
+        FROM bien_the_san_pham
+        WHERE so_luong_ton IS NOT NULL AND so_luong_ton <= :threshold
+        """, nativeQuery = true)
+    long countProductsWithLowStock(@Param("threshold") Integer threshold);
+    
+    // Debug: Lấy danh sách sản phẩm ID có biến thể sắp hết
+    @Query(value = """
+        SELECT DISTINCT id_san_pham
+        FROM bien_the_san_pham
+        WHERE so_luong_ton IS NOT NULL AND so_luong_ton <= :threshold
+        """, nativeQuery = true)
+    List<Long> findProductIdsWithLowStock(@Param("threshold") Integer threshold);
+
     // Get variant IDs for multiple products (only IDs, no entity loading)
     @Query("SELECT b.id FROM BienTheSanPham b WHERE b.sanPham.id IN :sanPhamIds")
     List<Long> findIdsBySanPham_IdIn(@Param("sanPhamIds") Iterable<Long> sanPhamIds);
@@ -43,4 +65,8 @@ public interface BienTheSanPhamRepository extends JpaRepository<BienTheSanPham, 
         FROM bien_the_san_pham
         """, nativeQuery = true)
     long findTotalInventory();
+
+    // Debug: Lấy danh sách tất cả biến thể với stock để kiểm tra
+    @Query("SELECT b.id, b.soLuongTon FROM BienTheSanPham b ORDER BY b.soLuongTon")
+    List<Object[]> findAllWithStock();
 }

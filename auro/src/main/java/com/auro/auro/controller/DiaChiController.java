@@ -42,6 +42,7 @@ public class DiaChiController {
                                 khachHang.setEmail(taiKhoan.getEmail());
                         }
                         khachHang.setKieu("REGISTERED");
+                        khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
                         khachHang = khachHangRepository.save(khachHang);
                         System.out.println("Created KhachHang with ID: " + khachHang.getId());
                 }

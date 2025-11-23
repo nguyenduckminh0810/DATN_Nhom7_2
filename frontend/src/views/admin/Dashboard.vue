@@ -15,7 +15,7 @@
       </div>
             </div>
             <div class="card-content">
-              <div class="main-value">{{ summary?.revenueToday?.toLocaleString('vi-VN') }}₫</div>
+              <div class="main-value">{{ (summary?.revenueToday ?? 0).toLocaleString('vi-VN') }}₫</div>
               <div v-if="revenueGrowth !== null" :class="['trend', revenueGrowth >= 0 ? 'positive' : 'negative']">
                 <i :class="revenueGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
                 <span>{{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth }}%</span>
@@ -351,6 +351,15 @@
               <div class="status-info">
                 <div class="status-count">{{ orderStatusCounts?.shipping ?? 0 }}</div>
                 <div class="status-label">Đang giao</div>
+              </div>
+            </div>
+            <div class="status-card delivered">
+              <div class="status-icon">
+                <i class="ph bi bi-box-seam"></i>
+              </div>
+              <div class="status-info">
+                <div class="status-count">{{ orderStatusCounts?.delivered ?? 0 }}</div>
+                <div class="status-label">Đã giao</div>
               </div>
             </div>
             <div class="status-card completed">
@@ -816,13 +825,17 @@ const exportChartData = () => {
 const loadChartData = async () => {
   try {
     isLoadingChart.value = true
+    console.log('📊 Loading chart data...', { range: chartTimeRange.value, metric: selectedMetric.value })
     const response = await thongKeService.getChart({
       range: chartTimeRange.value,
       metric: selectedMetric.value
     })
+    console.log('📊 Chart response:', response)
     chartData.value = response?.data ?? response
+    console.log('📊 Chart data loaded:', chartData.value)
   } catch (error) {
-    console.error('Error loading chart data:', error)
+    console.error('❌ Error loading chart data:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
     chartData.value = { labels: [], current: [], previous: [] }
   } finally {
     isLoadingChart.value = false
@@ -833,8 +846,12 @@ const loadChartData = async () => {
 const loadTopProducts = async () => {
   try {
     isLoadingTopProducts.value = true
+    console.log('🔄 Loading top products...')
     const response = await thongKeService.getTopProducts({ limit: 4, rangeDays: 30 })
+    console.log('📦 Top products response:', response)
     const data = response?.data ?? response
+    console.log('📦 Top products data:', data)
+    console.log('📦 Data type:', Array.isArray(data) ? 'array' : typeof data)
     topProducts.value = (data || []).map(product => ({
       id: product.id,
       name: product.name,
@@ -842,8 +859,10 @@ const loadTopProducts = async () => {
       sales: product.sales,
       revenue: formatCurrency(product.revenue)
     }))
+    console.log('✅ Top products loaded:', topProducts.value)
   } catch (error) {
-    console.error('Error loading top products:', error)
+    console.error('❌ Error loading top products:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
     topProducts.value = []
   } finally {
     isLoadingTopProducts.value = false
@@ -854,8 +873,11 @@ const loadTopProducts = async () => {
 const loadRecentOrders = async () => {
   try {
     isLoadingRecentOrders.value = true
+    console.log('📋 Loading recent orders...')
     const response = await thongKeService.getRecentOrders({ limit: 4 })
+    console.log('📋 Recent orders response:', response)
     const data = response?.data ?? response
+    console.log('📋 Recent orders data:', data)
     recentOrders.value = (data || []).map(order => ({
       id: order.orderCode || order.id,
       customer: order.customer,
@@ -864,8 +886,10 @@ const loadRecentOrders = async () => {
       status: mapOrderStatus(order.status),
       statusText: getStatusDisplayName(order.status)
     }))
+    console.log('✅ Recent orders loaded:', recentOrders.value)
   } catch (error) {
-    console.error('Error loading recent orders:', error)
+    console.error('❌ Error loading recent orders:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
     recentOrders.value = []
   } finally {
     isLoadingRecentOrders.value = false
@@ -876,8 +900,11 @@ const loadRecentOrders = async () => {
 const loadCategoryPerformance = async () => {
   try {
     isLoadingCategoryPerformance.value = true
+    console.log('📊 Loading category performance...')
     const response = await thongKeService.getCategoryPerformance({ limit: 4, rangeDays: 30 })
+    console.log('📊 Category performance response:', response)
     const data = response?.data ?? response
+    console.log('📊 Category performance data:', data)
     categoryPerformance.value = (data || []).map(category => ({
       id: category.id,
       name: category.name,
@@ -887,8 +914,10 @@ const loadCategoryPerformance = async () => {
       trend: category.trend,
       trendIcon: category.trendIcon
     }))
+    console.log('✅ Category performance loaded:', categoryPerformance.value)
   } catch (error) {
-    console.error('Error loading category performance:', error)
+    console.error('❌ Error loading category performance:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
     categoryPerformance.value = []
   } finally {
     isLoadingCategoryPerformance.value = false
@@ -899,10 +928,14 @@ const loadCategoryPerformance = async () => {
 const loadCustomerSummary = async () => {
   try {
     isLoadingCustomerSummary.value = true
+    console.log('👥 Loading customer summary...')
     const response = await thongKeService.getCustomerSummary()
+    console.log('👥 Customer summary response:', response)
     customerSummary.value = response?.data ?? response
+    console.log('✅ Customer summary loaded:', customerSummary.value)
   } catch (error) {
-    console.error('Error loading customer summary:', error)
+    console.error('❌ Error loading customer summary:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
     customerSummary.value = null
   } finally {
     isLoadingCustomerSummary.value = false
@@ -913,10 +946,14 @@ const loadCustomerSummary = async () => {
 const loadOrderStatusCounts = async () => {
   try {
     isLoadingOrderStatusCounts.value = true
+    console.log('📊 Loading order status counts...')
     const response = await thongKeService.getOrderStatusCounts()
+    console.log('📊 Order status counts response:', response)
     orderStatusCounts.value = response?.data ?? response
+    console.log('✅ Order status counts loaded:', orderStatusCounts.value)
   } catch (error) {
-    console.error('Error loading order status counts:', error)
+    console.error('❌ Error loading order status counts:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
     orderStatusCounts.value = null
   } finally {
     isLoadingOrderStatusCounts.value = false
@@ -981,6 +1018,9 @@ onMounted(async () => {
         const s = await thongKeService.getSummary({ lowStockThreshold: 10 })
         summary.value = s?.data ?? s
         console.log('✅ Summary loaded:', summary.value)
+        console.log('📊 Revenue Today:', summary.value?.revenueToday, typeof summary.value?.revenueToday)
+        console.log('📦 Low Stock Count:', summary.value?.lowStockCount, typeof summary.value?.lowStockCount)
+        console.log('👥 New Customers Today:', summary.value?.newCustomersToday, typeof summary.value?.newCustomersToday)
       } catch (error) {
         console.error('❌ Error loading summary:', error)
       } finally {
@@ -1643,6 +1683,11 @@ onMounted(async () => {
 .status-card.shipping .status-icon {
   background: #e9d5ff;
   color: #8b5cf6;
+}
+
+.status-card.delivered .status-icon {
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .status-card.completed .status-icon {

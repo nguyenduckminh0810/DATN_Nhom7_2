@@ -1189,6 +1189,7 @@ public class DonHangService {
             khachHang.setEmail(request.getEmail());
             khachHang.setSoDienThoai(request.getSoDienThoai());
             khachHang.setKieu("GUEST");
+            khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
             khachHang = khachHangRepository.save(khachHang);
 
             // Lấy giỏ hàng theo sessionId cho guest

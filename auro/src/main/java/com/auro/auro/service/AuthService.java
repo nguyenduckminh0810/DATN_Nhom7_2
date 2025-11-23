@@ -116,6 +116,7 @@ public class AuthService {
             khachHang.setEmail(savedTaiKhoan.getEmail());
             khachHang.setSoDienThoai(savedTaiKhoan.getSoDienThoai());
             khachHang.setKieu(maVaiTro);
+            khachHang.setTaoLuc(LocalDateTime.now()); // Set thời gian tạo
             khachHangRepository.save(khachHang);
 
         } else if ("STF".equals(maVaiTro) || "ADM".equals(maVaiTro)) {
