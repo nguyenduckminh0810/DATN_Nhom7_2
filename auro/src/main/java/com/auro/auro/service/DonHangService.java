@@ -305,7 +305,11 @@ public class DonHangService {
         boolean wasNotProcessed = wasPending || 
                                   (!wasDangGiao && !wasDaGiaoOrCompleted);
         
-        // Trạng thái mới cần trừ tồn kho
+        // ✅ TRẠNG THÁI "ĐÃ HỦY" - KHÔNG BAO GIỜ TRỪ TỒN KHO
+        boolean isDaHuy = "DA_HUY".equals(trangThaiMoiNormalized) ||
+                          "CANCELLED".equals(trangThaiMoiNormalized);
+        
+        // Trạng thái mới cần trừ tồn kho (chỉ khi KHÔNG phải "Đã hủy")
         boolean isDangGiao = "DANG_GIAO".equals(trangThaiMoiNormalized) ||
                             "SHIPPING".equals(trangThaiMoiNormalized);
         boolean isDaGiao = "DA_GIAO".equals(trangThaiMoiNormalized) ||
@@ -317,7 +321,8 @@ public class DonHangService {
                              "HOANTAT".equals(trangThaiMoiNormalized) ||
                              "HOANTHANH".equals(trangThaiMoiNormalized);
         
-        boolean needsStockReduction = wasNotProcessed && (isDangGiao || isDaGiao || isCompleted);
+        // ✅ CHỈ TRỪ TỒN KHO KHI: (1) Đơn chưa được xử lý, (2) Chuyển sang Đang giao/Đã giao/Hoàn tất, (3) KHÔNG PHẢI Đã hủy
+        boolean needsStockReduction = !isDaHuy && wasNotProcessed && (isDangGiao || isDaGiao || isCompleted);
 
         log.info("=== UPDATE ORDER STATUS ===");
         log.info("Order ID: {}", id);
@@ -435,7 +440,7 @@ public class DonHangService {
         donHangRepository.deleteById(id);
     }
 
-    // Xóa mềm đơn hàng (chuyển trạng thái sang Đã hủy)
+    // ✅ XÓA MỀM ĐƠN HÀNG (chuyển trạng thái sang Đã hủy) - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
     @Transactional
     public void softDeleteDonHang(Long id) {
         DonHang donHang = donHangRepository.findById(id)
@@ -450,10 +455,12 @@ public class DonHangService {
             throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
         }
 
-        // Đổi trạng thái sang Đã hủy
+        // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
         donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
+        
+        log.info("✅ Order #{} soft deleted - Status changed to DA_HUY (NO stock deduction)", donHang.getSoDonHang());
     }
 
     // Lấy toàn bộ đơn hàng DTO
@@ -961,19 +968,50 @@ public class DonHangService {
                 .build();
     } // Hủy đơn hàng
 
+    // ✅ HỦY ĐƠN HÀNG - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
     @Transactional
     public DonHangResponse huyDonHang(Long donHangId, Long khachHangId) {
+        log.info("=== HỦY ĐƠN HÀNG ===");
+        log.info("Order ID: {}, Customer ID: {}", donHangId, khachHangId);
+        
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+                .orElseThrow(() -> {
+                    log.error("Không tìm thấy đơn hàng ID: {} của khách hàng ID: {}", donHangId, khachHangId);
+                    return new RuntimeException("Không tìm thấy đơn hàng");
+                });
 
-        if (!OrderStatus.CHO_XAC_NHAN.equals(donHang.getTrangThai())) {
-            throw new RuntimeException("Không thể hủy đơn hàng này");
+        String currentStatus = donHang.getTrangThai();
+        log.info("Order #{} current status: {}", donHang.getSoDonHang(), currentStatus);
+        
+        // ✅ Normalize trạng thái để so sánh (hỗ trợ cả tiếng Việt và tiếng Anh)
+        String normalizedStatus = normalizeTrangThaiKey(currentStatus);
+        log.info("Order #{} normalized status: {}", donHang.getSoDonHang(), normalizedStatus);
+        
+        // ✅ Kiểm tra trạng thái - cho phép hủy nếu là "PENDING" (tiếng Anh) hoặc "Chờ xác nhận" (tiếng Việt)
+        // Sử dụng normalize để hỗ trợ cả hai format
+        boolean canCancel = "CHO_XAC_NHAN".equals(normalizedStatus) || 
+                           "PENDING".equals(normalizedStatus) ||
+                           "CHO_XAC_NHAN".equals(currentStatus) ||
+                           "PENDING".equals(currentStatus) ||
+                           "Chờ xác nhận".equals(currentStatus) ||
+                           (currentStatus != null && currentStatus.trim().equalsIgnoreCase("Chờ xác nhận")) ||
+                           (currentStatus != null && currentStatus.trim().equalsIgnoreCase("PENDING"));
+        
+        if (!canCancel) {
+            String errorMsg = String.format("Không thể hủy đơn hàng. Trạng thái hiện tại: %s. Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' (PENDING)", 
+                    currentStatus != null ? currentStatus : "null");
+            log.error("Cannot cancel order #{}: {} (normalized: {})", donHang.getSoDonHang(), errorMsg, normalizedStatus);
+            throw new RuntimeException(errorMsg);
         }
 
+        // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
         donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang savedDonHang = donHangRepository.save(donHang);
 
+        log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock deduction)", 
+                savedDonHang.getSoDonHang(), currentStatus);
+        
         return convertToDTO(savedDonHang);
     }
 

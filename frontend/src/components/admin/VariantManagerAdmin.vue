@@ -114,22 +114,146 @@
           <i class="bi bi-tags me-2"></i>
           Chất liệu
         </h5>
+        <button type="button" class="btn btn-sm btn-outline-primary" @click="showMaterialModal = true">
+          <i class="bi bi-plus me-1"></i>
+          Quản lý chất liệu
+        </button>
       </div>
-      <div class="material-grid">
+      <div v-if="isLoadingMaterials" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Đang tải chất liệu...</span>
+        </div>
+        <p class="mt-2 text-muted">Đang tải chất liệu...</p>
+      </div>
+      <div v-else-if="materialPresets.length === 0" class="text-center py-4">
+        <p class="text-muted mb-3">Chưa có chất liệu nào. Hãy thêm chất liệu mới.</p>
+        <button type="button" class="btn btn-sm btn-primary" @click="showMaterialModal = true">
+          <i class="bi bi-plus me-1"></i>
+          Thêm chất liệu đầu tiên
+        </button>
+      </div>
+      <div v-else class="material-grid">
         <label
-          v-for="material in materialOptions"
-          :key="material"
+          v-for="material in materialPresets"
+          :key="material.id || material.ten || material"
           class="material-option"
-          :class="{ selected: selectedMaterial === material }"
+          :class="{ selected: selectedMaterial === material.ten || selectedMaterial === material }"
         >
           <input
             type="radio"
-            :value="material"
+            :value="material.ten || material"
             v-model="selectedMaterial"
             class="material-radio"
           />
-          <span class="material-label">{{ material }}</span>
+          <span class="material-label">{{ material.ten || material }}</span>
         </label>
+      </div>
+    </div>
+
+    <!-- Material Management Modal -->
+    <div v-if="showMaterialModal" class="modal-overlay" @click="closeMaterialModal">
+      <div class="modal-content" @click.stop style="max-width: 600px;">
+        <div class="modal-header">
+          <h5>
+            <i class="bi bi-tags me-2"></i>
+            Quản lý chất liệu
+          </h5>
+          <button class="btn-close" @click="closeMaterialModal">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Add New Material -->
+          <div class="mb-4">
+            <h6 class="mb-3">Thêm chất liệu mới</h6>
+            <div class="input-group">
+              <input
+                type="text"
+                v-model="newMaterialName"
+                class="form-control"
+                placeholder="Nhập tên chất liệu (VD: Cotton 100%)"
+                @keyup.enter="addMaterial"
+              />
+              <button type="button" class="btn btn-primary" @click="addMaterial" :disabled="isSavingMaterial">
+                <i class="bi bi-plus me-1"></i>
+                Thêm
+              </button>
+            </div>
+          </div>
+
+          <!-- Material List -->
+          <div>
+            <h6 class="mb-3">Danh sách chất liệu</h6>
+            <div v-if="materialPresets.length === 0" class="text-center py-4 text-muted">
+              Chưa có chất liệu nào. Hãy thêm chất liệu mới.
+            </div>
+            <div v-else class="material-list">
+              <div
+                v-for="material in materialPresets"
+                :key="material.id"
+                class="material-list-item"
+              >
+                <div class="material-info">
+                  <span class="material-name">{{ material.ten || material }}</span>
+                </div>
+                <div class="material-actions">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-warning"
+                    @click="editMaterial(material)"
+                    title="Sửa"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    @click="deleteMaterial(material.id)"
+                    title="Xóa"
+                    :disabled="isDeletingMaterial === material.id"
+                  >
+                    <i v-if="isDeletingMaterial === material.id" class="spinner-border spinner-border-sm"></i>
+                    <i v-else class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeMaterialModal">Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Material Modal -->
+    <div v-if="showEditMaterialModal" class="modal-overlay" @click="closeEditMaterialModal">
+      <div class="modal-content" @click.stop style="max-width: 500px;">
+        <div class="modal-header">
+          <h5>Sửa chất liệu</h5>
+          <button class="btn-close" @click="closeEditMaterialModal">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Tên chất liệu:</label>
+            <input
+              type="text"
+              v-model="editingMaterialName"
+              class="form-control"
+              placeholder="Nhập tên chất liệu"
+              @keyup.enter="saveMaterialEdit"
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeEditMaterialModal">Hủy</button>
+          <button class="btn btn-primary" @click="saveMaterialEdit" :disabled="isSavingMaterial">
+            <span v-if="isSavingMaterial" class="spinner-border spinner-border-sm me-1"></span>
+            Lưu
+          </button>
+        </div>
       </div>
     </div>
 
@@ -366,6 +490,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import variantService from '@/services/variantService'
 import colorService from '@/services/colorService'
+import materialService from '@/services/materialService'
 import VariantImageUploader from './VariantImageUploader.vue'
 
 const props = defineProps({
@@ -416,6 +541,15 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const colorPresets = ref([]) // Load from DB
 const isLoadingColors = ref(false)
+const materialPresets = ref([]) // Load from DB
+const isLoadingMaterials = ref(false)
+const showMaterialModal = ref(false)
+const newMaterialName = ref('')
+const isSavingMaterial = ref(false)
+const showEditMaterialModal = ref(false)
+const editingMaterial = ref(null)
+const editingMaterialName = ref('')
+const isDeletingMaterial = ref(null)
 
 // Size configurations
 const sizeConfigs = {
@@ -431,20 +565,8 @@ const sizeConfigs = {
   }
 }
 
-// Material options for men's clothing
-const materialOptions = [
-  'Cotton 100%',
-  'Cotton Polyester (80/20)',
-  'Cotton Polyester (60/40)',
-  'Linen 100%',
-  'Cotton Linen blend',
-  'Kaki',
-  'Jean/Denim',
-  'Vải Wool',
-  'Vải Bamboo',
-  'Vải Modal',
-  'Custom'
-]
+// Material options sẽ được load từ API thay vì hardcode
+const materialOptions = computed(() => materialPresets.value.map(m => m.ten || m))
 
 // Computed
 const sizeType = computed(() => sizeConfigs[props.category]?.type || 'letter')
@@ -882,6 +1004,176 @@ const loadColors = async () => {
   }
 }
 
+// Load materials from API
+const loadMaterials = async () => {
+  isLoadingMaterials.value = true
+  try {
+    console.log('🔄 Đang load materials...')
+    const materials = await materialService.getAll()
+    console.log('✅ Materials loaded:', materials)
+    
+    // Xử lý nếu materials là array hoặc có cấu trúc khác
+    let materialsArray = materials
+    if (Array.isArray(materials)) {
+      materialsArray = materials
+    } else if (materials && Array.isArray(materials.data)) {
+      materialsArray = materials.data
+    } else if (materials && materials.content && Array.isArray(materials.content)) {
+      materialsArray = materials.content
+    }
+    
+    // Đảm bảo materialsArray là array và có dữ liệu
+    if (!Array.isArray(materialsArray)) {
+      console.warn('⚠️ Materials không phải là array:', materialsArray)
+      materialsArray = []
+    }
+    
+    materialPresets.value = materialsArray.map(material => {
+      // Đảm bảo material có đủ thuộc tính
+      return {
+        id: material.id || material.Id,
+        ten: material.ten || material.Ten || material.name || material.Name || String(material)
+      }
+    }).filter(m => m.ten) // Lọc bỏ các item không có tên
+    
+    console.log('✅ Material presets sau khi map:', materialPresets.value)
+    console.log('✅ Số lượng chất liệu:', materialPresets.value.length)
+  } catch (error) {
+    console.error('❌ Lỗi khi tải chất liệu:', error)
+    console.error('Error details:', error.response || error)
+    // Nếu lỗi, để danh sách rỗng thay vì dùng hardcode
+    materialPresets.value = []
+  } finally {
+    isLoadingMaterials.value = false
+  }
+}
+
+// Add new material
+const addMaterial = async () => {
+  if (!newMaterialName.value.trim()) {
+    alert('Vui lòng nhập tên chất liệu')
+    return
+  }
+
+  try {
+    isSavingMaterial.value = true
+    const newMaterial = {
+      ten: newMaterialName.value.trim()
+    }
+
+    await materialService.create(newMaterial)
+    
+    // Reload lại danh sách từ API để đảm bảo đồng bộ
+    await loadMaterials()
+
+    newMaterialName.value = ''
+    alert('Đã thêm chất liệu mới thành công!')
+  } catch (error) {
+    console.error('Lỗi khi thêm chất liệu:', error)
+    alert('Có lỗi khi thêm chất liệu: ' + (error.response?.data?.message || error.message))
+  } finally {
+    isSavingMaterial.value = false
+  }
+}
+
+// Edit material
+const editMaterial = (material) => {
+  editingMaterial.value = material
+  editingMaterialName.value = material.ten || material
+  showEditMaterialModal.value = true
+}
+
+// Save material edit
+const saveMaterialEdit = async () => {
+  if (!editingMaterialName.value.trim()) {
+    alert('Vui lòng nhập tên chất liệu')
+    return
+  }
+
+  if (!editingMaterial.value || !editingMaterial.value.id) {
+    alert('Không thể sửa chất liệu này')
+    return
+  }
+
+  try {
+    isSavingMaterial.value = true
+    const updatedMaterial = {
+      ten: editingMaterialName.value.trim()
+    }
+
+    const savedMaterial = await materialService.update(editingMaterial.value.id, updatedMaterial)
+    
+    // Reload lại danh sách từ API để đảm bảo đồng bộ
+    await loadMaterials()
+
+    // Nếu đang chọn chất liệu này, cập nhật selectedMaterial
+    if (selectedMaterial.value === editingMaterial.value.ten) {
+      selectedMaterial.value = savedMaterial.ten
+    }
+
+    closeEditMaterialModal()
+    alert('Đã cập nhật chất liệu thành công!')
+  } catch (error) {
+    console.error('Lỗi khi cập nhật chất liệu:', error)
+    alert('Có lỗi khi cập nhật chất liệu: ' + (error.response?.data?.message || error.message))
+  } finally {
+    isSavingMaterial.value = false
+  }
+}
+
+// Delete material
+const deleteMaterial = async (materialId) => {
+  if (!confirm('Bạn có chắc chắn muốn xóa chất liệu này?')) {
+    return
+  }
+
+  try {
+    isDeletingMaterial.value = materialId
+    
+    // Lưu tên chất liệu đang chọn trước khi xóa
+    const materialToDelete = materialPresets.value.find(m => m.id === materialId)
+    const wasSelected = materialToDelete && selectedMaterial.value === materialToDelete.ten
+    
+    await materialService.delete(materialId)
+    
+    // Reload lại danh sách từ API để đảm bảo đồng bộ
+    await loadMaterials()
+
+    // Nếu đang chọn chất liệu bị xóa, bỏ chọn
+    if (wasSelected) {
+      selectedMaterial.value = ''
+    }
+
+    alert('Đã xóa chất liệu thành công!')
+  } catch (error) {
+    console.error('Lỗi khi xóa chất liệu:', error)
+    alert('Có lỗi khi xóa chất liệu: ' + (error.response?.data?.message || error.message))
+  } finally {
+    isDeletingMaterial.value = null
+  }
+}
+
+// Close material modal
+const closeMaterialModal = () => {
+  showMaterialModal.value = false
+  newMaterialName.value = ''
+}
+
+// Watch for modal opening to reload materials
+watch(showMaterialModal, async (isOpen) => {
+  if (isOpen) {
+    // Reload materials when modal opens to ensure fresh data
+    await loadMaterials()
+  }
+})
+
+// Close edit material modal
+const closeEditMaterialModal = () => {
+  showEditMaterialModal.value = false
+  editingMaterial.value = null
+  editingMaterialName.value = ''
+}
+
 // Initialize from props
 const initializeVariants = () => {
   if (props.initialVariants && props.initialVariants.length > 0) {
@@ -894,8 +1186,11 @@ const initializeVariants = () => {
 
 // Lifecycle
 onMounted(async () => {
-  // Load colors from database first
-  await loadColors()
+  // Load colors and materials from database first
+  await Promise.all([
+    loadColors(),
+    loadMaterials()
+  ])
   
   // Load existing variants from API if productId exists
   if (props.productId) {
@@ -1174,6 +1469,46 @@ watch(() => props.category, () => {
 .material-label {
   cursor: pointer;
   flex: 1;
+}
+
+/* Material List in Modal */
+.material-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+}
+
+.material-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background 0.2s ease;
+}
+
+.material-list-item:last-child {
+  border-bottom: none;
+}
+
+.material-list-item:hover {
+  background: #f8fafb;
+}
+
+.material-info {
+  flex: 1;
+}
+
+.material-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.material-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 /* Variant Matrix */
