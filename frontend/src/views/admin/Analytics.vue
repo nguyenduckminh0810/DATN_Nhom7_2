@@ -22,103 +22,20 @@
                 <option value="custom">Tùy chỉnh</option>
               </select>
             </div>
-            <button class="btn btn-outline-primary btn-sm" @click="toggleAdvancedFilters">
-              <i class="bi bi-funnel me-1"></i>Bộ lọc nâng cao
-            </button>
-            <button class="btn btn-outline-success btn-sm" @click="exportReport">
-              <i class="bi bi-download me-1"></i>Xuất báo cáo
-            </button>
             <button class="btn btn-primary btn-sm" @click="refreshData">
               <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
             </button>
           </div>
         </div>
       </div>
-      
+
       <!-- Real-time Status -->
       <div class="realtime-status">
         <div class="realtime-indicator">
           <i class="bi bi-circle-fill"></i>
           <span>Đang cập nhật thời gian thực</span>
         </div>
-        <div class="last-updated">
-          Cập nhật lần cuối: {{ formatTime(lastUpdated) }}
-        </div>
-      </div>
-    </div>
-
-    <!-- Advanced Filters Panel -->
-    <div v-if="showAdvancedFilters" class="advanced-filters-panel">
-      <div class="filters-content">
-        <div class="filter-section">
-          <h6>Thời gian</h6>
-          <div class="filter-row">
-            <div class="filter-group">
-              <label>Từ ngày</label>
-              <input type="date" v-model="customStartDate" class="form-control">
-            </div>
-            <div class="filter-group">
-              <label>Đến ngày</label>
-              <input type="date" v-model="customEndDate" class="form-control">
-            </div>
-          </div>
-        </div>
-        
-        <div class="filter-section">
-          <h6>Phân khúc</h6>
-          <div class="filter-row">
-            <div class="filter-group">
-              <label>Danh mục sản phẩm</label>
-              <select v-model="selectedCategory" class="form-control">
-                <option value="">Tất cả danh mục</option>
-                <option value="ao-thun">Áo thun</option>
-                <option value="ao-so-mi">Áo sơ mi</option>
-                <option value="quan-jean">Quần jean</option>
-                <option value="quan-short">Quần short</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Khu vực</label>
-              <select v-model="selectedRegion" class="form-control">
-                <option value="">Tất cả khu vực</option>
-                <option value="hanoi">Hà Nội</option>
-                <option value="hcm">TP. Hồ Chí Minh</option>
-                <option value="danang">Đà Nẵng</option>
-                <option value="other">Khác</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        
-        <div class="filter-section">
-          <h6>Khách hàng</h6>
-          <div class="filter-row">
-            <div class="filter-group">
-              <label>Loại khách hàng</label>
-              <select v-model="selectedCustomerType" class="form-control">
-                <option value="">Tất cả</option>
-                <option value="new">Khách hàng mới</option>
-                <option value="returning">Khách hàng cũ</option>
-                <option value="vip">Khách hàng VIP</option>
-              </select>
-            </div>
-            <div class="filter-group">
-              <label>Độ tuổi</label>
-              <select v-model="selectedAgeGroup" class="form-control">
-                <option value="">Tất cả độ tuổi</option>
-                <option value="18-25">18-25 tuổi</option>
-                <option value="26-35">26-35 tuổi</option>
-                <option value="36-45">36-45 tuổi</option>
-                <option value="46+">46+ tuổi</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        
-        <div class="filter-actions">
-          <button class="btn btn-primary" @click="applyFilters">Áp dụng bộ lọc</button>
-          <button class="btn btn-outline-secondary" @click="resetFilters">Đặt lại</button>
-        </div>
+        <div class="last-updated">Cập nhật lần cuối: {{ formatTime(lastUpdated) }}</div>
       </div>
     </div>
 
@@ -131,9 +48,10 @@
               <i class="bi bi-currency-dollar"></i>
             </div>
             <div class="kpi-content">
-              <div class="kpi-value">{{ formatCurrency(totalRevenue) }}</div>
+              <div class="kpi-value" v-if="!isLoadingKpis">{{ formatCurrency(totalRevenue) }}</div>
+              <div class="kpi-value loading-placeholder" v-else>Đang tải...</div>
               <div class="kpi-label">Tổng doanh thu</div>
-              <div class="kpi-change" :class="revenueChange.type">
+              <div class="kpi-change" :class="revenueChange.type" v-if="!isLoadingKpis">
                 <i :class="revenueChange.icon"></i>
                 {{ revenueChange.value }}% so với kỳ trước
               </div>
@@ -143,16 +61,19 @@
             </div>
           </div>
         </div>
-        
+
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card orders">
             <div class="kpi-icon">
               <i class="bi bi-bag"></i>
             </div>
             <div class="kpi-content">
-              <div class="kpi-value">{{ totalOrders.toLocaleString('vi-VN') }}</div>
+              <div class="kpi-value" v-if="!isLoadingKpis">
+                {{ totalOrders.toLocaleString('vi-VN') }}
+              </div>
+              <div class="kpi-value loading-placeholder" v-else>Đang tải...</div>
               <div class="kpi-label">Tổng đơn hàng</div>
-              <div class="kpi-change" :class="ordersChange.type">
+              <div class="kpi-change" :class="ordersChange.type" v-if="!isLoadingKpis">
                 <i :class="ordersChange.icon"></i>
                 {{ ordersChange.value }}% so với kỳ trước
               </div>
@@ -162,16 +83,19 @@
             </div>
           </div>
         </div>
-        
+
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card customers">
             <div class="kpi-icon">
               <i class="bi bi-people"></i>
             </div>
             <div class="kpi-content">
-              <div class="kpi-value">{{ totalCustomers.toLocaleString('vi-VN') }}</div>
+              <div class="kpi-value" v-if="!isLoadingKpis">
+                {{ todayCustomers.toLocaleString('vi-VN') }}
+              </div>
+              <div class="kpi-value loading-placeholder" v-else>Đang tải...</div>
               <div class="kpi-label">Khách hàng mới</div>
-              <div class="kpi-change" :class="customersChange.type">
+              <div class="kpi-change" :class="customersChange.type" v-if="!isLoadingKpis">
                 <i :class="customersChange.icon"></i>
                 {{ customersChange.value }}% so với kỳ trước
               </div>
@@ -181,16 +105,19 @@
             </div>
           </div>
         </div>
-        
+
         <div class="col-lg-3 col-md-6">
           <div class="kpi-card products">
             <div class="kpi-icon">
               <i class="bi bi-box"></i>
             </div>
             <div class="kpi-content">
-              <div class="kpi-value">{{ totalProducts.toLocaleString('vi-VN') }}</div>
+              <div class="kpi-value" v-if="!isLoadingKpis">
+                {{ productsSold.toLocaleString('vi-VN') }}
+              </div>
+              <div class="kpi-value loading-placeholder" v-else>Đang tải...</div>
               <div class="kpi-label">Sản phẩm bán ra</div>
-              <div class="kpi-change" :class="productsChange.type">
+              <div class="kpi-change" :class="productsChange.type" v-if="!isLoadingKpis">
                 <i :class="productsChange.icon"></i>
                 {{ productsChange.value }}% so với kỳ trước
               </div>
@@ -203,282 +130,75 @@
       </div>
     </div>
 
-    <!-- Business Insights -->
-    <div class="insights-section">
+    <!-- Real-time Metrics Section -->
+    <div class="realtime-section">
       <div class="row g-4">
         <div class="col-lg-4">
-          <div class="insight-card">
-            <div class="insight-header">
-              <h6>Hiệu suất kinh doanh</h6>
-              <i class="bi bi-graph-up"></i>
-            </div>
-            <div class="insight-content">
-              <div class="insight-item">
-                <span class="insight-label">Giá trị đơn hàng trung bình</span>
-                <span class="insight-value">{{ formatCurrency(averageOrderValue) }}</span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-label">Tỷ lệ hoàn trả</span>
-                <span class="insight-value">{{ refundRate }}%</span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-label">Biên lợi nhuận</span>
-                <span class="insight-value">{{ profitMargin }}%</span>
+          <div class="metric-card-small">
+            <div class="metric-header">
+              <span class="metric-label">Hôm nay</span>
+              <div class="live-indicator">
+                <i class="bi bi-circle-fill"></i>
+                <span>LIVE</span>
               </div>
             </div>
+            <div class="metric-value">{{ formatCurrency(todayRevenue) }}</div>
+            <div class="metric-subtitle">Doanh thu</div>
           </div>
         </div>
-        
+
         <div class="col-lg-4">
-          <div class="insight-card">
-            <div class="insight-header">
-              <h6>Xu hướng khách hàng</h6>
-              <i class="bi bi-people-three"></i>
+          <div class="metric-card-small">
+            <div class="metric-header">
+              <span class="metric-label">Hôm nay</span>
             </div>
-            <div class="insight-content">
-              <div class="insight-item">
-                <span class="insight-label">Khách hàng quay lại</span>
-                <span class="insight-value">{{ returningCustomers }}%</span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-label">Giá trị khách hàng trọn đời</span>
-                <span class="insight-value">{{ formatCurrency(customerLifetimeValue) }}</span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-label">Thời gian giữ chân TB</span>
-                <span class="insight-value">{{ averageRetentionDays }} ngày</span>
-              </div>
-            </div>
+            <div class="metric-value">{{ todayOrders }}</div>
+            <div class="metric-subtitle">Đơn hàng</div>
           </div>
         </div>
-        
+
         <div class="col-lg-4">
-          <div class="insight-card">
-            <div class="insight-header">
-              <h6>Hiệu quả sản phẩm</h6>
-              <i class="bi bi-box"></i>
+          <div class="metric-card-small">
+            <div class="metric-header">
+              <span class="metric-label">Hôm nay</span>
             </div>
-            <div class="insight-content">
-              <div class="insight-item">
-                <span class="insight-label">Sản phẩm bán chạy nhất</span>
-                <span class="insight-value">{{ topSellingProduct }}</span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-label">Danh mục hàng đầu</span>
-                <span class="insight-value">{{ topCategory }}</span>
-              </div>
-              <div class="insight-item">
-                <span class="insight-label">Vòng quay tồn kho</span>
-                <span class="insight-value">{{ inventoryTurnover }}x</span>
-              </div>
-            </div>
+            <div class="metric-value">{{ todayCustomers }}</div>
+            <div class="metric-subtitle">Khách hàng mới</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Charts Section -->
-    <div class="charts-section">
+    <!-- Analytics Details Section -->
+    <div class="details-section">
       <div class="row g-4">
-        <!-- Main Revenue Chart -->
-        <div class="col-lg-8">
-          <div class="chart-card main-chart">
-            <div class="chart-header">
-              <div class="chart-title-section">
-                <h5 class="chart-title">Doanh thu & Hiệu suất</h5>
-                <div class="growth-badge">
-                  <i class="bi bi-graph-up"></i>
-                  +{{ growthRate }}% tăng trưởng
-                </div>
-                <!-- Comparison Mode Selector -->
-                <div class="comparison-selector" v-if="comparisonMode !== 'none' && comparisonPercentage !== null">
-                  <span class="comparison-badge" :class="comparisonPercentage >= 0 ? 'positive' : 'negative'">
-                    <i :class="comparisonPercentage >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down'"></i>
-                    {{ Math.abs(comparisonPercentage) }}%
-                  </span>
-                </div>
-              </div>
-              <div class="chart-controls">
-                <div class="metric-toggles">
-                  <button 
-                    v-for="metric in metrics" 
-                    :key="metric.value"
-                    :class="['metric-toggle', { active: selectedMetric === metric.value }]"
-                    @click="selectedMetric = metric.value"
-                  >
-                    <i :class="metric.icon"></i>
-                    {{ metric.label }}
-                  </button>
-                </div>
-                <!-- Beautiful Date Picker for Comparison -->
-                <div class="date-picker-container">
-                  <button 
-                    type="button" 
-                    class="date-picker-btn"
-                    @click="showComparisonDatePicker = !showComparisonDatePicker"
-                  >
-                    <div class="date-picker-icon">
-                      <i class="bi bi-calendar3"></i>
-                    </div>
-                    <div class="date-picker-content">
-                      <div class="date-picker-label">So sánh với</div>
-                      <div class="date-picker-value">{{ formatDate(comparisonDate) }}</div>
-                    </div>
-                    <div class="date-picker-arrow">
-                      <i class="bi bi-chevron-down" :class="{ 'rotated': showComparisonDatePicker }"></i>
-                    </div>
-                  </button>
-                  
-                  <div v-if="showComparisonDatePicker" class="date-picker-dropdown" @click.stop>
-                    <div class="date-picker-header">
-                      <h6>Chọn ngày so sánh</h6>
-                      <button type="button" class="close-btn" @click="showComparisonDatePicker = false">
-                        <i class="bi bi-x"></i>
-                      </button>
-                    </div>
-                    
-                    <div class="date-picker-body">
-                      <div class="quick-options">
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('yesterday')"
-                        >
-                          <i class="bi bi-calendar-check"></i>
-                          Hôm qua
-                        </button>
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('2days')"
-                        >
-                          <i class="bi bi-calendar2"></i>
-                          2 ngày trước
-                        </button>
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('week')"
-                        >
-                          <i class="bi bi-calendar-week"></i>
-                          1 tuần trước
-                        </button>
-                      </div>
-                      
-                      <div class="date-separator">
-                        <span>Hoặc chọn ngày cụ thể</span>
-                      </div>
-                      
-                      <div class="custom-date">
-                        <input 
-                          type="date" 
-                          v-model="comparisonDate" 
-                          class="date-input"
-                          :max="new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]"
-                          @change="showComparisonDatePicker = false"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <!-- Chart actions removed - default to line chart -->
-                <div class="chart-actions">
-                  <button class="btn btn-outline-primary btn-sm" @click="exportChart">
-                    <i class="bi bi-download"></i>
-                    Xuất biểu đồ
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div class="chart-content">
-              <Chart
-                :type="chartType"
-                :data="mainChartData"
-                :options="mainChartOptions"
-                :height="300"
-              />
-              <div class="chart-insights">
-                <div class="insight-item">
-                  <span class="insight-label">Xu hướng:</span>
-                  <span :class="['insight-value', trendDirection]">
-                    <i :class="trendIcon"></i>
-                    {{ trendText }}
-                  </span>
-                </div>
-                <div class="insight-item">
-                  <span class="insight-label">Điểm cao nhất:</span>
-                  <span class="insight-value">{{ formatCurrency(peakValue) }}</span>
-                </div>
-                <div class="insight-item">
-                  <span class="insight-label">Biến động:</span>
-                  <span class="insight-value">{{ volatility }}%</span>
-                </div>
-                <div class="insight-item">
-                  <span class="insight-label">Trung bình:</span>
-                  <span class="insight-value">{{ formatCurrency(Math.round(averageValue)) }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Real-time Metrics -->
-        <div class="col-lg-4">
-          <div class="realtime-metrics">
-            <div class="metric-card-small">
-              <div class="metric-header">
-                <span class="metric-label">Hôm nay</span>
-                <div class="live-indicator">
-                  <i class="bi bi-circle-fill"></i>
-                  <span>LIVE</span>
-                </div>
-              </div>
-              <div class="metric-value">{{ formatCurrency(todayRevenue) }}</div>
-              <div class="metric-subtitle">Doanh thu</div>
-            </div>
-            
-            <div class="metric-card-small">
-              <div class="metric-header">
-                <span class="metric-label">Hôm nay</span>
-              </div>
-              <div class="metric-value">{{ todayOrders }}</div>
-              <div class="metric-subtitle">Đơn hàng</div>
-            </div>
-            
-            <div class="metric-card-small">
-              <div class="metric-header">
-                <span class="metric-label">Hôm nay</span>
-              </div>
-              <div class="metric-value">{{ todayCustomers }}</div>
-              <div class="metric-subtitle">Khách hàng mới</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Secondary Charts -->
-    <div class="secondary-charts-section">
-      <div class="row g-4">
-        <!-- Top Products -->
-        <div class="col-lg-4">
-          <div class="chart-card">
-            <div class="chart-header">
-              <h6 class="chart-title">Sản phẩm bán chạy</h6>
+        <!-- Top Products Section -->
+        <div class="col-lg-6">
+          <div class="stat-card">
+            <div class="stat-header">
+              <h5 class="stat-title">Sản phẩm bán chạy</h5>
               <button class="btn btn-sm btn-outline-primary" @click="viewTopProducts">
                 Xem tất cả
               </button>
             </div>
-            <div class="chart-content">
-              <div class="top-products-list">
+            <div class="stat-content">
+              <div v-if="isLoadingTopProducts" class="loading-state">
+                <i class="bi bi-arrow-repeat rotate"></i>
+                <span>Đang tải...</span>
+              </div>
+              <div v-else-if="topProducts.length === 0" class="empty-state">
+                <i class="bi bi-box"></i>
+                <span>Chưa có dữ liệu sản phẩm</span>
+              </div>
+              <div v-else class="top-products-list">
                 <div v-for="(product, index) in topProducts" :key="product.id" class="product-item">
                   <div class="product-rank">{{ index + 1 }}</div>
                   <div class="product-image">
-                    <img :src="product.image" :alt="product.name">
+                    <img :src="product.image || '/placeholder.png'" :alt="product.name" />
                   </div>
                   <div class="product-info">
                     <div class="product-name">{{ product.name }}</div>
-                    <div class="product-category">{{ product.category }}</div>
+                    <div class="product-category">{{ product.category || 'Chưa phân loại' }}</div>
                   </div>
                   <div class="product-stats">
                     <div class="product-sales">{{ product.sales }} bán</div>
@@ -489,104 +209,102 @@
             </div>
           </div>
         </div>
-        
-        <!-- Order Distribution -->
-        <div class="col-lg-4">
-          <div class="chart-card">
-            <div class="chart-header">
-              <h6 class="chart-title">Phân bố đơn hàng</h6>
-              <select v-model="orderDistributionType" class="form-control form-control-sm">
-                <option value="status">Theo trạng thái</option>
-                <option value="payment">Theo thanh toán</option>
-                <option value="shipping">Theo vận chuyển</option>
-              </select>
+
+        <!-- Order Status Distribution -->
+        <div class="col-lg-6">
+          <div class="stat-card">
+            <div class="stat-header">
+              <h5 class="stat-title">Phân bố trạng thái đơn hàng</h5>
             </div>
-            <div class="chart-content">
-              <Chart
-                type="doughnut"
-                :data="orderDistributionData"
-                :options="orderDistributionOptions"
-                :height="200"
-              />
-            </div>
-          </div>
-        </div>
-        
-        <!-- Customer Analytics -->
-        <div class="col-lg-4">
-          <div class="chart-card">
-            <div class="chart-header">
-              <h6 class="chart-title">Phân tích khách hàng</h6>
-              <select v-model="customerAnalyticsType" @change="loadCustomerAnalytics" class="form-control form-control-sm">
-                <option value="segments">Phân khúc</option>
-                <option value="behavior">Hành vi</option>
-                <option value="geography">Địa lý</option>
-              </select>
-            </div>
-            <div class="chart-content">
-              <Chart
-                type="bar"
-                :data="customerAnalyticsChartData"
-                :options="customerAnalyticsOptions"
-                :height="200"
-              />
+            <div class="stat-content">
+              <div v-if="orderStatusCounts" class="status-grid">
+                <div class="status-item pending">
+                  <div class="status-count">{{ orderStatusCounts.pending || 0 }}</div>
+                  <div class="status-label">Chờ xử lý</div>
+                </div>
+                <div class="status-item shipping">
+                  <div class="status-count">{{ orderStatusCounts.shipping || 0 }}</div>
+                  <div class="status-label">Đang giao</div>
+                </div>
+                <div class="status-item completed">
+                  <div class="status-count">{{ orderStatusCounts.completed || 0 }}</div>
+                  <div class="status-label">Hoàn thành</div>
+                </div>
+                <div class="status-item cancelled">
+                  <div class="status-count">{{ orderStatusCounts.cancelled || 0 }}</div>
+                  <div class="status-label">Đã hủy</div>
+                </div>
+              </div>
+              <div v-else class="empty-state">
+                <i class="bi bi-pie-chart"></i>
+                <span>Đang tải trạng thái đơn hàng...</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Performance Metrics -->
-    <div class="performance-section">
+    <!-- Additional Analytics Section -->
+    <div class="additional-analytics">
       <div class="row g-4">
-        <div class="col-12">
-          <div class="chart-card">
-            <div class="chart-header">
-              <h6 class="chart-title">Chỉ số hiệu suất</h6>
+        <!-- Revenue Trends -->
+        <div class="col-lg-3">
+          <div class="metric-card-small trend-revenue">
+            <div class="metric-header">
+              <span class="metric-label">Xu hướng doanh thu</span>
+              <i class="bi bi-graph-up-arrow trend-icon"></i>
             </div>
-            <div class="chart-content">
-              <div class="performance-metrics">
-                <div class="performance-item">
-                  <div class="performance-header">
-                    <span class="performance-label">Tỷ lệ chuyển đổi</span>
-                    <span class="performance-value">{{ conversionRate }}%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-bar" :style="{ width: conversionRate + '%' }"></div>
-                  </div>
-                </div>
-                
-                <div class="performance-item">
-                  <div class="performance-header">
-                    <span class="performance-label">Tỷ lệ bỏ giỏ hàng</span>
-                    <span class="performance-value">{{ cartAbandonmentRate }}%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-bar" :style="{ width: cartAbandonmentRate + '%' }"></div>
-                  </div>
-                </div>
-                
-                <div class="performance-item">
-                  <div class="performance-header">
-                    <span class="performance-label">Mức độ hài lòng khách hàng</span>
-                    <span class="performance-value">{{ customerSatisfaction }}%</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-bar" :style="{ width: customerSatisfaction + '%' }"></div>
-                  </div>
-                </div>
-                
-                <div class="performance-item">
-                  <div class="performance-header">
-                    <span class="performance-label">Vòng quay tồn kho</span>
-                    <span class="performance-value">{{ inventoryTurnover }}x</span>
-                  </div>
-                  <div class="progress">
-                    <div class="progress-bar" :style="{ width: (inventoryTurnover / 10 * 100) + '%' }"></div>
-                  </div>
-                </div>
-              </div>
+            <div class="metric-value">
+              {{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth.toFixed(1) }}%
             </div>
+            <div class="metric-subtitle">So với kỳ trước</div>
+          </div>
+        </div>
+
+        <!-- Order Performance -->
+        <div class="col-lg-3">
+          <div class="metric-card-small trend-orders">
+            <div class="metric-header">
+              <span class="metric-label">Hiệu suất đơn hàng</span>
+              <i class="bi bi-cart-check trend-icon"></i>
+            </div>
+            <div class="metric-value">
+              {{
+                Math.round(
+                  (totalOrders / (totalOrders + (orderStatusCounts?.cancelled || 0))) * 100 || 0,
+                )
+              }}%
+            </div>
+            <div class="metric-subtitle">Tỷ lệ thành công</div>
+          </div>
+        </div>
+
+        <!-- Average Order Value -->
+        <div class="col-lg-3">
+          <div class="metric-card-small trend-average">
+            <div class="metric-header">
+              <span class="metric-label">Giá trị đơn hàng TB</span>
+              <i class="bi bi-calculator trend-icon"></i>
+            </div>
+            <div class="metric-value">
+              {{ formatCurrency(totalOrders > 0 ? totalRevenue / totalOrders : 0) }}
+            </div>
+            <div class="metric-subtitle">Trung bình mỗi đơn</div>
+          </div>
+        </div>
+
+        <!-- Customer Growth -->
+        <div class="col-lg-3">
+          <div class="metric-card-small trend-customers">
+            <div class="metric-header">
+              <span class="metric-label">Tăng trưởng KH</span>
+              <i class="bi bi-people-fill trend-icon"></i>
+            </div>
+            <div class="metric-value">
+              {{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth.toFixed(1) }}%
+            </div>
+            <div class="metric-subtitle">Khách hàng mới</div>
           </div>
         </div>
       </div>
@@ -596,96 +314,93 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import Chart from '@/components/admin/Chart.vue'
 import thongKeService from '@/services/thongKeService'
 
 // Reactive data
-const showAdvancedFilters = ref(false)
 const selectedDateRange = ref('30days')
 const customStartDate = ref('')
 const customEndDate = ref('')
-const selectedCategory = ref('')
-const selectedRegion = ref('')
-const selectedCustomerType = ref('')
-const selectedAgeGroup = ref('')
 
 // Computed date range for API calls
 const getDateRange = () => {
   const now = new Date()
+  // Set endDate to tomorrow to include full today
+  const tomorrow = new Date(now)
+  tomorrow.setDate(tomorrow.getDate() + 1)
   let startDate = ''
-  let endDate = now.toISOString().split('T')[0] // Today in YYYY-MM-DD format
+  let endDate = tomorrow.toISOString().split('T')[0] // Tomorrow in YYYY-MM-DD format to include full today
 
   if (selectedDateRange.value === 'custom' && customStartDate.value && customEndDate.value) {
     startDate = customStartDate.value
-    endDate = customEndDate.value
+    // For custom dates, also extend endDate to include full day
+    const customEnd = new Date(customEndDate.value)
+    customEnd.setDate(customEnd.getDate() + 1)
+    endDate = customEnd.toISOString().split('T')[0]
   } else {
     switch (selectedDateRange.value) {
       case 'today':
         startDate = now.toISOString().split('T')[0]
         break
-      case 'yesterday':
+      case 'yesterday': {
         const yesterday = new Date(now)
         yesterday.setDate(yesterday.getDate() - 1)
         startDate = yesterday.toISOString().split('T')[0]
-        endDate = yesterday.toISOString().split('T')[0]
+        endDate = now.toISOString().split('T')[0] // Only yesterday
         break
-      case '7days':
+      }
+      case '7days': {
         const sevenDaysAgo = new Date(now)
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
         startDate = sevenDaysAgo.toISOString().split('T')[0]
         break
-      case '30days':
+      }
+      case '30days': {
         const thirtyDaysAgo = new Date(now)
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
         startDate = thirtyDaysAgo.toISOString().split('T')[0]
         break
-      case '90days':
+      }
+      case '90days': {
         const ninetyDaysAgo = new Date(now)
         ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
         startDate = ninetyDaysAgo.toISOString().split('T')[0]
         break
+      }
       case 'thisMonth':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
         break
-      case 'lastMonth':
+      case 'lastMonth': {
         const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
         startDate = lastMonth.toISOString().split('T')[0]
-        endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+        const lastDayOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0)
+        lastDayOfLastMonth.setDate(lastDayOfLastMonth.getDate() + 1)
+        endDate = lastDayOfLastMonth.toISOString().split('T')[0]
         break
+      }
       case 'thisYear':
         startDate = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0]
         break
-      default:
+      default: {
         // Default to 30 days
         const defaultStart = new Date(now)
         defaultStart.setDate(defaultStart.getDate() - 30)
         startDate = defaultStart.toISOString().split('T')[0]
+      }
     }
   }
 
+  console.log('Date range calculated:', {
+    startDate,
+    endDate,
+    selectedRange: selectedDateRange.value,
+  })
   return { startDate, endDate }
 }
-
-const selectedMetric = ref('revenue')
-const chartType = ref('line')
-const orderDistributionType = ref('status')
-const customerAnalyticsType = ref('segments')
-
-// Comparison mode with date picker
-const comparisonMode = ref('yesterday')
-const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000))
-const showComparisonDatePicker = ref(false)
-
-// Chart refs
-const mainChart = ref(null)
-const orderDistributionChart = ref(null)
-const customerAnalyticsChart = ref(null)
 
 // Loading states
 const isLoadingKpis = ref(false)
 const isLoadingHourlySales = ref(false)
 const isLoadingBusinessInsights = ref(false)
-const isLoadingPerformance = ref(false)
 const isLoadingTopProducts = ref(false)
 
 // KPI Data - from API
@@ -698,67 +413,42 @@ const ordersGrowth = ref(0)
 const customersGrowth = ref(0)
 const productsGrowth = ref(0)
 
-// Business Insights - from API
-const averageOrderValue = ref(0)
-const refundRate = ref(0)
-const profitMargin = ref(0)
-const returningCustomers = ref(0)
-const customerLifetimeValue = ref(0)
-const averageRetentionDays = ref(0)
-const topSellingProduct = ref('')
-const topCategory = ref('')
-const inventoryTurnover = ref(0)
-
-// Performance Metrics - from API
-const cartConversionRate = ref(0)
-const cartAbandonmentRate = ref(0)
-const customerSatisfaction = ref(0)
-
-// Computed growth rate (use revenue growth as main indicator)
-const growthRate = computed(() => Math.abs(revenueGrowth.value).toFixed(1))
-
 // Real-time metrics - from API
 const todayRevenue = ref(0)
-const todayVisitors = ref(0)
-const todayClicks = ref(0)
 const todayOrders = ref(0)
-const todayProducts = ref(0)
-const todayBuyers = ref(0)
 const todayCustomers = ref(0)
-const conversionRate = ref(0)
+const productsSold = ref(0)
 const lastUpdate = ref('')
-const isRealtimeActive = ref(true)
 const lastUpdated = ref(new Date())
 
 // Chart data - from API
 const hourlySales = ref([])
 const topProducts = ref([])
 const orderStatusCounts = ref(null)
-const customerAnalyticsData = ref(null)
 
 // Computed properties for change indicators
 const revenueChange = computed(() => ({
   type: revenueGrowth.value >= 0 ? 'positive' : 'negative',
   icon: revenueGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
-  value: Math.abs(revenueGrowth.value).toFixed(1)
+  value: Math.abs(revenueGrowth.value).toFixed(1),
 }))
 
 const ordersChange = computed(() => ({
   type: ordersGrowth.value >= 0 ? 'positive' : 'negative',
   icon: ordersGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
-  value: Math.abs(ordersGrowth.value).toFixed(1)
+  value: Math.abs(ordersGrowth.value).toFixed(1),
 }))
 
 const customersChange = computed(() => ({
   type: customersGrowth.value >= 0 ? 'positive' : 'negative',
   icon: customersGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
-  value: Math.abs(customersGrowth.value).toFixed(1)
+  value: Math.abs(customersGrowth.value).toFixed(1),
 }))
 
 const productsChange = computed(() => ({
   type: productsGrowth.value >= 0 ? 'positive' : 'negative',
   icon: productsGrowth.value >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down',
-  value: Math.abs(productsGrowth.value).toFixed(1)
+  value: Math.abs(productsGrowth.value).toFixed(1),
 }))
 
 // Set up real-time updates every 30 seconds
@@ -772,18 +462,29 @@ const loadKpis = async () => {
     const { startDate, endDate } = getDateRange()
     const response = await thongKeService.getAnalyticsKpis({ startDate, endDate })
     const data = response?.data ?? response
-    
+
     totalRevenue.value = Number(data.totalRevenue || 0)
     totalOrders.value = Number(data.totalOrders || 0)
     totalCustomers.value = Number(data.totalCustomers || 0)
     totalProducts.value = Number(data.totalProducts || 0)
-    
+
     revenueGrowth.value = Number(data.revenueGrowth || 0)
     ordersGrowth.value = Number(data.ordersGrowth || 0)
     customersGrowth.value = Number(data.customersGrowth || 0)
     productsGrowth.value = Number(data.productsGrowth || 0)
+
+    console.log('KPIs loaded:', data)
   } catch (error) {
     console.error('Error loading KPIs:', error)
+    // Set default values if API fails
+    totalRevenue.value = 0
+    totalOrders.value = 0
+    totalCustomers.value = 0
+    totalProducts.value = 0
+    revenueGrowth.value = 0
+    ordersGrowth.value = 0
+    customersGrowth.value = 0
+    productsGrowth.value = 0
   } finally {
     isLoadingKpis.value = false
   }
@@ -795,10 +496,10 @@ const loadHourlySales = async () => {
     const response = await thongKeService.getHourlySales()
     const data = response?.data ?? response
     hourlySales.value = data || []
-    
+
     // Note: Today's metrics are now loaded from getBusinessInsights()
     // Only use hourly sales for chart data
-    
+
     lastUpdate.value = new Date().toLocaleString('vi-VN')
     lastUpdated.value = new Date()
   } catch (error) {
@@ -812,44 +513,34 @@ const loadBusinessInsights = async () => {
   try {
     isLoadingBusinessInsights.value = true
     const { startDate, endDate } = getDateRange()
-    const response = await thongKeService.getBusinessInsights({ startDate, endDate })
+    console.log('Loading business insights with date range:', { startDate, endDate })
+
+    const response = await thongKeService.getBusinessInsights({
+      startDate,
+      endDate,
+    })
     const data = response?.data ?? response
-    
-    averageOrderValue.value = Number(data.averageOrderValue || 0)
-    refundRate.value = Number(data.refundRate || 0)
-    profitMargin.value = Number(data.profitMargin || 0)
-    returningCustomers.value = Number(data.returningCustomersRate || 0)
-    customerLifetimeValue.value = Number(data.customerLifetimeValue || 0)
-    averageRetentionDays.value = Number(data.averageRetentionDays || 0)
-    topSellingProduct.value = data.topSellingProduct || 'N/A'
-    topCategory.value = data.topCategory || 'N/A'
-    inventoryTurnover.value = Number(data.inventoryTurnover || 0)
-    
+
+    console.log('Business insights API response:', data)
+    console.log('Products sold from API:', data.productsSold)
+
     // Load today's metrics from business insights
     todayRevenue.value = Number(data.todayRevenue || 0)
     todayOrders.value = Number(data.todayOrders || 0)
     todayCustomers.value = Number(data.todayCustomers || 0)
+    productsSold.value = Number(data.productsSold || 0)
+
+    console.log('After assignment - productsSold.value:', productsSold.value)
+    console.log('Business insights loaded:', data)
   } catch (error) {
     console.error('Error loading business insights:', error)
+    // Set default values if API fails
+    todayRevenue.value = 0
+    todayOrders.value = 0
+    todayCustomers.value = 0
+    productsSold.value = 0
   } finally {
     isLoadingBusinessInsights.value = false
-  }
-}
-
-const loadPerformanceMetrics = async () => {
-  try {
-    isLoadingPerformance.value = true
-    const { startDate, endDate } = getDateRange()
-    const response = await thongKeService.getPerformanceMetrics({ startDate, endDate })
-    const data = response?.data ?? response
-    
-    conversionRate.value = Number(data.conversionRate || 0)
-    cartAbandonmentRate.value = Number(data.cartAbandonmentRate || 0)
-    customerSatisfaction.value = Number(data.customerSatisfaction || 0)
-  } catch (error) {
-    console.error('Error loading performance metrics:', error)
-  } finally {
-    isLoadingPerformance.value = false
   }
 }
 
@@ -863,16 +554,24 @@ const loadTopProducts = async () => {
     const rangeDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 30
     const response = await thongKeService.getTopProducts({ limit: 5, rangeDays })
     const data = response?.data ?? response
-    topProducts.value = (data || []).map(product => ({
-      id: product.id,
-      name: product.name,
-      category: product.category || 'N/A',
-      sales: product.sales,
-      revenue: product.revenue,
-      image: product.image || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=SP'
-    }))
+
+    // Sort by sales (quantity sold) in descending order
+    topProducts.value = (data || [])
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        category: product.category || 'N/A',
+        sales: product.sales || 0,
+        revenue: product.revenue || 0,
+        image: product.image || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=SP',
+      }))
+      .sort((a, b) => (b.sales || 0) - (a.sales || 0)) // Sort by sales descending
+
+    console.log('Top products loaded:', topProducts.value)
   } catch (error) {
     console.error('Error loading top products:', error)
+    // Set default empty array if API fails
+    topProducts.value = []
   } finally {
     isLoadingTopProducts.value = false
   }
@@ -882,19 +581,11 @@ const loadOrderStatusCounts = async () => {
   try {
     const response = await thongKeService.getOrderStatusCounts()
     orderStatusCounts.value = response?.data ?? response
+    console.log('Order status counts loaded:', orderStatusCounts.value)
   } catch (error) {
     console.error('Error loading order status counts:', error)
-  }
-}
-
-const loadCustomerAnalytics = async () => {
-  try {
-    const response = await thongKeService.getCustomerAnalytics({ type: customerAnalyticsType.value })
-    customerAnalyticsData.value = response?.data ?? response
-    console.log('Customer Analytics Data:', customerAnalyticsData.value)
-  } catch (error) {
-    console.error('Error loading customer analytics:', error)
-    customerAnalyticsData.value = null
+    // Set default values if API fails
+    orderStatusCounts.value = null
   }
 }
 
@@ -904,12 +595,10 @@ onMounted(async () => {
     loadKpis(),
     loadHourlySales(),
     loadBusinessInsights(),
-    loadPerformanceMetrics(),
     loadTopProducts(),
     loadOrderStatusCounts(),
-    loadCustomerAnalytics()
   ])
-  
+
   // Start real-time updates (refresh every 5 minutes)
   realTimeInterval = setInterval(async () => {
     await loadHourlySales()
@@ -922,629 +611,12 @@ onUnmounted(() => {
   }
 })
 
-// Generate comparison data based on mode
-const getComparisonData = computed(() => {
-  if (comparisonMode.value === 'none' || !hourlySales.value || hourlySales.value.length === 0) {
-    return null
-  }
-  
-  // Generate comparison data for selected date
-  return hourlySales.value.map((hourData, index) => {
-    // Calculate days difference from selected date
-    const selectedDate = new Date(comparisonDate.value)
-    const today = new Date()
-    const daysDiff = Math.floor((today - selectedDate) / (1000 * 60 * 60 * 24))
-    
-    // Generate data for the selected date with realistic patterns
-    let baseRevenue = 150000
-    
-    // Peak hours pattern (similar to current day but with variation)
-    if (index >= 9 && index <= 11) baseRevenue = 1200000
-    else if (index >= 14 && index <= 16) baseRevenue = 1400000
-    else if (index >= 19 && index <= 21) baseRevenue = 1600000
-    else if (index >= 22 || index <= 6) baseRevenue = 80000
-    
-    // Add some variation based on days difference (older data tends to be lower)
-    const ageFactor = Math.max(0.5, 1 - (daysDiff * 0.05))
-    baseRevenue = Math.floor(baseRevenue * ageFactor)
-    
-    // Add random variation
-    const revenue = baseRevenue + Math.floor(Math.random() * baseRevenue * 0.3)
-    const orders = Math.floor(revenue / 120000) + Math.floor(Math.random() * 4)
-    const customers = Math.floor(orders * 0.6) + Math.floor(Math.random() * 2)
-    
-    return {
-      hour: index,
-      time: hourData.time,
-      revenue: revenue,
-      orders: orders,
-      customers: customers
-    }
-  })
-})
-
-// Calculate comparison percentage
-const comparisonPercentage = computed(() => {
-  if (comparisonMode.value === 'none' || !hourlySales.value || !getComparisonData.value) {
-    return null
-  }
-  
-  const currentTotal = hourlySales.value.reduce((sum, hour) => {
-    switch (selectedMetric.value) {
-      case 'revenue': return sum + (hour.revenue || 0)
-      case 'orders': return sum + (hour.orders || 0)
-      case 'customers': return sum + (hour.customers || 0)
-      case 'profit': return sum + Math.round((hour.revenue || 0) * 0.28)
-      default: return sum + (hour.revenue || 0)
-    }
-  }, 0)
-  
-  const comparisonTotal = getComparisonData.value.reduce((sum, hour) => {
-    if (!hour) return sum
-    switch (selectedMetric.value) {
-      case 'revenue': return sum + (hour.revenue || 0)
-      case 'orders': return sum + (hour.orders || 0)
-      case 'customers': return sum + (hour.customers || 0)
-      case 'profit': return sum + Math.round((hour.revenue || 0) * 0.28)
-      default: return sum + (hour.revenue || 0)
-    }
-  }, 0)
-  
-  if (comparisonTotal === 0) return 0
-  
-  return (((currentTotal - comparisonTotal) / comparisonTotal) * 100).toFixed(1)
-})
-
-// Computed properties
-const metrics = computed(() => [
-  { value: 'revenue', label: 'Doanh thu', icon: 'bi bi-currency-dollar' },
-  { value: 'orders', label: 'Đơn hàng', icon: 'bi bi-bag' },
-  { value: 'customers', label: 'Khách hàng', icon: 'bi bi-people' },
-  { value: 'profit', label: 'Lợi nhuận', icon: 'bi bi-graph-up' }
-])
-
-const trendDirection = computed(() => 'positive')
-const trendIcon = computed(() => 'bi bi-graph-up')
-const trendText = computed(() => 'Tăng trưởng ổn định')
-const peakValue = computed(() => 5200000)
-const volatility = computed(() => 12.8)
-const averageValue = computed(() => {
-  if (!hourlySales.value || hourlySales.value.length === 0) return 0
-  const total = hourlySales.value.reduce((sum, hour) => sum + (hour.revenue || 0), 0)
-  return total / hourlySales.value.length
-})
-
-// Chart data
-const mainChartData = computed(() => {
-  if (!hourlySales.value || hourlySales.value.length === 0) {
-    return {
-      labels: [],
-      datasets: []
-    }
-  }
-  
-  // Use hourly data for 24-hour chart
-  const labels = hourlySales.value.map(hour => hour.time)
-  const data = hourlySales.value.map(hour => {
-    switch (selectedMetric.value) {
-      case 'orders': return hour.orders || 0
-      case 'customers': return hour.customers || 0
-      case 'profit': return Math.round((hour.revenue || 0) * 0.28)
-      default: return hour.revenue || 0
-    }
-  })
-  
-  const datasets = [{
-    label: getMetricLabel(selectedMetric.value),
-    data,
-    borderColor: '#ef4444', // Red for today
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    fill: false,
-    tension: 0.3,
-    pointBackgroundColor: '#ffffff',
-    pointBorderColor: '#ef4444',
-    pointBorderWidth: 2,
-    pointRadius: 0,
-    pointHoverRadius: 6,
-    pointHoverBorderWidth: 2,
-    pointStyle: 'circle'
-  }]
-  
-  // Add comparison dataset if enabled
-  if (comparisonMode.value !== 'none' && getComparisonData.value) {
-    const comparisonData = getComparisonData.value.map(hour => {
-      if (!hour) return 0
-      switch (selectedMetric.value) {
-        case 'orders': return hour.orders || 0
-        case 'customers': return hour.customers || 0
-        case 'profit': return Math.round((hour.revenue || 0) * 0.28)
-        default: return hour.revenue || 0
-      }
-    })
-    
-    datasets.push({
-      label: getComparisonLabel(),
-      data: comparisonData,
-      borderColor: '#0ea5e9', // Blue for comparison (yesterday)
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      borderDash: [0, 0], // Solid line like in the image
-      fill: false,
-      tension: 0.3,
-      pointBackgroundColor: '#ffffff',
-      pointBorderColor: '#0ea5e9',
-      pointBorderWidth: 2,
-      pointRadius: 0,
-      pointHoverRadius: 6,
-      pointHoverBorderWidth: 2,
-      pointStyle: 'circle'
-    })
-  }
-  
-  return { labels, datasets }
-})
-
-const mainChartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: {
-    mode: 'index',
-    intersect: false
-  },
-  plugins: {
-    legend: {
-      display: comparisonMode.value !== 'none',
-      position: 'top',
-      align: 'end',
-      labels: {
-        usePointStyle: true,
-        pointStyle: 'circle',
-        padding: 15,
-        font: {
-          size: 10,
-          family: "'Inter', sans-serif",
-          weight: '400'
-        },
-        color: '#6b7280',
-        boxWidth: 6,
-        boxHeight: 6
-      }
-    },
-    tooltip: {
-      enabled: true,
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      titleColor: '#374151',
-      bodyColor: '#6b7280',
-      borderColor: '#e5e7eb',
-      borderWidth: 1,
-      cornerRadius: 8,
-      padding: 12,
-      displayColors: true,
-      boxWidth: 8,
-      boxHeight: 8,
-      boxPadding: 4,
-      titleFont: {
-        size: 12,
-        weight: '600',
-        family: "'Inter', sans-serif"
-      },
-      bodyFont: {
-        size: 11,
-        family: "'Inter', sans-serif"
-      },
-      bodySpacing: 4,
-      titleMarginBottom: 8,
-      callbacks: {
-        title: function(context) {
-          return context[0].label
-        },
-        label: function(context) {
-          const label = context.dataset.label || ''
-          const value = formatMetricValue(context.parsed.y, selectedMetric.value)
-          return label + ': ' + value
-        }
-      }
-    }
-  },
-  scales: {
-    x: {
-      grid: {
-        display: true,
-        color: 'rgba(156, 163, 175, 0.15)',
-        drawBorder: false,
-        lineWidth: 1
-      },
-      border: {
-        display: false
-      },
-      ticks: {
-        font: {
-          size: 10,
-          family: "'Inter', -apple-system, sans-serif",
-          weight: '400'
-        },
-        color: '#9ca3af',
-        padding: 6,
-        maxRotation: 0,
-        autoSkip: false,
-        maxTicksLimit: 24,
-        stepSize: 1
-      }
-    },
-    y: {
-      beginAtZero: true,
-      grid: {
-        display: true,
-        color: 'rgba(156, 163, 175, 0.15)',
-        drawBorder: false,
-        lineWidth: 1
-      },
-      border: {
-        display: false
-      },
-      ticks: {
-        callback: function(value) {
-          return formatMetricValue(value, selectedMetric.value)
-        },
-        font: {
-          size: 10,
-          family: "'Inter', -apple-system, sans-serif",
-          weight: '400'
-        },
-        color: '#9ca3af',
-        padding: 6,
-        maxTicksLimit: 8,
-        count: 8
-      }
-    }
-  },
-  layout: {
-    padding: {
-      top: 10,
-      right: 10,
-      bottom: 10,
-      left: 10
-    }
-  },
-  animation: {
-    duration: 300,
-    easing: 'easeInOut'
-  },
-  elements: {
-    line: {
-      tension: 0.3
-    },
-    point: {
-      radius: 0,
-      hitRadius: 20,
-      hoverRadius: 6,
-      hoverBorderWidth: 2
-    }
-  }
-}))
-
-const orderDistributionData = computed(() => {
-  if (!orderStatusCounts.value) {
-    return {
-      labels: [],
-      datasets: []
-    }
-  }
-  
-  if (orderDistributionType.value === 'status') {
-    return {
-      labels: ['Chờ xử lý', 'Đang giao', 'Hoàn thành'],
-      datasets: [{
-        data: [
-          orderStatusCounts.value.pending || 0,
-          orderStatusCounts.value.shipping || 0,
-          orderStatusCounts.value.completed || 0
-        ],
-        backgroundColor: ['#f59e0b', '#8b5cf6', '#10b981'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
-    }
-  } else if (orderDistributionType.value === 'payment') {
-    // Mock data for payment - would need real API
-    return {
-      labels: ['COD', 'VNPay'],
-      datasets: [{
-        data: [650, 600],
-        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
-    }
-  } else if (orderDistributionType.value === 'shipping') {
-    // Mock data for shipping - would need real API
-    return {
-      labels: ['Giao thành công', 'Đang giao', 'Chờ lấy hàng'],
-      datasets: [{
-        data: [780, 420, 350],
-        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
-        borderWidth: 2,
-        borderColor: '#ffffff'
-      }]
-    }
-  }
-  
-  return {
-    labels: [],
-    datasets: []
-  }
-})
-
-const orderDistributionOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  cutout: '70%',
-  plugins: {
-    legend: {
-      display: true,
-      position: 'bottom',
-      labels: {
-        usePointStyle: true,
-        pointStyle: 'circle',
-        padding: 15,
-        font: {
-          size: 12,
-          family: "'Inter', sans-serif",
-          weight: '500'
-        },
-        color: '#1e293b',
-        boxWidth: 10,
-        boxHeight: 10,
-        generateLabels: function(chart) {
-          const data = chart.data
-          if (data.labels.length && data.datasets.length) {
-            const dataset = data.datasets[0]
-            const total = dataset.data.reduce((sum, val) => sum + val, 0)
-            
-            return data.labels.map((label, i) => {
-              const value = dataset.data[i]
-              const percentage = ((value / total) * 100).toFixed(1)
-              
-              return {
-                text: `${label}: ${value} (${percentage}%)`,
-                fillStyle: dataset.backgroundColor[i],
-                strokeStyle: dataset.backgroundColor[i],
-                lineWidth: 0,
-                hidden: false,
-                index: i
-              }
-            })
-          }
-          return []
-        }
-      }
-    },
-    tooltip: {
-      enabled: true,
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      titleColor: '#ffffff',
-      bodyColor: '#e2e8f0',
-      borderColor: '#475569',
-      borderWidth: 1,
-      cornerRadius: 12,
-      padding: 16,
-      displayColors: true,
-      boxWidth: 12,
-      boxHeight: 12,
-      titleFont: {
-        size: 14,
-        weight: 'bold',
-        family: "'Inter', sans-serif"
-      },
-      bodyFont: {
-        size: 13,
-        family: "'Inter', sans-serif"
-      },
-      callbacks: {
-        title: function(context) {
-          return '📊 ' + context[0].label
-        },
-        label: function(context) {
-          const total = context.dataset.data.reduce((sum, val) => sum + val, 0)
-          const percentage = ((context.parsed / total) * 100).toFixed(1)
-          return `Số lượng: ${context.parsed} đơn (${percentage}%)`
-        },
-        footer: function(context) {
-          const total = context[0].dataset.data.reduce((sum, val) => sum + val, 0)
-          return ['────────────', `📦 Tổng: ${total} đơn`]
-        }
-      }
-    }
-  },
-  animation: {
-    animateRotate: true,
-    animateScale: true,
-    duration: 1000,
-    easing: 'easeInOutQuart'
-  },
-  elements: {
-    arc: {
-      borderWidth: 3,
-      borderColor: '#ffffff',
-      hoverBorderWidth: 4,
-      hoverOffset: 12
-    }
-  }
-}))
-
-const customerAnalyticsChartData = computed(() => {
-  if (!customerAnalyticsData.value) {
-    return {
-      labels: [],
-      datasets: []
-    }
-  }
-  
-  // Handle different types
-  if (customerAnalyticsType.value === 'segments') {
-    return {
-      labels: ['Khách mới', 'Khách cũ', 'VIP'],
-      datasets: [{
-        label: 'Số lượng khách hàng',
-        data: [
-          Number(customerAnalyticsData.value.newCustomers || 0),
-          Number(customerAnalyticsData.value.returningCustomers || 0),
-          Number(customerAnalyticsData.value.vipCustomers || 0)
-        ],
-        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-        borderWidth: 0,
-        borderRadius: 4
-      }]
-    }
-  } else if (customerAnalyticsType.value === 'age') {
-    return {
-      labels: ['18-24', '25-34', '35-44', '45+'],
-      datasets: [{
-        label: 'Số lượng khách hàng',
-        data: [
-          Number(customerAnalyticsData.value.age18_24 || 0),
-          Number(customerAnalyticsData.value.age25_34 || 0),
-          Number(customerAnalyticsData.value.age35_44 || 0),
-          Number(customerAnalyticsData.value.age45_plus || 0)
-        ],
-        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'],
-        borderWidth: 0,
-        borderRadius: 4
-      }]
-    }
-  } else if (customerAnalyticsType.value === 'region') {
-    return {
-      labels: ['Miền Bắc', 'Miền Trung', 'Miền Nam'],
-      datasets: [{
-        label: 'Số lượng khách hàng',
-        data: [
-          Number(customerAnalyticsData.value.north || 0),
-          Number(customerAnalyticsData.value.central || 0),
-          Number(customerAnalyticsData.value.south || 0)
-        ],
-        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
-        borderWidth: 0,
-        borderRadius: 4
-      }]
-    }
-  }
-  
-  return {
-    labels: [],
-    datasets: []
-  }
-})
-
-const customerAnalyticsOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: false
-    },
-    tooltip: {
-      enabled: true,
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      titleColor: '#ffffff',
-      bodyColor: '#e2e8f0',
-      borderColor: '#475569',
-      borderWidth: 1,
-      cornerRadius: 12,
-      padding: 16,
-      displayColors: true,
-      boxWidth: 12,
-      boxHeight: 12,
-      titleFont: {
-        size: 14,
-        weight: 'bold',
-        family: "'Inter', sans-serif"
-      },
-      bodyFont: {
-        size: 13,
-        family: "'Inter', sans-serif"
-      },
-      callbacks: {
-        title: function(context) {
-          return '👥 ' + context[0].label
-        },
-        label: function(context) {
-          const value = context.parsed.y
-          const total = context.dataset.data.reduce((sum, val) => sum + val, 0)
-          const percentage = ((value / total) * 100).toFixed(1)
-          
-          return [
-            `Số lượng: ${value.toLocaleString('vi-VN')} khách hàng`,
-            `Tỷ lệ: ${percentage}%`
-          ]
-        },
-        footer: function(context) {
-          const total = context[0].dataset.data.reduce((sum, val) => sum + val, 0)
-          return ['────────────', `📊 Tổng: ${total.toLocaleString('vi-VN')} khách`]
-        }
-      }
-    }
-  },
-  scales: {
-    x: {
-      grid: {
-        display: false
-      },
-      border: {
-        display: false
-      },
-      ticks: {
-        font: {
-          size: 11,
-          family: "'Inter', sans-serif",
-          weight: '500'
-        },
-        color: '#64748b'
-      }
-    },
-    y: {
-      beginAtZero: true,
-      grid: {
-        display: true,
-        color: 'rgba(15, 23, 42, 0.08)',
-        drawBorder: false
-      },
-      border: {
-        display: false
-      },
-      ticks: {
-        font: {
-          size: 12,
-          family: "'Inter', sans-serif",
-          weight: '500'
-        },
-        color: '#64748b',
-        callback: function(value) {
-          return value.toLocaleString('vi-VN')
-        }
-      }
-    }
-  },
-  animation: {
-    duration: 750,
-    easing: 'easeInOutQuart'
-  },
-  elements: {
-    bar: {
-      borderRadius: 8,
-      borderSkipped: false
-    }
-  },
-  barPercentage: 0.7,
-  categoryPercentage: 0.8
-}))
-
 // Format helper functions
 const formatCurrency = (value) => {
   if (!value || value === 0) return '0 ₫'
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(value)
 }
 
@@ -1555,65 +627,20 @@ const formatTime = (date) => {
     minute: '2-digit',
     day: '2-digit',
     month: '2-digit',
-    year: 'numeric'
+    year: 'numeric',
   })
-}
-
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
-const formatNumber = (value) => {
-  if (!value || value === 0) return '0'
-  return new Intl.NumberFormat('vi-VN').format(value)
 }
 
 // Methods
-const toggleAdvancedFilters = () => {
-  showAdvancedFilters.value = !showAdvancedFilters.value
-}
 
 const applyDateRange = async () => {
-  // If custom is selected, show advanced filters panel
+  // If custom is selected, just reload data
   if (selectedDateRange.value === 'custom') {
-    showAdvancedFilters.value = true
     return
   }
-  
+
   // Reload all data with new date range
   await refreshData()
-}
-
-const applyFilters = async () => {
-  // If custom date range is selected, ensure dates are set
-  if (selectedDateRange.value === 'custom') {
-    if (!customStartDate.value || !customEndDate.value) {
-      alert('Vui lòng chọn cả ngày bắt đầu và ngày kết thúc')
-      return
-    }
-  }
-  
-  // Close advanced filters panel
-  showAdvancedFilters.value = false
-  
-  // Reload all data with new filters
-  await refreshData()
-}
-
-const resetFilters = () => {
-  selectedCategory.value = ''
-  selectedRegion.value = ''
-  selectedCustomerType.value = ''
-  selectedAgeGroup.value = ''
-}
-
-const exportReport = () => {
-  // Export report functionality
 }
 
 const refreshData = async () => {
@@ -1623,85 +650,23 @@ const refreshData = async () => {
     loadKpis(),
     loadHourlySales(),
     loadBusinessInsights(),
-    loadPerformanceMetrics(),
     loadTopProducts(),
     loadOrderStatusCounts(),
-    loadCustomerAnalytics()
   ])
-}
-
-// Toggle function moved to later section
-
-const toggleChartType = () => {
-  chartType.value = chartType.value === 'line' ? 'bar' : 'line'
-}
-
-// exportChart moved to later section
-
-const viewTopProducts = () => {
-  // Navigate to all top products
-}
-
-// Real-time is always enabled - no toggle needed
-
-const selectQuickDate = (option) => {
-  const today = new Date()
-  let targetDate = new Date()
-  
-  switch (option) {
-    case 'yesterday':
-      targetDate.setDate(today.getDate() - 1)
-      break
-    case '2days':
-      targetDate.setDate(today.getDate() - 2)
-      break
-    case 'week':
-      targetDate.setDate(today.getDate() - 7)
-      break
-  }
-  
-  comparisonDate.value = targetDate
-  showComparisonDatePicker.value = false
-}
-
-const exportChart = () => {
-  // Export chart functionality
-  console.log('Exporting chart...')
 }
 
 const getMetricLabel = (metric) => {
   const labels = {
     revenue: 'Doanh thu',
-    orders: 'Đơn hàng', 
+    orders: 'Đơn hàng',
     customers: 'Khách hàng',
-    profit: 'Lợi nhuận'
+    profit: 'Lợi nhuận',
   }
   return labels[metric] || 'Doanh thu'
 }
 
-const getMetricColor = (metric, alpha = 1) => {
-  const colors = {
-    revenue: `rgba(99, 102, 241, ${alpha})`,      // Indigo - vibrant
-    orders: `rgba(245, 158, 11, ${alpha})`,       // Amber
-    customers: `rgba(16, 185, 129, ${alpha})`,    // Emerald
-    profit: `rgba(239, 68, 68, ${alpha})`         // Red
-  }
-  return colors[metric] || `rgba(99, 102, 241, ${alpha})`
-}
-
-const getComparisonLabel = () => {
-  const selectedDate = new Date(comparisonDate.value)
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
-  
-  // Check if it's yesterday
-  if (selectedDate.toDateString() === yesterday.toDateString()) {
-    return 'Hôm qua'
-  }
-  
-  // Check if it's a specific date
-  return `Ngày ${formatDate(selectedDate)}`
+const viewTopProducts = () => {
+  // Navigate to all top products
 }
 
 const formatMetricValue = (value, metric) => {
@@ -1728,7 +693,6 @@ defineExpose({
   formatCurrency,
   formatMetricValue,
   getMetricLabel,
-  getComparisonLabel
 })
 </script>
 
@@ -1744,7 +708,9 @@ defineExpose({
   border-radius: 16px;
   padding: 1.75rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 40px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.5);
 }
 
@@ -1758,10 +724,10 @@ defineExpose({
 .page-title {
   font-size: 2rem;
   font-weight: 800;
-  color: #0f172a;
+  color: #000000;
   margin: 0;
   letter-spacing: -0.03em;
-  background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+  background: linear-gradient(135deg, #000000 0%, #000000 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1829,7 +795,8 @@ defineExpose({
 }
 
 @keyframes pulse-green {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -1851,7 +818,9 @@ defineExpose({
   border-radius: 16px;
   padding: 1.75rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 40px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
   border: 1px solid rgba(226, 232, 240, 0.5);
 }
 
@@ -1896,7 +865,9 @@ defineExpose({
   background: white;
   border-radius: 16px;
   padding: 1.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 40px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1915,7 +886,9 @@ defineExpose({
 
 .kpi-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 20px 60px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.08);
   border-color: rgba(226, 232, 240, 0.8);
 }
 
@@ -1984,6 +957,13 @@ defineExpose({
   line-height: 1;
 }
 
+.loading-placeholder {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+  font-size: 1rem !important;
+  opacity: 0.8;
+}
+
 .kpi-label {
   font-size: 0.875rem;
   color: #64748b;
@@ -2031,7 +1011,9 @@ defineExpose({
   background: white;
   border-radius: 16px;
   padding: 1.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 40px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
   height: 100%;
   border: 1px solid rgba(226, 232, 240, 0.5);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2039,7 +1021,9 @@ defineExpose({
 
 .insight-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 20px 60px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
 .insight-header {
@@ -2108,14 +1092,18 @@ defineExpose({
   background: white;
   border-radius: 16px;
   padding: 1.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 10px 40px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
   height: 100%;
   border: 1px solid rgba(226, 232, 240, 0.5);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .chart-card:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 20px 60px rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.05),
+    0 20px 60px rgba(0, 0, 0, 0.08);
 }
 
 .main-chart {
@@ -2371,7 +1359,9 @@ defineExpose({
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.1),
+    0 8px 16px rgba(0, 0, 0, 0.06);
   margin-top: 0.5rem;
   min-width: 320px;
   overflow: hidden;
@@ -2527,73 +1517,83 @@ defineExpose({
 }
 
 .metric-card-small {
-  background: white;
-  border-radius: 12px;
-  padding: 1.25rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 8px 30px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(226, 232, 240, 0.5);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
 }
 
 .metric-card-small:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 16px 50px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 20px 60px rgba(0, 0, 0, 0.1);
+  border-color: #6366f1;
 }
 
 .metric-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .metric-label {
-  font-size: 0.8rem;
-  color: #6c757d;
+  font-size: 0.875rem;
+  color: #1e293b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .live-indicator {
   display: flex;
   align-items: center;
-  gap: 0.375rem;
+  gap: 0.25rem;
   color: #10b981;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.25rem 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   background: rgba(16, 185, 129, 0.1);
+  padding: 0.25rem 0.5rem;
   border-radius: 12px;
 }
 
 .live-indicator i {
-  animation: pulse-dot 2s ease-in-out infinite;
+  animation: pulse-green 2s ease-in-out infinite;
 }
 
-@keyframes pulse-dot {
-  0%, 100% {
+@keyframes pulse-green {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.7;
     transform: scale(0.9);
   }
 }
 
 .metric-value {
-  font-size: 1.75rem;
+  font-size: 2.25rem;
   font-weight: 800;
   color: #0f172a;
-  margin-bottom: 0.375rem;
-  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
   line-height: 1;
+  letter-spacing: -0.02em;
 }
 
 .metric-subtitle {
   font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
+  color: #475569;
+  font-weight: 600;
 }
 
 /* Top Products */
@@ -2660,16 +1660,17 @@ defineExpose({
 }
 
 .product-name {
-  font-weight: 600;
-  color: #0f172a;
-  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 1rem;
   margin-bottom: 0.25rem;
+  line-height: 1.2;
 }
 
 .product-category {
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 0.875rem;
+  color: #475569;
+  font-weight: 600;
 }
 
 .product-stats {
@@ -2677,15 +1678,259 @@ defineExpose({
 }
 
 .product-sales {
-  font-size: 0.8rem;
-  color: #64748b;
+  font-size: 0.875rem;
+  color: #475569;
   margin-bottom: 0.25rem;
+  font-weight: 600;
 }
 
 .product-revenue {
+  font-weight: 800;
+  color: #059669;
+  font-size: 1rem;
+}
+
+/* Stat Card */
+.stat-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 20px 60px rgba(0, 0, 0, 0.1);
+  border-color: #6366f1;
+}
+
+.stat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.stat-title {
+  font-size: 1.25rem;
   font-weight: 700;
-  color: #10b981;
-  font-size: 0.95rem;
+  color: #1e293b;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.stat-content {
+  color: #475569;
+}
+
+/* Loading and Empty States */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.loading-state i {
+  font-size: 1.5rem;
+  color: #6366f1;
+  margin-bottom: 0.5rem;
+}
+
+.rotate {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state i {
+  font-size: 2rem;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+/* Order Status Grid */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.status-item {
+  padding: 1.25rem;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.status-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.status-item.pending {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+}
+
+.status-item.shipping {
+  background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+  border: 1px solid #8b5cf6;
+}
+
+.status-item.completed {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #10b981;
+}
+
+.status-item.cancelled {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 1px solid #ef4444;
+}
+
+.status-count {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+  line-height: 1;
+}
+
+.status-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Trend Cards */
+.trend-revenue {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  border: 1px solid #10b981;
+}
+
+.trend-orders {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #3b82f6;
+}
+
+.trend-customers {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+}
+
+.trend-average {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  border: 1px solid #8b5cf6;
+}
+
+.trend-icon {
+  font-size: 1.5rem;
+  opacity: 0.7;
+}
+
+/* Business Insights */
+.insights-section {
+  margin-bottom: 2rem;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.insight-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
+
+.insight-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.insight-icon.revenue-icon {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.insight-icon.orders-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.insight-icon.customers-icon {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.insight-icon.products-icon {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.insight-content {
+  flex: 1;
+}
+
+.insight-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.insight-description {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* Additional Analytics */
+.additional-analytics {
+  margin-bottom: 2rem;
+}
+
+/* Details Section */
+.details-section {
+  margin-bottom: 2rem;
 }
 
 /* Performance Metrics */
@@ -2749,7 +1994,12 @@ defineExpose({
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 100%
+  );
   animation: shimmer 2s infinite;
 }
 
@@ -2769,21 +2019,21 @@ defineExpose({
     gap: 1rem;
     align-items: flex-start;
   }
-  
+
   .quick-actions {
     flex-wrap: wrap;
   }
-  
+
   .filter-row {
     grid-template-columns: 1fr;
   }
-  
+
   .chart-controls {
     flex-direction: column;
     gap: 0.5rem;
     align-items: flex-start;
   }
-  
+
   .metric-toggles {
     flex-wrap: wrap;
   }
