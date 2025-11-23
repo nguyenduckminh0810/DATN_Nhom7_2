@@ -27,7 +27,11 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet, 
       JOIN don_hang dh ON dh.id = ct.id_don_hang
       JOIN bien_the_san_pham bt ON bt.id = ct.id_bien_the
       JOIN san_pham sp ON sp.id = bt.id_san_pham
-      WHERE dh.trang_thai = :trangThai
+      WHERE (dh.trang_thai = :trangThai 
+             OR dh.trang_thai = N'Hoàn tất' 
+             OR dh.trang_thai = N'Đã giao'
+             OR dh.trang_thai = 'COMPLETED'
+             OR dh.trang_thai = 'DELIVERED')
         AND dh.dat_luc BETWEEN :from AND :to
       GROUP BY sp.id, sp.ten
       ORDER BY total_sold DESC
@@ -47,7 +51,11 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet, 
       JOIN bien_the_san_pham bt ON bt.id = ct.id_bien_the
       JOIN san_pham sp ON sp.id = bt.id_san_pham
       JOIN danh_muc dm ON dm.id = sp.id_danh_muc
-      WHERE dh.trang_thai = :trangThai
+      WHERE (dh.trang_thai = :trangThai 
+             OR dh.trang_thai = N'Hoàn tất' 
+             OR dh.trang_thai = N'Đã giao'
+             OR dh.trang_thai = 'COMPLETED'
+             OR dh.trang_thai = 'DELIVERED')
         AND dh.dat_luc BETWEEN :from AND :to
       GROUP BY dm.id, dm.ten
       ORDER BY total_revenue DESC

@@ -3,7 +3,6 @@ package com.auro.auro.repository;
 import com.auro.auro.model.DonHang;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -65,7 +64,11 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
             SELECT CAST(dh.dat_luc AS date) AS ngay,
                    SUM(dh.tong_thanh_toan) AS doanh_thu
             FROM don_hang dh
-            WHERE dh.trang_thai = :trangThai
+            WHERE (dh.trang_thai = :trangThai 
+                   OR dh.trang_thai = N'Hoàn tất' 
+                   OR dh.trang_thai = N'Đã giao'
+                   OR dh.trang_thai = 'COMPLETED'
+                   OR dh.trang_thai = 'DELIVERED')
               AND dh.dat_luc BETWEEN :from AND :to
             GROUP BY CAST(dh.dat_luc AS date)
             ORDER BY ngay

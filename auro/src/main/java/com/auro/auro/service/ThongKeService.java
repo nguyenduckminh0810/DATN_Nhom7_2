@@ -28,6 +28,8 @@ public class ThongKeService {
     private final KhachHangRepository khachHangRepository;
     private final SanPhamRepository sanPhamRepository;
     private final GioHangRepository gioHangRepository;
+    private final HinhAnhRepository hinhAnhRepository;
+    private final DanhGiaSanPhamRepository danhGiaSanPhamRepository;
 
     public Map<String, Object> getSummary(Integer lowStockThreshold) {
         if (lowStockThreshold == null)
@@ -42,10 +44,16 @@ public class ThongKeService {
         long ordersToday = donHangRepository.countByTaoLucBetween(startOfToday, now);
         long orders24h = donHangRepository.countByTaoLucBetween(now.minusHours(24), now);
 
-        // Total revenue (all completed orders) - Changed from "today" to "total"
-        // Because most orders have datLuc in the past, not today
-        BigDecimal revenueToday = donHangRepository
-                .sumRevenueByTrangThai(OrderStatus.HOAN_TAT);
+        // Doanh thu hôm nay - tính theo datLuc (ngày đặt hàng) của đơn hàng đã hoàn tất
+        BigDecimal revenueToday = donHangRepository.sumRevenueByDatLucBetweenAndTrangThai(OrderStatus.HOAN_TAT,
+                startOfToday, now);
+        // Nếu không có doanh thu theo datLuc, thử tính theo taoLuc
+        if (revenueToday == null || revenueToday.compareTo(BigDecimal.ZERO) == 0) {
+            BigDecimal revenueByTaoLuc = donHangRepository.sumRevenueByTaoLucBetween(startOfToday, now);
+            if (revenueByTaoLuc != null && revenueByTaoLuc.compareTo(BigDecimal.ZERO) > 0) {
+                revenueToday = revenueByTaoLuc;
+            }
+        }
 
         // Yesterday stats for comparison
         long ordersYesterday = donHangRepository.countByTaoLucBetween(startOfYesterday, endOfYesterday);
@@ -56,16 +64,60 @@ public class ThongKeService {
         double orderGrowth = calculateGrowth(ordersToday, ordersYesterday);
         double revenueGrowth = calculateGrowth(revenueToday, revenueYesterday);
 
-        // Customer stats
+        // Customer stats - Đếm từ bảng khach_hang
+        // Ưu tiên dùng khachHang.taoLuc nếu có, nếu không thì dùng taiKhoan.taoLuc
+        // Điều này bao gồm cả trường hợp admin tạo KhachHang từ TaiKhoan đã tồn tại
         long totalCustomers = khachHangRepository.count();
-        long newCustomersToday = 0; // TODO: Need to add taoLuc field to KhachHang
-        double customersGrowth = 0.0; // TODO: Calculate when taoLuc is available
+        long newCustomersToday = khachHangRepository.countNewCustomersBetween(startOfToday, now);
+        long newCustomersYesterday = khachHangRepository.countNewCustomersBetween(startOfYesterday, endOfYesterday);
+        double customersGrowth = calculateGrowth(newCustomersToday, newCustomersYesterday);
+        
+        // Debug logging
+        System.out.println("👥 [CUSTOMER DEBUG] Querying from: khach_hang table");
+        System.out.println("👥 [CUSTOMER DEBUG] Start of Today: " + startOfToday);
+        System.out.println("👥 [CUSTOMER DEBUG] Now: " + now);
+        System.out.println("👥 [CUSTOMER DEBUG] New Customers Today: " + newCustomersToday);
+        System.out.println("👥 [CUSTOMER DEBUG] Total Customers: " + totalCustomers);
 
-        // Low stock count
-        long lowStockCount = bienTheSanPhamRepository.countBySoLuongTonLessThanEqual(lowStockThreshold);
+        // Low stock count - Đếm số SẢN PHẨM (không phải biến thể) có ít nhất 1 biến thể sắp hết hoặc hết hàng
+        // Bao gồm cả biến thể hết hàng (stock = 0) và sắp hết (0 < stock <= threshold)
+        long lowStockCount = bienTheSanPhamRepository.countProductsWithLowStock(lowStockThreshold);
+        
+        // Debug: Kiểm tra tổng số biến thể và các trường hợp khác
+        long totalVariants = bienTheSanPhamRepository.count();
+        long lowStockVariants = bienTheSanPhamRepository.countLowStockVariants(lowStockThreshold);
+        long allLowStockVariants = bienTheSanPhamRepository.countBySoLuongTonLessThanEqual(lowStockThreshold);
+        
+        // Debug: Xem chi tiết stock của tất cả biến thể và sản phẩm
+        try {
+            List<Object[]> allVariants = bienTheSanPhamRepository.findAllWithStock();
+            List<Long> productIdsWithLowStock = bienTheSanPhamRepository.findProductIdsWithLowStock(lowStockThreshold);
+            
+            System.out.println("📦 [LOW STOCK DEBUG] Threshold: " + lowStockThreshold);
+            System.out.println("📦 [LOW STOCK DEBUG] Products with Low Stock (distinct products): " + lowStockCount);
+            System.out.println("📦 [LOW STOCK DEBUG] Product IDs with Low Stock: " + productIdsWithLowStock);
+            System.out.println("📦 [LOW STOCK DEBUG] Low Stock Variants (>0 and <=" + lowStockThreshold + "): " + lowStockVariants);
+            System.out.println("📦 [LOW STOCK DEBUG] All Low Stock Variants (<= " + lowStockThreshold + ", including 0): " + allLowStockVariants);
+            System.out.println("📦 [LOW STOCK DEBUG] Total Variants: " + totalVariants);
+            
+            // Đếm số sản phẩm có biến thể hết hàng (stock = 0)
+            long productsOutOfStock = bienTheSanPhamRepository.countProductsWithLowStock(0);
+            System.out.println("📦 [LOW STOCK DEBUG] Products with Out of Stock variants (stock = 0): " + productsOutOfStock);
+            
+            System.out.println("📦 [LOW STOCK DEBUG] All Variants Stock Details:");
+            for (Object[] variant : allVariants) {
+                Long id = (Long) variant[0];
+                Integer stock = (Integer) variant[1];
+                System.out.println("  - Variant ID: " + id + ", Stock: " + (stock != null ? stock : "NULL"));
+            }
+        } catch (Exception e) {
+            System.out.println("📦 [LOW STOCK DEBUG] Error getting variant details: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         Map<String, Object> summary = new HashMap<>();
-        summary.put("revenueToday", revenueToday != null ? revenueToday : BigDecimal.ZERO);
+        // Convert BigDecimal to number for JSON serialization
+        summary.put("revenueToday", revenueToday != null ? revenueToday.doubleValue() : 0.0);
         summary.put("revenueGrowth", Math.round(revenueGrowth * 100.0) / 100.0);
         summary.put("newOrders24h", orders24h);
         summary.put("ordersGrowth", Math.round(orderGrowth * 100.0) / 100.0);
@@ -74,6 +126,14 @@ public class ThongKeService {
         summary.put("lowStockCount", lowStockCount);
         summary.put("totalCustomers", totalCustomers);
 
+        // Debug logging
+        System.out.println("📊 [THONG KE SUMMARY]");
+        System.out.println("  - Revenue Today: " + summary.get("revenueToday"));
+        System.out.println("  - Low Stock Count: " + summary.get("lowStockCount") + " (type: " + lowStockCount + ")");
+        System.out.println("  - New Customers Today: " + summary.get("newCustomersToday"));
+        System.out.println("  - Summary map keys: " + summary.keySet());
+        System.out.println("  - Summary map values: " + summary);
+
         return summary;
     }
 
@@ -81,15 +141,32 @@ public class ThongKeService {
         if (lowStockThreshold == null)
             lowStockThreshold = 10;
 
-        long lowStockCount = bienTheSanPhamRepository.countBySoLuongTonLessThanEqual(lowStockThreshold);
-        long pendingOrders = donHangRepository.countByTrangThai(OrderStatus.CHO_XAC_NHAN);
-        long shippingOrders = donHangRepository.countByTrangThai(OrderStatus.DANG_GIAO);
+        System.out.println("🚨 [ALERTS DEBUG]");
+        System.out.println("  - Low Stock Threshold: " + lowStockThreshold);
+
+        // Low stock count - Đếm số SẢN PHẨM (không phải biến thể) có ít nhất 1 biến thể sắp hết hoặc hết hàng
+        // Bao gồm cả biến thể hết hàng (stock = 0) và sắp hết (0 < stock <= threshold)
+        long lowStockCount = bienTheSanPhamRepository.countProductsWithLowStock(lowStockThreshold);
+        System.out.println("  - Low Stock Products: " + lowStockCount);
+        
+        // Đếm đơn hàng chờ xác nhận - hỗ trợ cả tiếng Anh và tiếng Việt
+        long pendingOrders = donHangRepository.countByTrangThai(OrderStatus.CHO_XAC_NHAN) +
+                            donHangRepository.countByTrangThai("Chờ xác nhận") +
+                            donHangRepository.countByTrangThai("CHO_XAC_NHAN");
+        System.out.println("  - Pending Orders (status=" + OrderStatus.CHO_XAC_NHAN + "): " + pendingOrders);
+        
+        // Đếm đơn hàng đang giao - hỗ trợ cả tiếng Anh và tiếng Việt
+        long shippingOrders = donHangRepository.countByTrangThai(OrderStatus.DANG_GIAO) +
+                             donHangRepository.countByTrangThai("Đang giao") +
+                             donHangRepository.countByTrangThai("DANG_GIAO");
+        System.out.println("  - Shipping Orders (status=" + OrderStatus.DANG_GIAO + "): " + shippingOrders);
 
         Map<String, Object> alerts = new HashMap<>();
         alerts.put("lowStockProducts", lowStockCount);
         alerts.put("pendingOrders", pendingOrders);
         alerts.put("needShipping", shippingOrders);
 
+        System.out.println("  - Final Alerts: " + alerts);
         return alerts;
     }
 
@@ -109,6 +186,12 @@ public class ThongKeService {
         LocalDateTime previousStart = currentStart.minusDays(days);
         LocalDateTime previousEnd = currentStart.minusSeconds(1);
 
+        System.out.println("📊 [CHART DEBUG]");
+        System.out.println("  - Range: " + range + " (" + days + " days)");
+        System.out.println("  - Metric: " + metric);
+        System.out.println("  - Current Period: " + currentStart + " to " + now);
+        System.out.println("  - Previous Period: " + previousStart + " to " + previousEnd);
+
         // Generate labels (dates)
         List<String> labels = new ArrayList<>();
         for (int i = 0; i < days; i++) {
@@ -124,6 +207,7 @@ public class ThongKeService {
             // Current period revenue
             List<Object[]> currentRevenue = donHangRepository.sumRevenueByDateBetween(
                     OrderStatus.HOAN_TAT, currentStart, now);
+            System.out.println("  - Current Revenue Records: " + currentRevenue.size());
             for (Object[] row : currentRevenue) {
                 currentDataMap.put(row[0].toString(), (Number) row[1]);
             }
@@ -131,6 +215,7 @@ public class ThongKeService {
             // Previous period revenue
             List<Object[]> previousRevenue = donHangRepository.sumRevenueByDateBetween(
                     OrderStatus.HOAN_TAT, previousStart, previousEnd);
+            System.out.println("  - Previous Revenue Records: " + previousRevenue.size());
             for (Object[] row : previousRevenue) {
                 // Shift dates forward by 'days' to align with current period
                 LocalDate oldDate = LocalDate.parse(row[0].toString());
@@ -140,12 +225,14 @@ public class ThongKeService {
         } else if ("orders".equals(metric)) {
             // Current period orders
             List<Object[]> currentOrders = donHangRepository.countOrdersByDateBetween(currentStart, now);
+            System.out.println("  - Current Orders Records: " + currentOrders.size());
             for (Object[] row : currentOrders) {
                 currentDataMap.put(row[0].toString(), (Number) row[1]);
             }
 
             // Previous period orders
             List<Object[]> previousOrders = donHangRepository.countOrdersByDateBetween(previousStart, previousEnd);
+            System.out.println("  - Previous Orders Records: " + previousOrders.size());
             for (Object[] row : previousOrders) {
                 LocalDate oldDate = LocalDate.parse(row[0].toString());
                 LocalDate newDate = oldDate.plusDays(days);
@@ -161,6 +248,10 @@ public class ThongKeService {
             currentData.add(currentDataMap.getOrDefault(label, 0));
             previousData.add(previousDataMap.getOrDefault(label, 0));
         }
+
+        System.out.println("  - Labels count: " + labels.size());
+        System.out.println("  - Current data count: " + currentData.size());
+        System.out.println("  - Previous data count: " + previousData.size());
 
         Map<String, Object> result = new HashMap<>();
         result.put("labels", labels);
@@ -180,20 +271,58 @@ public class ThongKeService {
         LocalDateTime startDate = now.minusDays(rangeDays);
         Pageable pageable = PageRequest.of(0, limit);
 
+        System.out.println("📦 [TOP PRODUCTS DEBUG]");
+        System.out.println("  - Limit: " + limit);
+        System.out.println("  - Range Days: " + rangeDays);
+        System.out.println("  - Start Date: " + startDate);
+        System.out.println("  - End Date: " + now);
+        System.out.println("  - OrderStatus.HOAN_TAT: " + OrderStatus.HOAN_TAT);
+
         List<Object[]> topProducts = donHangChiTietRepository.findTopProductsBetween(OrderStatus.HOAN_TAT, startDate,
                 now, pageable);
+        
+        System.out.println("  - Found " + topProducts.size() + " top products");
+
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Object[] row : topProducts) {
+            Long productId = ((Number) row[0]).longValue();
+            String productName = (String) row[1];
+            Long sales = ((Number) row[2]).longValue();
+            BigDecimal revenue = (BigDecimal) row[3];
+            
+            System.out.println("  - Product ID: " + productId + ", Name: " + productName + ", Sales: " + sales + ", Revenue: " + revenue);
+            
             Map<String, Object> product = new HashMap<>();
-            product.put("id", row[0]);
-            product.put("name", row[1]);
-            product.put("sales", row[2]);
-            product.put("revenue", row[3]);
-            product.put("image", null); // TODO: Add image URL from SanPham
+            product.put("id", productId);
+            product.put("name", productName);
+            product.put("sales", sales);
+            product.put("revenue", revenue != null ? revenue.doubleValue() : 0.0);
+            
+            // Lấy ảnh đại diện của sản phẩm
+            String imageUrl = null;
+            try {
+                var images = hinhAnhRepository.findBySanPham_IdOrderByThuTuAscIdAsc(productId);
+                if (images != null && !images.isEmpty()) {
+                    imageUrl = images.stream()
+                            .filter(ha -> Boolean.TRUE.equals(ha.getLaDaiDien()))
+                            .map(com.auro.auro.model.HinhAnh::getUrl)
+                            .findFirst()
+                            .orElseGet(() -> images.get(0).getUrl());
+                    System.out.println("  - Image URL: " + imageUrl);
+                } else {
+                    System.out.println("  - No images found for product " + productId);
+                }
+            } catch (Exception e) {
+                System.out.println("⚠️ Error loading image for product " + productId + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+            product.put("image", imageUrl);
+            
             result.add(product);
         }
 
+        System.out.println("  - Returning " + result.size() + " products");
         return result;
     }
 
@@ -201,35 +330,80 @@ public class ThongKeService {
         if (limit == null)
             limit = 10;
 
+        System.out.println("📋 [RECENT ORDERS DEBUG]");
+        System.out.println("  - Limit: " + limit);
+
         Pageable pageable = PageRequest.of(0, limit);
         var orders = donHangRepository.findRecentOrders(pageable);
 
-        return orders.stream().map(order -> {
+        System.out.println("  - Found " + orders.size() + " recent orders");
+
+        List<Map<String, Object>> result = orders.stream().map(order -> {
             Map<String, Object> orderMap = new HashMap<>();
             orderMap.put("id", order.getId());
             orderMap.put("orderCode", order.getSoDonHang());
             orderMap.put("customer", order.getKhachHang() != null ? order.getKhachHang().getHoTen() : "Khách vãng lai");
-            orderMap.put("amount", order.getTongThanhToan());
+            orderMap.put("amount", order.getTongThanhToan() != null ? order.getTongThanhToan().doubleValue() : 0.0);
             orderMap.put("status", order.getTrangThai());
             orderMap.put("time", order.getDatLuc() != null ? order.getDatLuc().toString() : "");
+            
+            System.out.println("  - Order #" + order.getSoDonHang() + ", Customer: " + orderMap.get("customer") + ", Amount: " + orderMap.get("amount"));
             return orderMap;
         }).collect(Collectors.toList());
+
+        System.out.println("  - Returning " + result.size() + " orders");
+        return result;
     }
 
     public Map<String, Object> getCustomerSummary() {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
+        
         long totalCustomers = khachHangRepository.count();
         long customersWithOrders = donHangRepository.countCustomersWithCompletedOrders(OrderStatus.HOAN_TAT);
         long repeatCustomers = donHangRepository.countRepeatCustomers(OrderStatus.HOAN_TAT);
+        long newCustomersToday = khachHangRepository.countNewCustomersBetween(startOfToday, now);
 
         double repeatRate = totalCustomers > 0
                 ? (double) repeatCustomers / totalCustomers * 100
                 : 0.0;
+
+        // Tính average rating từ tất cả đánh giá
+        double averageRating = 0.0;
+        try {
+            // Lấy tất cả đánh giá và tính trung bình
+            var allRatings = danhGiaSanPhamRepository.findAll();
+            if (allRatings != null && !allRatings.isEmpty()) {
+                double totalStars = allRatings.stream()
+                        .filter(dg -> dg.getSoSao() != null)
+                        .mapToInt(com.auro.auro.model.DanhGiaSanPham::getSoSao)
+                        .sum();
+                int count = (int) allRatings.stream()
+                        .filter(dg -> dg.getSoSao() != null)
+                        .count();
+                if (count > 0) {
+                    averageRating = Math.round((totalStars / count) * 10.0) / 10.0;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Error calculating average rating: " + e.getMessage());
+        }
+
+        System.out.println("👥 [CUSTOMER SUMMARY DEBUG]");
+        System.out.println("  - Total Customers: " + totalCustomers);
+        System.out.println("  - Customers With Orders: " + customersWithOrders);
+        System.out.println("  - Repeat Customers: " + repeatCustomers);
+        System.out.println("  - New Customers Today: " + newCustomersToday);
+        System.out.println("  - Repeat Rate: " + repeatRate + "%");
+        System.out.println("  - Average Rating: " + averageRating);
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalCustomers", totalCustomers);
         summary.put("customersWithOrders", customersWithOrders);
         summary.put("repeatCustomers", repeatCustomers);
         summary.put("repeatRate", Math.round(repeatRate * 100.0) / 100.0);
+        summary.put("newCustomersToday", newCustomersToday);
+        summary.put("averageRating", averageRating);
 
         return summary;
     }
@@ -242,24 +416,81 @@ public class ThongKeService {
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startDate = now.minusDays(rangeDays);
+        LocalDateTime previousStart = startDate.minusDays(rangeDays);
+        LocalDateTime previousEnd = startDate.minusSeconds(1);
         Pageable pageable = PageRequest.of(0, limit);
 
+        System.out.println("📊 [CATEGORY PERFORMANCE DEBUG]");
+        System.out.println("  - Limit: " + limit);
+        System.out.println("  - Range Days: " + rangeDays);
+        System.out.println("  - Current Period: " + startDate + " to " + now);
+        System.out.println("  - Previous Period: " + previousStart + " to " + previousEnd);
+
+        // Current period
         List<Object[]> categoryData = donHangChiTietRepository.findCategoryPerformanceBetween(OrderStatus.HOAN_TAT,
                 startDate, now, pageable);
+        
+        // Previous period for comparison
+        List<Object[]> previousCategoryData = donHangChiTietRepository.findCategoryPerformanceBetween(OrderStatus.HOAN_TAT,
+                previousStart, previousEnd, pageable);
+
+        // Build map of previous period revenue by category ID
+        Map<Long, BigDecimal> previousRevenueMap = new HashMap<>();
+        for (Object[] row : previousCategoryData) {
+            Long categoryId = ((Number) row[0]).longValue();
+            BigDecimal revenue = (BigDecimal) row[3];
+            previousRevenueMap.put(categoryId, revenue);
+        }
+
+        System.out.println("  - Found " + categoryData.size() + " categories in current period");
+        System.out.println("  - Found " + previousCategoryData.size() + " categories in previous period");
+
         List<Map<String, Object>> result = new ArrayList<>();
 
         for (Object[] row : categoryData) {
+            Long categoryId = ((Number) row[0]).longValue();
+            String categoryName = (String) row[1];
+            Long sales = ((Number) row[2]).longValue();
+            BigDecimal revenue = (BigDecimal) row[3];
+            
+            // Calculate change vs previous period
+            BigDecimal previousRevenue = previousRevenueMap.getOrDefault(categoryId, BigDecimal.ZERO);
+            double change = 0.0;
+            String trend = "neutral";
+            String trendIcon = "bi bi-dash";
+            
+            if (previousRevenue.compareTo(BigDecimal.ZERO) > 0) {
+                double changePercent = ((revenue.doubleValue() - previousRevenue.doubleValue()) / previousRevenue.doubleValue()) * 100;
+                change = Math.round(changePercent * 10.0) / 10.0;
+                
+                if (change > 0) {
+                    trend = "up";
+                    trendIcon = "bi bi-graph-up-arrow";
+                } else if (change < 0) {
+                    trend = "down";
+                    trendIcon = "bi bi-graph-down-arrow";
+                }
+            } else if (revenue.compareTo(BigDecimal.ZERO) > 0) {
+                // New category with sales
+                change = 100.0;
+                trend = "up";
+                trendIcon = "bi bi-graph-up-arrow";
+            }
+            
+            System.out.println("  - Category: " + categoryName + ", Sales: " + sales + ", Revenue: " + revenue + ", Change: " + change + "%");
+
             Map<String, Object> category = new HashMap<>();
-            category.put("id", row[0]);
-            category.put("name", row[1]);
-            category.put("sales", row[2]);
-            category.put("revenue", row[3]);
-            category.put("change", 0); // TODO: Calculate change vs previous period
-            category.put("trend", "up"); // TODO: Calculate trend
-            category.put("trendIcon", "bi bi-graph-up"); // TODO: Set based on trend
+            category.put("id", categoryId);
+            category.put("name", categoryName);
+            category.put("sales", sales);
+            category.put("revenue", revenue != null ? revenue.doubleValue() : 0.0);
+            category.put("change", change);
+            category.put("trend", trend);
+            category.put("trendIcon", trendIcon);
             result.add(category);
         }
 
+        System.out.println("  - Returning " + result.size() + " categories");
         return result;
     }
 

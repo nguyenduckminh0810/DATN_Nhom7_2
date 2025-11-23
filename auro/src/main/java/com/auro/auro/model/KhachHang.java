@@ -3,6 +3,8 @@ package com.auro.auro.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "khach_hang")
 @Data
@@ -34,4 +36,7 @@ public class KhachHang {
 
     @Column(name = "avatar", columnDefinition = "NVARCHAR(500)")
     private String avatar;
+
+    @Column(name = "tao_luc")
+    private LocalDateTime taoLuc;
 }
