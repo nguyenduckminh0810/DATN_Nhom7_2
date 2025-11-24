@@ -1,479 +1,323 @@
 <template>
   <div class="dashboard-content">
-
-      <!-- Store Overview Section -->
-      <section class="overview-section">
-        <div class="overview-grid">
-          <div class="overview-card revenue">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-currency-dollar"></i>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">Dashboard Tổng Quan</h1>
+          <p class="page-subtitle">Theo dõi hiệu suất kinh doanh của bạn</p>
         </div>
-              <div class="card-info">
-                <h3>Tổng doanh thu</h3>
-                <p class="card-subtitle">Đơn hàng hoàn tất</p>
-      </div>
+        <div class="header-right">
+          <div class="realtime-info">
+            <div class="live-indicator">
+              <i class="bi bi-circle-fill"></i>
+              <span>Cập nhật realtime</span>
             </div>
-            <div class="card-content">
-              <div class="main-value">{{ (summary?.revenueToday ?? 0).toLocaleString('vi-VN') }}₫</div>
-              <div v-if="revenueGrowth !== null" :class="['trend', revenueGrowth >= 0 ? 'positive' : 'negative']">
-                <i :class="revenueGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
-                <span>{{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth }}%</span>
+            <div class="last-updated">
+              {{ new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-          <div class="overview-card orders">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-cart3"></i>
-          </div>
-              <div class="card-info">
-                <h3>Đơn hàng mới</h3>
-                <p class="card-subtitle">Trong 24h qua</p>
-          </div>
-        </div>
-            <div class="card-content">
-              <div class="main-value">{{ summary?.newOrders24h ?? 0 }}</div>
-              <div v-if="ordersGrowth !== null" :class="['trend', ordersGrowth >= 0 ? 'positive' : 'negative']">
-                <i :class="ordersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
-                <span>{{ ordersGrowth >= 0 ? '+' : '' }}{{ ordersGrowth }}%</span>
-      </div>
+    <!-- Store Overview Section -->
+    <section class="overview-section">
+      <div class="overview-grid">
+        <div class="overview-card revenue">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="ph bi bi-currency-dollar"></i>
+            </div>
+            <div class="card-info">
+              <h3>Tổng doanh thu</h3>
+              <p class="card-subtitle">Đơn hàng hoàn tất</p>
             </div>
           </div>
-
-          <div class="overview-card customers">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-people"></i>
-              </div>
-              <div class="card-info">
-                <h3>Khách hàng mới</h3>
-                <p class="card-subtitle">Đăng ký hôm nay</p>
-              </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.revenueToday?.toLocaleString('vi-VN') }}₫</div>
+            <div
+              v-if="revenueGrowth !== null"
+              :class="['trend', revenueGrowth >= 0 ? 'positive' : 'negative']"
+            >
+              <i :class="revenueGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+              <span>{{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth }}%</span>
             </div>
-            <div class="card-content">
-              <div class="main-value">{{ summary?.newCustomersToday ?? 0 }}</div>
-              <div v-if="customersGrowth !== null" :class="['trend', customersGrowth >= 0 ? 'positive' : 'negative']">
-                <i :class="customersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
-                <span>{{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth }}%</span>
+          </div>
         </div>
-      </div>
-    </div>
 
-          <div class="overview-card inventory">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-box"></i>
-        </div>
-              <div class="card-info">
-                <h3>Sản phẩm sắp hết</h3>
-                <p class="card-subtitle">Cần nhập hàng</p>
-      </div>
-        </div>
-            <div class="card-content">
-              <div class="main-value">{{ summary?.lowStockCount ?? 0 }}</div>
-              <div class="trend warning">
-                <i class="ph bi bi-exclamation-triangle"></i>
-                <span>Cần nhập</span>
-      </div>
-        </div>
-      </div>
-    </div>
-      </section>
-
-      <!-- Quick Actions & Alerts -->
-      <section class="actions-alerts-section">
-        <div class="quick-actions-panel">
-          <h3>Thao tác nhanh</h3>
-          <div class="action-buttons">
-            <button class="action-btn" @click="$router.push('/admin/products')">
-              <i class="ph bi bi-plus-circle"></i>
-              <span>Thêm sản phẩm</span>
-            </button>
-            <button class="action-btn" @click="$router.push('/admin/orders')">
+        <div class="overview-card orders">
+          <div class="card-header">
+            <div class="card-icon">
               <i class="ph bi bi-cart3"></i>
-              <span>Xem đơn hàng</span>
-            </button>
-            <button class="action-btn" @click="$router.push('/admin/users')">
+            </div>
+            <div class="card-info">
+              <h3>Đơn hàng mới</h3>
+              <p class="card-subtitle">Trong 24h qua</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.newOrders24h ?? 0 }}</div>
+            <div
+              v-if="ordersGrowth !== null"
+              :class="['trend', ordersGrowth >= 0 ? 'positive' : 'negative']"
+            >
+              <i :class="ordersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+              <span>{{ ordersGrowth >= 0 ? '+' : '' }}{{ ordersGrowth }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-card customers">
+          <div class="card-header">
+            <div class="card-icon">
               <i class="ph bi bi-people"></i>
-              <span>Quản lý khách hàng</span>
+            </div>
+            <div class="card-info">
+              <h3>Khách hàng mới</h3>
+              <p class="card-subtitle">Đăng ký hôm nay</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.newCustomersToday ?? 0 }}</div>
+            <div
+              v-if="customersGrowth !== null"
+              :class="['trend', customersGrowth >= 0 ? 'positive' : 'negative']"
+            >
+              <i :class="customersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+              <span>{{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-card inventory">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="ph bi bi-box"></i>
+            </div>
+            <div class="card-info">
+              <h3>Sản phẩm sắp hết</h3>
+              <p class="card-subtitle">Cần nhập hàng</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.lowStockCount ?? 0 }}</div>
+            <div class="trend warning">
+              <i class="ph bi bi-exclamation-triangle"></i>
+              <span>Cần nhập</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Actions & Alerts -->
+    <section class="actions-alerts-section">
+      <div class="quick-actions-panel">
+        <h3>Thao tác nhanh</h3>
+        <div class="action-buttons">
+          <button class="action-btn" @click="$router.push('/admin/products')">
+            <i class="bi bi-plus-lg"></i>
+            <span>Thêm sản phẩm</span>
+          </button>
+          <button class="action-btn" @click="$router.push('/admin/orders')">
+            <i class="bi bi-list-check"></i>
+            <span>Quản lý đơn hàng</span>
+          </button>
+          <button class="action-btn" @click="$router.push('/admin/analytics')">
+            <i class="bi bi-graph-up"></i>
+            <span>Báo cáo chi tiết</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="alerts-panel">
+        <h3>Cần chú ý</h3>
+        <div class="alert-list">
+          <div class="alert-item urgent">
+            <div class="alert-icon">
+              <i class="ph bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="alert-content">
+              <div class="alert-title">{{ alerts?.pendingOrders ?? 0 }} đơn hàng chờ xác nhận</div>
+              <div class="alert-time">Cần xử lý</div>
+            </div>
+            <button class="alert-action" @click="$router.push('/admin/orders?status=pending')">
+              Xem
             </button>
-            <button class="action-btn" @click="$router.push('/admin/analytics')">
-              <i class="ph bi bi-bar-chart"></i>
-              <span>Báo cáo doanh thu</span>
+          </div>
+          <div class="alert-item warning">
+            <div class="alert-icon">
+              <i class="ph bi bi-box"></i>
+            </div>
+            <div class="alert-content">
+              <div class="alert-title">
+                {{ alerts?.lowStockProducts ?? 0 }} sản phẩm sắp hết hàng
+              </div>
+              <div class="alert-time">Cần nhập hàng</div>
+            </div>
+            <button class="alert-action" @click="$router.push('/admin/inventory')">Xem</button>
+          </div>
+          <div class="alert-item info">
+            <div class="alert-icon">
+              <i class="ph bi bi-clock"></i>
+            </div>
+            <div class="alert-content">
+              <div class="alert-title">{{ alerts?.needShipping ?? 0 }} đơn hàng cần giao</div>
+              <div class="alert-time">Đang vận chuyển</div>
+            </div>
+            <button class="alert-action" @click="$router.push('/admin/orders?status=shipping')">
+              Xem
             </button>
           </div>
-            </div>
-
-        <div class="alerts-panel">
-          <h3>Cần chú ý</h3>
-          <div class="alert-list">
-            <div class="alert-item urgent">
-              <div class="alert-icon">
-                <i class="ph bi bi-exclamation-triangle"></i>
-          </div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alerts?.pendingOrders ?? 0 }} đơn hàng chờ xác nhận</div>
-                <div class="alert-time">Cần xử lý</div>
         </div>
-              <button class="alert-action" @click="$router.push('/admin/orders?status=pending')">Xem</button>
       </div>
-            <div class="alert-item warning">
-              <div class="alert-icon">
-                <i class="ph bi bi-box"></i>
-    </div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alerts?.lowStockProducts ?? 0 }} sản phẩm sắp hết hàng</div>
-                <div class="alert-time">Cần nhập hàng</div>
-              </div>
-              <button class="alert-action" @click="$router.push('/admin/inventory')">Xem</button>
-            </div>
-            <div class="alert-item info">
-              <div class="alert-icon">
-                <i class="ph bi bi-clock"></i>
-              </div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alerts?.needShipping ?? 0 }} đơn hàng cần giao</div>
-                <div class="alert-time">Đang vận chuyển</div>
-              </div>
-              <button class="alert-action" @click="$router.push('/admin/orders?status=shipping')">Xem</button>
-            </div>
-          </div>
-        </div>
-      </section>
+    </section>
 
-      <!-- Sales Analytics Section -->
-      <section class="analytics-section">
-        <div class="analytics-grid">
-          <div class="chart-card main-chart">
-            <div class="chart-header">
-              <div class="chart-title-section">
-                <div class="chart-title-row">
-                  <h3 class="chart-title">Phân tích doanh thu & đơn hàng</h3>
-                  <div class="growth-badge">
-                    <i class="bi bi-graph-up"></i>
-                    +{{ growthRate }}% tăng trưởng
-                  </div>
-                </div>
-              </div>
-              <div class="chart-controls">
-                <div class="metric-toggles">
-                  <button 
-                    :class="['metric-toggle', { active: selectedMetric === 'revenue' }]"
-                    @click="selectedMetric = 'revenue'"
-                  >
-                    <i class="bi bi-currency-dollar"></i>
-                    Doanh thu
-                  </button>
-                  <button 
-                    :class="['metric-toggle', { active: selectedMetric === 'orders' }]"
-                    @click="selectedMetric = 'orders'"
-                  >
-                    <i class="bi bi-cart3"></i>
-                    Đơn hàng
-                  </button>
-                  <button 
-                    :class="['metric-toggle', { active: selectedMetric === 'customers' }]"
-                    @click="selectedMetric = 'customers'"
-                  >
-                    <i class="bi bi-people"></i>
-                    Khách hàng
-                  </button>
-                </div>
-                
-                <!-- Beautiful Date Picker for Comparison -->
-                <div class="date-picker-container">
-                  <button 
-                    type="button" 
-                    class="date-picker-btn"
-                    @click="showComparisonDatePicker = !showComparisonDatePicker"
-                  >
-                    <div class="date-picker-icon">
-                      <i class="bi bi-calendar3"></i>
-                    </div>
-                    <div class="date-picker-content">
-                      <div class="date-picker-label">So sánh với</div>
-                      <div class="date-picker-value">{{ formatDate(comparisonDate) }}</div>
-                    </div>
-                    <div class="date-picker-arrow">
-                      <i class="bi bi-chevron-down" :class="{ 'rotated': showComparisonDatePicker }"></i>
-                    </div>
-                  </button>
-                  
-                  <div v-if="showComparisonDatePicker" class="date-picker-dropdown" @click.stop>
-                    <div class="date-picker-header">
-                      <h6>Chọn ngày so sánh</h6>
-                      <button type="button" class="close-btn" @click="showComparisonDatePicker = false">
-                        <i class="bi bi-x"></i>
-                      </button>
-                    </div>
-                    
-                    <div class="date-picker-body">
-                      <div class="quick-options">
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('yesterday')"
-                        >
-                          <i class="bi bi-calendar-check"></i>
-                          Hôm qua
-                        </button>
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('2days')"
-                        >
-                          <i class="bi bi-calendar2"></i>
-                          2 ngày trước
-                        </button>
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('week')"
-                        >
-                          <i class="bi bi-calendar-week"></i>
-                          1 tuần trước
-                        </button>
-                      </div>
-                      
-                      <div class="date-separator">
-                        <span>Hoặc chọn ngày cụ thể</span>
-                      </div>
-                      
-                      <div class="custom-date">
-                        <input 
-                          type="date" 
-                          v-model="comparisonDate" 
-                          class="date-input"
-                          :max="new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]"
-                          @change="showComparisonDatePicker = false"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="chart-actions">
-                  <button class="btn btn-outline-primary btn-sm" @click="exportChartData">
-                    <i class="bi bi-download"></i>
-                    Xuất biểu đồ
-                  </button>
-                </div>
-              </div>
-            </div>
-        <div class="chart-content">
-          <Chart
-            type="line"
-                :data="enhancedChartData"
-                :options="enhancedChartOptions"
-                :height="350"
-          />
-        </div>
-            <div class="chart-insights">
-              <div class="insight-item">
-                <div class="insight-icon revenue">
+    <!-- Sales Analytics Section -->
+    <section class="analytics-section">
+      <div class="analytics-grid">
+        <div class="chart-card main-chart">
+          <div class="chart-header">
+            <div class="chart-title-section">
+              <div class="chart-title-row">
+                <h3 class="chart-title">Phân tích doanh thu & đơn hàng</h3>
+                <div class="growth-badge">
                   <i class="bi bi-graph-up"></i>
-      </div>
-                <div class="insight-content">
-                  <div class="insight-title">Tăng trưởng doanh thu</div>
-                  <div class="insight-value positive">+{{ growthRate }}%</div>
-                  <div class="insight-subtitle">So với kỳ trước</div>
-    </div>
-        </div>
-              <div class="insight-item">
-                <div class="insight-icon orders">
-                  <i class="ph bi bi-cart3"></i>
-                </div>
-                <div class="insight-content">
-                  <div class="insight-title">Đơn hàng trung bình</div>
-                  <div class="insight-value">{{ averageOrderValue }}</div>
-                  <div class="insight-subtitle">Giá trị/đơn hàng</div>
+                  +{{ growthRate }}% tăng trưởng
                 </div>
               </div>
-              <div class="insight-item">
-                <div class="insight-icon profit">
-                  <i class="bi bi-graph-up"></i>
-                </div>
-                <div class="insight-content">
-                  <div class="insight-title">Tỷ lệ lợi nhuận</div>
-                  <div class="insight-value">{{ profitMargin }}%</div>
-                  <div class="insight-subtitle">Margin trung bình</div>
-                </div>
-          </div>
-        </div>
-      </div>
+            </div>
+            <div class="chart-controls">
+              <div class="metric-toggles">
+                <button
+                  :class="['metric-toggle', { active: selectedMetric === 'revenue' }]"
+                  @click="selectedMetric = 'revenue'"
+                >
+                  <i class="bi bi-currency-dollar"></i>
+                  Doanh thu
+                </button>
+                <button
+                  :class="['metric-toggle', { active: selectedMetric === 'orders' }]"
+                  @click="selectedMetric = 'orders'"
+                >
+                  <i class="bi bi-cart3"></i>
+                  Đơn hàng
+                </button>
+                <button
+                  :class="['metric-toggle', { active: selectedMetric === 'customers' }]"
+                  @click="selectedMetric = 'customers'"
+                >
+                  <i class="bi bi-people"></i>
+                  Khách hàng
+                </button>
+              </div>
 
-          <div class="top-products-card">
-            <div class="card-header">
-              <h3>Sản phẩm bán chạy</h3>
-              <button class="view-all-btn">Xem tất cả</button>
-        </div>
-            <div class="products-list">
-              <div v-if="isLoadingTopProducts" class="loading-state">
-                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
+              <div class="chart-actions">
+                <button class="btn btn-outline-primary btn-sm" @click="exportChartData">
+                  <i class="bi bi-download"></i>
+                  Xuất biểu đồ
+                </button>
               </div>
-              <div v-else-if="topProducts.length === 0" class="empty-state">
-                Chưa có dữ liệu sản phẩm
-              </div>
-              <div v-else class="product-item" v-for="product in topProducts" :key="product.id">
-                <div class="product-image">
-                  <img :src="product.image" :alt="product.name">
-          </div>
-                <div class="product-info">
-                  <div class="product-name">{{ product.name }}</div>
-                  <div class="product-sales">{{ product.sales }} đã bán</div>
-        </div>
-                <div class="product-revenue">{{ product.revenue }}</div>
-      </div>
             </div>
           </div>
+          <div class="chart-content">
+            <Chart
+              type="line"
+              :data="enhancedChartData"
+              :options="enhancedChartOptions"
+              :height="350"
+            />
+          </div>
         </div>
-      </section>
 
-      <!-- Order Management Section -->
-      <section class="order-management-section">
-        <div class="order-grid">
-          <div class="order-status-cards">
-            <div class="status-card pending">
-              <div class="status-icon">
-                <i class="ph bi bi-clock"></i>
-        </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.pending ?? 0 }}</div>
-                <div class="status-label">Chờ xử lý</div>
-              </div>
+        <div class="top-products-card">
+          <div class="card-header">
+            <h3>Sản phẩm bán chạy</h3>
+            <button class="view-all-btn">Xem tất cả</button>
+          </div>
+          <div class="products-list">
+            <div v-if="isLoadingTopProducts" class="loading-state">
+              <i class="bi bi-arrow-repeat spin"></i> Đang tải...
             </div>
-            <div class="status-card shipping">
-              <div class="status-icon">
-                <i class="ph bi bi-truck"></i>
-              </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.shipping ?? 0 }}</div>
-                <div class="status-label">Đang giao</div>
-              </div>
+            <div v-else-if="topProducts.length === 0" class="empty-state">
+              Chưa có dữ liệu sản phẩm
             </div>
-            <div class="status-card delivered">
-              <div class="status-icon">
-                <i class="ph bi bi-box-seam"></i>
+            <div v-else class="product-item" v-for="product in topProducts" :key="product.id">
+              <div class="product-image">
+                <img :src="product.image" :alt="product.name" />
               </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.delivered ?? 0 }}</div>
-                <div class="status-label">Đã giao</div>
+              <div class="product-info">
+                <div class="product-name">{{ product.name }}</div>
+                <div class="product-sales">{{ product.sales }} đã bán</div>
               </div>
+              <div class="product-revenue">{{ product.revenue }}</div>
             </div>
-            <div class="status-card completed">
-              <div class="status-icon">
-                <i class="ph bi bi-check-circle"></i>
-              </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.completed ?? 0 }}</div>
-                <div class="status-label">Hoàn thành</div>
           </div>
         </div>
       </div>
+    </section>
 
-          <div class="recent-orders-card">
-            <div class="card-header">
-              <h3>Đơn hàng gần đây</h3>
-              <button class="view-all-btn">Xem tất cả</button>
-        </div>
-            <div class="orders-list">
-              <div v-if="isLoadingRecentOrders" class="loading-state">
-                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
-              </div>
-              <div v-else-if="recentOrders.length === 0" class="empty-state">
-                Chưa có đơn hàng nào
-              </div>
-              <div v-else class="order-item" v-for="order in recentOrders" :key="order.id">
-                <div class="order-info">
-                  <div class="order-id">#{{ order.id }}</div>
-                  <div class="customer-name">{{ order.customer }}</div>
-                  <div class="order-time">{{ order.time }}</div>
+    <!-- Order Management Section -->
+    <section class="order-management-section">
+      <div class="order-grid">
+        <div class="order-status-cards">
+          <div class="status-card pending">
+            <div class="status-icon">
+              <i class="ph bi bi-clock"></i>
+            </div>
+            <div class="status-info">
+              <div class="status-count">{{ orderStatusCounts?.pending ?? 0 }}</div>
+              <div class="status-label">Chờ xử lý</div>
+            </div>
           </div>
-                <div class="order-amount">{{ order.amount }}</div>
-                <div class="order-status" :class="order.status">
-                  {{ order.statusText }}
-        </div>
-      </div>
-    </div>
+          <div class="status-card shipping">
+            <div class="status-icon">
+              <i class="ph bi bi-truck"></i>
+            </div>
+            <div class="status-info">
+              <div class="status-count">{{ orderStatusCounts?.shipping ?? 0 }}</div>
+              <div class="status-label">Đang giao</div>
+            </div>
+          </div>
+          <div class="status-card completed">
+            <div class="status-icon">
+              <i class="ph bi bi-check-circle"></i>
+            </div>
+            <div class="status-info">
+              <div class="status-count">{{ orderStatusCounts?.completed ?? 0 }}</div>
+              <div class="status-label">Hoàn thành</div>
+            </div>
           </div>
         </div>
-      </section>
 
-      <!-- Customer Insights Section -->
-      <section class="customer-insights-section">
-        <div class="insights-grid">
-          <div class="customer-stats-card">
-            <div class="card-header">
-              <h3>Thống kê khách hàng</h3>
-        </div>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-people"></i>
-              </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.totalCustomers ?? 0 }}</div>
-                  <div class="stat-label">Tổng khách hàng</div>
+        <div class="recent-orders-card">
+          <div class="card-header">
+            <h3>Đơn hàng gần đây</h3>
+            <button class="view-all-btn">Xem tất cả</button>
+          </div>
+          <div class="orders-list">
+            <div v-if="isLoadingRecentOrders" class="loading-state">
+              <i class="bi bi-arrow-repeat spin"></i> Đang tải...
             </div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-person-plus"></i>
+            <div v-else-if="recentOrders.length === 0" class="empty-state">
+              Chưa có đơn hàng nào
             </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.newCustomersToday ?? 0 }}</div>
-                  <div class="stat-label">Khách hàng mới</div>
+            <div v-else class="order-item" v-for="order in recentOrders" :key="order.id">
+              <div class="order-info">
+                <div class="order-id">#{{ order.id }}</div>
+                <div class="customer-name">{{ order.customer }}</div>
+                <div class="order-time">{{ order.time }}</div>
+              </div>
+              <div class="order-amount">{{ order.amount }}</div>
+              <div class="order-status" :class="order.status">
+                {{ order.statusText }}
+              </div>
+            </div>
           </div>
         </div>
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-arrow-repeat"></i>
       </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.repeatRate ?? 0 }}%</div>
-                  <div class="stat-label">Tỷ lệ quay lại</div>
-    </div>
-          </div>
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-star"></i>
-        </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.averageRating ?? 0 }}</div>
-                  <div class="stat-label">Đánh giá trung bình</div>
-                      </div>
-                    </div>
-          </div>
-            </div>
-
-          <div class="category-performance-card">
-            <div class="card-header">
-              <h3>Hiệu suất danh mục</h3>
-          </div>
-            <div class="categories-list">
-              <div v-if="isLoadingCategoryPerformance" class="loading-state">
-                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
-              </div>
-              <div v-else-if="categoryPerformance.length === 0" class="empty-state">
-                Chưa có dữ liệu danh mục
-              </div>
-              <div v-else class="category-item" v-for="category in categoryPerformance" :key="category.id">
-                <div class="category-info">
-                  <div class="category-name">{{ category.name }}</div>
-                  <div class="category-sales">{{ category.sales }} sản phẩm</div>
-        </div>
-                <div class="category-revenue">{{ category.revenue }}</div>
-                <div class="category-trend" :class="category.trend">
-                  <i :class="category.trendIcon"></i>
-                  <span>{{ category.change }}</span>
-      </div>
-    </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    </section>
   </div>
 </template>
 
@@ -490,36 +334,29 @@ const isLoadingAlerts = ref(false)
 
 // Chart enhancement state
 const selectedMetric = ref('revenue')
-const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000))
-const showComparisonDatePicker = ref(false)
-const chartTimeRange = ref('30days')
+const chartTimeRange = ref('7days')
 
 // Real data from API
 const topProducts = ref([])
 const recentOrders = ref([])
-const categoryPerformance = ref([])
 const chartData = ref(null)
-const customerSummary = ref(null)
 const orderStatusCounts = ref(null)
 const isLoadingChart = ref(false)
 const isLoadingTopProducts = ref(false)
 const isLoadingRecentOrders = ref(false)
-const isLoadingCategoryPerformance = ref(false)
-const isLoadingCustomerSummary = ref(false)
 const isLoadingOrderStatusCounts = ref(false)
-
 
 // Enhanced chart data - Analytics style with real API data
 const enhancedChartData = computed(() => {
   if (!chartData.value || !chartData.value.labels) {
     return {
       labels: [],
-      datasets: []
+      datasets: [],
     }
   }
 
   const datasets = []
-  
+
   // Main dataset based on selected metric
   if (selectedMetric.value === 'revenue') {
     datasets.push({
@@ -532,9 +369,9 @@ const enhancedChartData = computed(() => {
       tension: 0.3,
       pointRadius: 0,
       pointStyle: 'circle',
-      yAxisID: 'y'
+      yAxisID: 'y',
     })
-    
+
     datasets.push({
       label: 'Doanh thu kỳ trước (triệu VNĐ)',
       data: chartData.value.previous || [],
@@ -546,7 +383,7 @@ const enhancedChartData = computed(() => {
       pointRadius: 0,
       pointStyle: 'circle',
       borderDash: [0, 0],
-      yAxisID: 'y'
+      yAxisID: 'y',
     })
   } else if (selectedMetric.value === 'orders') {
     datasets.push({
@@ -559,9 +396,9 @@ const enhancedChartData = computed(() => {
       tension: 0.3,
       pointRadius: 0,
       pointStyle: 'circle',
-      yAxisID: 'y'
+      yAxisID: 'y',
     })
-    
+
     datasets.push({
       label: 'Số đơn hàng kỳ trước',
       data: chartData.value.previous || [],
@@ -573,7 +410,7 @@ const enhancedChartData = computed(() => {
       pointRadius: 0,
       pointStyle: 'circle',
       borderDash: [0, 0],
-      yAxisID: 'y'
+      yAxisID: 'y',
     })
   } else if (selectedMetric.value === 'customers') {
     // For customers, use orders data as proxy (can be enhanced later)
@@ -587,9 +424,9 @@ const enhancedChartData = computed(() => {
       tension: 0.3,
       pointRadius: 0,
       pointStyle: 'circle',
-      yAxisID: 'y'
+      yAxisID: 'y',
     })
-    
+
     datasets.push({
       label: 'Khách hàng kỳ trước',
       data: chartData.value.previous || [],
@@ -601,13 +438,13 @@ const enhancedChartData = computed(() => {
       pointRadius: 0,
       pointStyle: 'circle',
       borderDash: [0, 0],
-      yAxisID: 'y'
+      yAxisID: 'y',
     })
   }
-  
+
   return {
     labels: chartData.value.labels || [],
-    datasets
+    datasets,
   }
 })
 
@@ -616,29 +453,12 @@ const growthRate = computed(() => {
   if (!chartData.value || !chartData.value.current || !chartData.value.previous) {
     return '0.0'
   }
-  
+
   const currentTotal = chartData.value.current.reduce((sum, val) => sum + Number(val || 0), 0)
   const previousTotal = chartData.value.previous.reduce((sum, val) => sum + Number(val || 0), 0)
-  
+
   if (previousTotal === 0) return currentTotal > 0 ? '100.0' : '0.0'
-  return ((currentTotal - previousTotal) / previousTotal * 100).toFixed(1)
-})
-
-const averageOrderValue = computed(() => {
-  if (!summary.value || !summary.value.revenueToday || !summary.value.newOrders24h) {
-    return '0k₫'
-  }
-  
-  const revenue = Number(summary.value.revenueToday || 0)
-  const orders = Number(summary.value.newOrders24h || 1)
-  
-  if (orders === 0) return '0k₫'
-  return (revenue / orders / 1000).toFixed(0) + 'k₫'
-})
-
-const profitMargin = computed(() => {
-  // Mock profit margin (can be enhanced with real data later)
-  return '25.0'
+  return (((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1)
 })
 
 // Growth rates for overview cards - from API
@@ -676,12 +496,12 @@ const enhancedChartOptions = computed(() => ({
         font: {
           size: 10,
           family: "'Inter', sans-serif",
-          weight: '400'
+          weight: '400',
         },
         color: '#6b7280',
         boxWidth: 6,
-        boxHeight: 6
-      }
+        boxHeight: 6,
+      },
     },
     tooltip: {
       backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -697,24 +517,24 @@ const enhancedChartOptions = computed(() => ({
       titleFont: {
         size: 12,
         weight: '600',
-        family: "'Inter', sans-serif"
+        family: "'Inter', sans-serif",
       },
       bodyFont: {
         size: 11,
         weight: '500',
-        family: "'Inter', sans-serif"
+        family: "'Inter', sans-serif",
       },
       bodySpacing: 4,
       titleMarginBottom: 8,
       callbacks: {
-        title: function(context) {
+        title: function (context) {
           return `${context[0].label}`
         },
-        label: function(context) {
+        label: function (context) {
           return `${context.dataset.label}: ${context.parsed.y.toLocaleString('vi-VN')}`
-        }
-      }
-    }
+        },
+      },
+    },
   },
   scales: {
     x: {
@@ -722,101 +542,64 @@ const enhancedChartOptions = computed(() => ({
         display: true,
         color: 'rgba(156, 163, 175, 0.15)',
         drawBorder: false,
-        lineWidth: 1
+        lineWidth: 1,
       },
       ticks: {
         font: {
           size: 11,
           family: "'Inter', sans-serif",
-          weight: '400'
+          weight: '400',
         },
         color: '#9ca3af',
         padding: 6,
         autoSkip: false,
         maxTicksLimit: 24,
-        stepSize: 1
-      }
+        stepSize: 1,
+      },
     },
     y: {
       grid: {
         display: true,
         color: 'rgba(156, 163, 175, 0.15)',
         drawBorder: false,
-        lineWidth: 1
+        lineWidth: 1,
       },
       ticks: {
         font: {
           size: 10,
           family: "'Inter', sans-serif",
-          weight: '400'
+          weight: '400',
         },
         color: '#9ca3af',
         padding: 6,
         maxTicksLimit: 8,
-        count: 8
-      }
-    }
+        count: 8,
+      },
+    },
   },
   animation: {
     duration: 300,
-    easing: 'easeInOut'
+    easing: 'easeInOut',
   },
   elements: {
     point: {
       radius: 0,
       hitRadius: 30,
       hoverRadius: 6,
-      hoverBorderWidth: 2
-    }
+      hoverBorderWidth: 2,
+    },
   },
   layout: {
     padding: {
       top: 10,
       right: 10,
       bottom: 10,
-      left: 10
-    }
-  }
+      left: 10,
+    },
+  },
 }))
 
-
 // Methods
-const formatDate = (date) => {
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const targetDate = new Date(date)
-  
-  if (targetDate.toDateString() === yesterday.toDateString()) {
-    return 'Hôm qua'
-  }
-  
-  return targetDate.toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
-const selectQuickDate = (option) => {
-  const today = new Date()
-  let targetDate = new Date()
-  
-  switch (option) {
-    case 'yesterday':
-      targetDate = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-      break
-    case '2days':
-      targetDate = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
-      break
-    case 'week':
-      targetDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
-  }
-  
-  comparisonDate.value = targetDate
-  showComparisonDatePicker.value = false
-}
-
-
 const exportChartData = () => {
   // Export chart data functionality
 }
@@ -825,17 +608,13 @@ const exportChartData = () => {
 const loadChartData = async () => {
   try {
     isLoadingChart.value = true
-    console.log('📊 Loading chart data...', { range: chartTimeRange.value, metric: selectedMetric.value })
     const response = await thongKeService.getChart({
       range: chartTimeRange.value,
-      metric: selectedMetric.value
+      metric: selectedMetric.value,
     })
-    console.log('📊 Chart response:', response)
     chartData.value = response?.data ?? response
-    console.log('📊 Chart data loaded:', chartData.value)
   } catch (error) {
-    console.error('❌ Error loading chart data:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
+    console.error('Error loading chart data:', error)
     chartData.value = { labels: [], current: [], previous: [] }
   } finally {
     isLoadingChart.value = false
@@ -846,23 +625,17 @@ const loadChartData = async () => {
 const loadTopProducts = async () => {
   try {
     isLoadingTopProducts.value = true
-    console.log('🔄 Loading top products...')
     const response = await thongKeService.getTopProducts({ limit: 4, rangeDays: 30 })
-    console.log('📦 Top products response:', response)
     const data = response?.data ?? response
-    console.log('📦 Top products data:', data)
-    console.log('📦 Data type:', Array.isArray(data) ? 'array' : typeof data)
-    topProducts.value = (data || []).map(product => ({
+    topProducts.value = (data || []).map((product) => ({
       id: product.id,
       name: product.name,
       image: product.image || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=SP',
       sales: product.sales,
-      revenue: formatCurrency(product.revenue)
+      revenue: formatCurrency(product.revenue),
     }))
-    console.log('✅ Top products loaded:', topProducts.value)
   } catch (error) {
-    console.error('❌ Error loading top products:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
+    console.error('Error loading top products:', error)
     topProducts.value = []
   } finally {
     isLoadingTopProducts.value = false
@@ -873,72 +646,21 @@ const loadTopProducts = async () => {
 const loadRecentOrders = async () => {
   try {
     isLoadingRecentOrders.value = true
-    console.log('📋 Loading recent orders...')
     const response = await thongKeService.getRecentOrders({ limit: 4 })
-    console.log('📋 Recent orders response:', response)
     const data = response?.data ?? response
-    console.log('📋 Recent orders data:', data)
-    recentOrders.value = (data || []).map(order => ({
+    recentOrders.value = (data || []).map((order) => ({
       id: order.orderCode || order.id,
       customer: order.customer,
       time: order.time,
       amount: formatCurrency(order.amount),
       status: mapOrderStatus(order.status),
-      statusText: getStatusDisplayName(order.status)
+      statusText: getStatusDisplayName(order.status),
     }))
-    console.log('✅ Recent orders loaded:', recentOrders.value)
   } catch (error) {
-    console.error('❌ Error loading recent orders:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
+    console.error('Error loading recent orders:', error)
     recentOrders.value = []
   } finally {
     isLoadingRecentOrders.value = false
-  }
-}
-
-// Load category performance from API
-const loadCategoryPerformance = async () => {
-  try {
-    isLoadingCategoryPerformance.value = true
-    console.log('📊 Loading category performance...')
-    const response = await thongKeService.getCategoryPerformance({ limit: 4, rangeDays: 30 })
-    console.log('📊 Category performance response:', response)
-    const data = response?.data ?? response
-    console.log('📊 Category performance data:', data)
-    categoryPerformance.value = (data || []).map(category => ({
-      id: category.id,
-      name: category.name,
-      sales: category.sales,
-      revenue: formatCurrency(category.revenue),
-      change: (category.change >= 0 ? '+' : '') + category.change + '%',
-      trend: category.trend,
-      trendIcon: category.trendIcon
-    }))
-    console.log('✅ Category performance loaded:', categoryPerformance.value)
-  } catch (error) {
-    console.error('❌ Error loading category performance:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
-    categoryPerformance.value = []
-  } finally {
-    isLoadingCategoryPerformance.value = false
-  }
-}
-
-// Load customer summary from API
-const loadCustomerSummary = async () => {
-  try {
-    isLoadingCustomerSummary.value = true
-    console.log('👥 Loading customer summary...')
-    const response = await thongKeService.getCustomerSummary()
-    console.log('👥 Customer summary response:', response)
-    customerSummary.value = response?.data ?? response
-    console.log('✅ Customer summary loaded:', customerSummary.value)
-  } catch (error) {
-    console.error('❌ Error loading customer summary:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
-    customerSummary.value = null
-  } finally {
-    isLoadingCustomerSummary.value = false
   }
 }
 
@@ -946,14 +668,10 @@ const loadCustomerSummary = async () => {
 const loadOrderStatusCounts = async () => {
   try {
     isLoadingOrderStatusCounts.value = true
-    console.log('📊 Loading order status counts...')
     const response = await thongKeService.getOrderStatusCounts()
-    console.log('📊 Order status counts response:', response)
     orderStatusCounts.value = response?.data ?? response
-    console.log('✅ Order status counts loaded:', orderStatusCounts.value)
   } catch (error) {
-    console.error('❌ Error loading order status counts:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
+    console.error('Error loading order status counts:', error)
     orderStatusCounts.value = null
   } finally {
     isLoadingOrderStatusCounts.value = false
@@ -971,22 +689,22 @@ const formatCurrency = (amount) => {
   }
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(num)
 }
 
 const mapOrderStatus = (status) => {
   // Map English status from API to CSS class
   const statusMap = {
-    'PENDING': 'pending',
-    'SHIPPING': 'shipping',
-    'COMPLETED': 'completed',
-    'CANCELLED': 'cancelled',
+    PENDING: 'pending',
+    SHIPPING: 'shipping',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
     // Fallback for Vietnamese (backward compatibility)
     'Chờ xác nhận': 'pending',
     'Đang giao': 'shipping',
     'Hoàn tất': 'completed',
-    'Đã hủy': 'cancelled'
+    'Đã hủy': 'cancelled',
   }
   return statusMap[status] || 'pending'
 }
@@ -994,10 +712,10 @@ const mapOrderStatus = (status) => {
 // Get Vietnamese display name for status
 const getStatusDisplayName = (status) => {
   const displayMap = {
-    'PENDING': 'Chờ xác nhận',
-    'SHIPPING': 'Đang giao',
-    'COMPLETED': 'Hoàn tất',
-    'CANCELLED': 'Đã hủy'
+    PENDING: 'Chờ xác nhận',
+    SHIPPING: 'Đang giao',
+    COMPLETED: 'Hoàn tất',
+    CANCELLED: 'Đã hủy',
   }
   return displayMap[status] || status
 }
@@ -1018,9 +736,6 @@ onMounted(async () => {
         const s = await thongKeService.getSummary({ lowStockThreshold: 10 })
         summary.value = s?.data ?? s
         console.log('✅ Summary loaded:', summary.value)
-        console.log('📊 Revenue Today:', summary.value?.revenueToday, typeof summary.value?.revenueToday)
-        console.log('📦 Low Stock Count:', summary.value?.lowStockCount, typeof summary.value?.lowStockCount)
-        console.log('👥 New Customers Today:', summary.value?.newCustomersToday, typeof summary.value?.newCustomersToday)
       } catch (error) {
         console.error('❌ Error loading summary:', error)
       } finally {
@@ -1041,9 +756,7 @@ onMounted(async () => {
     loadChartData(),
     loadTopProducts(),
     loadRecentOrders(),
-    loadCategoryPerformance(),
-    loadCustomerSummary(),
-    loadOrderStatusCounts()
+    loadOrderStatusCounts(),
   ])
 })
 </script>
@@ -1054,8 +767,68 @@ onMounted(async () => {
   padding: 0;
   background: #f8fafc;
   color: #1f2937;
+  font-family: 'Inter', sans-serif;
 }
 
+/* Dashboard Header */
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.realtime-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.live-indicator i {
+  font-size: 0.5rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.last-updated {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
 
 /* Overview Section */
 .overview-section {
@@ -1172,7 +945,8 @@ onMounted(async () => {
   margin-bottom: 2rem;
 }
 
-.quick-actions-panel, .alerts-panel {
+.quick-actions-panel,
+.alerts-panel {
   background: #ffffff;
   border-radius: 12px;
   padding: 1.5rem;
@@ -1180,7 +954,8 @@ onMounted(async () => {
   border: 1px solid #e5e7eb;
 }
 
-.quick-actions-panel h3, .alerts-panel h3 {
+.quick-actions-panel h3,
+.alerts-panel h3 {
   font-size: 1.125rem;
   font-weight: 600;
   color: #1f2937;
@@ -1189,7 +964,7 @@ onMounted(async () => {
 
 .action-buttons {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 
@@ -1431,7 +1206,8 @@ onMounted(async () => {
   color: #374151;
 }
 
-.time-selector, .granularity-selector {
+.time-selector,
+.granularity-selector {
   padding: 0.5rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -1442,7 +1218,8 @@ onMounted(async () => {
   transition: border-color 0.2s;
 }
 
-.time-selector:focus, .granularity-selector:focus {
+.time-selector:focus,
+.granularity-selector:focus {
   outline: none;
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
@@ -1685,11 +1462,6 @@ onMounted(async () => {
   color: #8b5cf6;
 }
 
-.status-card.delivered .status-icon {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
 .status-card.completed .status-icon {
   background: #dcfce7;
   color: #16a34a;
@@ -1794,132 +1566,6 @@ onMounted(async () => {
   color: #16a34a;
 }
 
-/* Customer Insights Section */
-.customer-insights-section {
-  margin-bottom: 2rem;
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.customer-stats-card, .category-performance-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.stat-item:hover {
-  background: #f9fafb;
-}
-
-.stat-item .stat-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.categories-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.category-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.category-item:hover {
-  background: #f9fafb;
-}
-
-.category-info {
-  flex: 1;
-}
-
-.category-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.category-sales {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.category-revenue {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #16a34a;
-  margin-right: 1rem;
-}
-
-.category-trend {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.category-trend.positive {
-  color: #16a34a;
-}
-
-.category-trend.negative {
-  color: #dc2626;
-}
-
 .section-header {
   display: flex;
   justify-content: space-between;
@@ -1960,9 +1606,9 @@ onMounted(async () => {
   background: #6366f1;
   border-color: #6366f1;
   color: #ffffff;
-  }
-  
-  .kpi-grid {
+}
+
+.kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
@@ -2058,12 +1704,8 @@ onMounted(async () => {
   .analytics-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .order-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .insights-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -2072,11 +1714,11 @@ onMounted(async () => {
   .actions-alerts-section {
     grid-template-columns: 1fr;
   }
-  
+
   .overview-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .order-status-cards {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -2087,266 +1729,72 @@ onMounted(async () => {
     flex-direction: column;
     gap: 0.5rem;
   }
-  
+
   .chart-controls {
     flex-direction: column;
     align-items: stretch;
     gap: 0.75rem;
   }
-  
+
   .control-group {
     justify-content: space-between;
   }
-  
+
   .chart-insights {
     grid-template-columns: 1fr;
   }
-  
+
   .overview-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .actions-alerts-section {
     grid-template-columns: 1fr;
   }
-  
+
   .action-buttons {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
   }
-  
+
   .order-status-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
   }
 }
 
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .action-buttons {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
+  .dashboard-content {
+    padding: 0;
+  }
+
   .overview-card {
     padding: 1rem;
   }
-  
-  .quick-actions-panel, .alerts-panel {
+
+  .quick-actions-panel,
+  .alerts-panel {
     padding: 1rem;
   }
-  
-  .chart-card, .top-products-card {
+
+  .chart-card,
+  .top-products-card {
     padding: 1rem;
   }
-}
-
-/* Beautiful Date Picker Styles */
-.date-picker-container {
-  position: relative;
-  display: inline-block;
-}
-
-.date-picker-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.date-picker-btn:hover {
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.date-picker-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.date-picker-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.date-picker-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.date-picker-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.date-picker-arrow {
-  display: flex;
-  align-items: center;
-  color: #64748b;
-  transition: transform 0.3s ease;
-}
-
-.date-picker-arrow .rotated {
-  transform: rotate(180deg);
-}
-
-.date-picker-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  z-index: 1000;
-  min-width: 280px;
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.date-picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.date-picker-header h6 {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: #f1f5f9;
-  border: none;
-  border-radius: 6px;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.date-picker-body {
-  padding: 1rem 1.25rem 1.25rem;
-}
-
-.quick-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.quick-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.quick-option:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  transform: translateX(2px);
-}
-
-.quick-option i {
-  color: #3b82f6;
-  font-size: 0.875rem;
-}
-
-.date-separator {
-  position: relative;
-  text-align: center;
-  margin: 1rem 0;
-}
-
-.date-separator::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e2e8f0;
-}
-
-.date-separator span {
-  background: white;
-  padding: 0 1rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.custom-date {
-  margin-top: 0.5rem;
-}
-
-.date-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  color: #1e293b;
-  background: #f8fafc;
-  transition: all 0.2s ease;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .chart-actions {
