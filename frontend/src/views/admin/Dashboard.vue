@@ -11,7 +11,7 @@
         </div>
               <div class="card-info">
                 <h3>Tổng doanh thu</h3>
-                <p class="card-subtitle">Đơn hàng hoàn tất</p>
+                <p class="card-subtitle">Hôm nay</p>
       </div>
             </div>
             <div class="card-content">

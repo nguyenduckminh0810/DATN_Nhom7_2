@@ -166,7 +166,22 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in paginatedInventory" :key="item.id">
+            <tr v-if="isLoadingInventory">
+              <td colspan="9" class="text-center py-4">
+                <div class="loading-state">
+                  <i class="bi bi-arrow-repeat spin me-2"></i>
+                  Đang tải dữ liệu...
+                </div>
+              </td>
+            </tr>
+            <tr v-else-if="paginatedInventory.length === 0">
+              <td colspan="9" class="text-center py-4">
+                <div class="empty-state">
+                  Không có dữ liệu tồn kho
+                </div>
+              </td>
+            </tr>
+            <tr v-else v-for="item in paginatedInventory" :key="item.id">
               <td>
                 <input type="checkbox" class="form-check-input" v-model="selectedItems" :value="item.id">
               </td>
@@ -362,7 +377,8 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import variantService from '@/services/variantService'
 
 // Reactive data
 const searchQuery = ref('')
@@ -379,85 +395,10 @@ const stockToRemove = ref(0)
 const stockNote = ref('')
 const showLowStockModal = ref(false)
 const showBulkUpdateModal = ref(false)
+const isLoadingInventory = ref(false)
 
-// Mock inventory data
-const inventoryItems = ref([
-  {
-    id: 1,
-    productId: 1,
-    productName: 'Áo sơ mi nam cao cấp',
-    productSku: 'ASM001',
-    productImage: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?w=100',
-    size: 'M',
-    color: 'Trắng',
-    colorHex: '#FFFFFF',
-    material: 'Cotton 100%',
-    variantSku: 'ASM001-M-TRA',
-    stock: 25,
-    price: 450000,
-    lastUpdated: new Date('2024-01-20')
-  },
-  {
-    id: 2,
-    productId: 1,
-    productName: 'Áo sơ mi nam cao cấp',
-    productSku: 'ASM001',
-    productImage: 'https://images.unsplash.com/photo-1594938298605-cd64d190e6bc?w=100',
-    size: 'L',
-    color: 'Đen',
-    colorHex: '#000000',
-    material: 'Cotton 100%',
-    variantSku: 'ASM001-L-DEN',
-    stock: 3,
-    price: 450000,
-    lastUpdated: new Date('2024-01-19')
-  },
-  {
-    id: 3,
-    productId: 2,
-    productName: 'Quần jean nam slim fit',
-    productSku: 'QJN002',
-    productImage: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=100',
-    size: '30',
-    color: 'Xanh denim',
-    colorHex: '#1560BD',
-    material: 'Denim',
-    variantSku: 'QJN002-30-XAN',
-    stock: 0,
-    price: 650000,
-    lastUpdated: new Date('2024-01-18')
-  },
-  {
-    id: 4,
-    productId: 2,
-    productName: 'Quần jean nam slim fit',
-    productSku: 'QJN002',
-    productImage: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=100',
-    size: '32',
-    color: 'Đen',
-    colorHex: '#000000',
-    material: 'Denim',
-    variantSku: 'QJN002-32-DEN',
-    stock: 8,
-    price: 650000,
-    lastUpdated: new Date('2024-01-21')
-  },
-  {
-    id: 5,
-    productId: 3,
-    productName: 'Áo thun nam basic',
-    productSku: 'ATN003',
-    productImage: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=100',
-    size: 'XL',
-    color: 'Xám',
-    colorHex: '#808080',
-    material: 'Cotton',
-    variantSku: 'ATN003-XL-XAM',
-    stock: 45,
-    price: 250000,
-    lastUpdated: new Date('2024-01-22')
-  }
-])
+// Inventory data from API
+const inventoryItems = ref([])
 
 // Computed
 const inventoryStats = computed(() => ({
@@ -498,7 +439,14 @@ const filteredInventory = computed(() => {
   }
 
   if (categoryFilter.value) {
-    filtered = filtered.filter(item => item.productSku.startsWith(categoryFilter.value.toUpperCase()))
+    filtered = filtered.filter(item => {
+      if (categoryFilter.value === 'ao') {
+        return item.categoryName && item.categoryName.toLowerCase().includes('áo')
+      } else if (categoryFilter.value === 'quan') {
+        return item.categoryName && item.categoryName.toLowerCase().includes('quần')
+      }
+      return true
+    })
   }
 
   return filtered
@@ -608,17 +556,71 @@ const closeEditModal = () => {
   stockNote.value = ''
 }
 
-const saveStockUpdate = () => {
+// Load inventory items from API
+const loadInventoryItems = async () => {
+  try {
+    isLoadingInventory.value = true
+    console.log('📦 Loading inventory items...')
+    const response = await variantService.getAllInventoryItems()
+    const data = response?.data ?? response
+    console.log('📦 Inventory response:', data)
+    
+    // Map API data to component format
+    inventoryItems.value = (data || []).map(item => ({
+      id: item.id,
+      productId: item.productId,
+      productName: item.productName || 'N/A',
+      productSku: item.productSku || '',
+      productImage: item.productImage || item.imageUrl || 'https://via.placeholder.com/50x50/e2e8f0/94a3b8?text=SP',
+      categoryName: item.categoryName || '',
+      size: item.size || 'N/A',
+      color: item.color || 'N/A',
+      colorHex: item.colorHex || '#808080',
+      material: item.material || 'N/A',
+      variantSku: item.variantSku || '',
+      stock: item.stock ?? 0,
+      price: item.price ? Number(item.price) : (item.productPrice ? Number(item.price) : 0),
+      lastUpdated: item.lastUpdated ? new Date(item.lastUpdated) : new Date()
+    }))
+    
+    console.log('✅ Inventory items loaded:', inventoryItems.value.length)
+  } catch (error) {
+    console.error('❌ Error loading inventory items:', error)
+    console.error('❌ Error details:', error.response?.data || error.message)
+    inventoryItems.value = []
+    alert('Lỗi khi tải dữ liệu tồn kho. Vui lòng thử lại sau.')
+  } finally {
+    isLoadingInventory.value = false
+  }
+}
+
+const saveStockUpdate = async () => {
   if (!editingItem.value) return
   
-  const item = inventoryItems.value.find(i => i.id === editingItem.value.id)
-  if (item) {
-    item.stock = newStock.value
-    item.lastUpdated = new Date()
+  try {
+    const newStockValue = newStock.value
+    if (newStockValue < 0) {
+      alert('Tồn kho không thể âm!')
+      return
+    }
+    
+    console.log('💾 Updating stock...', { id: editingItem.value.id, stock: newStockValue })
+    const response = await variantService.updateStock(editingItem.value.id, newStockValue)
+    console.log('✅ Stock updated:', response)
+    
+    // Update local data
+    const item = inventoryItems.value.find(i => i.id === editingItem.value.id)
+    if (item) {
+      item.stock = newStockValue
+      item.lastUpdated = new Date()
+    }
+    
+    alert(`Đã cập nhật tồn kho!\nSKU: ${editingItem.value.variantSku}\nTồn kho mới: ${newStockValue}`)
+    closeEditModal()
+  } catch (error) {
+    console.error('❌ Error updating stock:', error)
+    alert('Lỗi khi cập nhật tồn kho. Vui lòng thử lại.')
   }
-  
-  alert(`Đã cập nhật tồn kho!\nSKU: ${editingItem.value.variantSku}\nTồn kho mới: ${newStock.value}`)
-  closeEditModal()
 }
 
 const viewHistory = (item) => {
@@ -626,13 +628,30 @@ const viewHistory = (item) => {
 }
 
 const exportInventory = () => {
-  alert('Xuất Excel - Coming soon!')
-  console.log('Export data:', filteredInventory.value)
+  // Export to Excel/CSV
+  const data = filteredInventory.value.map(item => ({
+    'Mã biến thể': item.variantSku,
+    'Tên sản phẩm': item.productName,
+    'Size': item.size,
+    'Màu sắc': item.color,
+    'Chất liệu': item.material,
+    'Tồn kho': item.stock,
+    'Giá': item.price,
+    'Cập nhật': formatDate(item.lastUpdated)
+  }))
+  
+  console.log('Export data:', data)
+  alert('Tính năng xuất Excel - Coming soon!\nDữ liệu đã log ra console.')
 }
 
 const bulkRestock = () => {
   alert('Nhập hàng hàng loạt - Coming soon!')
 }
+
+// Load data on mount
+onMounted(() => {
+  loadInventoryItems()
+})
 </script>
 
 <style scoped>

@@ -20,6 +20,9 @@ export default {
   // Xóa tất cả biến thể của sản phẩm
   deleteAllBySanPham: (sanPhamId) => api.delete(`/bien-the/san-pham/${sanPhamId}`),
 
+  // Lấy tất cả biến thể với thông tin sản phẩm (cho trang inventory)
+  getAllInventoryItems: () => api.get('/bien-the/inventory/all'),
+
   // Legacy method for compatibility
   upsert: (productId, data) => api.post(`/bien-the/san-pham/${productId}`, data),
 }

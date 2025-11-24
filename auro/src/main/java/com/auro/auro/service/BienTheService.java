@@ -1,6 +1,7 @@
 package com.auro.auro.service;
 
 import com.auro.auro.dto.request.VariantUpsertRequest;
+import com.auro.auro.dto.response.InventoryItemResponse;
 import com.auro.auro.dto.response.VariantResponse;
 import com.auro.auro.model.*;
 import com.auro.auro.repository.*;
@@ -8,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -229,6 +232,88 @@ public class BienTheService {
     @Transactional
     public void deleteAllVariantsBySanPham(Long sanPhamId) {
         bienTheSanPhamRepository.deleteBySanPham_Id(sanPhamId);
+    }
+
+    /**
+     * Lấy tất cả biến thể với thông tin sản phẩm (cho trang inventory)
+     */
+    public List<InventoryItemResponse> getAllInventoryItems() {
+        List<BienTheSanPham> variants = bienTheSanPhamRepository.findAll();
+        return variants.stream()
+                .map(this::toInventoryItemResponse)
+                .toList();
+    }
+
+    /**
+     * Chuyển đổi entity sang InventoryItemResponse
+     */
+    private InventoryItemResponse toInventoryItemResponse(BienTheSanPham variant) {
+        InventoryItemResponse response = new InventoryItemResponse();
+        
+        // Variant info
+        response.setId(variant.getId());
+        response.setVariantSku(variant.getSku());
+        response.setStock(variant.getSoLuongTon());
+        response.setPrice(variant.getGia());
+        
+        if (variant.getKichCo() != null) {
+            response.setSize(variant.getKichCo().getTen());
+        }
+        
+        if (variant.getMauSac() != null) {
+            response.setColor(variant.getMauSac().getTen());
+            response.setColorHex(variant.getMauSac().getMa());
+        }
+        
+        if (variant.getChatLieu() != null) {
+            response.setMaterial(variant.getChatLieu().getTen());
+        }
+        
+        // Load variant image
+        try {
+            var hinhAnh = hinhAnhRepository.findFirstByBienThe_IdOrderByThuTuAscIdAsc(variant.getId());
+            if (hinhAnh.isPresent()) {
+                response.setImageUrl(hinhAnh.get().getUrl());
+            }
+        } catch (Exception e) {
+            // Ignore error
+        }
+        
+        // Product info
+        if (variant.getSanPham() != null) {
+            SanPham product = variant.getSanPham();
+            response.setProductId(product.getId());
+            response.setProductName(product.getTen());
+            response.setProductPrice(product.getGia());
+            
+            if (product.getDanhMuc() != null) {
+                response.setCategoryName(product.getDanhMuc().getTen());
+            }
+            
+            // Load product image
+            try {
+                var productImage = hinhAnhRepository.findFirstBySanPham_IdOrderByThuTuAscIdAsc(product.getId());
+                if (productImage.isPresent()) {
+                    response.setProductImage(productImage.get().getUrl());
+                }
+            } catch (Exception e) {
+                // Ignore error
+            }
+        }
+        
+        // Use product image if variant image is not available
+        if (response.getImageUrl() == null && response.getProductImage() != null) {
+            response.setImageUrl(response.getProductImage());
+        }
+        
+        // Last updated - use product's capNhatLuc or variant's creation time
+        if (variant.getSanPham() != null && variant.getSanPham().getCapNhatLuc() != null) {
+            response.setLastUpdated(variant.getSanPham().getCapNhatLuc());
+        } else {
+            response.setLastUpdated(LocalDateTime.now());
+        }
+        
+        return response;
     }
 
     /**
