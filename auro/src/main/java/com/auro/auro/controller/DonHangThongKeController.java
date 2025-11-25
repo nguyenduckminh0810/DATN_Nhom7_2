@@ -169,10 +169,7 @@ public class DonHangThongKeController {
     public ResponseEntity<Map<String, Object>> getAnalyticsKpis(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("totalOrders", donHangRepository.count());
-        result.put("totalRevenue", 0);
-        result.put("averageOrderValue", 0);
+        Map<String, Object> result = thongKeService.getAnalyticsKpis(startDate, endDate);
         return ResponseEntity.ok(result);
     }
 
@@ -181,8 +178,7 @@ public class DonHangThongKeController {
     public ResponseEntity<Map<String, Object>> getBusinessInsights(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("insights", Collections.emptyList());
+        Map<String, Object> result = thongKeService.getBusinessInsights(startDate, endDate);
         return ResponseEntity.ok(result);
     }
 
@@ -190,7 +186,8 @@ public class DonHangThongKeController {
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<List<Map<String, Object>>> getHourlySales(
             @RequestParam(required = false) String date) {
-        return ResponseEntity.ok(Collections.emptyList());
+        List<Map<String, Object>> result = thongKeService.getHourlySales(date);
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/analytics/performance")
@@ -198,8 +195,7 @@ public class DonHangThongKeController {
     public ResponseEntity<Map<String, Object>> getPerformanceMetrics(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("metrics", Collections.emptyMap());
+        Map<String, Object> result = thongKeService.getPerformanceMetrics(startDate, endDate);
         return ResponseEntity.ok(result);
     }
 
@@ -209,8 +205,7 @@ public class DonHangThongKeController {
             @RequestParam(defaultValue = "status") String type,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("distribution", Collections.emptyMap());
+        Map<String, Object> result = thongKeService.getOrderDistribution(type, startDate, endDate);
         return ResponseEntity.ok(result);
     }
 
@@ -220,8 +215,7 @@ public class DonHangThongKeController {
             @RequestParam(defaultValue = "segments") String type,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("analytics", Collections.emptyMap());
+        Map<String, Object> result = thongKeService.getCustomerAnalytics(type, startDate, endDate);
         return ResponseEntity.ok(result);
     }
 

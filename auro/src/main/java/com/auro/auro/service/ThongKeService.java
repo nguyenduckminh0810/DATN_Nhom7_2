@@ -238,6 +238,22 @@ public class ThongKeService {
                 LocalDate newDate = oldDate.plusDays(days);
                 previousDataMap.put(newDate.toString(), (Number) row[1]);
             }
+        } else if ("customers".equals(metric)) {
+            // Current period customers (distinct customers who placed orders)
+            List<Object[]> currentCustomers = donHangRepository.countCustomersByDateBetween(currentStart, now);
+            System.out.println("  - Current Customers Records: " + currentCustomers.size());
+            for (Object[] row : currentCustomers) {
+                currentDataMap.put(row[0].toString(), (Number) row[1]);
+            }
+
+            // Previous period customers
+            List<Object[]> previousCustomers = donHangRepository.countCustomersByDateBetween(previousStart, previousEnd);
+            System.out.println("  - Previous Customers Records: " + previousCustomers.size());
+            for (Object[] row : previousCustomers) {
+                LocalDate oldDate = LocalDate.parse(row[0].toString());
+                LocalDate newDate = oldDate.plusDays(days);
+                previousDataMap.put(newDate.toString(), (Number) row[1]);
+            }
         }
 
         // Build arrays aligned with labels
@@ -508,6 +524,11 @@ public class ThongKeService {
         LocalDateTime startDate = parseDate(startDateStr, LocalDate.now().minusDays(30));
         LocalDateTime endDate = parseDate(endDateStr, LocalDate.now());
 
+        System.out.println("📊 [ANALYTICS KPIS DEBUG]");
+        System.out.println("  - Start Date: " + startDate);
+        System.out.println("  - End Date: " + endDate);
+        System.out.println("  - OrderStatus.HOAN_TAT: " + OrderStatus.HOAN_TAT);
+
         // Calculate period length in days
         long periodDays = java.time.Duration.between(startDate, endDate).toDays();
         if (periodDays == 0)
@@ -526,10 +547,17 @@ public class ThongKeService {
         long totalCustomers = khachHangRepository.count();
         long totalProducts = sanPhamRepository.count();
 
+        System.out.println("  - Total Orders (all status): " + totalOrders);
+        System.out.println("  - Completed Orders: " + completedOrders);
+        System.out.println("  - Total Revenue: " + (totalRevenue != null ? totalRevenue : "NULL"));
+
         // Previous period stats for growth calculation
         long previousOrders = donHangRepository.countByDatLucBetween(previousStart, previousEnd);
         BigDecimal previousRevenue = donHangRepository.sumRevenueByDatLucBetweenAndTrangThai(OrderStatus.HOAN_TAT,
                 previousStart, previousEnd);
+        
+        System.out.println("  - Previous Orders: " + previousOrders);
+        System.out.println("  - Previous Revenue: " + (previousRevenue != null ? previousRevenue : "NULL"));
 
         // Note: For customers and products, we can't track historical count easily
         // without timestamp fields

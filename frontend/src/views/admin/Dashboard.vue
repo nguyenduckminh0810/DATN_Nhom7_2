@@ -263,11 +263,22 @@
               </div>
             </div>
         <div class="chart-content">
+          <div v-if="isLoadingChart" class="chart-loading">
+            <div class="spinner-border text-warning" role="status">
+              <span class="visually-hidden">Đang tải...</span>
+            </div>
+            <p class="mt-2 text-muted">Đang tải dữ liệu biểu đồ...</p>
+          </div>
+          <div v-else-if="!chartData || !chartData.labels || chartData.labels.length === 0" class="chart-empty">
+            <i class="bi bi-bar-chart display-4 text-muted"></i>
+            <p class="mt-2 text-muted">Chưa có dữ liệu để hiển thị</p>
+          </div>
           <Chart
+            v-else
             type="line"
-                :data="enhancedChartData"
-                :options="enhancedChartOptions"
-                :height="350"
+            :data="enhancedChartData"
+            :options="enhancedChartOptions"
+            :height="350"
           />
         </div>
             <div class="chart-insights">
@@ -576,7 +587,7 @@ const enhancedChartData = computed(() => {
       yAxisID: 'y'
     })
   } else if (selectedMetric.value === 'customers') {
-    // For customers, use orders data as proxy (can be enhanced later)
+    // Customers data from API (distinct customers who placed orders)
     datasets.push({
       label: 'Khách hàng mới',
       data: chartData.value.current || [],
@@ -657,127 +668,181 @@ const customersGrowth = computed(() => {
   return Number(summary.value.customersGrowth)
 })
 
-const enhancedChartOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: {
-    mode: 'index',
-    intersect: false,
-  },
-  plugins: {
-    legend: {
-      display: true,
-      position: 'top',
-      align: 'end',
-      labels: {
-        usePointStyle: true,
-        pointStyle: 'circle',
-        padding: 15,
-        font: {
-          size: 10,
-          family: "'Inter', sans-serif",
-          weight: '400'
-        },
-        color: '#6b7280',
-        boxWidth: 6,
-        boxHeight: 6
-      }
+const enhancedChartOptions = computed(() => {
+  const currentMetric = selectedMetric.value
+  
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: {
+      mode: 'index',
+      intersect: false,
     },
-    tooltip: {
-      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-      titleColor: '#374151',
-      bodyColor: '#6b7280',
-      borderColor: '#e5e7eb',
-      borderWidth: 1,
-      cornerRadius: 8,
-      padding: 12,
-      boxWidth: 8,
-      boxHeight: 8,
-      boxPadding: 4,
-      titleFont: {
-        size: 12,
-        weight: '600',
-        family: "'Inter', sans-serif"
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: {
+          usePointStyle: true,
+          pointStyle: 'circle',
+          padding: 15,
+          font: {
+            size: 10,
+            family: "'Inter', sans-serif",
+            weight: '400'
+          },
+          color: '#6b7280',
+          boxWidth: 6,
+          boxHeight: 6
+        }
       },
-      bodyFont: {
-        size: 11,
-        weight: '500',
-        family: "'Inter', sans-serif"
-      },
-      bodySpacing: 4,
-      titleMarginBottom: 8,
-      callbacks: {
-        title: function(context) {
-          return `${context[0].label}`
+      tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        titleColor: '#374151',
+        bodyColor: '#6b7280',
+        borderColor: '#e5e7eb',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 12,
+        boxWidth: 8,
+        boxHeight: 8,
+        boxPadding: 4,
+        titleFont: {
+          size: 12,
+          weight: '600',
+          family: "'Inter', sans-serif"
         },
-        label: function(context) {
-          return `${context.dataset.label}: ${context.parsed.y.toLocaleString('vi-VN')}`
+        bodyFont: {
+          size: 11,
+          weight: '500',
+          family: "'Inter', sans-serif"
+        },
+        bodySpacing: 4,
+        titleMarginBottom: 8,
+        callbacks: {
+          title: function(context) {
+            // Format date label from YYYY-MM-DD to DD/MM/YYYY
+            const label = context[0].label
+            if (label && label.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              const [year, month, day] = label.split('-')
+              return `${day}/${month}/${year}`
+            }
+            return label
+          },
+          label: function(context) {
+            const value = context.parsed.y
+            let formattedValue = ''
+            
+            if (currentMetric === 'revenue') {
+              // Format doanh thu: chia cho 1,000,000 để hiển thị triệu VNĐ
+              if (value >= 1000000) {
+                formattedValue = (value / 1000000).toFixed(1) + 'M₫'
+              } else if (value >= 1000) {
+                formattedValue = (value / 1000).toFixed(0) + 'k₫'
+              } else {
+                formattedValue = new Intl.NumberFormat('vi-VN', {
+                  style: 'currency',
+                  currency: 'VND'
+                }).format(value)
+              }
+            } else {
+              // Format số nguyên cho orders và customers
+              formattedValue = value.toLocaleString('vi-VN')
+            }
+            
+            return `${context.dataset.label}: ${formattedValue}`
+          }
         }
       }
-    }
-  },
-  scales: {
-    x: {
-      grid: {
-        display: true,
-        color: 'rgba(156, 163, 175, 0.15)',
-        drawBorder: false,
-        lineWidth: 1
-      },
-      ticks: {
-        font: {
-          size: 11,
-          family: "'Inter', sans-serif",
-          weight: '400'
+    },
+    scales: {
+      x: {
+        grid: {
+          display: true,
+          color: 'rgba(156, 163, 175, 0.15)',
+          drawBorder: false,
+          lineWidth: 1
         },
-        color: '#9ca3af',
-        padding: 6,
-        autoSkip: false,
-        maxTicksLimit: 24,
-        stepSize: 1
+        ticks: {
+          font: {
+            size: 11,
+            family: "'Inter', sans-serif",
+            weight: '400'
+          },
+          color: '#9ca3af',
+          padding: 6,
+          autoSkip: true,
+          maxTicksLimit: 12,
+          stepSize: 1,
+          callback: function(value) {
+            // Format date labels from YYYY-MM-DD to DD/MM
+            const label = this.getLabelForValue(value)
+            if (label && label.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              const [, month, day] = label.split('-')
+              return `${day}/${month}`
+            }
+            return label
+          }
+        }
+      },
+      y: {
+        grid: {
+          display: true,
+          color: 'rgba(156, 163, 175, 0.15)',
+          drawBorder: false,
+          lineWidth: 1
+        },
+        ticks: {
+          font: {
+            size: 10,
+            family: "'Inter', sans-serif",
+            weight: '400'
+          },
+          color: '#9ca3af',
+          padding: 6,
+          maxTicksLimit: 8,
+          count: 8,
+          callback: function(value) {
+            if (currentMetric === 'revenue') {
+              // Format doanh thu: chia cho 1,000,000 để hiển thị triệu VNĐ
+              if (value >= 1000000) {
+                return (value / 1000000).toFixed(1) + 'M₫'
+              } else if (value >= 1000) {
+                return (value / 1000).toFixed(0) + 'k₫'
+              } else {
+                return value.toLocaleString('vi-VN') + '₫'
+              }
+            } else {
+              // Format số nguyên cho orders và customers
+              return value.toLocaleString('vi-VN')
+            }
+          }
+        }
       }
     },
-    y: {
-      grid: {
-        display: true,
-        color: 'rgba(156, 163, 175, 0.15)',
-        drawBorder: false,
-        lineWidth: 1
-      },
-      ticks: {
-        font: {
-          size: 10,
-          family: "'Inter', sans-serif",
-          weight: '400'
-        },
-        color: '#9ca3af',
-        padding: 6,
-        maxTicksLimit: 8,
-        count: 8
+    animation: {
+      duration: 300,
+      easing: 'easeInOut'
+    },
+    elements: {
+      point: {
+        radius: 0,
+        hitRadius: 30,
+        hoverRadius: 6,
+        hoverBorderWidth: 2
+      }
+    },
+    layout: {
+      padding: {
+        top: 10,
+        right: 10,
+        bottom: 10,
+        left: 10
       }
     }
-  },
-  animation: {
-    duration: 300,
-    easing: 'easeInOut'
-  },
-  elements: {
-    point: {
-      radius: 0,
-      hitRadius: 30,
-      hoverRadius: 6,
-      hoverBorderWidth: 2
-    }
-  },
-  layout: {
-    padding: {
-      top: 10,
-      right: 10,
-      bottom: 10,
-      left: 10
-    }
   }
-}))
+})
 
 
 // Methods
@@ -1547,6 +1612,30 @@ onMounted(async () => {
 .insight-subtitle {
   font-size: 0.75rem;
   color: #9ca3af;
+}
+
+.chart-content {
+  position: relative;
+  min-height: 350px;
+}
+
+.chart-loading,
+.chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 350px;
+  padding: 2rem;
+}
+
+.chart-loading .spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+.chart-empty i {
+  opacity: 0.5;
 }
 
 .top-products-card {

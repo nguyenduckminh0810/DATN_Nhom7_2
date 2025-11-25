@@ -133,6 +133,7 @@
             <div class="kpi-content">
               <div class="kpi-value">{{ formatCurrency(totalRevenue) }}</div>
               <div class="kpi-label">Tổng doanh thu</div>
+              <div class="kpi-subtitle">{{ getDateRangeLabel() }}</div>
               <div class="kpi-change" :class="revenueChange.type">
                 <i :class="revenueChange.icon"></i>
                 {{ revenueChange.value }}% so với kỳ trước
@@ -170,7 +171,7 @@
             </div>
             <div class="kpi-content">
               <div class="kpi-value">{{ totalCustomers.toLocaleString('vi-VN') }}</div>
-              <div class="kpi-label">Khách hàng mới</div>
+              <div class="kpi-label">Tổng khách hàng</div>
               <div class="kpi-change" :class="customersChange.type">
                 <i :class="customersChange.icon"></i>
                 {{ customersChange.value }}% so với kỳ trước
@@ -189,7 +190,7 @@
             </div>
             <div class="kpi-content">
               <div class="kpi-value">{{ totalProducts.toLocaleString('vi-VN') }}</div>
-              <div class="kpi-label">Sản phẩm bán ra</div>
+              <div class="kpi-label">Số lượng sản phẩm đã bán</div>
               <div class="kpi-change" :class="productsChange.type">
                 <i :class="productsChange.icon"></i>
                 {{ productsChange.value }}% so với kỳ trước
@@ -1704,6 +1705,21 @@ const getComparisonLabel = () => {
   return `Ngày ${formatDate(selectedDate)}`
 }
 
+const getDateRangeLabel = () => {
+  const labels = {
+    'today': 'Hôm nay',
+    'yesterday': 'Hôm qua',
+    '7days': '7 ngày qua',
+    '30days': '30 ngày qua',
+    '90days': '90 ngày qua',
+    'thisMonth': 'Tháng này',
+    'lastMonth': 'Tháng trước',
+    'thisYear': 'Năm nay',
+    'custom': 'Khoảng tùy chỉnh'
+  }
+  return labels[selectedDateRange.value] || '30 ngày qua'
+}
+
 const formatMetricValue = (value, metric) => {
   switch (metric) {
     case 'revenue':
@@ -1987,10 +2003,18 @@ defineExpose({
 .kpi-label {
   font-size: 0.875rem;
   color: #64748b;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.25rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+}
+
+.kpi-subtitle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-bottom: 0.5rem;
+  font-style: italic;
 }
 
 .kpi-change {
