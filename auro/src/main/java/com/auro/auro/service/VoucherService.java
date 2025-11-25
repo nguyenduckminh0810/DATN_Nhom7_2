@@ -8,6 +8,8 @@ import com.auro.auro.model.VoucherKhachId;
 import com.auro.auro.model.KhachHang;
 import com.auro.auro.repository.VoucherRepository;
 import com.auro.auro.repository.VoucherKhachRepository;
+import com.auro.auro.repository.DonHangRepository;
+import com.auro.auro.repository.projection.VoucherUsageProjection;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +29,11 @@ public class VoucherService {
 
     private final VoucherRepository voucherRepository;
     private final VoucherKhachRepository voucherKhachRepository;
+    private final DonHangRepository donHangRepository;
+
+    private static final List<String> COMPLETED_ORDER_STATUSES = List.of(
+            "COMPLETED", "DELIVERED", "Hoàn tất", "Đã giao"
+    );
 
     // GetAll voucher        
     public List<Voucher> getAllVouchers() {
@@ -308,6 +317,8 @@ public class VoucherService {
         voucher.setKetThucLuc(request.getKetThucLuc());
         // Handle NULL constraint: if null, use -1 to represent unlimited
         voucher.setGioiHanSuDung(request.getGioiHanSuDung() != null ? request.getGioiHanSuDung() : -1);
+        // Khi admin cập nhật từ màn hình quản lý, mặc định đưa voucher về trạng thái Active
+        voucher.setTrangThai(1);
         voucher.setCapNhatLuc(LocalDateTime.now());
 
         return voucherRepository.save(voucher);
@@ -325,6 +336,16 @@ public class VoucherService {
     // getAll voucher admin - lấy tất cả, không filter theo ngày
     public List<Voucher> getAllVouchersForAdmin() {
         return voucherRepository.findAllOrderByTaoLucDesc();
+    }
+
+    public Map<String, VoucherUsageStats> getVoucherUsageStatsForAdmin() {
+        List<VoucherUsageProjection> rows = donHangRepository.aggregateVoucherUsage(COMPLETED_ORDER_STATUSES);
+        return rows.stream().collect(Collectors.toMap(
+                VoucherUsageProjection::getVoucherCode,
+                row -> new VoucherUsageStats(
+                        row.getUsageCount() != null ? row.getUsageCount() : 0L,
+                        row.getTotalDiscount() != null ? row.getTotalDiscount() : BigDecimal.ZERO
+                )));
     }
 
     public Voucher getVoucherById(Long id) {
@@ -362,6 +383,19 @@ public class VoucherService {
         
         return voucherRepository.save(voucher);
     }
+
+    @Transactional
+    public Voucher deactivateVoucher(Long id) {
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Voucher " + id + " không tồn tại"));
+
+        voucher.setTrangThai(2); // 2 = Ngừng hoạt động thủ công
+        voucher.setCapNhatLuc(LocalDateTime.now());
+
+        return voucherRepository.save(voucher);
+    }
+
+    public record VoucherUsageStats(long usedCount, BigDecimal totalDiscount) { }
 
     // Helper method: Tính trạng thái hiển thị dựa trên status và thời gian
     public String getTrangThaiHienThi(Voucher voucher) {

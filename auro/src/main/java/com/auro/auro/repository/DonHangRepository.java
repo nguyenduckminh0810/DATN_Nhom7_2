@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.math.BigDecimal;
+import com.auro.auro.repository.projection.VoucherUsageProjection;
 
 @Repository
 public interface DonHangRepository extends JpaRepository<DonHang, Long> {
@@ -179,5 +180,15 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
                         ) t
                         """, nativeQuery = true)
         long countRepeatCustomersIn(@Param("statusValues") java.util.List<String> statusValues);
+
+        @Query("""
+                SELECT dh.voucher.ma AS voucherCode,
+                       COUNT(dh.id) AS usageCount,
+                       COALESCE(SUM(dh.giamGiaTong), 0) AS totalDiscount
+                FROM DonHang dh
+                WHERE dh.voucher IS NOT NULL AND dh.trangThai IN :statusValues
+                GROUP BY dh.voucher.ma
+                """)
+        List<VoucherUsageProjection> aggregateVoucherUsage(@Param("statusValues") java.util.List<String> statusValues);
 
 }
