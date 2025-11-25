@@ -87,7 +87,6 @@
           <option value="percentage">Giảm %</option>
           <option value="fixed">Giảm cố định</option>
           <option value="freeship">Freeship</option>
-          <option value="bogo">Buy X Get Y</option>
         </select>
       </div>
     </div>
@@ -191,7 +190,7 @@
 
             <div class="detail-item">
               <i class="bi bi-bar-chart"></i>
-              <span>Giới hạn: {{ promotion.gioiHanSuDung === -1 || promotion.gioiHanSuDung === null ? '∞' : promotion.gioiHanSuDung }}</span>
+              <span>Giới hạn: Không giới hạn</span>
             </div>
           </div>
 
@@ -255,17 +254,6 @@
           </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div v-if="promotion.usageLimit" class="promotion-progress">
-          <div class="progress">
-            <div
-              class="progress-bar"
-              :class="getProgressBarClass(promotion)"
-              :style="{ width: (promotion.usedCount / promotion.usageLimit * 100) + '%' }"
-            ></div>
-          </div>
-          <small class="progress-text">{{ Math.round(promotion.usedCount / promotion.usageLimit * 100) }}% đã sử dụng</small>
-        </div>
       </div>
 
       <!-- Empty State -->
@@ -309,7 +297,6 @@
                   <option value="percentage">Giảm giá %</option>
                   <option value="fixed">Giảm giá cố định</option>
                   <option value="freeship">Miễn phí ship</option>
-                  <option value="bogo">Mua X tặng Y</option>
                 </select>
               </div>
 
@@ -370,10 +357,6 @@
                 </div>
               </div>
 
-              <div class="col-md-4">
-                <label class="form-label">Số lần sử dụng</label>
-                <input type="number" class="form-control" v-model.number="promotionForm.usageLimit" min="0" placeholder="Không giới hạn">
-              </div>
 
               <!-- Time Range -->
               <div class="col-12">
@@ -518,7 +501,7 @@
                 </div>
                 <div class="detail-item">
                   <label>Giới hạn sử dụng:</label>
-                  <span class="voucher-limit">{{ selectedPromotion.gioiHanSuDung === -1 ? 'Không giới hạn' : selectedPromotion.gioiHanSuDung }}</span>
+                  <span class="voucher-limit">Không giới hạn</span>
                 </div>
               </div>
             </div>
@@ -581,7 +564,6 @@ const promotionForm = ref({
   code: '',
   startDate: '',
   endDate: '',
-  usageLimit: null,
   minOrderValue: 0,
   applyTo: 'all',
   categories: [],
@@ -666,8 +648,7 @@ const getTypeIcon = (type) => {
   const icons = {
     percentage: 'bi bi-percent',
     fixed: 'bi bi-cash',
-    freeship: 'bi bi-truck',
-    bogo: 'bi bi-gift'
+    freeship: 'bi bi-truck'
   }
   return icons[type] || 'bi bi-tag'
 }
@@ -676,8 +657,7 @@ const getTypeName = (type) => {
   const names = {
     percentage: 'Giảm %',
     fixed: 'Giảm cố định',
-    freeship: 'Freeship',
-    bogo: 'Mua X tặng Y'
+    freeship: 'Freeship'
   }
   return names[type] || type
 }
@@ -722,13 +702,6 @@ const getConditionsSummary = (conditions) => {
     parts.push(`Danh mục: ${conditions.category}`)
   }
   return parts.join(', ') || 'Không có điều kiện'
-}
-
-const getProgressBarClass = (promotion) => {
-  const percent = (promotion.usedCount / promotion.usageLimit) * 100
-  if (percent >= 90) return 'bg-danger'
-  if (percent >= 70) return 'bg-warning'
-  return 'bg-success'
 }
 
 const formatCurrency = (amount) => {
@@ -837,8 +810,7 @@ const duplicatePromotion = async (promotion) => {
       giamToiDa: promotion.giamToiDa,
       donToiThieu: promotion.donToiThieu,
       batDauLuc: promotion.batDauLuc,
-      ketThucLuc: promotion.ketThucLuc,
-      gioiHanSuDung: promotion.gioiHanSuDung
+      ketThucLuc: promotion.ketThucLuc
     }
 
     console.log('Duplicating voucher:', voucherData)
@@ -880,8 +852,7 @@ const startPromotion = async (promotion) => {
       giamToiDa: promotion.giamToiDa || 0,
       donToiThieu: promotion.donToiThieu || 0,
       batDauLuc: localNow, 
-      ketThucLuc: endDate, 
-      gioiHanSuDung: promotion.gioiHanSuDung || -1
+      ketThucLuc: endDate
     }
     
     console.log('Voucher data to update:', voucherData)
@@ -974,7 +945,6 @@ const editPromotion = (promotion) => {
   let formType = 'fixed'
   if (normalizedLoai === 'PERCENT' || normalizedLoai === 'PHAN_TRAM') formType = 'percentage'
   else if (normalizedLoai === 'FREESHIP') formType = 'freeship'
-  else if (normalizedLoai === 'BUY_X_GET_Y' || normalizedLoai === 'BOGO') formType = 'bogo'
   
   promotionForm.value = {
     name: promotion.ma,
@@ -986,7 +956,6 @@ const editPromotion = (promotion) => {
     code: promotion.ma,
     startDate: promotion.batDauLuc,
     endDate: promotion.ketThucLuc,
-    usageLimit: promotion.gioiHanSuDung === -1 ? null : promotion.gioiHanSuDung,
     minOrderValue: promotion.donToiThieu || 0,
     applyTo: 'all',
     categories: [],
@@ -1011,7 +980,6 @@ const closeCreateModal = () => {
     code: '',
     startDate: '',
     endDate: '',
-    usageLimit: null,
     minOrderValue: 0,
     applyTo: 'all',
     categories: [],
@@ -1105,8 +1073,7 @@ const createVoucher = async () => {
       giamToiDa: promotionForm.value.maxDiscount || 0,
       donToiThieu: promotionForm.value.minOrderValue || 0,
       batDauLuc: promotionForm.value.startDate,
-      ketThucLuc: getEndDatePayload(),
-      gioiHanSuDung: promotionForm.value.usageLimit === null ? -1 : promotionForm.value.usageLimit
+      ketThucLuc: getEndDatePayload()
     }
     
     const response = await apiService.adminVoucher.create(voucherData)
@@ -1179,7 +1146,6 @@ const reactivateVoucher = (promotion) => {
   let formType = 'fixed'
   if (normalizedLoaiForReactivate === 'PERCENT' || normalizedLoaiForReactivate === 'PHAN_TRAM') formType = 'percentage'
   else if (normalizedLoaiForReactivate === 'FREESHIP') formType = 'freeship'
-  else if (normalizedLoaiForReactivate === 'BUY_X_GET_Y' || normalizedLoaiForReactivate === 'BOGO') formType = 'bogo'
 
   const now = new Date()
   const defaultStart = promotion.batDauLuc && new Date(promotion.batDauLuc) > now
@@ -1200,7 +1166,6 @@ const reactivateVoucher = (promotion) => {
     code: promotion.ma,
     startDate: defaultStart,
     endDate: defaultEnd,
-    usageLimit: promotion.gioiHanSuDung === -1 ? null : promotion.gioiHanSuDung,
     minOrderValue: promotion.donToiThieu || 0,
     applyTo: 'all',
     categories: [],
@@ -1251,11 +1216,9 @@ const savePromotion = async () => {
       giaTri = promotionForm.value.fixedValue
     } else if (promotionForm.value.type === 'freeship') {
       giaTri = 0
-    } else if (promotionForm.value.type === 'bogo') {
-      giaTri = 0
     }
     
-    if (!promotionForm.value.type.includes('freeship') && !promotionForm.value.type.includes('bogo') && (!giaTri || giaTri <= 0)) {
+    if (!promotionForm.value.type.includes('freeship') && (!giaTri || giaTri <= 0)) {
       error.value = 'Giá trị voucher không được để trống hoặc bằng 0'
       loading.value = false
       return
@@ -1264,14 +1227,12 @@ const savePromotion = async () => {
     const voucherData = {
       ma: promotionForm.value.code,
       loai: promotionForm.value.type === 'percentage' ? 'percent' : 
-            promotionForm.value.type === 'freeship' ? 'freeship' :
-            promotionForm.value.type === 'bogo' ? 'buy_x_get_y' : 'fixed',
+            promotionForm.value.type === 'freeship' ? 'freeship' : 'fixed',
       giaTri: giaTri,
       giamToiDa: promotionForm.value.maxDiscount || 0,
       donToiThieu: promotionForm.value.minOrderValue || 0,
       batDauLuc: promotionForm.value.startDate,
-      ketThucLuc: getEndDatePayload(),
-      gioiHanSuDung: promotionForm.value.usageLimit === null ? -1 : promotionForm.value.usageLimit
+      ketThucLuc: getEndDatePayload()
     }
     
     console.log('Voucher data to save:', voucherData)
@@ -1572,10 +1533,6 @@ watch(
   color: #d97706;
 }
 
-.type-bogo {
-  background: #fce7f3;
-  color: #db2777;
-}
 
 .promotion-name {
   font-size: 1.25rem;
@@ -1613,9 +1570,6 @@ watch(
   color: #f59e0b;
 }
 
-.value-bogo {
-  color: #db2777;
-}
 
 .promotion-status {
   margin-top: 0.5rem;
