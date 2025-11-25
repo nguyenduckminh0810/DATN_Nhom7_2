@@ -91,10 +91,10 @@
             </div>
             <div class="kpi-content">
               <div class="kpi-value" v-if="!isLoadingKpis">
-                {{ todayCustomers.toLocaleString('vi-VN') }}
+                {{ totalCustomers.toLocaleString('vi-VN') }}
               </div>
               <div class="kpi-value loading-placeholder" v-else>Đang tải...</div>
-              <div class="kpi-label">Khách hàng mới</div>
+              <div class="kpi-label">Khách hàng</div>
               <div class="kpi-change" :class="customersChange.type" v-if="!isLoadingKpis">
                 <i :class="customersChange.icon"></i>
                 {{ customersChange.value }}% so với kỳ trước
@@ -130,41 +130,55 @@
       </div>
     </div>
 
-    <!-- Real-time Metrics Section -->
-    <div class="realtime-section">
-      <div class="row g-4">
-        <div class="col-lg-4">
-          <div class="metric-card-small">
-            <div class="metric-header">
-              <span class="metric-label">Hôm nay</span>
-              <div class="live-indicator">
-                <i class="bi bi-circle-fill"></i>
-                <span>LIVE</span>
-              </div>
+    <!-- Revenue & Orders Analytics Chart -->
+    <div class="chart-analysis-section">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title-section">
+            <h3 class="chart-title">Phân tích doanh thu & đơn hàng</h3>
+            <div class="growth-badge" v-if="chartGrowthRate">
+              <i class="bi bi-graph-up"></i>
+              +{{ chartGrowthRate }}% tăng trưởng
             </div>
-            <div class="metric-value">{{ formatCurrency(todayRevenue) }}</div>
-            <div class="metric-subtitle">Doanh thu</div>
+          </div>
+          <div class="chart-controls">
+            <div class="metric-toggles">
+              <button
+                :class="['metric-toggle', { active: selectedChartMetric === 'revenue' }]"
+                @click="selectedChartMetric = 'revenue'"
+              >
+                <i class="bi bi-currency-dollar"></i>
+                Doanh thu
+              </button>
+              <button
+                :class="['metric-toggle', { active: selectedChartMetric === 'orders' }]"
+                @click="selectedChartMetric = 'orders'"
+              >
+                <i class="bi bi-cart3"></i>
+                Đơn hàng
+              </button>
+              <button
+                :class="['metric-toggle', { active: selectedChartMetric === 'customers' }]"
+                @click="selectedChartMetric = 'customers'"
+              >
+                <i class="bi bi-people"></i>
+                Khách hàng
+              </button>
+            </div>
           </div>
         </div>
-
-        <div class="col-lg-4">
-          <div class="metric-card-small">
-            <div class="metric-header">
-              <span class="metric-label">Hôm nay</span>
-            </div>
-            <div class="metric-value">{{ todayOrders }}</div>
-            <div class="metric-subtitle">Đơn hàng</div>
+        <div class="chart-content">
+          <div v-if="isLoadingChart" class="loading-state">
+            <i class="bi bi-arrow-repeat rotate"></i>
+            <span>Đang tải biểu đồ...</span>
           </div>
-        </div>
-
-        <div class="col-lg-4">
-          <div class="metric-card-small">
-            <div class="metric-header">
-              <span class="metric-label">Hôm nay</span>
-            </div>
-            <div class="metric-value">{{ todayCustomers }}</div>
-            <div class="metric-subtitle">Khách hàng mới</div>
-          </div>
+          <Chart
+            v-else
+            type="line"
+            :data="enhancedChartData"
+            :options="enhancedChartOptions"
+            :height="350"
+          />
         </div>
       </div>
     </div>
@@ -310,16 +324,153 @@
       </div>
     </div>
   </div>
+
+  <!-- Modal: Top Products Full List -->
+  <div v-if="showTopProductsModal" class="modal-overlay" @click="closeTopProductsModal">
+    <div class="modal-dialog modal-lg" @click.stop>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-box-seam"></i>
+            Danh sách sản phẩm bán chạy
+          </h5>
+          <button type="button" class="btn-close" @click="closeTopProductsModal">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Loading State -->
+          <div v-if="isLoadingModalProducts" class="loading-state-modal">
+            <i class="bi bi-arrow-repeat rotate"></i>
+            <span>Đang tải dữ liệu...</span>
+          </div>
+
+          <!-- Product List -->
+          <div v-else-if="modalProducts.length > 0" class="modal-products-list">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th width="60">#</th>
+                    <th width="80">Ảnh</th>
+                    <th>Tên sản phẩm</th>
+                    <th width="150">Danh mục</th>
+                    <th width="120">Số lượng bán</th>
+                    <th width="150">Doanh thu</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(product, index) in modalProducts"
+                    :key="product.id"
+                    class="product-row"
+                  >
+                    <td>
+                      <div class="rank-badge" :class="getRankClass(index)">
+                        {{ (modalCurrentPage - 1) * modalPageSize + index + 1 }}
+                      </div>
+                    </td>
+                    <td>
+                      <div class="product-image-cell">
+                        <img :src="product.image || '/placeholder.png'" :alt="product.name" />
+                      </div>
+                    </td>
+                    <td>
+                      <div class="product-name-cell">{{ product.name }}</div>
+                    </td>
+                    <td>
+                      <span class="category-badge">{{ product.category || 'N/A' }}</span>
+                    </td>
+                    <td>
+                      <div class="sales-cell">
+                        <i class="bi bi-box-seam"></i>
+                        <strong>{{ product.sales }}</strong>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="revenue-cell">{{ formatCurrency(product.revenue) }}</div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="modal-pagination">
+              <div class="pagination-info">
+                Hiển thị {{ (modalCurrentPage - 1) * modalPageSize + 1 }} -
+                {{ Math.min(modalCurrentPage * modalPageSize, modalTotalProducts) }}
+                trong tổng số {{ modalTotalProducts }} sản phẩm
+              </div>
+              <div class="pagination-controls">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  :disabled="modalCurrentPage === 1"
+                  @click="goToModalPage(1)"
+                >
+                  <i class="bi bi-chevron-bar-left"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  :disabled="modalCurrentPage === 1"
+                  @click="goToModalPage(modalCurrentPage - 1)"
+                >
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="page-numbers">
+                  <button
+                    v-for="page in displayedPages"
+                    :key="page"
+                    class="btn btn-sm"
+                    :class="page === modalCurrentPage ? 'btn-primary' : 'btn-outline-secondary'"
+                    @click="goToModalPage(page)"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  :disabled="modalCurrentPage === modalTotalPages"
+                  @click="goToModalPage(modalCurrentPage + 1)"
+                >
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  :disabled="modalCurrentPage === modalTotalPages"
+                  @click="goToModalPage(modalTotalPages)"
+                >
+                  <i class="bi bi-chevron-bar-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else class="empty-state-modal">
+            <i class="bi bi-inbox"></i>
+            <p>Chưa có dữ liệu sản phẩm bán chạy</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import Chart from '@/components/admin/Chart.vue'
 import thongKeService from '@/services/thongKeService'
 
 // Reactive data
 const selectedDateRange = ref('30days')
 const customStartDate = ref('')
 const customEndDate = ref('')
+
+// Chart state
+const selectedChartMetric = ref('revenue')
+const chartData = ref(null)
+const isLoadingChart = ref(false)
 
 // Computed date range for API calls
 const getDateRange = () => {
@@ -414,9 +565,6 @@ const customersGrowth = ref(0)
 const productsGrowth = ref(0)
 
 // Real-time metrics - from API
-const todayRevenue = ref(0)
-const todayOrders = ref(0)
-const todayCustomers = ref(0)
 const productsSold = ref(0)
 const lastUpdate = ref('')
 const lastUpdated = ref(new Date())
@@ -425,6 +573,15 @@ const lastUpdated = ref(new Date())
 const hourlySales = ref([])
 const topProducts = ref([])
 const orderStatusCounts = ref(null)
+
+// Modal state for top products
+const showTopProductsModal = ref(false)
+const isLoadingModalProducts = ref(false)
+const modalProducts = ref([])
+const modalCurrentPage = ref(1)
+const modalPageSize = ref(10)
+const modalTotalProducts = ref(0)
+const modalTotalPages = ref(0)
 
 // Computed properties for change indicators
 const revenueChange = computed(() => ({
@@ -453,14 +610,17 @@ const productsChange = computed(() => ({
 
 // Set up real-time updates every 30 seconds
 let realTimeInterval = null
+let isMounted = false
 
 // ==================== LOAD DATA METHODS ====================
 
 const loadKpis = async () => {
+  if (!isMounted) return
   try {
     isLoadingKpis.value = true
     const { startDate, endDate } = getDateRange()
     const response = await thongKeService.getAnalyticsKpis({ startDate, endDate })
+    if (!isMounted) return
     const data = response?.data ?? response
 
     totalRevenue.value = Number(data.totalRevenue || 0)
@@ -475,6 +635,7 @@ const loadKpis = async () => {
 
     console.log('KPIs loaded:', data)
   } catch (error) {
+    if (!isMounted) return
     console.error('Error loading KPIs:', error)
     // Set default values if API fails
     totalRevenue.value = 0
@@ -486,7 +647,9 @@ const loadKpis = async () => {
     customersGrowth.value = 0
     productsGrowth.value = 0
   } finally {
-    isLoadingKpis.value = false
+    if (isMounted) {
+      isLoadingKpis.value = false
+    }
   }
 }
 
@@ -524,20 +687,14 @@ const loadBusinessInsights = async () => {
     console.log('Business insights API response:', data)
     console.log('Products sold from API:', data.productsSold)
 
-    // Load today's metrics from business insights
-    todayRevenue.value = Number(data.todayRevenue || 0)
-    todayOrders.value = Number(data.todayOrders || 0)
-    todayCustomers.value = Number(data.todayCustomers || 0)
+    // Load products sold from business insights
     productsSold.value = Number(data.productsSold || 0)
 
     console.log('After assignment - productsSold.value:', productsSold.value)
     console.log('Business insights loaded:', data)
   } catch (error) {
     console.error('Error loading business insights:', error)
-    // Set default values if API fails
-    todayRevenue.value = 0
-    todayOrders.value = 0
-    todayCustomers.value = 0
+    // Set default value if API fails
     productsSold.value = 0
   } finally {
     isLoadingBusinessInsights.value = false
@@ -589,7 +746,264 @@ const loadOrderStatusCounts = async () => {
   }
 }
 
+const loadChartData = async () => {
+  try {
+    isLoadingChart.value = true
+    const response = await thongKeService.getChart({
+      range: selectedDateRange.value,
+      metric: selectedChartMetric.value,
+    })
+    chartData.value = response?.data ?? response
+    console.log('Chart data loaded:', chartData.value)
+  } catch (error) {
+    console.error('Error loading chart data:', error)
+    chartData.value = { labels: [], current: [], previous: [] }
+  } finally {
+    isLoadingChart.value = false
+  }
+}
+
+// Chart computed properties
+const enhancedChartData = computed(() => {
+  if (!chartData.value || !chartData.value.labels) {
+    return {
+      labels: [],
+      datasets: [],
+    }
+  }
+
+  const datasets = []
+
+  if (selectedChartMetric.value === 'revenue') {
+    datasets.push({
+      label: 'Doanh thu (triệu VNĐ)',
+      data: chartData.value.current || [],
+      borderColor: '#ef4444',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      yAxisID: 'y',
+    })
+
+    datasets.push({
+      label: 'Doanh thu kỳ trước (triệu VNĐ)',
+      data: chartData.value.previous || [],
+      borderColor: '#0ea5e9',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0],
+      yAxisID: 'y',
+    })
+  } else if (selectedChartMetric.value === 'orders') {
+    datasets.push({
+      label: 'Số đơn hàng',
+      data: chartData.value.current || [],
+      borderColor: '#ef4444',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      yAxisID: 'y',
+    })
+
+    datasets.push({
+      label: 'Số đơn hàng kỳ trước',
+      data: chartData.value.previous || [],
+      borderColor: '#0ea5e9',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0],
+      yAxisID: 'y',
+    })
+  } else if (selectedChartMetric.value === 'customers') {
+    datasets.push({
+      label: 'Khách hàng mới',
+      data: chartData.value.current || [],
+      borderColor: '#ef4444',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      yAxisID: 'y',
+    })
+
+    datasets.push({
+      label: 'Khách hàng kỳ trước',
+      data: chartData.value.previous || [],
+      borderColor: '#0ea5e9',
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      fill: false,
+      tension: 0.3,
+      pointRadius: 0,
+      pointStyle: 'circle',
+      borderDash: [0, 0],
+      yAxisID: 'y',
+    })
+  }
+
+  return {
+    labels: chartData.value.labels || [],
+    datasets,
+  }
+})
+
+const chartGrowthRate = computed(() => {
+  if (!chartData.value || !chartData.value.current || !chartData.value.previous) {
+    return null
+  }
+
+  const currentTotal = chartData.value.current.reduce((sum, val) => sum + Number(val || 0), 0)
+  const previousTotal = chartData.value.previous.reduce((sum, val) => sum + Number(val || 0), 0)
+
+  if (previousTotal === 0) return currentTotal > 0 ? '100.0' : '0.0'
+  return (((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1)
+})
+
+const enhancedChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  interaction: {
+    mode: 'index',
+    intersect: false,
+  },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top',
+      align: 'end',
+      labels: {
+        usePointStyle: true,
+        pointStyle: 'circle',
+        padding: 15,
+        font: {
+          size: 10,
+          family: "'Inter', sans-serif",
+          weight: '400',
+        },
+        color: '#6b7280',
+        boxWidth: 6,
+        boxHeight: 6,
+      },
+    },
+    tooltip: {
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      titleColor: '#374151',
+      bodyColor: '#6b7280',
+      borderColor: '#e5e7eb',
+      borderWidth: 1,
+      cornerRadius: 8,
+      padding: 12,
+      boxWidth: 8,
+      boxHeight: 8,
+      boxPadding: 4,
+      titleFont: {
+        size: 12,
+        weight: '600',
+        family: "'Inter', sans-serif",
+      },
+      bodyFont: {
+        size: 11,
+        weight: '500',
+        family: "'Inter', sans-serif",
+      },
+      bodySpacing: 4,
+      titleMarginBottom: 8,
+      callbacks: {
+        title: function (context) {
+          return `${context[0].label}`
+        },
+        label: function (context) {
+          return `${context.dataset.label}: ${context.parsed.y.toLocaleString('vi-VN')}`
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      grid: {
+        display: true,
+        color: 'rgba(156, 163, 175, 0.15)',
+        drawBorder: false,
+        lineWidth: 1,
+      },
+      ticks: {
+        font: {
+          size: 11,
+          family: "'Inter', sans-serif",
+          weight: '400',
+        },
+        color: '#9ca3af',
+        padding: 6,
+        autoSkip: false,
+        maxTicksLimit: 24,
+        stepSize: 1,
+      },
+    },
+    y: {
+      grid: {
+        display: true,
+        color: 'rgba(156, 163, 175, 0.15)',
+        drawBorder: false,
+        lineWidth: 1,
+      },
+      ticks: {
+        font: {
+          size: 10,
+          family: "'Inter', sans-serif",
+          weight: '400',
+        },
+        color: '#9ca3af',
+        padding: 6,
+        maxTicksLimit: 8,
+        count: 8,
+      },
+    },
+  },
+  animation: {
+    duration: 300,
+    easing: 'easeInOut',
+  },
+  elements: {
+    point: {
+      radius: 0,
+      hitRadius: 30,
+      hoverRadius: 6,
+      hoverBorderWidth: 2,
+    },
+  },
+  layout: {
+    padding: {
+      top: 10,
+      right: 10,
+      bottom: 10,
+      left: 10,
+    },
+  },
+}))
+
+// Watch for metric changes
+const stopWatcher = watch(selectedChartMetric, () => {
+  loadChartData()
+})
+
 onMounted(async () => {
+  isMounted = true
   // Load all data
   await Promise.all([
     loadKpis(),
@@ -597,18 +1011,44 @@ onMounted(async () => {
     loadBusinessInsights(),
     loadTopProducts(),
     loadOrderStatusCounts(),
+    loadChartData(),
   ])
 
   // Start real-time updates (refresh every 5 minutes)
-  realTimeInterval = setInterval(async () => {
-    await loadHourlySales()
-  }, 300000) // 5 minutes
+  if (isMounted) {
+    realTimeInterval = setInterval(async () => {
+      if (isMounted) {
+        await loadHourlySales()
+      }
+    }, 300000) // 5 minutes
+  }
 })
 
 onUnmounted(() => {
+  // Mark component as unmounted
+  isMounted = false
+  
+  // Close modal if open
+  if (showTopProductsModal.value) {
+    showTopProductsModal.value = false
+  }
+  
+  // Clear interval
   if (realTimeInterval) {
     clearInterval(realTimeInterval)
+    realTimeInterval = null
   }
+  
+  // Stop watcher
+  if (stopWatcher) {
+    stopWatcher()
+  }
+  
+  // Reset all reactive state to prevent memory leaks
+  chartData.value = null
+  hourlySales.value = []
+  topProducts.value = []
+  modalProducts.value = []
 })
 
 // Format helper functions
@@ -652,6 +1092,7 @@ const refreshData = async () => {
     loadBusinessInsights(),
     loadTopProducts(),
     loadOrderStatusCounts(),
+    loadChartData(),
   ])
 }
 
@@ -666,7 +1107,107 @@ const getMetricLabel = (metric) => {
 }
 
 const viewTopProducts = () => {
-  // Navigate to all top products
+  showTopProductsModal.value = true
+  modalCurrentPage.value = 1
+  loadModalProducts()
+}
+
+const closeTopProductsModal = () => {
+  showTopProductsModal.value = false
+}
+
+const loadModalProducts = async () => {
+  try {
+    isLoadingModalProducts.value = true
+    const { startDate, endDate } = getDateRange()
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    const rangeDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) || 30
+
+    // Call API with pagination
+    const response = await thongKeService.getTopProducts({
+      limit: 100, // Get more products for pagination
+      rangeDays,
+    })
+    const data = response?.data ?? response
+
+    // Sort and map all products
+    const allProducts = (data || [])
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        category: product.category || 'N/A',
+        sales: product.sales || 0,
+        revenue: product.revenue || 0,
+        image: product.image || 'https://via.placeholder.com/60x60/3b82f6/ffffff?text=SP',
+      }))
+      .sort((a, b) => (b.sales || 0) - (a.sales || 0))
+
+    modalTotalProducts.value = allProducts.length
+    modalTotalPages.value = Math.ceil(allProducts.length / modalPageSize.value)
+
+    // Get current page products
+    const startIndex = (modalCurrentPage.value - 1) * modalPageSize.value
+    const endIndex = startIndex + modalPageSize.value
+    modalProducts.value = allProducts.slice(startIndex, endIndex)
+  } catch (error) {
+    console.error('Error loading modal products:', error)
+    modalProducts.value = []
+    modalTotalProducts.value = 0
+    modalTotalPages.value = 0
+  } finally {
+    isLoadingModalProducts.value = false
+  }
+}
+
+const goToModalPage = (page) => {
+  if (page < 1 || page > modalTotalPages.value) return
+  modalCurrentPage.value = page
+  loadModalProducts()
+}
+
+const displayedPages = computed(() => {
+  const pages = []
+  const total = modalTotalPages.value
+  const current = modalCurrentPage.value
+
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) {
+      pages.push(i)
+    }
+  } else {
+    if (current <= 4) {
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) {
+        pages.push(i)
+      }
+    } else {
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(total)
+    }
+  }
+
+  return pages
+})
+
+const getRankClass = (index) => {
+  const rank = (modalCurrentPage.value - 1) * modalPageSize.value + index + 1
+  if (rank === 1) return 'rank-gold'
+  if (rank === 2) return 'rank-silver'
+  if (rank === 3) return 'rank-bronze'
+  return ''
 }
 
 const formatMetricValue = (value, metric) => {
@@ -681,11 +1222,6 @@ const formatMetricValue = (value, metric) => {
       return value
   }
 }
-
-// Lifecycle
-onMounted(() => {
-  // Initialize advanced analytics
-})
 
 // Expose functions and variables to template
 defineExpose({
@@ -858,7 +1394,7 @@ defineExpose({
 
 /* KPI Cards */
 .kpi-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .kpi-card {
@@ -1514,85 +2050,6 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 1rem;
-}
-
-.metric-card-small {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px;
-  padding: 1.75rem;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.05),
-    0 10px 40px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  height: 100%;
-}
-
-.metric-card-small:hover {
-  transform: translateY(-4px);
-  box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 20px 60px rgba(0, 0, 0, 0.1);
-  border-color: #6366f1;
-}
-
-.metric-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.metric-label {
-  font-size: 0.875rem;
-  color: #1e293b;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.025em;
-}
-
-.live-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  color: #10b981;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: rgba(16, 185, 129, 0.1);
-  padding: 0.25rem 0.5rem;
-  border-radius: 12px;
-}
-
-.live-indicator i {
-  animation: pulse-green 2s ease-in-out infinite;
-}
-
-@keyframes pulse-green {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.7;
-    transform: scale(0.9);
-  }
-}
-
-.metric-value {
-  font-size: 2.25rem;
-  font-weight: 800;
-  color: #0f172a;
-  margin-bottom: 0.5rem;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.metric-subtitle {
-  font-size: 0.875rem;
-  color: #475569;
   font-weight: 600;
 }
 
@@ -1824,28 +2281,74 @@ defineExpose({
 
 /* Trend Cards */
 .trend-revenue {
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  border: 1px solid #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border: 1px solid #a7f3d0;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.trend-revenue:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+}
+
+.trend-revenue .trend-icon {
+  color: #10b981;
 }
 
 .trend-orders {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  border: 1px solid #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.trend-orders:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+}
+
+.trend-orders .trend-icon {
+  color: #3b82f6;
 }
 
 .trend-customers {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border: 1px solid #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+}
+
+.trend-customers:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.2);
+}
+
+.trend-customers .trend-icon {
+  color: #f59e0b;
 }
 
 .trend-average {
-  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
-  border: 1px solid #8b5cf6;
+  background: linear-gradient(135deg, #faf5ff 0%, #ede9fe 100%);
+  border: 1px solid #ddd6fe;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.1);
+}
+
+.trend-average:hover {
+  border-color: #8b5cf6;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.2);
+}
+
+.trend-average .trend-icon {
+  color: #8b5cf6;
 }
 
 .trend-icon {
-  font-size: 1.5rem;
-  opacity: 0.7;
+  font-size: 1.75rem;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.metric-card-small:hover .trend-icon {
+  opacity: 1;
+  transform: scale(1.1);
 }
 
 /* Business Insights */
@@ -1925,17 +2428,508 @@ defineExpose({
 
 /* Additional Analytics */
 .additional-analytics {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.metric-card-small {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.metric-card-small:hover {
+  transform: translateY(-4px);
+}
+
+.metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal-dialog {
+  width: 100%;
+  max-width: 1200px;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.modal-title i {
+  font-size: 1.5rem;
+}
+
+.btn-close {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  font-size: 1.25rem;
+}
+
+.btn-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 2rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.loading-state-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.loading-state-modal i {
+  font-size: 2.5rem;
+  color: #6366f1;
+}
+
+.loading-state-modal span {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.empty-state-modal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  gap: 1rem;
+}
+
+.empty-state-modal i {
+  font-size: 3rem;
+  color: #d1d5db;
+}
+
+.empty-state-modal p {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Modal Products Table */
+.modal-products-list .table {
+  margin-bottom: 0;
+}
+
+.modal-products-list .table thead th {
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.modal-products-list .table tbody td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.modal-products-list .product-row {
+  transition: all 0.2s;
+}
+
+.modal-products-list .product-row:hover {
+  background: #f9fafb;
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.rank-badge.rank-gold {
+  background: linear-gradient(135deg, #ffd700, #ffed4e);
+  color: #854d0e;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.rank-badge.rank-silver {
+  background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
+  color: #374151;
+  box-shadow: 0 2px 8px rgba(192, 192, 192, 0.3);
+}
+
+.rank-badge.rank-bronze {
+  background: linear-gradient(135deg, #cd7f32, #e8a87c);
+  color: #78350f;
+  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
+}
+
+.product-image-cell {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.product-image-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-name-cell {
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.4;
+}
+
+.category-badge {
+  display: inline-block;
+  padding: 0.375rem 0.75rem;
+  background: #ede9fe;
+  color: #6b21a8;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+
+.sales-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.sales-cell i {
+  font-size: 1rem;
+}
+
+.revenue-cell {
+  font-weight: 600;
+  color: #16a34a;
+  font-size: 0.9375rem;
+}
+
+/* Modal Pagination */
+.modal-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-controls .btn {
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.pagination-controls .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-controls .btn-primary {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
+}
+
+.pagination-controls .btn-outline-secondary {
+  border-color: #d1d5db;
+  color: #6b7280;
+}
+
+.pagination-controls .btn-outline-secondary:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .modal-dialog {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  .modal-body {
+    padding: 1rem;
+    max-height: 60vh;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+  }
+
+  .modal-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pagination-controls {
+    justify-content: center;
+  }
+
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .modal-products-list .table thead th,
+  .modal-products-list .table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .product-image-cell {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+.metric-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.metric-subtitle {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Chart Analysis Section */
+.chart-analysis-section {
+  margin-bottom: 1.5rem;
+}
+
+.chart-card {
+  background: white;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.05),
+    0 10px 40px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chart-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.chart-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+}
+
+.growth-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.growth-badge i {
+  font-size: 0.875rem;
+}
+
+.chart-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.metric-toggles {
+  display: flex;
+  gap: 0.5rem;
+  background: #f3f4f6;
+  padding: 0.25rem;
+  border-radius: 8px;
+}
+
+.metric-toggle {
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.metric-toggle:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.metric-toggle.active {
+  background: #ffffff;
+  color: #ef4444;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.metric-toggle i {
+  font-size: 0.875rem;
+}
+
+.chart-content {
+  position: relative;
+  height: 350px;
 }
 
 /* Details Section */
 .details-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 /* Performance Metrics */
 .performance-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .performance-metrics {
