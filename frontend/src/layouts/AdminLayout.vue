@@ -177,8 +177,15 @@
       <!-- Page Content -->
       <main class="admin-content">
         <router-view v-slot="{ Component, route }">
-          <transition name="page" mode="out-in">
-            <component :is="Component" :key="route.path" />
+          <transition name="page" mode="out-in" appear>
+            <div :key="route.path" class="router-view-wrapper">
+              <Suspense>
+                <component :is="Component" />
+                <template #fallback>
+                  <div class="loading-fallback">Đang tải...</div>
+                </template>
+              </Suspense>
+            </div>
           </transition>
         </router-view>
       </main>
@@ -741,6 +748,21 @@ onUnmounted(() => {
   overflow-y: auto;
 }
 
+.router-view-wrapper {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.loading-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
 /* Notifications Panel */
 .notifications-panel {
   position: fixed;
@@ -844,19 +866,22 @@ onUnmounted(() => {
 }
 
 /* Page Transitions */
-.page-enter-active,
+.page-enter-active {
+  transition: all 0.2s ease-out;
+}
+
 .page-leave-active {
-  transition: all 0.3s ease;
+  transition: all 0.15s ease-in;
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(10px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-10px);
 }
 
 /* Responsive */

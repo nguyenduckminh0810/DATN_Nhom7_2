@@ -610,14 +610,17 @@ const productsChange = computed(() => ({
 
 // Set up real-time updates every 30 seconds
 let realTimeInterval = null
+let isMounted = false
 
 // ==================== LOAD DATA METHODS ====================
 
 const loadKpis = async () => {
+  if (!isMounted) return
   try {
     isLoadingKpis.value = true
     const { startDate, endDate } = getDateRange()
     const response = await thongKeService.getAnalyticsKpis({ startDate, endDate })
+    if (!isMounted) return
     const data = response?.data ?? response
 
     totalRevenue.value = Number(data.totalRevenue || 0)
@@ -632,6 +635,7 @@ const loadKpis = async () => {
 
     console.log('KPIs loaded:', data)
   } catch (error) {
+    if (!isMounted) return
     console.error('Error loading KPIs:', error)
     // Set default values if API fails
     totalRevenue.value = 0
@@ -643,7 +647,9 @@ const loadKpis = async () => {
     customersGrowth.value = 0
     productsGrowth.value = 0
   } finally {
-    isLoadingKpis.value = false
+    if (isMounted) {
+      isLoadingKpis.value = false
+    }
   }
 }
 
@@ -992,11 +998,12 @@ const enhancedChartOptions = computed(() => ({
 }))
 
 // Watch for metric changes
-watch(selectedChartMetric, () => {
+const stopWatcher = watch(selectedChartMetric, () => {
   loadChartData()
 })
 
 onMounted(async () => {
+  isMounted = true
   // Load all data
   await Promise.all([
     loadKpis(),
@@ -1008,15 +1015,40 @@ onMounted(async () => {
   ])
 
   // Start real-time updates (refresh every 5 minutes)
-  realTimeInterval = setInterval(async () => {
-    await loadHourlySales()
-  }, 300000) // 5 minutes
+  if (isMounted) {
+    realTimeInterval = setInterval(async () => {
+      if (isMounted) {
+        await loadHourlySales()
+      }
+    }, 300000) // 5 minutes
+  }
 })
 
 onUnmounted(() => {
+  // Mark component as unmounted
+  isMounted = false
+  
+  // Close modal if open
+  if (showTopProductsModal.value) {
+    showTopProductsModal.value = false
+  }
+  
+  // Clear interval
   if (realTimeInterval) {
     clearInterval(realTimeInterval)
+    realTimeInterval = null
   }
+  
+  // Stop watcher
+  if (stopWatcher) {
+    stopWatcher()
+  }
+  
+  // Reset all reactive state to prevent memory leaks
+  chartData.value = null
+  hourlySales.value = []
+  topProducts.value = []
+  modalProducts.value = []
 })
 
 // Format helper functions
@@ -1190,11 +1222,6 @@ const formatMetricValue = (value, metric) => {
       return value
   }
 }
-
-// Lifecycle
-onMounted(() => {
-  // Initialize advanced analytics
-})
 
 // Expose functions and variables to template
 defineExpose({
