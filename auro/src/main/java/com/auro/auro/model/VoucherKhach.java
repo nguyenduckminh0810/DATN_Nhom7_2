@@ -10,23 +10,22 @@ import lombok.*;
 @AllArgsConstructor
 public class VoucherKhach {
 
-    @EmbeddedId
-    private VoucherKhachId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idVoucher")
-    @JoinColumn(name = "id_voucher")
+    @JoinColumn(name = "id_voucher", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Voucher voucher;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("idKhachHang")
-    @JoinColumn(name = "id_khach_hang")
+    @JoinColumn(name = "id_khach_hang", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private KhachHang khachHang;
 
-    @Column(name = "trang_thai", columnDefinition = "NVARCHAR(20)") // vd: USED / UNUSED
+    @Column(name = "trang_thai", columnDefinition = "NVARCHAR(20)") 
     private String trangThai;
 }

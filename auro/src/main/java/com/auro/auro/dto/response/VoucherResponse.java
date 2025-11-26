@@ -24,6 +24,8 @@ public class VoucherResponse {
     private LocalDateTime ketThucLuc;
     private Integer gioiHanSuDung;
     private Integer trangThai;
+    private Long usedCount;
+    private BigDecimal totalDiscount;
 
     private String moTa;
     private Boolean daHetHan;

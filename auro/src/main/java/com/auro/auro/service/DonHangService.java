@@ -9,7 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.Set;
@@ -40,7 +39,6 @@ import com.auro.auro.repository.DiaChiRepository;
 import com.auro.auro.repository.VoucherRepository;
 import com.auro.auro.repository.BienTheSanPhamRepository;
 import com.auro.auro.repository.DanhGiaSanPhamRepository;
-import org.springframework.data.domain.PageRequest;
 import lombok.extern.slf4j.Slf4j;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -736,6 +734,8 @@ public class DonHangService {
                         } else {
                             giamGiaTong = result.getGiamGia();
                             voucherGiamGia = result.getVoucher();
+                            log.info("✅ Voucher applied successfully - maVoucher: {}, giamGiaTong: {}, tamTinh: {}", 
+                                    voucherGiamGia.getMa(), giamGiaTong, tamTinh);
                         }
                     }
                 }
@@ -824,6 +824,10 @@ public class DonHangService {
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
         donHang.setVoucher(voucherGiamGia);
+        
+        // Log để debug
+        log.info("📦 Creating order - tamTinh: {}, giamGiaTong: {}, phiVanChuyen: {}, voucher: {}", 
+                tamTinh, giamGiaTong, phiVanChuyen, voucherGiamGia != null ? voucherGiamGia.getMa() : "null");
         donHang.setDiaChiGiao(diaChiSnapshot);
         donHang.setGhiChu(request.getGhiChu());
         donHang.setPaymentMethod(request.getPhuongThucThanhToan());
