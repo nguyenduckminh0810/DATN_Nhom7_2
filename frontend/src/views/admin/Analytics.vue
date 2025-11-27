@@ -998,7 +998,7 @@ const enhancedChartOptions = computed(() => ({
 }))
 
 // Watch for metric changes
-const stopWatcher = watch(selectedChartMetric, () => {
+watch(selectedChartMetric, () => {
   loadChartData()
 })
 
@@ -1027,23 +1027,18 @@ onMounted(async () => {
 onUnmounted(() => {
   // Mark component as unmounted
   isMounted = false
-  
+
   // Close modal if open
   if (showTopProductsModal.value) {
     showTopProductsModal.value = false
   }
-  
+
   // Clear interval
   if (realTimeInterval) {
     clearInterval(realTimeInterval)
     realTimeInterval = null
   }
-  
-  // Stop watcher
-  if (stopWatcher) {
-    stopWatcher()
-  }
-  
+
   // Reset all reactive state to prevent memory leaks
   chartData.value = null
   hourlySales.value = []

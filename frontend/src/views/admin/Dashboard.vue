@@ -4,7 +4,7 @@
     <div class="dashboard-header">
       <div class="header-content">
         <div class="header-left">
-          <h1 class="page-title">Dashboard Tổng Quan</h1>
+          <h1 class="page-title">Tổng Quan Hoạt Động</h1>
           <p class="page-subtitle">Theo dõi hiệu suất kinh doanh của bạn</p>
         </div>
         <div class="header-right">

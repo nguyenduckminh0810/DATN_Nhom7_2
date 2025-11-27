@@ -90,12 +90,15 @@
           </li>
 
           <li class="nav-item">
-            <router-link class="nav-link modern-nav-link sale-link" to="/category/sale">
+            <a
+              class="nav-link modern-nav-link sale-link"
+              href="#"
+              @click.prevent="scrollToBestSellers"
+            >
               <div class="sale-container">
-                <span class="sale-text">SALE</span>
-                <span class="sale-percent">-50%</span>
+                <span class="hot-badge">Hot</span>
               </div>
-            </router-link>
+            </a>
           </li>
         </ul>
 
@@ -356,6 +359,34 @@ const scrollToNewProducts = async () => {
   }
 }
 
+// Scroll to best sellers section
+const scrollToBestSellers = async () => {
+  // If not on home page, navigate to home first
+  if (router.currentRoute.value.name !== 'home') {
+    await router.push('/')
+    // Wait for navigation to complete
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+
+  // Find and scroll to best sellers section
+  const bestSellersSection = document.querySelector('.best-sellers-section')
+  if (bestSellersSection) {
+    const navbarHeight = 80 // Account for fixed navbar
+    const targetPosition = bestSellersSection.offsetTop - navbarHeight
+
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth',
+    })
+  } else {
+    // Fallback: scroll down if section not found
+    window.scrollTo({
+      top: window.innerHeight * 1.5,
+      behavior: 'smooth',
+    })
+  }
+}
+
 // Search handler
 const handleSearch = () => {
   const query = searchQuery.value.trim()
@@ -599,27 +630,24 @@ router-link:focus-visible {
   justify-content: center;
 }
 
-.sale-text {
-  font-size: 1.2rem;
-  font-weight: 900;
-  color: #dc3545 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.hot-badge {
+  font-size: 0.875rem;
+  font-weight: 700;
+  font-family: var(--auro-body-font);
+  color: #fff;
   line-height: 1;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+  padding: 6px 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
 }
 
-.sale-percent {
-  position: absolute;
-  top: -8px;
-  right: -12px;
-  font-size: 0.6rem;
-  font-weight: 900;
-  color: #dc3545;
-  line-height: 1;
-  background: white;
-  padding: 2px 4px;
-  border-radius: 3px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.sale-link:hover .hot-badge {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
 }
 
 .modern-nav-link::before {
