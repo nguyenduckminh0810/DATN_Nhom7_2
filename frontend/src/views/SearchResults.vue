@@ -118,7 +118,7 @@
         <!-- Has Results -->
         <div v-else class="search-results-grid" style="min-height: 200px;">
           <div class="row g-4">
-            <div class="col-md-6 col-lg-4 col-xl-3" v-for="product in sortedResults" :key="`product-${product.id}`">
+            <div class="col-md-6 col-lg-4 col-xl-3" v-for="product in paginatedResults" :key="`product-${product.id}`">
               <div class="card product-card h-100">
                 <div class="position-relative product-image-container">
                   <img 
@@ -168,6 +168,81 @@
               </div>
             </div>
           </div>
+
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="pagination-wrapper mt-5">
+            <nav aria-label="Search results pagination">
+              <ul class="pagination modern-pagination justify-content-center">
+                <!-- First Page -->
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button
+                    class="page-link"
+                    @click="changePage(1)"
+                    :disabled="currentPage === 1"
+                    title="Trang đầu"
+                  >
+                    <i class="bi bi-chevron-double-left"></i>
+                  </button>
+                </li>
+
+                <!-- Previous Page -->
+                <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                  <button
+                    class="page-link"
+                    @click="changePage(currentPage - 1)"
+                    :disabled="currentPage === 1"
+                    title="Trang trước"
+                  >
+                    <i class="bi bi-chevron-left"></i>
+                  </button>
+                </li>
+
+                <!-- Page Numbers -->
+                <li
+                  v-for="page in visiblePages"
+                  :key="page"
+                  class="page-item"
+                  :class="{ active: page === currentPage }"
+                >
+                  <button class="page-link" @click="changePage(page)">
+                    {{ page }}
+                  </button>
+                </li>
+
+                <!-- Next Page -->
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button
+                    class="page-link"
+                    @click="changePage(currentPage + 1)"
+                    :disabled="currentPage === totalPages"
+                    title="Trang sau"
+                  >
+                    <i class="bi bi-chevron-right"></i>
+                  </button>
+                </li>
+
+                <!-- Last Page -->
+                <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                  <button
+                    class="page-link"
+                    @click="changePage(totalPages)"
+                    :disabled="currentPage === totalPages"
+                    title="Trang cuối"
+                  >
+                    <i class="bi bi-chevron-double-right"></i>
+                  </button>
+                </li>
+              </ul>
+            </nav>
+
+            <!-- Pagination Info -->
+            <div class="pagination-info text-center mt-3">
+              <small class="text-muted">
+                Trang {{ currentPage }} / {{ totalPages }} 
+                (Hiển thị {{ startIndex + 1 }} - {{ endIndex }} trong {{ sortedResults.length }} sản phẩm)
+              </small>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -214,6 +289,8 @@ const cartStore = useCartStore()
 // Local state
 const searchQuery = ref('')
 const sortBy = ref('relevance')
+const currentPage = ref(1)
+const itemsPerPage = 8
 
 // Computed
 const isSearching = computed(() => searchStore.isSearching)
@@ -241,15 +318,78 @@ const sortedResults = computed(() => {
   }
 })
 
+// Pagination computed
+const totalPages = computed(() => {
+  return Math.ceil(sortedResults.value.length / itemsPerPage)
+})
+
+const startIndex = computed(() => {
+  return (currentPage.value - 1) * itemsPerPage
+})
+
+const endIndex = computed(() => {
+  return Math.min(startIndex.value + itemsPerPage, sortedResults.value.length)
+})
+
+const paginatedResults = computed(() => {
+  return sortedResults.value.slice(startIndex.value, endIndex.value)
+})
+
+const visiblePages = computed(() => {
+  const pages = []
+  const totalPagesVal = totalPages.value
+  const current = currentPage.value
+
+  if (totalPagesVal <= 7) {
+    for (let i = 1; i <= totalPagesVal; i++) {
+      pages.push(i)
+    }
+  } else {
+    if (current <= 4) {
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPagesVal)
+    } else if (current >= totalPagesVal - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPagesVal - 4; i <= totalPagesVal; i++) {
+        pages.push(i)
+      }
+    } else {
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPagesVal)
+    }
+  }
+
+  return pages
+})
+
 // Methods
 const performSearch = () => {
   if (searchQuery.value.trim()) {
+    currentPage.value = 1 // Reset to first page on new search
     searchStore.searchProducts(searchQuery.value)
   }
 }
 
 const sortResults = () => {
   // Results are automatically sorted via computed property
+  currentPage.value = 1 // Reset to first page when sorting changes
+}
+
+const changePage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 }
 
 const searchTag = (tag) => {
@@ -325,6 +465,11 @@ watch(() => route.query.q, (newQuery) => {
     searchQuery.value = newQuery
     performSearch()
   }
+})
+
+// Watch for sort changes to reset pagination
+watch(sortBy, () => {
+  currentPage.value = 1
 })
 </script>
 
@@ -404,6 +549,64 @@ watch(() => route.query.q, (newQuery) => {
 .suggestions ul li {
   color: #6c757d;
   margin-bottom: 4px;
+}
+
+/* Pagination Styles */
+.pagination-wrapper {
+  margin-top: 3rem;
+}
+
+.modern-pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.modern-pagination .page-item {
+  margin: 0 0.25rem;
+}
+
+.modern-pagination .page-link {
+  border: 2px solid #e9ecef;
+  color: #495057;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  background: white;
+  cursor: pointer;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+}
+
+.modern-pagination .page-link:hover:not(:disabled) {
+  background: #b8860b;
+  border-color: #b8860b;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);
+}
+
+.modern-pagination .page-item.active .page-link {
+  background: linear-gradient(135deg, #b8860b 0%, #daa520 100%);
+  border-color: #b8860b;
+  color: white;
+}
+
+.modern-pagination .page-item.disabled .page-link {
+  background: #f8f9fa;
+  border-color: #e9ecef;
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pagination-info {
+  margin-top: 1rem;
 }
 
 /* Scroll animations */

@@ -47,7 +47,7 @@
         </div>
 
         <div v-else>
-          <div v-for="item in items" :key="item.itemKey" class="cart-item">
+          <div v-for="item in paginatedItems" :key="item.itemKey" class="cart-item">
             <div class="row align-items-center p-3">
               <!-- Checkbox - Always visible -->
               <div class="col-1">
@@ -195,6 +195,59 @@
           </div>
         </div>
       </div>
+
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="pagination-wrapper mt-3 px-3 pb-3">
+        <nav aria-label="Cart pagination">
+          <ul class="pagination pagination-sm justify-content-center mb-0">
+            <!-- Previous Page -->
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button
+                class="page-link"
+                @click.prevent="goToPage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                title="Trang trước"
+                type="button"
+              >
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+
+            <!-- Page Numbers -->
+            <li
+              v-for="page in visiblePages"
+              :key="page"
+              class="page-item"
+              :class="{ active: page === currentPage }"
+            >
+              <button v-if="page !== '...'" class="page-link" @click.prevent="goToPage(page)" type="button">
+                {{ page }}
+              </button>
+              <span v-else class="page-link" style="pointer-events: none;">{{ page }}</span>
+            </li>
+
+            <!-- Next Page -->
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button
+                class="page-link"
+                @click.prevent="goToPage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                title="Trang sau"
+                type="button"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Pagination Info -->
+        <div class="text-center mt-2">
+          <small class="text-muted">
+            Hiển thị {{ startIndex + 1 }} - {{ endIndex }} trong {{ items.length }} sản phẩm
+          </small>
+        </div>
+      </div>
     </div>
 
     <!-- Continue Shopping -->
@@ -221,6 +274,10 @@ const productVariantsMap = ref(new Map())
 
 // Loading state để prevent spam click
 const isUpdating = ref(false)
+
+// Pagination state
+const currentPage = ref(1)
+const itemsPerPage = 3
 
 // 🔍 DEBUG: Log items from cart
 console.log('🛒 [CART ITEMS] Total items:', items.value?.length || 0)
@@ -644,6 +701,86 @@ const toggleSelectAll = async () => {
     window.$toast.success(message)
   }
 }
+
+// Pagination computed properties
+const totalPages = computed(() => {
+  if (!items.value || items.value.length === 0) return 0
+  return Math.ceil(items.value.length / itemsPerPage)
+})
+
+const startIndex = computed(() => {
+  return (currentPage.value - 1) * itemsPerPage
+})
+
+const endIndex = computed(() => {
+  if (!items.value || items.value.length === 0) return 0
+  return Math.min(startIndex.value + itemsPerPage, items.value.length)
+})
+
+const paginatedItems = computed(() => {
+  if (!items.value || items.value.length === 0) return []
+  return items.value.slice(startIndex.value, endIndex.value)
+})
+
+const visiblePages = computed(() => {
+  const pages = []
+  const totalPagesVal = totalPages.value
+  const current = currentPage.value
+
+  if (totalPagesVal <= 7) {
+    // Hiển thị tất cả các trang nếu <= 7
+    for (let i = 1; i <= totalPagesVal; i++) {
+      pages.push(i)
+    }
+  } else {
+    // Hiển thị với ellipsis
+    if (current <= 3) {
+      // Đầu danh sách
+      for (let i = 1; i <= 4; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPagesVal)
+    } else if (current >= totalPagesVal - 2) {
+      // Cuối danh sách
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPagesVal - 3; i <= totalPagesVal; i++) {
+        pages.push(i)
+      }
+    } else {
+      // Giữa danh sách
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPagesVal)
+    }
+  }
+
+  return pages
+})
+
+// Pagination methods
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value && page !== currentPage.value) {
+    currentPage.value = page
+    // Scroll to top of cart items section
+    const cartSection = document.querySelector('.cart-items-section')
+    if (cartSection) {
+      cartSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+}
+
+// Reset to page 1 when items change
+watch(() => items.value?.length, () => {
+  if (currentPage.value > totalPages.value) {
+    currentPage.value = 1
+  }
+})
 </script>
 
 <style scoped>
@@ -1134,5 +1271,48 @@ const toggleSelectAll = async () => {
     justify-content: center;
     margin: 0 auto;
   }
+}
+
+/* Pagination Styles */
+.pagination-wrapper {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 1rem;
+}
+
+.pagination {
+  margin-bottom: 0;
+}
+
+.page-link {
+  border: 1px solid #dee2e6;
+  color: #6c757d;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.page-link:hover:not(:disabled) {
+  background: #f8f9fa;
+  color: #B8860B;
+  border-color: #B8860B;
+}
+
+.page-item.active .page-link {
+  background: #B8860B;
+  border-color: #B8860B;
+  color: white;
+  font-weight: 600;
+}
+
+.page-item.disabled .page-link {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f8f9fa;
+}
+
+.pagination-info {
+  font-size: 0.85rem;
+  color: #6c757d;
 }
 </style>

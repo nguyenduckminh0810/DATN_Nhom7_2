@@ -5,9 +5,10 @@
     itemtype="https://schema.org/Product"
     :data-product-id="props.id"
     @mouseleave="handleCardMouseLeave"
+    
   >
     <!-- Image Section - Separate and larger -->
-    <div class="product-image-section">
+    <div class="product-image-section" >
       <div class="image-wrapper">
         <div 
           class="product-image-container"
@@ -42,17 +43,32 @@
       <h3 class="product-name" itemprop="name" @click="navigateToDetail">{{ name }}</h3>
       
       <!-- Rating Stars -->
-      <div v-if="rating !== null && rating !== undefined" class="product-rating">
-        <div class="stars">
-          <i 
-            v-for="star in 5" 
-            :key="star" 
-            :class="star <= Math.round(rating) ? 'bi bi-star-fill' : 'bi bi-star'"
-            class="star-icon"
-          ></i>
+      <div class="product-rating">
+        <div class="stars-container">
+          <div class="stars">
+            <i 
+              v-for="star in 5" 
+              :key="star" 
+              :class="[
+                'star-icon',
+                star <= Math.floor(rating || 0) ? 'bi bi-star-fill' : 
+                (star - 0.5 <= (rating || 0) && star > Math.floor(rating || 0)) ? 'bi bi-star-half' : 
+                'bi bi-star'
+              ]"
+            ></i>
+          </div>
+          <span v-if="rating !== null && rating !== undefined" class="rating-average">
+            {{ (rating || 0).toFixed(1) }}
+          </span>
+          <span v-else class="rating-average no-rating">
+            0.0
+          </span>
         </div>
-        <span v-if="reviewCount !== null && reviewCount !== undefined" class="rating-count">
-          ({{ reviewCount }})
+        <span v-if="reviewCount !== null && reviewCount !== undefined && reviewCount > 0" class="rating-count">
+          ({{ reviewCount }} đánh giá)
+        </span>
+        <span v-else class="rating-count no-reviews">
+          (0)
         </span>
       </div>
       
@@ -410,9 +426,11 @@ const handleGlobalMouseLeave = (event) => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  flex: 0 0 calc((100vw - 120px) / 5); /* 5 sản phẩm chia đều chiều ngang */
-  max-width: 400px;
+  width: 100%;
   min-height: 650px; /* Giảm từ 700px vì product-info nhỏ hơn */
+  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .product-card:hover {
@@ -553,33 +571,66 @@ const handleGlobalMouseLeave = (event) => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+  min-height: 20px; /* Đảm bảo chiều cao tối thiểu */
+}
+
+.product-rating .stars-container {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
 }
 
 .product-rating .stars {
   display: flex;
   gap: 2px;
+  align-items: center;
+  line-height: 1;
 }
 
 .product-rating .star-icon {
   font-size: 0.875rem;
   color: #ffc107;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .product-rating .star-icon.bi-star {
   color: #e0e0e0;
 }
 
+.product-rating .star-icon.bi-star-half {
+  color: #ffc107;
+}
+
+.product-rating .rating-average {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #212529;
+  line-height: 1;
+  min-width: 36px; /* Đảm bảo width cố định để căn chỉnh (cho số 0.0 - 5.0) */
+  text-align: left;
+  display: inline-block;
+}
+
+.product-rating .rating-average.no-rating {
+  color: #adb5bd;
+  font-weight: 400;
+}
+
 .product-rating .rating-count {
   font-size: 0.75rem;
   color: #6c757d;
-  line-height: 1.3; /* Giảm line-height */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 2rem; /* Giảm từ 2.5rem */
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.product-rating .rating-count.no-reviews {
+  color: #adb5bd;
+  font-style: italic;
 }
 
 .product-price {
