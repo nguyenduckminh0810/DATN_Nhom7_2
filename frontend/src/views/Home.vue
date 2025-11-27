@@ -16,7 +16,7 @@
           class="carousel-inner"
           :style="{
             transform: `translateX(-${currentIndex * 20}%)`,
-            transition: isAnimating ? 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)' : 'none',
+            transition: isAnimating ? 'transform 0.8s cubic-bezier(0.4, 0.0, 0.2, 1)' : 'none',
           }"
           @transitionend="onTransitionEnd"
         >
@@ -29,179 +29,43 @@
               class="hero-slide"
               :style="{
                 backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1)), url(${slide.backgroundImage})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                minHeight: '100vh',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
               }"
             >
-              <div
-                class="hero-content-wrapper"
-                style="
-                  display: flex;
-                  width: 100%;
-                  max-width: 1200px;
-                  margin: 0 auto;
-                  padding: 2rem;
-                  align-items: center;
-                  position: relative;
-                  z-index: 2;
-                "
-              >
-                <div class="hero-text" style="flex: 1; padding-right: 2rem">
-                  <div
-                    class="badge-new"
-                    style="
-                      background: #cd7f32;
-                      color: white;
-                      padding: 0.5rem 1rem;
-                      border-radius: 20px;
-                      font-size: 0.875rem;
-                      font-weight: bold;
-                      display: inline-block;
-                      margin-bottom: 1rem;
-                    "
-                  >
+              <div class="hero-content-wrapper">
+                <div class="hero-text">
+                  <div class="badge-new">
                     {{ slide.badge }}
                   </div>
-                  <h1
-                    class="hero-title"
-                    style="
-                      font-size: 3rem;
-                      font-weight: bold;
-                      color: white;
-                      margin-bottom: 1rem;
-                      line-height: 1.2;
-                    "
-                  >
+                  <h1 class="hero-title">
                     {{ slide.title }}
                   </h1>
-                  <p
-                    class="hero-description"
-                    style="
-                      font-size: 1.125rem;
-                      color: rgba(255, 255, 255, 0.9);
-                      margin-bottom: 2rem;
-                      line-height: 1.6;
-                    "
-                  >
+                  <p class="hero-description">
                     {{ slide.description }}
                   </p>
-                  <div
-                    class="hero-promo"
-                    v-if="slide.promo"
-                    style="
-                      background: rgba(255, 255, 255, 0.1);
-                      padding: 1rem;
-                      border-radius: 8px;
-                      margin-bottom: 2rem;
-                      display: flex;
-                      align-items: center;
-                      gap: 1rem;
-                    "
-                  >
-                    <span class="promo-text" style="color: white; flex: 1">{{ slide.promo }}</span>
-                    <div class="promo-item" style="display: flex; align-items: center; gap: 0.5rem">
-                      <i class="bi bi-plus-circle" style="color: #cd7f32; font-size: 1.5rem"></i>
-                      <img
-                        :src="slide.promoImage"
-                        :alt="slide.promoItem"
-                        class="promo-image"
-                        style="width: 40px; height: 40px; border-radius: 4px; object-fit: cover"
-                      />
+                  <div class="hero-promo" v-if="slide.promo">
+                    <span class="promo-text">{{ slide.promo }}</span>
+                    <div class="promo-item">
+                      <i class="bi bi-plus-circle"></i>
+                      <img :src="slide.promoImage" :alt="slide.promoItem" class="promo-image" />
                     </div>
                   </div>
-                  <router-link
-                    :to="slide.ctaLink"
-                    class="btn-hero-cta"
-                    style="
-                      background: #cd7f32;
-                      color: white;
-                      padding: 1rem 2rem;
-                      border-radius: 8px;
-                      text-decoration: none;
-                      font-weight: bold;
-                      display: inline-flex;
-                      align-items: center;
-                      gap: 0.5rem;
-                      transition: all 0.3s ease;
-                    "
-                  >
+                  <router-link :to="slide.ctaLink" class="btn-hero-cta">
                     {{ slide.ctaText }}
-                    <i class="bi bi-arrow-right" style="font-size: 1.25rem"></i>
+                    <i class="bi bi-arrow-right"></i>
                   </router-link>
                 </div>
-                <div class="hero-image" style="flex: 1; text-align: center">
-                  <img
-                    :src="slide.mainImage"
-                    :alt="slide.title"
-                    class="hero-main-image"
-                    style="
-                      width: 100%;
-                      height: 100vh;
-                      object-fit: cover;
-                      border-radius: 12px;
-                      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-                    "
-                  />
+                <div class="hero-image">
+                  <img :src="slide.mainImage" :alt="slide.title" class="hero-main-image" />
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <button
-          class="carousel-control-prev"
-          type="button"
-          @click="previousSlide"
-          style="
-            position: absolute;
-            left: 2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            border: none;
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.3s ease;
-          "
-        >
-          <i class="bi bi-caret-left" style="font-size: 1.5rem"></i>
+        <button class="carousel-control-prev" type="button" @click="previousSlide">
+          <i class="bi bi-caret-left"></i>
         </button>
-        <button
-          class="carousel-control-next"
-          type="button"
-          @click="nextSlide"
-          style="
-            position: absolute;
-            right: 2rem;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.5);
-            border: none;
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.3s ease;
-          "
-        >
-          <i class="bi bi-caret-right" style="font-size: 1.5rem"></i>
+        <button class="carousel-control-next" type="button" @click="nextSlide">
+          <i class="bi bi-caret-right"></i>
         </button>
       </div>
     </section>
@@ -220,13 +84,13 @@
         <button class="section-nav-btn prev" @click="scrollCategories('prev')">‹</button>
         <div class="section-list categories-grid" ref="categoriesGrid">
           <template v-if="isLoadingCategories">
-  <SkeletonLoader
-    v-for="n in 5"
-    :key="`category-skeleton-${n}`"
-    variant="card"
-    class="category-item section-item"
-  />
-</template>
+            <SkeletonLoader
+              v-for="n in 5"
+              :key="`category-skeleton-${n}`"
+              variant="card"
+              class="category-item section-item"
+            />
+          </template>
           <template v-else>
             <div
               v-for="category in displayCategories"
@@ -343,32 +207,36 @@ const allCategories = ref([])
 const isLoadingCategories = ref(false)
 
 const mapCategoryFromBE = (beCategory) => {
-
   const tenLower = (beCategory.ten || '').toLowerCase()
   const slugLower = (beCategory.slug || '').toLowerCase()
-  
+
   let filter = null
   if (tenLower.includes('áo') || slugLower.startsWith('ao') || slugLower.includes('ao-')) {
     filter = 'ao'
-  } else if (tenLower.includes('quần') || slugLower.startsWith('quan') || slugLower.includes('quan-')) {
+  } else if (
+    tenLower.includes('quần') ||
+    slugLower.startsWith('quan') ||
+    slugLower.includes('quan-')
+  ) {
     filter = 'quan'
   }
 
   const description = `${beCategory.ten} nam cao cấp`
 
-  const defaultImage = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
-  
+  const defaultImage =
+    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80'
+
   return {
     id: beCategory.id,
     name: beCategory.ten,
     slug: beCategory.slug,
     description: description,
     filter: filter,
-    image: defaultImage, 
+    image: defaultImage,
     idCha: beCategory.idCha,
     thuTu: beCategory.thuTu,
     hoatDong: beCategory.hoatDong,
-    productCount: beCategory.productCount || 0
+    productCount: beCategory.productCount || 0,
   }
 }
 
@@ -376,42 +244,43 @@ const fetchCategories = async () => {
   isLoadingCategories.value = true
   try {
     const response = await categoryService.getAll()
-    
+
     if (response.success && response.data) {
       const mappedCategories = response.data.map(mapCategoryFromBE)
-      
-      const activeCategories = mappedCategories.filter(cat => cat.hoatDong === 1)
 
-      const parentCategories = activeCategories.filter(cat => !cat.idCha)
+      const activeCategories = mappedCategories.filter((cat) => cat.hoatDong === 1)
+
+      const parentCategories = activeCategories.filter((cat) => !cat.idCha)
 
       if (parentCategories.length > 0) {
-        categoryFilters.value = parentCategories.map(cat => ({
+        categoryFilters.value = parentCategories.map((cat) => ({
           id: cat.id,
-          name: cat.name
+          name: cat.name,
         }))
 
         if (categoryFilters.value.length > 0) {
           selectedFilter.value = categoryFilters.value[0].id
         }
       } else {
-        const uniqueFilters = [...new Set(activeCategories.map(cat => cat.filter).filter(Boolean))]
+        const uniqueFilters = [
+          ...new Set(activeCategories.map((cat) => cat.filter).filter(Boolean)),
+        ]
         if (uniqueFilters.length > 0) {
-          categoryFilters.value = uniqueFilters.map(filter => {
+          categoryFilters.value = uniqueFilters.map((filter) => {
             const filterNames = {
-              'ao': 'ÁO',
-              'quan': 'QUẦN'
+              ao: 'ÁO',
+              quan: 'QUẦN',
             }
             return {
               id: filter,
-              name: filterNames[filter] || filter.toUpperCase()
+              name: filterNames[filter] || filter.toUpperCase(),
             }
           })
           selectedFilter.value = categoryFilters.value[0].id
         }
       }
 
-      allCategories.value = activeCategories.filter(cat => cat.idCha !== null)
-      
+      allCategories.value = activeCategories.filter((cat) => cat.idCha !== null)
 
       allCategories.value.sort((a, b) => {
         if (a.thuTu && b.thuTu) return a.thuTu - b.thuTu
@@ -507,6 +376,7 @@ onUnmounted(() => {
   max-width: 100vw;
   margin: 0;
   padding: 0;
+  margin-top: -2rem;
 }
 html,
 body {
@@ -523,66 +393,84 @@ body {
 .hero-content-wrapper {
   margin-top: 0 !important;
   padding-top: 0 !important;
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 4rem;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  gap: 4rem;
 }
 .hero-text,
 .hero-image {
+  flex: 1;
   padding-top: 0 !important;
   margin-top: 0 !important;
+}
+
+.hero-text {
+  padding-left: 2rem;
+  padding-right: 0;
+}
+
+.hero-image {
+  text-align: center;
 }
 .hero-main-image {
   display: block;
   border-radius: 24px;
+  width: 100%;
+  height: 50vh;
+  max-height: 600px;
+  object-fit: cover;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-hero-cta i {
+  font-size: 1.25rem;
 }
 .section-header {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   width: 100%;
   text-align: center;
 }
-.btn-view-all {
-  position: absolute;
-  bottom: -60px;
-  right: -350px;
-  background: #000;
-  color: #fff;
-  padding: 5px 10px;
-  border-radius: 20px;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  z-index: 10;
-}
+
 .categories-section.section-full {
-  margin-top: 2rem;
+  margin-top: 1rem;
+  padding: 2.5rem 0;
 }
 .section-list {
   display: flex;
-  gap: 0.25rem; /* Giảm khoảng cách giữa các items xuống tối thiểu */
-  justify-content: space-between;
+  gap: 0.75rem; /* Khoảng cách vừa phải giữa các items */
+  justify-content: center;
 }
 
-/* Khoảng cách cho categories grid giống với BestSellers */
+/* Khoảng cách cho categories grid */
 .section-list.categories-grid {
-  gap: 20px !important; /* Giống với BestSellers.vue - dùng !important để override */
-  justify-content: center !important; /* Căn giữa cả khối */
+  gap: 0.75rem !important; /* Khoảng cách 12px */
+  justify-content: center !important;
 }
 
 .section-item {
-  width: calc(20% - 0.2rem); /* Điều chỉnh width theo gap mới (0.25rem * 4 gaps / 5 items ≈ 0.2rem) */
   position: relative;
   border-radius: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.2s ease;
+  flex: 0 0 auto;
 }
 
 /* Điều chỉnh width cho categories items */
 .categories-grid .section-item {
-  width: calc(20% - 16px); /* Điều chỉnh theo gap 20px (20px * 4 gaps / 5 items ≈ 16px) */
+  width: 280px;
+  max-width: 280px;
 }
 
 /* Tránh ảnh hưởng đến product-card trong best-sellers */
@@ -594,43 +482,54 @@ body {
 }
 .section-item__image {
   width: 100%;
-  height: 200px;
+  height: 240px;
   object-fit: cover;
   display: block;
-  border-radius: 12px;
+  border-radius: 20px;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.section-item:hover .section-item__image {
+  transform: scale(1.05);
 }
 .category-content {
-  padding: 0.75rem 0.5rem 0;
+  padding: 1rem 0.75rem;
 }
 .category-title {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #1a1a1a;
 }
 .category-description {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: #666;
-  margin: 0.25rem 0 0;
+  margin: 0;
+  line-height: 1.4;
 }
 .section-nav-btn {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  border: 1px solid #e0e0e0;
-  background: #fff;
-  font-size: 20px;
-  color: #333;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  font-size: 18px;
+  color: #1a1a1a;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 300;
 }
 .section-nav-btn:hover {
-  background: #f8f8f8;
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+  transform: scale(1.05);
 }
 .section-nav-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 .btn-view-all {
   position: absolute;
@@ -658,15 +557,18 @@ body {
 .hero-carousel-section {
   position: relative;
   overflow: hidden;
-  height: 100vh;
+  height: 70vh;
+  min-height: 600px;
+  max-height: 800px;
   padding-top: 0;
   margin-top: 0;
+  padding: 0;
   width: 100%;
 }
 
 .carousel-inner {
   display: flex;
-  height: 100vh;
+  height: 100%;
   width: 500%; /* 5 slides * 100% */
   will-change: transform;
   overflow: hidden;
@@ -678,7 +580,7 @@ body {
   flex: 0 0 20%; /* 5 slides * 20% = 100% */
   width: 20%;
   min-width: 20%;
-  height: 100vh;
+  height: 100%;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -691,12 +593,12 @@ body {
 .custom-carousel {
   position: relative;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
 }
 
 .hero-slide {
-  height: 100vh;
+  height: 100%;
   width: 100%;
   background-size: cover !important;
   background-position: center !important;
@@ -713,7 +615,7 @@ body {
   position: relative;
   z-index: 2;
   color: white;
-  padding: 2rem 0;
+  padding: 1rem 0;
 }
 
 .hero-image-container {
@@ -725,31 +627,33 @@ body {
 
 .badge-new {
   display: inline-block;
-  background: var(--auro-secondary);
-  color: var(--auro-primary);
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
+  background: rgba(205, 127, 50, 0.15);
+  color: var(--auro-secondary);
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 1rem;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(205, 127, 50, 0.3);
 }
 
 .hero-title {
   font-family: var(--auro-display-font);
-  font-size: 3.5rem;
+  font-size: 3rem;
   font-weight: 700;
-  line-height: 1.1;
-  margin-bottom: 1.5rem;
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
   color: white;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: -0.5px;
 }
 
 .hero-description {
-  font-size: 1.125rem;
-  line-height: 1.6;
-  margin-bottom: 2rem;
+  font-size: 1.05rem;
+  line-height: 1.75;
+  margin-bottom: 1.5rem;
   color: rgba(255, 255, 255, 0.9);
   max-width: 500px;
 }
@@ -757,11 +661,11 @@ body {
 .hero-promo {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
+  border-radius: 8px;
   backdrop-filter: blur(10px);
 }
 
@@ -812,16 +716,6 @@ body {
   box-shadow: 0 6px 20px rgba(205, 127, 50, 0.4);
 }
 
-.hero-main-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-}
-
-.hero-main-image:hover {
-  transform: scale(1.05);
-}
-
 /* Carousel Controls */
 .carousel-indicators {
   position: absolute;
@@ -834,30 +728,39 @@ body {
 }
 
 .carousel-indicators button {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
+  width: 32px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.4);
   border: none;
-  margin: 0 0.5rem;
-  transition: all 0.3s ease;
+  margin: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
 }
 
 .carousel-indicators button.active {
-  background: var(--auro-secondary);
-  transform: scale(1.2);
+  background: rgba(255, 255, 255, 0.95);
+  width: 48px;
 }
 
 .carousel-control-prev,
 .carousel-control-next {
-  width: 60px;
-  height: 60px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
   background: rgba(255, 255, 255, 0.1);
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
   border-radius: 50%;
   backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 10;
 }
 
 .carousel-control-prev {
@@ -870,14 +773,16 @@ body {
 
 .carousel-control-prev:hover,
 .carousel-control-next:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-50%) scale(1.05);
 }
 
 .carousel-control-prev i,
 .carousel-control-next i {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: white;
+  font-weight: 300;
 }
 
 /* Responsive Design */
@@ -963,45 +868,6 @@ body {
   }
 }
 
-/* Hero Section */
-.hero-content {
-  position: relative;
-  z-index: 2;
-}
-
-.hero-image-container {
-  position: relative;
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: var(--auro-shadow-hover);
-}
-
-.hero-main-image {
-  width: 100%;
-  height: 500px;
-  object-fit: cover;
-  transition: transform 0.4s ease;
-}
-
-.hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, rgba(26, 26, 26, 0.1), rgba(212, 175, 55, 0.1));
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.hero-image:hover .hero-overlay {
-  opacity: 1;
-}
-
-.hero-image:hover .hero-main-image {
-  transform: scale(1.05);
-}
-
 /* Section Divider */
 .section-divider {
   width: 80px;
@@ -1066,35 +932,36 @@ body {
   display: flex;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .category-filter-btn {
-  padding: 12px 32px;
-  border: none;
-  background: #f8f9fa;
-  color: #6c757d;
-  font-weight: 600;
+  padding: 10px 28px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  color: #666;
+  font-weight: 500;
   font-size: 0.875rem;
-  border-radius: 50px;
-  transition: all 0.3s ease;
+  border-radius: 999px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .category-filter-btn.active {
-  background: #000;
+  background: rgba(26, 26, 26, 0.95);
   color: white;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .category-filter-btn:hover:not(.active) {
-  background: #e9ecef;
-  color: #000;
-  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #1a1a1a;
 }
 
 .categories-carousel-container {
@@ -1102,7 +969,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 2rem 0;
+  margin: 0;
   width: 100%;
 }
 
@@ -1122,31 +989,6 @@ body {
 
 .home > div {
   background: transparent !important;
-}
-
-/* Category content styling only */
-.category-content {
-  padding: 1.5rem;
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: center;
-}
-
-.category-title {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: #212529;
-  margin-bottom: 0.5rem;
-  line-height: 1.2;
-}
-
-.category-description {
-  color: #6c757d;
-  font-size: 0.9rem;
-  margin: 0;
-  font-weight: 500;
 }
 
 /* Skeleton loading for categories */

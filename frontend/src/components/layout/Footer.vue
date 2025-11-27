@@ -4,12 +4,10 @@
       <div class="row">
         <!-- Brand & Description -->
         <div class="col-lg-4 mb-4">
-          <h5 class="fw-bold mb-3 gradient-text">
-            <i class="bi bi-shop me-2"></i>AURO
-          </h5>
+          <h5 class="fw-bold mb-3 gradient-text"><i class="bi bi-shop me-2"></i>AURO</h5>
           <p class="text-white-50">
-            Thương hiệu thời trang nam cao cấp với thiết kế tinh tế và chất lượng vượt trội.
-            Chúng tôi cam kết mang đến những sản phẩm tốt nhất cho phái mạnh.
+            Thương hiệu thời trang nam cao cấp với thiết kế tinh tế và chất lượng vượt trội. Chúng
+            tôi cam kết mang đến những sản phẩm tốt nhất cho phái mạnh.
           </p>
           <div class="social-links">
             <a href="#" title="Facebook">
@@ -26,7 +24,7 @@
             </a>
           </div>
         </div>
-        
+
         <!-- Products -->
         <div class="col-lg-2 col-md-6 mb-4">
           <h6 class="fw-bold mb-3">Sản phẩm</h6>
@@ -58,7 +56,7 @@
             </li>
           </ul>
         </div>
-        
+
         <!-- Customer Service -->
         <div class="col-lg-2 col-md-6 mb-4">
           <h6 class="fw-bold mb-3">Hỗ trợ khách hàng</h6>
@@ -80,7 +78,7 @@
             </li>
           </ul>
         </div>
-        
+
         <!-- Company -->
         <div class="col-lg-2 col-md-6 mb-4">
           <h6 class="fw-bold mb-3">Công ty</h6>
@@ -102,7 +100,7 @@
             </li>
           </ul>
         </div>
-        
+
         <!-- Contact Info -->
         <div class="col-lg-2 col-md-6 mb-4">
           <h6 class="fw-bold mb-3">Liên hệ</h6>
@@ -125,46 +123,50 @@
             </p>
             <p class="text-white-50">
               <i class="bi bi-clock me-2"></i>
-              T2-T6: 8:00-18:00<br>
+              T2-T6: 8:00-18:00<br />
               <span class="ms-4">T7-CN: 9:00-17:00</span>
             </p>
           </div>
         </div>
       </div>
-      
+
       <!-- Newsletter -->
-      <div class="row mt-4">
+      <div class="row mt-5 mb-4">
         <div class="col-12">
-          <div class="newsletter-section text-center py-4 border-top" style="border-color: rgba(255, 255, 255, 0.2) !important;">
-            <h6 class="fw-bold mb-3">Đăng ký nhận tin</h6>
-            <p class="text-white-50 mb-3">Nhận thông tin về sản phẩm mới và ưu đãi đặc biệt</p>
-            <form @submit.prevent="handleNewsletter" class="d-flex justify-content-center gap-2">
-              <div class="input-group" style="max-width: 400px;">
-                <input 
-                  v-model="email"
-                  type="email" 
-                  class="form-control" 
-                  placeholder="Nhập email của bạn"
-                  required
-                >
-                <button class="btn btn-auro-primary" type="submit">
-                  Đăng ký
-                </button>
+          <div class="newsletter-section">
+            <div class="row align-items-center">
+              <div class="col-md-6 mb-3 mb-md-0 text-md-start text-center">
+                <h6 class="fw-bold mb-1 text-white">Đăng ký nhận tin mới</h6>
+                <p class="text-white-50 mb-0 small">
+                  Nhận thông tin sản phẩm mới và ưu đãi đặc biệt
+                </p>
               </div>
-            </form>
+              <div class="col-md-6">
+                <form @submit.prevent="handleNewsletter">
+                  <div class="input-group newsletter-input">
+                    <input
+                      v-model="email"
+                      type="email"
+                      class="form-control"
+                      placeholder="Nhập email của bạn"
+                      required
+                    />
+                    <button class="btn btn-auro-primary" type="submit">Đăng ký</button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      
+
       <!-- Copyright -->
       <div class="row mt-4">
         <div class="col-12">
-          <hr class="my-4">
+          <hr class="my-4" />
           <div class="row align-items-center">
             <div class="col-md-6">
-              <p class="text-white-50 mb-0">
-                &copy; 2024 AURO. Tất cả quyền được bảo lưu.
-              </p>
+              <p class="text-white-50 mb-0">&copy; 2024 AURO. Tất cả quyền được bảo lưu.</p>
             </div>
             <div class="col-md-6 text-md-end">
               <div class="payment-methods">
@@ -197,13 +199,28 @@ const handleNewsletter = () => {
 </script>
 
 <style scoped>
+.footer-modern h6 {
+  color: var(--auro-secondary);
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.footer-modern .text-white-50 {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.footer-modern .text-white-50:hover {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
 .social-links a {
   font-size: 1.2rem;
   transition: all 0.3s ease;
 }
 
 .contact-info a:hover {
-  color: #ffc107 !important;
+  color: var(--auro-secondary) !important;
 }
 
 .payment-methods i {
@@ -216,18 +233,64 @@ const handleNewsletter = () => {
 }
 
 .newsletter-section {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 1rem;
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 24px 32px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.newsletter-section:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.newsletter-input {
+  max-width: 100%;
+}
+
+.newsletter-input .form-control {
+  background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 8px 0 0 8px;
+}
+
+.newsletter-input .form-control::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.newsletter-input .form-control:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--auro-secondary);
+  color: #fff;
+  box-shadow: 0 0 0 0.25rem rgba(205, 127, 50, 0.15);
+}
+
+.newsletter-input .btn {
+  padding: 12px 24px;
+  border-radius: 0 8px 8px 0;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Mobile responsive */
 @media (max-width: 767.98px) {
-  .newsletter-section .input-group {
-    max-width: 100% !important;
+  .newsletter-section {
+    padding: 20px 16px;
   }
-  
+
+  .newsletter-input .form-control {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+
+  .newsletter-input .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
   .payment-methods {
     margin-top: 1rem;
     text-align: center !important;

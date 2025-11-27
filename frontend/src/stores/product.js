@@ -17,6 +17,7 @@ export const useProductStore = defineStore('product', () => {
   const currentProduct = ref(null)
   const relatedProducts = ref([])
   const productReviews = ref([])
+  const bestSellers = ref([])
   const isLoading = ref(false)
   const error = ref(null)
   const pagination = ref({
@@ -328,7 +329,7 @@ export const useProductStore = defineStore('product', () => {
 
       if (response.success || response.content) {
         // Handle Spring Boot Page response
-        const products = response.content || response.data?.products || []
+        const productsData = response.content || response.data?.products || []
         const pagination = {
           page: response.number || response.page || 0,
           limit: response.size || response.limit || 10,
@@ -336,7 +337,10 @@ export const useProductStore = defineStore('product', () => {
           totalPages: response.totalPages || response.totalPages || 0,
         }
 
-        const data = { products, pagination }
+        const data = { products: productsData, pagination }
+
+        // Save to state
+        bestSellers.value = productsData
 
         // Cache the response
         apiCache.set(cacheKey, data)
@@ -399,6 +403,7 @@ export const useProductStore = defineStore('product', () => {
     currentProduct,
     relatedProducts,
     productReviews,
+    bestSellers,
     isLoading,
     error,
     pagination,
