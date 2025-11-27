@@ -52,9 +52,6 @@
                   <div class="voucher-content">
                     <div class="voucher-header">
                       <div class="voucher-code">{{ voucher.ma }}</div>
-                      <div class="voucher-remaining" v-if="voucher.gioiHanSuDung && voucher.gioiHanSuDung > 0">
-                        Còn {{ voucher.gioiHanSuDung }}
-                      </div>
                     </div>
                     <div class="voucher-description">
                       {{ getVoucherDescription(voucher) }}

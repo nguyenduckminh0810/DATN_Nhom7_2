@@ -352,6 +352,7 @@ class ApiService {
     update: (id, data) => this.put(`/phieu-giam-gia/quan-ly/${id}`, data),
     delete: (id) => this.delete(`/phieu-giam-gia/quan-ly/${id}`),
     reactivate: (id, soNgayGiaHan) => this.post(`/phieu-giam-gia/quan-ly/${id}/reactivate`, null, { params: { soNgayGiaHan } }),
+    deactivate: (id) => this.post(`/phieu-giam-gia/quan-ly/${id}/deactivate`),
   }
 
   // Admin Users

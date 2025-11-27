@@ -87,4 +87,8 @@ public interface DonHangChiTietRepository extends JpaRepository<DonHangChiTiet, 
     long findTotalSoldQuantityBetweenIn(@Param("statusValues") java.util.List<String> statusValues,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/master

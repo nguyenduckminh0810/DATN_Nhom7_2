@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,11 +31,12 @@ public class VoucherAdminController {
         
         try {
             List<Voucher> voucherEntities = voucherService.getAllVouchersForAdmin();
+            Map<String, VoucherService.VoucherUsageStats> usageStats = voucherService.getVoucherUsageStatsForAdmin();
             System.out.println("Found " + voucherEntities.size() + " vouchers in database");
             
             List<VoucherResponse> vouchers = voucherEntities
             .stream()
-            .map(this::convertToResponse)
+            .map(v -> convertToResponse(v, usageStats.get(v.getMa())))
             .collect(Collectors.toList());
 
             System.out.println("Converted to " + vouchers.size() + " responses");
@@ -121,9 +123,27 @@ public class VoucherAdminController {
         }
     }
 
+    // Ngừng hoạt động voucher
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<ApiResponse<VoucherResponse>> deactivateVoucher(@PathVariable Long id) {
+        try {
+            Voucher voucher = voucherService.deactivateVoucher(id);
+            VoucherResponse response = convertToResponse(voucher);
+            return ResponseEntity.ok(ApiResponse.success(response, "Đã chuyển voucher sang trạng thái ngừng hoạt động"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
 
 
     private VoucherResponse convertToResponse(Voucher voucher) {
+        return convertToResponse(voucher, null);
+    }
+
+    private VoucherResponse convertToResponse(Voucher voucher, VoucherService.VoucherUsageStats usageStats) {
+        long usedCount = usageStats != null ? usageStats.usedCount() : 0L;
+        java.math.BigDecimal totalDiscount = usageStats != null ? usageStats.totalDiscount() : java.math.BigDecimal.ZERO;
         return VoucherResponse.builder()
             .id(voucher.getId())
             .ma(voucher.getMa())
@@ -135,6 +155,8 @@ public class VoucherAdminController {
             .ketThucLuc(voucher.getKetThucLuc())
             .gioiHanSuDung(voucher.getGioiHanSuDung())
             .trangThai(voucher.getTrangThai())
+            .usedCount(usedCount)
+            .totalDiscount(totalDiscount)
             .build();
     }
 }

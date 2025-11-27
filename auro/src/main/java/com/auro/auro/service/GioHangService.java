@@ -41,7 +41,7 @@ public class GioHangService {
 
     // Lấy chi tiết giỏ hàng
     public List<GioHangChiTiet> layChiTietGioHang(Long gioHangId) {
-        return gioHangChiTietRepo.findByGioHang_Id(gioHangId);
+        return gioHangChiTietRepo.findByGioHang_IdWithDetails(gioHangId);
     }
 
     // Lấy chi tiết giỏ hàng khách
