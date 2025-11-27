@@ -30,6 +30,7 @@
               :style="{
                 backgroundImage: `linear-gradient(135deg, rgba(0,0,0,0.3), rgba(0,0,0,0.1)), url(${slide.backgroundImage})`,
               }"
+              style="margin-top: 150px;"
             >
               <div class="hero-content-wrapper">
                 <div class="hero-text">
@@ -69,46 +70,7 @@
         </button>
       </div>
     </section>
-    <section class="categories-section section-full">
-      <div class="category-filters">
-        <button
-          v-for="filter in categoryFilters"
-          :key="filter.id"
-          :class="['category-filter-btn', { active: selectedFilter === filter.id }]"
-          @click="selectFilter(filter.id)"
-        >
-          {{ filter.name }}
-        </button>
-      </div>
-      <div class="categories-carousel-container">
-        <button class="section-nav-btn prev" @click="scrollCategories('prev')">‹</button>
-        <div class="section-list categories-grid" ref="categoriesGrid">
-          <template v-if="isLoadingCategories">
-            <SkeletonLoader
-              v-for="n in 5"
-              :key="`category-skeleton-${n}`"
-              variant="card"
-              class="category-item section-item"
-            />
-          </template>
-          <template v-else>
-            <div
-              v-for="category in displayCategories"
-              :key="category.id"
-              class="category-item section-item"
-              @click="goToCategory(category.slug)"
-            >
-              <img :src="category.image" :alt="category.name" class="section-item__image" />
-              <div class="category-content">
-                <h5 class="category-title">{{ category.name }}</h5>
-                <p class="category-description">{{ category.description }}</p>
-              </div>
-            </div>
-          </template>
-        </div>
-        <button class="section-nav-btn next" @click="scrollCategories('next')">›</button>
-      </div>
-    </section>
+
     <BestSellers />
     <NewArrivals />
   </div>
