@@ -250,4 +250,82 @@ private String layEmailNguoiNhan(KhachHang khachHang) {
         return date.format(formatter);
     }
 
+    // Gửi email đặt lại mật khẩu
+    public void guiEmailDatLaiMatKhau(String email, String resetToken, String resetUrl) {
+        try {
+            if (email == null || email.trim().isEmpty() || !email.contains("@")) {
+                log.warn("Email không hợp lệ để gửi link đặt lại mật khẩu: {}", email);
+                return;
+            }
+
+            String subject = "Đặt lại mật khẩu - AURO Store";
+            String content = taoNoiDungEmailDatLaiMatKhau(resetToken, resetUrl);
+            guiEmail(email, subject, content);
+
+            log.info("Đã gửi email đặt lại mật khẩu đến {}", email);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email đặt lại mật khẩu đến {}: {}", email, e.getMessage());
+            throw new RuntimeException("Không thể gửi email đặt lại mật khẩu", e);
+        }
+    }
+
+    // Nội dung email đặt lại mật khẩu
+    private String taoNoiDungEmailDatLaiMatKhau(String resetToken, String resetUrl) {
+        StringBuilder html = new StringBuilder();
+
+        html.append("<!DOCTYPE html>");
+        html.append("<html>");
+        html.append("<head><meta charset='UTF-8'></head>");
+        html.append("<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>");
+
+        // Header
+        html.append("<div style='background-color: #2c3e50; color: white; padding: 20px; text-align: center;'>");
+        html.append("<h1 style='margin: 0;'>AURO STORE</h1>");
+        html.append("</div>");
+
+        // Content
+        html.append("<div style='padding: 20px;'>");
+        html.append("<h2 style='color: #2c3e50;'>Đặt lại mật khẩu</h2>");
+        html.append("<p>Xin chào,</p>");
+        html.append("<p>Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại AURO Store.</p>");
+        html.append("<p>Vui lòng click vào nút bên dưới để đặt lại mật khẩu:</p>");
+
+        // Button
+        html.append("<div style='text-align: center; margin: 30px 0;'>");
+        html.append("<a href='").append(resetUrl).append("' ");
+        html.append("style='display: inline-block; padding: 15px 30px; background-color: #2c3e50; ");
+        html.append("color: white; text-decoration: none; border-radius: 5px; font-weight: bold;'>");
+        html.append("Đặt lại mật khẩu</a>");
+        html.append("</div>");
+
+        // Alternative link
+        html.append("<p style='color: #666; font-size: 14px;'>Nếu nút không hoạt động, bạn có thể copy và dán link sau vào trình duyệt:</p>");
+        html.append("<p style='color: #2c3e50; word-break: break-all;'>").append(resetUrl).append("</p>");
+
+        // Security notice
+        html.append("<div style='background-color: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107; margin: 20px 0;'>");
+        html.append("<p style='margin: 5px 0;'><strong>Lưu ý bảo mật:</strong></p>");
+        html.append("<ul style='margin: 5px 0; padding-left: 20px;'>");
+        html.append("<li>Link này chỉ có hiệu lực trong 24 giờ</li>");
+        html.append("<li>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này</li>");
+        html.append("<li>Không chia sẻ link này với bất kỳ ai</li>");
+        html.append("</ul>");
+        html.append("</div>");
+
+        // Footer
+        html.append("<p style='margin-top: 30px;'>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>");
+        html.append("<p>Trân trọng,<br><strong>AURO Store Team</strong></p>");
+        html.append("</div>");
+
+        // Footer
+        html.append("<div style='background-color: #f4f4f4; padding: 15px; text-align: center; font-size: 12px; color: #666;'>");
+        html.append("<p>© 2025 AURO Store. All rights reserved.</p>");
+        html.append("</div>");
+
+        html.append("</body>");
+        html.append("</html>");
+
+        return html.toString();
+    }
+
 }

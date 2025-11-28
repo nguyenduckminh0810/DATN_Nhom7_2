@@ -68,7 +68,8 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      return handleError(err, 'Login')
+      // Không hiển thị toast khi login - để LoginPopup tự xử lý hiển thị lỗi
+      return handleError(err, 'Login', false)
     } finally {
       isLoading.value = false
     }
@@ -199,7 +200,8 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      return handleError(err, 'Login')
+      // Không hiển thị toast khi forgot password - để component tự xử lý
+      return handleError(err, 'Quên mật khẩu', false)
     } finally {
       isLoading.value = false
     }
@@ -219,7 +221,8 @@ export const useUserStore = defineStore('user', () => {
         return { success: false, message: response.message }
       }
     } catch (err) {
-      return handleError(err, 'Login')
+      // Không hiển thị toast khi reset password - để component tự xử lý
+      return handleError(err, 'Đặt lại mật khẩu', false)
     } finally {
       isLoading.value = false
     }
@@ -300,7 +303,29 @@ export const useUserStore = defineStore('user', () => {
   }
 
   // Standardized error handling
-  const handleError = (err, context = 'User') => {
+  const handleError = (err, context = 'User', showToast = true) => {
+    // Nếu không muốn hiển thị toast (ví dụ khi đang login), chỉ lấy message
+    if (!showToast) {
+      let message = 'Có lỗi xảy ra'
+      if (err.response) {
+        const { status, data } = err.response
+        if (status === 401 || status === 403) {
+          message = data?.message || 'Tài khoản hoặc mật khẩu không đúng'
+        } else if (status === 400 || status === 422) {
+          message = data?.message || 'Thông tin không hợp lệ'
+        } else {
+          message = data?.message || 'Có lỗi xảy ra'
+        }
+      } else if (err.request) {
+        message = 'Không thể kết nối đến server'
+      } else {
+        message = err.message || 'Có lỗi xảy ra'
+      }
+      error.value = message
+      return { success: false, message }
+    }
+    
+    // Hiển thị toast như bình thường
     const errorResult = handleApiError(err, context)
     error.value = errorResult.message
     return { success: false, message: errorResult.message }

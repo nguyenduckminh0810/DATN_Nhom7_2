@@ -2,6 +2,8 @@ package com.auro.auro.controller;
 
 import com.auro.auro.dto.request.DangKyRequest;
 import com.auro.auro.dto.request.DangNhapRequest;
+import com.auro.auro.dto.request.ForgotPasswordRequest;
+import com.auro.auro.dto.request.ResetPasswordRequest;
 import com.auro.auro.dto.response.ApiResponse;
 import com.auro.auro.dto.response.JwtResponse;
 import com.auro.auro.dto.response.UserInfoResponse;
@@ -277,6 +279,40 @@ public class AuthController {
                 .kieu(kieu)
                 .avatar(avatar)
                 .build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Object>> quenMatKhau(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        try {
+            authService.quenMatKhau(request);
+
+            ApiResponse<Object> response = ApiResponse.success(
+                    null,
+                    "Link đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Object>> datLaiMatKhau(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        try {
+            authService.datLaiMatKhau(request);
+
+            ApiResponse<Object> response = ApiResponse.success(
+                    null,
+                    "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     @GetMapping("/debug")
