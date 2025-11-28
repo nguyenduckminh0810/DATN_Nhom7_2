@@ -4,7 +4,7 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Sản phẩm mới</h2>
-        <router-link to="/san-pham?sort=createdAt" class="btn-view-all"> Xem tất cả </router-link>
+        <router-link to="/san-pham?sort=createdAt" style="margin-right: 30px;" class="btn-view-all"> Xem tất cả </router-link>
       </div>
     </div>
 

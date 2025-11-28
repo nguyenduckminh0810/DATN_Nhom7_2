@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="section-header">
       <h2 class="section-title">Sản phẩm bán chạy</h2>
-      <router-link to="/san-pham?sort=sales" class="btn-view-all"> Xem tất cả </router-link>
+      <router-link to="/san-pham?sort=sales" style="margin-right: 30px;" class="btn-view-all"> Xem tất cả </router-link>
     </div>
 
     <!-- Full-width products carousel -->

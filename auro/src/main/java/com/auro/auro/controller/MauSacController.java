@@ -44,6 +44,43 @@ public class MauSacController {
     }
 
     /**
+     * Cập nhật màu
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateColor(@PathVariable Long id, @RequestBody MauSac mauSac) {
+        return mauSacRepository.findById(id)
+                .map(existing -> {
+                    // Kiểm tra tên mới có trùng với màu khác không
+                    if (mauSac.getTen() != null && !mauSac.getTen().trim().isEmpty()) {
+                        if (!existing.getTen().equals(mauSac.getTen().trim())) {
+                            if (mauSacRepository.existsByTen(mauSac.getTen().trim())) {
+                                return ResponseEntity.badRequest()
+                                        .body(java.util.Map.of("message", "Màu sắc đã tồn tại", "error", "Color already exists"));
+                            }
+                        }
+                        existing.setTen(mauSac.getTen().trim());
+                    }
+                    
+                    // Cập nhật mã màu nếu có
+                    if (mauSac.getMa() != null) {
+                        // Kiểm tra mã mới có trùng với màu khác không
+                        if (!existing.getMa().equals(mauSac.getMa())) {
+                            var existingByMa = mauSacRepository.findByMa(mauSac.getMa());
+                            if (existingByMa.isPresent() && !existingByMa.get().getId().equals(id)) {
+                                return ResponseEntity.badRequest()
+                                        .body(java.util.Map.of("message", "Mã màu đã tồn tại", "error", "Color code already exists"));
+                            }
+                        }
+                        existing.setMa(mauSac.getMa());
+                    }
+                    
+                    MauSac updated = mauSacRepository.save(existing);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
      * Xóa màu
      */
     @DeleteMapping("/{id}")
