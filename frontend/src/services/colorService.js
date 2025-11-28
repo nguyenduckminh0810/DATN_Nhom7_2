@@ -17,6 +17,9 @@ export default {
   // Thêm màu mới
   create: (data) => api.post('/mau-sac', data),
 
+  // Cập nhật màu
+  update: (id, data) => api.put(`/mau-sac/${id}`, data),
+
   // Xóa màu
   delete: (id) => api.delete(`/mau-sac/${id}`)
 }

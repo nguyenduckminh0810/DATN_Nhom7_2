@@ -58,9 +58,30 @@ class ApiService {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          localStorage.removeItem('auro_token')
-          localStorage.removeItem('auro_user')
-          window.location.href = '/'
+          // Kiểm tra xem có phải là lỗi từ login endpoint không
+          const isLoginEndpoint = error.config?.url?.includes('/auth/login')
+          
+          // Chỉ reload trang nếu KHÔNG phải là lỗi từ login
+          // Khi đăng nhập sai, không reload để hiển thị thông báo lỗi
+          if (!isLoginEndpoint) {
+            localStorage.removeItem('auro_token')
+            localStorage.removeItem('auro_user')
+            // Chỉ reload nếu không phải đang ở trang login
+            const currentPath = window.location.pathname
+            if (!currentPath.includes('/login') && !currentPath.includes('/register')) {
+              window.location.href = '/'
+            }
+          } else {
+            // Nếu là lỗi từ login, chỉ xóa token/user nếu có (có thể là token cũ)
+            // Nhưng không reload trang để hiển thị thông báo lỗi
+            const existingToken = localStorage.getItem('auro_token')
+            if (existingToken) {
+              // Có thể là token cũ không hợp lệ, xóa nó
+              localStorage.removeItem('auro_token')
+              localStorage.removeItem('auro_user')
+            }
+            // Không reload - để LoginPopup hiển thị thông báo lỗi
+          }
         }
         return Promise.reject(error)
       },

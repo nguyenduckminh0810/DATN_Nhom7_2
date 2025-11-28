@@ -77,6 +77,12 @@ const router = createRouter({
       meta: { title: 'Đăng ký - AURO' },
     },
     {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import(/* webpackChunkName: "auth" */ '../views/ResetPassword.vue'),
+      meta: { title: 'Đặt lại mật khẩu - AURO' },
+    },
+    {
       path: '/profile',
       name: 'profile',
       component: Profile,

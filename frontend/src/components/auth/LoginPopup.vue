@@ -17,7 +17,7 @@
         </div>
 
         <!-- Benefits -->
-        <div class="benefits-section">
+        <div v-if="!showForgotPassword" class="benefits-section">
           <div class="benefit-item">
             <div class="benefit-icon">%</div>
             <span>Voucher ưu đãi</span>
@@ -28,8 +28,57 @@
           </div>
         </div>
 
+        <!-- Forgot Password Form -->
+        <div v-if="showForgotPassword" class="forgot-password-section">
+          <div class="forgot-password-header">
+            <button class="back-btn" @click="showForgotPassword = false">
+              <span>←</span> Quay lại
+            </button>
+            <h3 class="forgot-password-title">Quên mật khẩu</h3>
+            <p class="forgot-password-subtitle">Nhập email của bạn để nhận link đặt lại mật khẩu</p>
+          </div>
+
+          <div class="forgot-password-form">
+            <!-- Success Message -->
+            <div v-if="forgotPasswordSuccess" class="forgot-password-success">
+              <i class="bi bi-check-circle me-2"></i>
+              {{ forgotPasswordSuccess }}
+            </div>
+
+            <!-- Error Message -->
+            <div v-if="forgotPasswordError" class="login-error-message">
+              <i class="bi bi-exclamation-circle me-2"></i>
+              {{ forgotPasswordError }}
+            </div>
+
+            <div class="form-group">
+              <input
+                v-model="forgotPasswordEmail"
+                type="email"
+                class="form-input"
+                :class="{ 'input-error': forgotPasswordError }"
+                placeholder="Email của bạn"
+                @keydown.enter.prevent.stop="handleForgotPasswordSubmit"
+                @input="forgotPasswordError = ''"
+                autocomplete="email"
+              />
+            </div>
+
+            <button 
+              type="button" 
+              class="login-btn" 
+              @click.prevent.stop="handleForgotPasswordSubmit" 
+              @mousedown.prevent.stop
+              :disabled="isSubmittingForgotPassword"
+            >
+              <span v-if="isSubmittingForgotPassword" class="spinner"></span>
+              {{ isSubmittingForgotPassword ? 'Đang gửi...' : 'GỬI LINK ĐẶT LẠI MẬT KHẨU' }}
+            </button>
+          </div>
+        </div>
+
         <!-- Login Form -->
-        <div class="login-form-section">
+        <div v-else class="login-form-section">
           <p class="login-intro">Đăng nhập hoặc đăng ký (miễn phí)</p>
 
           <!-- Social Login -->
@@ -71,36 +120,54 @@
             <div class="divider-line"></div>
           </div>
 
-          <!-- Form -->
-          <form @submit.prevent="handleLogin">
+          <!-- Form - Dùng div thay vì form để tránh reload trang -->
+          <div class="login-form-wrapper">
+            <!-- Error Message -->
+            <div v-if="loginError" class="login-error-message">
+              <i class="bi bi-exclamation-circle me-2"></i>
+              {{ loginError }}
+            </div>
+
             <div class="form-group">
               <input
                 v-model="values.login"
                 type="text"
                 class="form-input"
+                :class="{ 'input-error': loginError }"
                 placeholder="Email/SĐT của bạn"
-                required
+                @keydown.enter.prevent.stop="handleLogin"
+                @input="loginError = ''"
+                autocomplete="username"
               />
             </div>
 
             <div class="form-group">
               <input
                 :type="showPassword ? 'text' : 'password'"
-                  v-model="values.matKhau"
+                v-model="values.matKhau"
                 class="form-input"
+                :class="{ 'input-error': loginError }"
                 placeholder="Mật khẩu"
-                required
+                @keydown.enter.prevent.stop="handleLogin"
+                @input="loginError = ''"
+                autocomplete="current-password"
               />
               <button type="button" class="password-toggle" @click="showPassword = !showPassword">
                 <span class="toggle-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
               </button>
             </div>
 
-            <button type="submit" class="login-btn" :disabled="isSubmitting">
+            <button 
+              type="button" 
+              class="login-btn" 
+              @click.prevent.stop="handleLogin" 
+              @mousedown.prevent.stop
+              :disabled="isSubmitting"
+            >
               <span v-if="isSubmitting" class="spinner"></span>
               {{ isSubmitting ? 'Đang đăng nhập...' : 'ĐĂNG NHẬP' }}
             </button>
-          </form>
+          </div>
 
           <!-- Links -->
           <div class="form-links">
@@ -119,7 +186,6 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '../../stores/user'
 import { useFormValidation, validationSchemas } from '../../composables/useFormValidation'
 import { useToast } from '../../composables/useToast'
-import { useErrorHandler } from '../../composables/useErrorHandler'
 
 const props = defineProps({
   isOpen: {
@@ -131,26 +197,32 @@ const props = defineProps({
 const emit = defineEmits(['close', 'switchToRegister'])
 const router = useRouter()
 const userStore = useUserStore()
-const { success, error: showError } = useToast()
-const { handleApiError } = useErrorHandler()
+const { success } = useToast() // Chỉ dùng success, không dùng error toast
 
 // Import cart store for syncing after login
 import { useCartStore } from '@/stores/cart'
 
-// Form validation
+// Form validation - chỉ dùng values, không dùng handleSubmit
 const {
   values,
   errors,
-  isSubmitting,
   setValue,
   setTouched,
-  handleSubmit,
   getFieldError,
   hasFieldError,
 } = useFormValidation(validationSchemas.login)
 
 // Reactive data
 const showPassword = ref(false)
+const isSubmitting = ref(false) // Tự quản lý submitting state
+const loginError = ref('') // Thông báo lỗi đăng nhập
+
+// Forgot password state
+const showForgotPassword = ref(false)
+const forgotPasswordEmail = ref('')
+const forgotPasswordError = ref('')
+const forgotPasswordSuccess = ref('')
+const isSubmittingForgotPassword = ref(false)
 
 const form = ref({
   login: '',
@@ -168,8 +240,95 @@ const switchToRegister = () => {
 }
 
 const handleForgotPassword = () => {
-  // TODO: Implement forgot password functionality
-  alert('Chức năng quên mật khẩu sẽ được triển khai')
+  showForgotPassword.value = true
+  forgotPasswordEmail.value = ''
+  forgotPasswordError.value = ''
+  forgotPasswordSuccess.value = ''
+}
+
+const handleForgotPasswordSubmit = async (e) => {
+  // Ngăn chặn mọi hành vi mặc định
+  if (e) {
+    if (typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    if (typeof e.stopPropagation === 'function') {
+      e.stopPropagation()
+    }
+    if (typeof e.stopImmediatePropagation === 'function') {
+      e.stopImmediatePropagation()
+    }
+  }
+
+  // Ngăn chặn submit nếu đang xử lý
+  if (isSubmittingForgotPassword.value) {
+    return false
+  }
+
+  // Xóa lỗi và success cũ
+  forgotPasswordError.value = ''
+  forgotPasswordSuccess.value = ''
+
+  // Validate email
+  const email = forgotPasswordEmail.value?.trim() || ''
+  
+  if (!email) {
+    forgotPasswordError.value = 'Vui lòng nhập email của bạn'
+    return false
+  }
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(email)) {
+    forgotPasswordError.value = 'Email không hợp lệ'
+    return false
+  }
+
+  // Set submitting state
+  isSubmittingForgotPassword.value = true
+
+  try {
+    const response = await userStore.forgotPassword(email)
+
+    if (response && response.success) {
+      forgotPasswordSuccess.value = response.message || 'Link đặt lại mật khẩu đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư.'
+      forgotPasswordEmail.value = ''
+      
+      // Tự động quay lại form login sau 3 giây
+      setTimeout(() => {
+        showForgotPassword.value = false
+        forgotPasswordSuccess.value = ''
+      }, 3000)
+    } else {
+      forgotPasswordError.value = response?.message || 'Không thể gửi email. Vui lòng thử lại sau.'
+    }
+  } catch (error) {
+    // Xử lý lỗi từ API
+    if (error.response) {
+      const status = error.response.status
+      const data = error.response.data
+      
+      if (status === 403) {
+        forgotPasswordError.value = 'Chức năng quên mật khẩu đang được bảo trì. Vui lòng liên hệ quản trị viên.'
+      } else if (status === 404) {
+        forgotPasswordError.value = data?.message || 'Email không tồn tại trong hệ thống'
+      } else if (status === 400 || status === 422) {
+        forgotPasswordError.value = data?.message || 'Email không hợp lệ'
+      } else if (status === 500) {
+        forgotPasswordError.value = 'Có lỗi xảy ra từ server. Vui lòng thử lại sau hoặc liên hệ quản trị viên.'
+      } else {
+        forgotPasswordError.value = data?.message || 'Không thể gửi email. Vui lòng thử lại sau.'
+      }
+    } else if (error.request) {
+      forgotPasswordError.value = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng'
+    } else {
+      forgotPasswordError.value = 'Có lỗi xảy ra. Vui lòng thử lại.'
+    }
+  } finally {
+    isSubmittingForgotPassword.value = false
+  }
+
+  return false
 }
 
 const handleSocialLogin = (provider) => {
@@ -177,85 +336,154 @@ const handleSocialLogin = (provider) => {
   alert(`Đăng nhập với ${provider} sẽ được triển khai`)
 }
 
-const handleLogin = async () => {
-  const result = await handleSubmit(async (formData) => {
-    try {
-      // Backend expects 'login' and 'matKhau'
-      const payload = {
-        login: formData.login,
-        matKhau: formData.matKhau,
-      }
-
-      const response = await userStore.login(payload)
-
-      if (response.success) {
-        success('Đăng nhập thành công!')
-        
-        console.log('✅ Login successful')
-        console.log('🔄 Syncing local cart with backend...')
-        
-        // Đồng bộ giỏ hàng local lên backend sau khi đăng nhập
-        try {
-          const cartStore = useCartStore()
-          const localItems = cartStore.items || []
-          
-          console.log('📦 Local cart items:', localItems.length)
-          
-          if (localItems.length > 0) {
-            // Import cartService
-            const cartService = (await import('@/services/cartService')).default
-            
-            // Thêm từng item vào backend cart
-            for (const item of localItems) {
-              try {
-                if (item.bienTheId || item.variantId) {
-                  await cartService.addToCart({
-                    bienTheId: item.bienTheId || item.variantId,
-                    soLuong: item.quantity || 1
-                  })
-                  console.log('✅ Synced item to backend:', item.name)
-                }
-              } catch (err) {
-                console.warn('⚠️ Failed to sync item (may already exist):', item.name, err.message)
-              }
-            }
-            
-            console.log('✅ Cart synced with backend')
-            
-            // Load lại cart từ backend để cập nhật IDs
-            await cartStore.loadCart()
-          } else {
-            console.log('ℹ️ No local cart items to sync')
-            
-            // Vẫn load cart từ backend (có thể đã có items từ session trước)
-            const cartStore = useCartStore()
-            await cartStore.loadCart()
-          }
-        } catch (syncError) {
-          console.error('❌ Error syncing cart:', syncError)
-          // Không throw error, tiếp tục xử lý
-        }
-
-        // Handle redirect
-        const redirectUrl = localStorage.getItem('auro_redirect')
-        if (redirectUrl) {
-          localStorage.removeItem('auro_redirect')
-          closePopup()
-          router.push(redirectUrl)
-        } else {
-          closePopup()
-          // Không reload trang nữa, chỉ cần đóng popup
-          // Cart đã được đồng bộ ở trên
-        }
-      } else {
-        showError(response.message)
-      }
-    } catch (error) {
-      handleApiError(error, 'Đăng nhập')
+const handleLogin = async (e) => {
+  // Ngăn chặn mọi hành vi mặc định - QUAN TRỌNG để không reload trang
+  if (e) {
+    if (typeof e.preventDefault === 'function') {
+      e.preventDefault()
     }
-  })
+    if (typeof e.stopPropagation === 'function') {
+      e.stopPropagation()
+    }
+    if (typeof e.stopImmediatePropagation === 'function') {
+      e.stopImmediatePropagation()
+    }
+  }
 
-  return result
+  // Ngăn chặn submit nếu đang xử lý
+  if (isSubmitting.value) {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    return false
+  }
+
+  // Xóa lỗi cũ
+  loginError.value = ''
+
+  // Validate form trước - tự validate không dùng handleSubmit
+  const loginValue = values.value.login?.trim() || ''
+  const matKhauValue = values.value.matKhau?.trim() || ''
+
+  if (!loginValue) {
+    loginError.value = 'Vui lòng nhập email hoặc số điện thoại'
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    return false
+  }
+
+  if (!matKhauValue) {
+    loginError.value = 'Vui lòng nhập mật khẩu'
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    return false
+  }
+
+  if (matKhauValue.length < 6) {
+    loginError.value = 'Mật khẩu phải có ít nhất 6 ký tự'
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+    return false
+  }
+
+  // Set submitting state
+  isSubmitting.value = true
+
+  // Wrap toàn bộ logic trong try-catch để đảm bảo luôn return false
+  try {
+    // Backend expects 'login' and 'matKhau'
+    const payload = {
+      login: loginValue,
+      matKhau: matKhauValue,
+    }
+
+    const response = await userStore.login(payload)
+
+    if (response && response.success) {
+      success('Đăng nhập thành công!')
+      
+      // Đồng bộ giỏ hàng local lên backend sau khi đăng nhập
+      try {
+        const cartStore = useCartStore()
+        const localItems = cartStore.items || []
+        
+        if (localItems.length > 0) {
+          // Import cartService
+          const cartService = (await import('@/services/cartService')).default
+          
+          // Thêm từng item vào backend cart
+          for (const item of localItems) {
+            try {
+              if (item.bienTheId || item.variantId) {
+                await cartService.addToCart({
+                  bienTheId: item.bienTheId || item.variantId,
+                  soLuong: item.quantity || 1
+                })
+              }
+            } catch (err) {
+              // Bỏ qua lỗi sync item
+            }
+          }
+          
+          // Load lại cart từ backend để cập nhật IDs
+          await cartStore.loadCart()
+        } else {
+          // Vẫn load cart từ backend (có thể đã có items từ session trước)
+          const cartStore = useCartStore()
+          await cartStore.loadCart()
+        }
+      } catch (syncError) {
+        // Không throw error, tiếp tục xử lý
+      }
+
+      // Handle redirect
+      const redirectUrl = localStorage.getItem('auro_redirect')
+      if (redirectUrl) {
+        localStorage.removeItem('auro_redirect')
+        closePopup()
+        router.push(redirectUrl)
+      } else {
+        closePopup()
+        // Không reload trang nữa, chỉ cần đóng popup
+        // Cart đã được đồng bộ ở trên
+      }
+    } else {
+      // Hiển thị lỗi trong popup
+      loginError.value = response?.message || 'Tài khoản hoặc mật khẩu không đúng'
+    }
+  } catch (error) {
+    // Xử lý lỗi từ API - chỉ hiển thị trong popup, không log ra console
+    if (error.response) {
+      const status = error.response.status
+      const data = error.response.data
+      
+      if (status === 401 || status === 403) {
+        loginError.value = data?.message || 'Tài khoản hoặc mật khẩu không đúng'
+      } else if (status === 400 || status === 422) {
+        loginError.value = data?.message || 'Thông tin đăng nhập không hợp lệ'
+      } else {
+        loginError.value = 'Đăng nhập không đúng. Vui lòng thử lại.'
+      }
+    } else if (error.request) {
+      loginError.value = 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng'
+    } else {
+      loginError.value = 'Đăng nhập không đúng. Vui lòng thử lại.'
+    }
+  } finally {
+    // Luôn reset submitting state
+    isSubmitting.value = false
+    
+    // Đảm bảo ngăn chặn mọi hành vi mặc định
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault()
+    }
+  }
+  
+  // Luôn return false để ngăn form submit mặc định - QUAN TRỌNG
+  return false
 }
 </script>
 
@@ -430,6 +658,72 @@ const handleLogin = async () => {
   font-weight: 500;
 }
 
+/* Forgot Password Section */
+.forgot-password-section {
+  text-align: center;
+}
+
+.forgot-password-header {
+  margin-bottom: 30px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: var(--auro-accent);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.3s ease;
+}
+
+.back-btn:hover {
+  color: var(--auro-dark);
+}
+
+.back-btn span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.forgot-password-title {
+  font-family: var(--auro-heading-font);
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--auro-accent);
+  margin-bottom: 10px;
+  letter-spacing: 0.03rem;
+}
+
+.forgot-password-subtitle {
+  font-size: 14px;
+  color: var(--auro-text-light);
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+.forgot-password-form {
+  margin-top: 20px;
+}
+
+.forgot-password-success {
+  background: #d1fae5;
+  border: 1px solid #86efac;
+  color: #065f46;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
 /* Login Form Section */
 .login-form-section {
   text-align: center;
@@ -509,6 +803,36 @@ const handleLogin = async () => {
 }
 
 /* Form */
+.login-form-wrapper {
+  /* Dùng div thay vì form để tránh reload trang - không cần style */
+  display: block;
+}
+
+.login-error-message {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .form-group {
   position: relative;
   margin-bottom: 20px;
@@ -538,6 +862,16 @@ const handleLogin = async () => {
   background: var(--auro-card);
   box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
   transform: translateY(-1px);
+}
+
+.form-input.input-error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.form-input.input-error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
 .password-toggle {
