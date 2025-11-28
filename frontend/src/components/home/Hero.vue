@@ -17,7 +17,7 @@
           </div>
         </div>
         <div class="hero-image">
-          <img 
+          <img
             src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
             alt="Thời trang nam cao cấp"
             class="hero-img"
@@ -34,29 +34,29 @@
 
 <style scoped>
 .hero-section {
-  padding: 4rem 0;
+  padding: 2.5rem 0;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .hero-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  gap: 2rem;
   align-items: center;
 }
 
 .hero-title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: #212529;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   line-height: 1.2;
 }
 
 .hero-description {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: #6c757d;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   line-height: 1.6;
 }
 
@@ -105,7 +105,7 @@
 
 .hero-img {
   width: 100%;
-  height: 500px;
+  height: 380px;
   object-fit: cover;
   border-radius: 24px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -114,48 +114,48 @@
 @media (max-width: 992px) {
   .hero-content {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1.5rem;
     text-align: center;
   }
-  
+
   .hero-title {
-    font-size: 2.5rem;
+    font-size: 2rem;
   }
-  
+
   .hero-description {
-    font-size: 1.1rem;
+    font-size: 1rem;
   }
-  
+
   .hero-img {
-    height: 400px;
+    height: 320px;
   }
 }
 
 @media (max-width: 768px) {
   .hero-section {
-    padding: 3rem 0;
+    padding: 2rem 0;
   }
-  
+
   .hero-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
-  
+
   .hero-description {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
-  
+
   .hero-actions {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .btn {
     width: 200px;
     text-align: center;
   }
-  
+
   .hero-img {
-    height: 300px;
+    height: 280px;
   }
 }
 </style>

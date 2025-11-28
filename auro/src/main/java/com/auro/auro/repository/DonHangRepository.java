@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.math.BigDecimal;
+import com.auro.auro.repository.projection.VoucherUsageProjection;
 
 @Repository
 public interface DonHangRepository extends JpaRepository<DonHang, Long> {
@@ -75,8 +76,8 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
             SELECT CAST(dh.dat_luc AS date) AS ngay,
                    SUM(dh.tong_thanh_toan) AS doanh_thu
             FROM don_hang dh
-            WHERE (dh.trang_thai = :trangThai 
-                   OR dh.trang_thai = N'Hoàn tất' 
+            WHERE (dh.trang_thai = :trangThai
+                   OR dh.trang_thai = N'Hoàn tất'
                    OR dh.trang_thai = N'Đã giao'
                    OR dh.trang_thai = 'COMPLETED'
                    OR dh.trang_thai = 'DELIVERED')
@@ -182,5 +183,48 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
     // Sum total spent by customer (all orders)
     @Query("SELECT COALESCE(SUM(dh.tongThanhToan), 0.0) FROM DonHang dh WHERE dh.khachHang.id = :khachHangId")
     Double sumTotalSpentByKhachHangId(@Param("khachHangId") Long khachHangId);
+
+    // ============================================
+    // NEW: Support both Vietnamese and English status values
+    // ============================================
+
+    @Query("SELECT COUNT(dh) FROM DonHang dh WHERE dh.trangThai IN :statusValues")
+    long countByTrangThaiIn(@Param("statusValues") java.util.List<String> statusValues);
+
+    @Query("SELECT COALESCE(SUM(dh.tongThanhToan), 0) FROM DonHang dh WHERE dh.trangThai IN :statusValues AND dh.datLuc BETWEEN :from AND :to")
+    BigDecimal sumRevenueByDatLucBetweenAndTrangThaiIn(@Param("statusValues") java.util.List<String> statusValues,
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query("SELECT COUNT(dh) FROM DonHang dh WHERE dh.trangThai IN :statusValues AND dh.datLuc BETWEEN :from AND :to")
+    long countByTrangThaiInAndDatLucBetween(@Param("statusValues") java.util.List<String> statusValues,
+            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
+    @Query(value = """
+            SELECT COUNT(DISTINCT dh.id_khach_hang)
+            FROM don_hang dh
+            WHERE dh.trang_thai IN :statusValues
+            """, nativeQuery = true)
+    long countCustomersWithCompletedOrdersIn(@Param("statusValues") java.util.List<String> statusValues);
+
+    @Query(value = """
+            SELECT COUNT(*) FROM (
+                SELECT dh.id_khach_hang, COUNT(*) AS so_don
+                FROM don_hang dh
+                WHERE dh.trang_thai IN :statusValues
+                GROUP BY dh.id_khach_hang
+                HAVING COUNT(*) > 1
+            ) t
+            """, nativeQuery = true)
+    long countRepeatCustomersIn(@Param("statusValues") java.util.List<String> statusValues);
+
+    @Query("""
+            SELECT dh.voucher.ma AS voucherCode,
+                   COUNT(dh.id) AS usageCount,
+                   COALESCE(SUM(dh.giamGiaTong), 0) AS totalDiscount
+            FROM DonHang dh
+            WHERE dh.voucher IS NOT NULL AND dh.trangThai IN :statusValues
+            GROUP BY dh.voucher.ma
+            """)
+    List<VoucherUsageProjection> aggregateVoucherUsage(@Param("statusValues") java.util.List<String> statusValues);
 
 }

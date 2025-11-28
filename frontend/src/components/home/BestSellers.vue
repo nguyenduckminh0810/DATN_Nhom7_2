@@ -3,22 +3,24 @@
     <!-- Header -->
     <div class="section-header">
       <h2 class="section-title">Sản phẩm bán chạy</h2>
-      <router-link to="/san-pham?sort=sales" class="btn-view-all">
-        Xem tất cả
-      </router-link>
+      <router-link to="/san-pham?sort=sales" class="btn-view-all"> Xem tất cả </router-link>
     </div>
-    
+
     <!-- Full-width products carousel -->
     <div class="products-carousel-container">
-      <button 
-        class="section-nav-btn prev" 
+      <button
+        class="section-nav-btn prev"
         @click="scrollProducts('prev')"
         :disabled="products.length <= 5"
       >
         ‹
       </button>
-      
-      <div class="section-list products-grid" :class="{ 'centered': products.length <= 5 }" ref="productsGrid">
+
+      <div
+        class="section-list products-grid"
+        :class="{ centered: products.length <= 5 }"
+        ref="productsGrid"
+      >
         <!-- Skeleton Loading -->
         <div v-if="loading" v-for="n in 5" :key="n" class="product-card skeleton">
           <div class="skeleton-image"></div>
@@ -27,13 +29,13 @@
             <div class="skeleton-price"></div>
           </div>
         </div>
-        
+
         <!-- Error State -->
         <div v-else-if="error" class="error-state">
           <p>{{ error }}</p>
           <button @click="fetchBestSellers" class="btn-retry">Thử lại</button>
         </div>
-        
+
         <!-- Product Cards -->
         <ProductCard
           v-else
@@ -56,9 +58,9 @@
           :review-count="getReviewCount(product)"
         />
       </div>
-      
-      <button 
-        class="section-nav-btn next" 
+
+      <button
+        class="section-nav-btn next"
         @click="scrollProducts('next')"
         :disabled="products.length <= 5"
       >
@@ -81,22 +83,18 @@ const error = ref(null)
 const productsGrid = ref(null)
 const currentIndex = ref(0)
 
-// Fetch best sellers from API
+// Fetch best sellers from API (using public API for homepage)
 const fetchBestSellers = async () => {
   try {
     loading.value = true
     error.value = null
-    
-    const result = await productStore.fetchBestSellers({ 
-      page: 0, 
-      size: 10 
-    })
-    
-    if (result.success && result.data?.products) {
-      products.value = result.data.products
-    } else {
-      error.value = result.message || 'Không thể tải sản phẩm bán chạy'
-    }
+
+    // Use public best-sellers API (doesn't require authentication)
+    await productStore.fetchBestSellers()
+    products.value = productStore.bestSellers || []
+
+    console.log('✅ Best sellers loaded:', products.value.length)
+    console.log('📦 Best sellers data:', products.value)
   } catch (err) {
     console.error('Error fetching best sellers:', err)
     error.value = 'Đã có lỗi xảy ra khi tải dữ liệu'
@@ -108,7 +106,7 @@ const fetchBestSellers = async () => {
 // Navigation functions
 const scrollProducts = (direction) => {
   if (products.value.length <= 5) return
-  
+
   if (direction === 'next') {
     currentIndex.value = (currentIndex.value + 1) % products.value.length
   } else {
@@ -119,15 +117,15 @@ const scrollProducts = (direction) => {
 // Display 5 products starting from currentIndex
 const displayProducts = computed(() => {
   if (products.value.length === 0) return []
-  
+
   const displayCount = Math.min(5, products.value.length)
   const result = []
-  
+
   for (let i = 0; i < displayCount; i++) {
     const index = (currentIndex.value + i) % products.value.length
     result.push(products.value[index])
   }
-  
+
   return result
 })
 
@@ -162,9 +160,9 @@ const getPromotionalBadge = (product) => {
 const getColorOptions = (product) => {
   // Lấy màu sắc từ biến thể
   if (!product.bienThes || product.bienThes.length === 0) return []
-  
+
   const colors = new Set()
-  product.bienThes.forEach(bt => {
+  product.bienThes.forEach((bt) => {
     if (bt.colorHex) {
       colors.add(bt.colorHex)
     }
@@ -177,9 +175,9 @@ const getSizes = (product) => {
   if (!product.bienThes || product.bienThes.length === 0) {
     return ['S', 'M', 'L', 'XL', '2XL', '3XL']
   }
-  
+
   const sizes = new Set()
-  product.bienThes.forEach(bt => {
+  product.bienThes.forEach((bt) => {
     if (bt.kichThuoc) {
       sizes.add(bt.kichThuoc)
     }
@@ -192,9 +190,9 @@ const getAvailableSizes = (product) => {
   if (!product.bienThes || product.bienThes.length === 0) {
     return ['S', 'M', 'L', 'XL', '2XL', '3XL']
   }
-  
+
   const sizes = new Set()
-  product.bienThes.forEach(bt => {
+  product.bienThes.forEach((bt) => {
     if (bt.kichThuoc && bt.tonKho && bt.tonKho > 0) {
       sizes.add(bt.kichThuoc)
     }
@@ -205,9 +203,9 @@ const getAvailableSizes = (product) => {
 const getColorSizeMapping = (product) => {
   // Mapping màu với size
   if (!product.bienThes || product.bienThes.length === 0) return {}
-  
+
   const mapping = {}
-  product.bienThes.forEach(bt => {
+  product.bienThes.forEach((bt) => {
     if (bt.colorHex && bt.kichThuoc) {
       if (!mapping[bt.colorHex]) {
         mapping[bt.colorHex] = []
@@ -227,7 +225,9 @@ const getRating = (product) => {
 
 const getReviewCount = (product) => {
   // Lấy số lượng đánh giá từ product (backend trả về soLuongDanhGia)
-  return product.soLuongDanhGia !== null && product.soLuongDanhGia !== undefined ? product.soLuongDanhGia : null
+  return product.soLuongDanhGia !== null && product.soLuongDanhGia !== undefined
+    ? product.soLuongDanhGia
+    : null
 }
 
 onMounted(() => {
@@ -274,7 +274,7 @@ onMounted(() => {
   background: #333;
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .products-carousel-container {
@@ -474,7 +474,7 @@ onMounted(() => {
     gap: 1rem;
     margin-bottom: 2rem;
   }
-  
+
   .btn-view-all {
     position: static;
     margin-top: 1rem;

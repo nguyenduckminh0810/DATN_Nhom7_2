@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/phieu-giam-gia")
@@ -93,6 +94,8 @@ public class VoucherController {
             .batDauLuc(voucher.getBatDauLuc())
             .ketThucLuc(voucher.getKetThucLuc())
             .gioiHanSuDung(voucher.getGioiHanSuDung())
+            .usedCount(0L)
+            .totalDiscount(BigDecimal.ZERO)
             .build();
     }
   

@@ -1,496 +1,332 @@
 <template>
   <div class="dashboard-content">
-
-      <!-- Store Overview Section -->
-      <section class="overview-section">
-        <div class="overview-grid">
-          <div class="overview-card revenue">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-currency-dollar"></i>
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">Tổng Quan Hoạt Động</h1>
+          <p class="page-subtitle">Theo dõi hiệu suất kinh doanh của bạn</p>
         </div>
-              <div class="card-info">
-                <h3>Tổng doanh thu</h3>
-                <p class="card-subtitle">Hôm nay</p>
-      </div>
+        <div class="header-right">
+          <div class="realtime-info">
+            <div class="live-indicator">
+              <i class="bi bi-circle-fill"></i>
+              <span>Cập nhật realtime</span>
             </div>
-            <div class="card-content">
-              <div class="main-value">{{ (summary?.revenueToday ?? 0).toLocaleString('vi-VN') }}₫</div>
-              <div v-if="revenueGrowth !== null" :class="['trend', revenueGrowth >= 0 ? 'positive' : 'negative']">
-                <i :class="revenueGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
-                <span>{{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth }}%</span>
+            <div class="last-updated">
+              {{ new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) }}
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-          <div class="overview-card orders">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-cart3"></i>
-          </div>
-              <div class="card-info">
-                <h3>Đơn hàng mới</h3>
-                <p class="card-subtitle">Trong 24h qua</p>
-          </div>
-        </div>
-            <div class="card-content">
-              <div class="main-value">{{ summary?.newOrders24h ?? 0 }}</div>
-              <div v-if="ordersGrowth !== null" :class="['trend', ordersGrowth >= 0 ? 'positive' : 'negative']">
-                <i :class="ordersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
-                <span>{{ ordersGrowth >= 0 ? '+' : '' }}{{ ordersGrowth }}%</span>
-      </div>
+    <!-- Store Overview Section -->
+    <section class="overview-section">
+      <div class="overview-grid">
+        <div class="overview-card revenue">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="ph bi bi-currency-dollar"></i>
             </div>
-          </div>
-
-          <div class="overview-card customers">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-people"></i>
+            <div class="card-info">
+              <div class="info-title">
+                <h3>Doanh thu hôm nay</h3>
+                <div class="tooltip-wrapper">
+                  <i class="bi bi-info-circle info-icon"></i>
+                  <div class="tooltip-content">
+                    Tổng doanh thu từ các đơn hàng có trạng thái "Hoàn tất" trong ngày hôm nay (từ
+                    00:00 đến hiện tại)
+                  </div>
+                </div>
               </div>
-              <div class="card-info">
-                <h3>Khách hàng mới</h3>
-                <p class="card-subtitle">Đăng ký hôm nay</p>
-              </div>
+              <p class="card-subtitle">Đơn hàng hoàn tất hôm nay</p>
             </div>
-            <div class="card-content">
-              <div class="main-value">{{ summary?.newCustomersToday ?? 0 }}</div>
-              <div v-if="customersGrowth !== null" :class="['trend', customersGrowth >= 0 ? 'positive' : 'negative']">
-                <i :class="customersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
-                <span>{{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth }}%</span>
+          </div>
+          <div class="card-content">
+            <div class="value-section">
+              <div class="main-value">
+                {{ summary?.revenueToday ? summary.revenueToday.toLocaleString('vi-VN') : '0' }}₫
+              </div>
+              <p v-if="!summary?.revenueToday || summary?.revenueToday === 0" class="zero-hint">
+                Chưa có đơn hàng hoàn tất hôm nay
+              </p>
+            </div>
+            <div
+              v-if="revenueGrowth !== null && summary?.revenueToday > 0"
+              :class="['trend', revenueGrowth >= 0 ? 'positive' : 'negative']"
+            >
+              <i :class="revenueGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+              <span>{{ revenueGrowth >= 0 ? '+' : '' }}{{ revenueGrowth }}%</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
 
-          <div class="overview-card inventory">
-            <div class="card-header">
-              <div class="card-icon">
-                <i class="ph bi bi-box"></i>
-        </div>
-              <div class="card-info">
-                <h3>Sản phẩm sắp hết</h3>
-                <p class="card-subtitle">Cần nhập hàng</p>
-      </div>
-        </div>
-            <div class="card-content">
-              <div class="main-value">{{ summary?.lowStockCount ?? 0 }}</div>
-              <div class="trend warning">
-                <i class="ph bi bi-exclamation-triangle"></i>
-                <span>Cần nhập</span>
-      </div>
-        </div>
-      </div>
-    </div>
-      </section>
-
-      <!-- Quick Actions & Alerts -->
-      <section class="actions-alerts-section">
-        <div class="quick-actions-panel">
-          <h3>Thao tác nhanh</h3>
-          <div class="action-buttons">
-            <button class="action-btn" @click="$router.push('/admin/products')">
-              <i class="ph bi bi-plus-circle"></i>
-              <span>Thêm sản phẩm</span>
-            </button>
-            <button class="action-btn" @click="$router.push('/admin/orders')">
+        <div class="overview-card orders">
+          <div class="card-header">
+            <div class="card-icon">
               <i class="ph bi bi-cart3"></i>
-              <span>Xem đơn hàng</span>
-            </button>
-            <button class="action-btn" @click="$router.push('/admin/users')">
+            </div>
+            <div class="card-info">
+              <div class="info-title">
+                <h3>Đơn hàng mới</h3>
+                <div class="tooltip-wrapper">
+                  <i class="bi bi-info-circle info-icon"></i>
+                  <div class="tooltip-content">
+                    Số đơn hàng mới được tạo trong 24 giờ qua (tất cả trạng thái)
+                  </div>
+                </div>
+              </div>
+              <p class="card-subtitle">Trong 24h qua</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.newOrders24h ?? 0 }}</div>
+            <div
+              v-if="ordersGrowth !== null"
+              :class="['trend', ordersGrowth >= 0 ? 'positive' : 'negative']"
+            >
+              <i :class="ordersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+              <span>{{ ordersGrowth >= 0 ? '+' : '' }}{{ ordersGrowth }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-card customers">
+          <div class="card-header">
+            <div class="card-icon">
               <i class="ph bi bi-people"></i>
-              <span>Quản lý khách hàng</span>
-            </button>
-            <button class="action-btn" @click="$router.push('/admin/analytics')">
-              <i class="ph bi bi-bar-chart"></i>
-              <span>Báo cáo doanh thu</span>
-            </button>
-          </div>
             </div>
-
-        <div class="alerts-panel">
-          <h3>Cần chú ý</h3>
-          <div class="alert-list">
-            <div class="alert-item urgent">
-              <div class="alert-icon">
-                <i class="ph bi bi-exclamation-triangle"></i>
-          </div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alerts?.pendingOrders ?? 0 }} đơn hàng chờ xác nhận</div>
-                <div class="alert-time">Cần xử lý</div>
-        </div>
-              <button class="alert-action" @click="$router.push('/admin/orders?status=pending')">Xem</button>
-      </div>
-            <div class="alert-item warning">
-              <div class="alert-icon">
-                <i class="ph bi bi-box"></i>
-    </div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alerts?.lowStockProducts ?? 0 }} sản phẩm sắp hết hàng</div>
-                <div class="alert-time">Cần nhập hàng</div>
-              </div>
-              <button class="alert-action" @click="$router.push('/admin/inventory')">Xem</button>
-            </div>
-            <div class="alert-item info">
-              <div class="alert-icon">
-                <i class="ph bi bi-clock"></i>
-              </div>
-              <div class="alert-content">
-                <div class="alert-title">{{ alerts?.needShipping ?? 0 }} đơn hàng cần giao</div>
-                <div class="alert-time">Đang vận chuyển</div>
-              </div>
-              <button class="alert-action" @click="$router.push('/admin/orders?status=shipping')">Xem</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Sales Analytics Section -->
-      <section class="analytics-section">
-        <div class="analytics-grid">
-          <div class="chart-card main-chart">
-            <div class="chart-header">
-              <div class="chart-title-section">
-                <div class="chart-title-row">
-                  <h3 class="chart-title">Phân tích doanh thu & đơn hàng</h3>
-                  <div class="growth-badge">
-                    <i class="bi bi-graph-up"></i>
-                    +{{ growthRate }}% tăng trưởng
+            <div class="card-info">
+              <div class="info-title">
+                <h3>Khách hàng mới</h3>
+                <div class="tooltip-wrapper">
+                  <i class="bi bi-info-circle info-icon"></i>
+                  <div class="tooltip-content">
+                    Số khách hàng mới đăng ký tài khoản trong ngày hôm nay
                   </div>
                 </div>
               </div>
-              <div class="chart-controls">
-                <div class="metric-toggles">
-                  <button 
-                    :class="['metric-toggle', { active: selectedMetric === 'revenue' }]"
-                    @click="selectedMetric = 'revenue'"
-                  >
-                    <i class="bi bi-currency-dollar"></i>
-                    Doanh thu
-                  </button>
-                  <button 
-                    :class="['metric-toggle', { active: selectedMetric === 'orders' }]"
-                    @click="selectedMetric = 'orders'"
-                  >
-                    <i class="bi bi-cart3"></i>
-                    Đơn hàng
-                  </button>
-                  <button 
-                    :class="['metric-toggle', { active: selectedMetric === 'customers' }]"
-                    @click="selectedMetric = 'customers'"
-                  >
-                    <i class="bi bi-people"></i>
-                    Khách hàng
-                  </button>
-                </div>
-                
-                <!-- Beautiful Date Picker for Comparison -->
-                <div class="date-picker-container">
-                  <button 
-                    type="button" 
-                    class="date-picker-btn"
-                    @click="showComparisonDatePicker = !showComparisonDatePicker"
-                  >
-                    <div class="date-picker-icon">
-                      <i class="bi bi-calendar3"></i>
-                    </div>
-                    <div class="date-picker-content">
-                      <div class="date-picker-label">So sánh với</div>
-                      <div class="date-picker-value">{{ formatDate(comparisonDate) }}</div>
-                    </div>
-                    <div class="date-picker-arrow">
-                      <i class="bi bi-chevron-down" :class="{ 'rotated': showComparisonDatePicker }"></i>
-                    </div>
-                  </button>
-                  
-                  <div v-if="showComparisonDatePicker" class="date-picker-dropdown" @click.stop>
-                    <div class="date-picker-header">
-                      <h6>Chọn ngày so sánh</h6>
-                      <button type="button" class="close-btn" @click="showComparisonDatePicker = false">
-                        <i class="bi bi-x"></i>
-                      </button>
-                    </div>
-                    
-                    <div class="date-picker-body">
-                      <div class="quick-options">
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('yesterday')"
-                        >
-                          <i class="bi bi-calendar-check"></i>
-                          Hôm qua
-                        </button>
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('2days')"
-                        >
-                          <i class="bi bi-calendar2"></i>
-                          2 ngày trước
-                        </button>
-                        <button 
-                          type="button" 
-                          class="quick-option"
-                          @click="selectQuickDate('week')"
-                        >
-                          <i class="bi bi-calendar-week"></i>
-                          1 tuần trước
-                        </button>
-                      </div>
-                      
-                      <div class="date-separator">
-                        <span>Hoặc chọn ngày cụ thể</span>
-                      </div>
-                      
-                      <div class="custom-date">
-                        <input 
-                          type="date" 
-                          v-model="comparisonDate" 
-                          class="date-input"
-                          :max="new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0]"
-                          @change="showComparisonDatePicker = false"
-                        />
-                      </div>
-                    </div>
+              <p class="card-subtitle">Đăng ký hôm nay</p>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.newCustomersToday ?? 0 }}</div>
+            <div
+              v-if="customersGrowth !== null"
+              :class="['trend', customersGrowth >= 0 ? 'positive' : 'negative']"
+            >
+              <i :class="customersGrowth >= 0 ? 'bi bi-graph-up' : 'bi bi-graph-down'"></i>
+              <span>{{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-card inventory">
+          <div class="card-header">
+            <div class="card-icon">
+              <i class="ph bi bi-box"></i>
+            </div>
+            <div class="card-info">
+              <div class="info-title">
+                <h3>Sản phẩm sắp hết</h3>
+                <div class="tooltip-wrapper">
+                  <i class="bi bi-info-circle info-icon"></i>
+                  <div class="tooltip-content">
+                    Số sản phẩm có ít nhất 1 biến thể với số lượng tồn kho ≤ 10 (cần nhập thêm hàng)
                   </div>
                 </div>
-                
-                <div class="chart-actions">
-                  <button class="btn btn-outline-primary btn-sm" @click="exportChartData">
-                    <i class="bi bi-download"></i>
-                    Xuất biểu đồ
-                  </button>
-                </div>
               </div>
+              <p class="card-subtitle">Cần nhập hàng</p>
             </div>
-        <div class="chart-content">
-          <div v-if="isLoadingChart" class="chart-loading">
-            <div class="spinner-border text-warning" role="status">
-              <span class="visually-hidden">Đang tải...</span>
+          </div>
+          <div class="card-content">
+            <div class="main-value">{{ summary?.lowStockCount ?? 0 }}</div>
+            <div class="trend warning">
+              <i class="ph bi bi-exclamation-triangle"></i>
+              <span>Cần nhập</span>
             </div>
-            <p class="mt-2 text-muted">Đang tải dữ liệu biểu đồ...</p>
-          </div>
-          <div v-else-if="!chartData || !chartData.labels || chartData.labels.length === 0" class="chart-empty">
-            <i class="bi bi-bar-chart display-4 text-muted"></i>
-            <p class="mt-2 text-muted">Chưa có dữ liệu để hiển thị</p>
-          </div>
-          <Chart
-            v-else
-            type="line"
-            :data="enhancedChartData"
-            :options="enhancedChartOptions"
-            :height="350"
-          />
-        </div>
-            <div class="chart-insights">
-              <div class="insight-item">
-                <div class="insight-icon revenue">
-                  <i class="bi bi-graph-up"></i>
-      </div>
-                <div class="insight-content">
-                  <div class="insight-title">Tăng trưởng doanh thu</div>
-                  <div class="insight-value positive">+{{ growthRate }}%</div>
-                  <div class="insight-subtitle">So với kỳ trước</div>
-    </div>
-        </div>
-              <div class="insight-item">
-                <div class="insight-icon orders">
-                  <i class="ph bi bi-cart3"></i>
-                </div>
-                <div class="insight-content">
-                  <div class="insight-title">Đơn hàng trung bình</div>
-                  <div class="insight-value">{{ averageOrderValue }}</div>
-                  <div class="insight-subtitle">Giá trị/đơn hàng</div>
-                </div>
-              </div>
-              <div class="insight-item">
-                <div class="insight-icon profit">
-                  <i class="bi bi-graph-up"></i>
-                </div>
-                <div class="insight-content">
-                  <div class="insight-title">Tỷ lệ lợi nhuận</div>
-                  <div class="insight-value">{{ profitMargin }}%</div>
-                  <div class="insight-subtitle">Margin trung bình</div>
-                </div>
           </div>
         </div>
       </div>
+    </section>
 
-          <div class="top-products-card">
-            <div class="card-header">
-              <h3>Sản phẩm bán chạy</h3>
-              <button class="view-all-btn">Xem tất cả</button>
-        </div>
-            <div class="products-list">
-              <div v-if="isLoadingTopProducts" class="loading-state">
-                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
+    <!-- Main Content Grid -->
+    <section class="main-content-section">
+      <div class="content-grid">
+        <!-- Left Column: Alerts -->
+        <div class="left-column">
+          <div class="section-card alerts-card">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="bi bi-bell"></i>
+                Cần chú ý
+              </h3>
+            </div>
+            <div class="alert-list">
+              <div class="alert-item urgent">
+                <div class="alert-icon">
+                  <i class="bi bi-exclamation-triangle-fill"></i>
+                </div>
+                <div class="alert-content">
+                  <div class="alert-title">{{ alerts?.pendingOrders ?? 0 }} đơn chờ xác nhận</div>
+                  <div class="alert-subtitle">Cần xử lý ngay</div>
+                </div>
+                <button class="alert-btn" @click="$router.push('/admin/orders?status=pending')">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
               </div>
-              <div v-else-if="topProducts.length === 0" class="empty-state">
-                Chưa có dữ liệu sản phẩm
+              <div class="alert-item warning">
+                <div class="alert-icon">
+                  <i class="bi bi-box-seam"></i>
+                </div>
+                <div class="alert-content">
+                  <div class="alert-title">
+                    {{ alerts?.lowStockProducts ?? 0 }} sản phẩm sắp hết
+                  </div>
+                  <div class="alert-subtitle">Cần nhập hàng</div>
+                </div>
+                <button class="alert-btn" @click="$router.push('/admin/inventory')">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
               </div>
-              <div v-else class="product-item" v-for="product in topProducts" :key="product.id">
-                <div class="product-image">
-                  <img :src="product.image" :alt="product.name">
-          </div>
-                <div class="product-info">
-                  <div class="product-name">{{ product.name }}</div>
-                  <div class="product-sales">{{ product.sales }} đã bán</div>
-        </div>
-                <div class="product-revenue">{{ product.revenue }}</div>
-      </div>
+              <div class="alert-item info">
+                <div class="alert-icon">
+                  <i class="bi bi-truck"></i>
+                </div>
+                <div class="alert-content">
+                  <div class="alert-title">{{ alerts?.needShipping ?? 0 }} đơn cần giao</div>
+                  <div class="alert-subtitle">Đang vận chuyển</div>
+                </div>
+                <button class="alert-btn" @click="$router.push('/admin/orders?status=shipping')">
+                  <i class="bi bi-arrow-right"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </section>
 
-      <!-- Order Management Section -->
-      <section class="order-management-section">
-        <div class="order-grid">
-          <div class="order-status-cards">
-            <div class="status-card pending">
-              <div class="status-icon">
-                <i class="ph bi bi-clock"></i>
-        </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.pending ?? 0 }}</div>
-                <div class="status-label">Chờ xử lý</div>
+        <!-- Right Column: Order Status -->
+        <div class="right-column">
+          <div class="section-card status-card">
+            <div class="section-header">
+              <h3 class="section-title">
+                <i class="bi bi-bar-chart"></i>
+                Trạng thái đơn hàng
+              </h3>
+            </div>
+            <div class="status-grid">
+              <div class="status-item pending">
+                <div class="status-icon">
+                  <i class="bi bi-clock-history"></i>
+                </div>
+                <div class="status-info">
+                  <div class="status-count">{{ orderStatusCounts?.pending ?? 0 }}</div>
+                  <div class="status-label">Chờ xử lý</div>
+                </div>
+              </div>
+              <div class="status-item shipping">
+                <div class="status-icon">
+                  <i class="bi bi-truck"></i>
+                </div>
+                <div class="status-info">
+                  <div class="status-count">{{ orderStatusCounts?.shipping ?? 0 }}</div>
+                  <div class="status-label">Đang giao</div>
+                </div>
+              </div>
+              <div class="status-item completed">
+                <div class="status-icon">
+                  <i class="bi bi-check-circle-fill"></i>
+                </div>
+                <div class="status-info">
+                  <div class="status-count">{{ orderStatusCounts?.completed ?? 0 }}</div>
+                  <div class="status-label">Hoàn thành</div>
+                </div>
+              </div>
+              <div class="status-item cancelled">
+                <div class="status-icon">
+                  <i class="bi bi-x-circle-fill"></i>
+                </div>
+                <div class="status-info">
+                  <div class="status-count">{{ orderStatusCounts?.cancelled ?? 0 }}</div>
+                  <div class="status-label">Đã hủy</div>
+                </div>
               </div>
             </div>
-            <div class="status-card shipping">
-              <div class="status-icon">
-                <i class="ph bi bi-truck"></i>
-              </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.shipping ?? 0 }}</div>
-                <div class="status-label">Đang giao</div>
-              </div>
-            </div>
-            <div class="status-card delivered">
-              <div class="status-icon">
-                <i class="ph bi bi-box-seam"></i>
-              </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.delivered ?? 0 }}</div>
-                <div class="status-label">Đã giao</div>
-              </div>
-            </div>
-            <div class="status-card completed">
-              <div class="status-icon">
-                <i class="ph bi bi-check-circle"></i>
-              </div>
-              <div class="status-info">
-                <div class="status-count">{{ orderStatusCounts?.completed ?? 0 }}</div>
-                <div class="status-label">Hoàn thành</div>
           </div>
         </div>
       </div>
+    </section>
 
-          <div class="recent-orders-card">
-            <div class="card-header">
-              <h3>Đơn hàng gần đây</h3>
-              <button class="view-all-btn">Xem tất cả</button>
+    <!-- Recent Orders Section -->
+    <section class="recent-orders-section">
+      <div class="section-card">
+        <div class="section-header">
+          <h3 class="section-title">
+            <i class="bi bi-receipt"></i>
+            Đơn hàng gần đây
+          </h3>
+          <button class="view-all-link" @click="$router.push('/admin/orders')">
+            Xem tất cả
+            <i class="bi bi-arrow-right"></i>
+          </button>
         </div>
-            <div class="orders-list">
-              <div v-if="isLoadingRecentOrders" class="loading-state">
-                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
-              </div>
-              <div v-else-if="recentOrders.length === 0" class="empty-state">
-                Chưa có đơn hàng nào
-              </div>
-              <div v-else class="order-item" v-for="order in recentOrders" :key="order.id">
-                <div class="order-info">
-                  <div class="order-id">#{{ order.id }}</div>
-                  <div class="customer-name">{{ order.customer }}</div>
-                  <div class="order-time">{{ order.time }}</div>
+        <div class="orders-table">
+          <div v-if="isLoadingRecentOrders" class="loading-state">
+            <i class="bi bi-arrow-repeat spin"></i>
+            <span>Đang tải...</span>
           </div>
-                <div class="order-amount">{{ order.amount }}</div>
-                <div class="order-status" :class="order.status">
+          <div v-else-if="recentOrders.length === 0" class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <span>Chưa có đơn hàng nào</span>
+          </div>
+          <div v-else class="orders-list">
+            <div class="order-row" v-for="order in recentOrders" :key="order.id">
+              <div class="order-col order-id">
+                <span class="label-mobile">Mã đơn:</span>
+                <span class="value">#{{ order.id }}</span>
+              </div>
+              <div class="order-col customer">
+                <span class="label-mobile">Khách hàng:</span>
+                <span class="value customer-name">{{ order.customer }}</span>
+              </div>
+              <div class="order-col products">
+                <span class="label-mobile">Sản phẩm:</span>
+                <span class="value product-count">
+                  <i class="bi bi-box-seam"></i>
+                  {{ order.productCount }} SP
+                </span>
+              </div>
+              <div class="order-col payment">
+                <span class="label-mobile">Thanh toán:</span>
+                <span class="value payment-method" :class="order.paymentMethodClass">
+                  <i :class="order.paymentIcon"></i>
+                  {{ order.paymentMethodText }}
+                </span>
+              </div>
+              <div class="order-col time">
+                <span class="label-mobile">Thời gian:</span>
+                <span class="value time-text">{{ order.timeFormatted }}</span>
+              </div>
+              <div class="order-col amount">
+                <span class="label-mobile">Giá trị:</span>
+                <span class="value amount-text">{{ order.amount }}</span>
+              </div>
+              <div class="order-col status">
+                <span class="status-badge" :class="order.status">
                   {{ order.statusText }}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Customer Insights Section -->
-      <section class="customer-insights-section">
-        <div class="insights-grid">
-          <div class="customer-stats-card">
-            <div class="card-header">
-              <h3>Thống kê khách hàng</h3>
-        </div>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-people"></i>
-              </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.totalCustomers ?? 0 }}</div>
-                  <div class="stat-label">Tổng khách hàng</div>
-            </div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-person-plus"></i>
-            </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.newCustomersToday ?? 0 }}</div>
-                  <div class="stat-label">Khách hàng mới</div>
-          </div>
-        </div>
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-arrow-repeat"></i>
-      </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.repeatRate ?? 0 }}%</div>
-                  <div class="stat-label">Tỷ lệ quay lại</div>
-    </div>
-          </div>
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="ph bi bi-star"></i>
-        </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ customerSummary?.averageRating ?? 0 }}</div>
-                  <div class="stat-label">Đánh giá trung bình</div>
-                      </div>
-                    </div>
-          </div>
-            </div>
-
-          <div class="category-performance-card">
-            <div class="card-header">
-              <h3>Hiệu suất danh mục</h3>
-          </div>
-            <div class="categories-list">
-              <div v-if="isLoadingCategoryPerformance" class="loading-state">
-                <i class="bi bi-arrow-repeat spin"></i> Đang tải...
-              </div>
-              <div v-else-if="categoryPerformance.length === 0" class="empty-state">
-                Chưa có dữ liệu danh mục
-              </div>
-              <div v-else class="category-item" v-for="category in categoryPerformance" :key="category.id">
-                <div class="category-info">
-                  <div class="category-name">{{ category.name }}</div>
-                  <div class="category-sales">{{ category.sales }} sản phẩm</div>
-        </div>
-                <div class="category-revenue">{{ category.revenue }}</div>
-                <div class="category-trend" :class="category.trend">
-                  <i :class="category.trendIcon"></i>
-                  <span>{{ category.change }}</span>
-      </div>
-    </div>
-            </div>
-          </div>
-        </div>
-      </section>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
-import Chart from '@/components/admin/Chart.vue'
+import { ref, onMounted, computed } from 'vue'
 import thongKeService from '@/services/thongKeService'
 
 // Reactive state
@@ -499,158 +335,11 @@ const alerts = ref(null)
 const isLoadingSummary = ref(false)
 const isLoadingAlerts = ref(false)
 
-// Chart enhancement state
-const selectedMetric = ref('revenue')
-const comparisonDate = ref(new Date(Date.now() - 24 * 60 * 60 * 1000))
-const showComparisonDatePicker = ref(false)
-const chartTimeRange = ref('30days')
-
 // Real data from API
-const topProducts = ref([])
 const recentOrders = ref([])
-const categoryPerformance = ref([])
-const chartData = ref(null)
-const customerSummary = ref(null)
 const orderStatusCounts = ref(null)
-const isLoadingChart = ref(false)
-const isLoadingTopProducts = ref(false)
 const isLoadingRecentOrders = ref(false)
-const isLoadingCategoryPerformance = ref(false)
-const isLoadingCustomerSummary = ref(false)
 const isLoadingOrderStatusCounts = ref(false)
-
-
-// Enhanced chart data - Analytics style with real API data
-const enhancedChartData = computed(() => {
-  if (!chartData.value || !chartData.value.labels) {
-    return {
-      labels: [],
-      datasets: []
-    }
-  }
-
-  const datasets = []
-  
-  // Main dataset based on selected metric
-  if (selectedMetric.value === 'revenue') {
-    datasets.push({
-      label: 'Doanh thu (triệu VNĐ)',
-      data: chartData.value.current || [],
-      borderColor: '#ef4444',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      yAxisID: 'y'
-    })
-    
-    datasets.push({
-      label: 'Doanh thu kỳ trước (triệu VNĐ)',
-      data: chartData.value.previous || [],
-      borderColor: '#0ea5e9',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      borderDash: [0, 0],
-      yAxisID: 'y'
-    })
-  } else if (selectedMetric.value === 'orders') {
-    datasets.push({
-      label: 'Số đơn hàng',
-      data: chartData.value.current || [],
-      borderColor: '#ef4444',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      yAxisID: 'y'
-    })
-    
-    datasets.push({
-      label: 'Số đơn hàng kỳ trước',
-      data: chartData.value.previous || [],
-      borderColor: '#0ea5e9',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      borderDash: [0, 0],
-      yAxisID: 'y'
-    })
-  } else if (selectedMetric.value === 'customers') {
-    // Customers data from API (distinct customers who placed orders)
-    datasets.push({
-      label: 'Khách hàng mới',
-      data: chartData.value.current || [],
-      borderColor: '#ef4444',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      yAxisID: 'y'
-    })
-    
-    datasets.push({
-      label: 'Khách hàng kỳ trước',
-      data: chartData.value.previous || [],
-      borderColor: '#0ea5e9',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      borderDash: [0, 0],
-      yAxisID: 'y'
-    })
-  }
-  
-  return {
-    labels: chartData.value.labels || [],
-    datasets
-  }
-})
-
-// Computed insights from real data
-const growthRate = computed(() => {
-  if (!chartData.value || !chartData.value.current || !chartData.value.previous) {
-    return '0.0'
-  }
-  
-  const currentTotal = chartData.value.current.reduce((sum, val) => sum + Number(val || 0), 0)
-  const previousTotal = chartData.value.previous.reduce((sum, val) => sum + Number(val || 0), 0)
-  
-  if (previousTotal === 0) return currentTotal > 0 ? '100.0' : '0.0'
-  return ((currentTotal - previousTotal) / previousTotal * 100).toFixed(1)
-})
-
-const averageOrderValue = computed(() => {
-  if (!summary.value || !summary.value.revenueToday || !summary.value.newOrders24h) {
-    return '0k₫'
-  }
-  
-  const revenue = Number(summary.value.revenueToday || 0)
-  const orders = Number(summary.value.newOrders24h || 1)
-  
-  if (orders === 0) return '0k₫'
-  return (revenue / orders / 1000).toFixed(0) + 'k₫'
-})
-
-const profitMargin = computed(() => {
-  // Mock profit margin (can be enhanced with real data later)
-  return '25.0'
-})
 
 // Growth rates for overview cards - from API
 const revenueGrowth = computed(() => {
@@ -668,271 +357,7 @@ const customersGrowth = computed(() => {
   return Number(summary.value.customersGrowth)
 })
 
-const enhancedChartOptions = computed(() => {
-  const currentMetric = selectedMetric.value
-  
-  return {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    plugins: {
-      legend: {
-        display: true,
-        position: 'top',
-        align: 'end',
-        labels: {
-          usePointStyle: true,
-          pointStyle: 'circle',
-          padding: 15,
-          font: {
-            size: 10,
-            family: "'Inter', sans-serif",
-            weight: '400'
-          },
-          color: '#6b7280',
-          boxWidth: 6,
-          boxHeight: 6
-        }
-      },
-      tooltip: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        titleColor: '#374151',
-        bodyColor: '#6b7280',
-        borderColor: '#e5e7eb',
-        borderWidth: 1,
-        cornerRadius: 8,
-        padding: 12,
-        boxWidth: 8,
-        boxHeight: 8,
-        boxPadding: 4,
-        titleFont: {
-          size: 12,
-          weight: '600',
-          family: "'Inter', sans-serif"
-        },
-        bodyFont: {
-          size: 11,
-          weight: '500',
-          family: "'Inter', sans-serif"
-        },
-        bodySpacing: 4,
-        titleMarginBottom: 8,
-        callbacks: {
-          title: function(context) {
-            // Format date label from YYYY-MM-DD to DD/MM/YYYY
-            const label = context[0].label
-            if (label && label.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              const [year, month, day] = label.split('-')
-              return `${day}/${month}/${year}`
-            }
-            return label
-          },
-          label: function(context) {
-            const value = context.parsed.y
-            let formattedValue = ''
-            
-            if (currentMetric === 'revenue') {
-              // Format doanh thu: chia cho 1,000,000 để hiển thị triệu VNĐ
-              if (value >= 1000000) {
-                formattedValue = (value / 1000000).toFixed(1) + 'M₫'
-              } else if (value >= 1000) {
-                formattedValue = (value / 1000).toFixed(0) + 'k₫'
-              } else {
-                formattedValue = new Intl.NumberFormat('vi-VN', {
-                  style: 'currency',
-                  currency: 'VND'
-                }).format(value)
-              }
-            } else {
-              // Format số nguyên cho orders và customers
-              formattedValue = value.toLocaleString('vi-VN')
-            }
-            
-            return `${context.dataset.label}: ${formattedValue}`
-          }
-        }
-      }
-    },
-    scales: {
-      x: {
-        grid: {
-          display: true,
-          color: 'rgba(156, 163, 175, 0.15)',
-          drawBorder: false,
-          lineWidth: 1
-        },
-        ticks: {
-          font: {
-            size: 11,
-            family: "'Inter', sans-serif",
-            weight: '400'
-          },
-          color: '#9ca3af',
-          padding: 6,
-          autoSkip: true,
-          maxTicksLimit: 12,
-          stepSize: 1,
-          callback: function(value) {
-            // Format date labels from YYYY-MM-DD to DD/MM
-            const label = this.getLabelForValue(value)
-            if (label && label.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              const [, month, day] = label.split('-')
-              return `${day}/${month}`
-            }
-            return label
-          }
-        }
-      },
-      y: {
-        grid: {
-          display: true,
-          color: 'rgba(156, 163, 175, 0.15)',
-          drawBorder: false,
-          lineWidth: 1
-        },
-        ticks: {
-          font: {
-            size: 10,
-            family: "'Inter', sans-serif",
-            weight: '400'
-          },
-          color: '#9ca3af',
-          padding: 6,
-          maxTicksLimit: 8,
-          count: 8,
-          callback: function(value) {
-            if (currentMetric === 'revenue') {
-              // Format doanh thu: chia cho 1,000,000 để hiển thị triệu VNĐ
-              if (value >= 1000000) {
-                return (value / 1000000).toFixed(1) + 'M₫'
-              } else if (value >= 1000) {
-                return (value / 1000).toFixed(0) + 'k₫'
-              } else {
-                return value.toLocaleString('vi-VN') + '₫'
-              }
-            } else {
-              // Format số nguyên cho orders và customers
-              return value.toLocaleString('vi-VN')
-            }
-          }
-        }
-      }
-    },
-    animation: {
-      duration: 300,
-      easing: 'easeInOut'
-    },
-    elements: {
-      point: {
-        radius: 0,
-        hitRadius: 30,
-        hoverRadius: 6,
-        hoverBorderWidth: 2
-      }
-    },
-    layout: {
-      padding: {
-        top: 10,
-        right: 10,
-        bottom: 10,
-        left: 10
-      }
-    }
-  }
-})
-
-
 // Methods
-const formatDate = (date) => {
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const targetDate = new Date(date)
-  
-  if (targetDate.toDateString() === yesterday.toDateString()) {
-    return 'Hôm qua'
-  }
-  
-  return targetDate.toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric'
-  })
-}
-
-const selectQuickDate = (option) => {
-  const today = new Date()
-  let targetDate = new Date()
-  
-  switch (option) {
-    case 'yesterday':
-      targetDate = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-      break
-    case '2days':
-      targetDate = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000)
-      break
-    case 'week':
-      targetDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
-  }
-  
-  comparisonDate.value = targetDate
-  showComparisonDatePicker.value = false
-}
-
-
-const exportChartData = () => {
-  // Export chart data functionality
-}
-
-// Load chart data from API
-const loadChartData = async () => {
-  try {
-    isLoadingChart.value = true
-    console.log('📊 Loading chart data...', { range: chartTimeRange.value, metric: selectedMetric.value })
-    const response = await thongKeService.getChart({
-      range: chartTimeRange.value,
-      metric: selectedMetric.value
-    })
-    console.log('📊 Chart response:', response)
-    chartData.value = response?.data ?? response
-    console.log('📊 Chart data loaded:', chartData.value)
-  } catch (error) {
-    console.error('❌ Error loading chart data:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
-    chartData.value = { labels: [], current: [], previous: [] }
-  } finally {
-    isLoadingChart.value = false
-  }
-}
-
-// Load top products from API
-const loadTopProducts = async () => {
-  try {
-    isLoadingTopProducts.value = true
-    console.log('🔄 Loading top products...')
-    const response = await thongKeService.getTopProducts({ limit: 4, rangeDays: 30 })
-    console.log('📦 Top products response:', response)
-    const data = response?.data ?? response
-    console.log('📦 Top products data:', data)
-    console.log('📦 Data type:', Array.isArray(data) ? 'array' : typeof data)
-    topProducts.value = (data || []).map(product => ({
-      id: product.id,
-      name: product.name,
-      image: product.image || 'https://via.placeholder.com/40x40/3b82f6/ffffff?text=SP',
-      sales: product.sales,
-      revenue: formatCurrency(product.revenue)
-    }))
-    console.log('✅ Top products loaded:', topProducts.value)
-  } catch (error) {
-    console.error('❌ Error loading top products:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
-    topProducts.value = []
-  } finally {
-    isLoadingTopProducts.value = false
-  }
-}
 
 // Load recent orders from API
 const loadRecentOrders = async () => {
@@ -942,14 +367,20 @@ const loadRecentOrders = async () => {
     const response = await thongKeService.getRecentOrders({ limit: 4 })
     console.log('📋 Recent orders response:', response)
     const data = response?.data ?? response
-    console.log('📋 Recent orders data:', data)
-    recentOrders.value = (data || []).map(order => ({
+    recentOrders.value = (data || []).map((order) => ({
       id: order.orderCode || order.id,
       customer: order.customer,
       time: order.time,
+      timeFormatted: formatDateTime(order.time),
       amount: formatCurrency(order.amount),
       status: mapOrderStatus(order.status),
-      statusText: getStatusDisplayName(order.status)
+      statusText: getStatusDisplayName(order.status),
+      productCount: order.productCount || 0,
+      paymentMethod: order.paymentMethod || 'COD',
+      paymentMethodText: getPaymentMethodText(order.paymentMethod),
+      paymentMethodClass: getPaymentMethodClass(order.paymentMethod),
+      paymentIcon: getPaymentIcon(order.paymentMethod),
+      shippingCity: order.shippingCity || '',
     }))
     console.log('✅ Recent orders loaded:', recentOrders.value)
   } catch (error) {
@@ -958,52 +389,6 @@ const loadRecentOrders = async () => {
     recentOrders.value = []
   } finally {
     isLoadingRecentOrders.value = false
-  }
-}
-
-// Load category performance from API
-const loadCategoryPerformance = async () => {
-  try {
-    isLoadingCategoryPerformance.value = true
-    console.log('📊 Loading category performance...')
-    const response = await thongKeService.getCategoryPerformance({ limit: 4, rangeDays: 30 })
-    console.log('📊 Category performance response:', response)
-    const data = response?.data ?? response
-    console.log('📊 Category performance data:', data)
-    categoryPerformance.value = (data || []).map(category => ({
-      id: category.id,
-      name: category.name,
-      sales: category.sales,
-      revenue: formatCurrency(category.revenue),
-      change: (category.change >= 0 ? '+' : '') + category.change + '%',
-      trend: category.trend,
-      trendIcon: category.trendIcon
-    }))
-    console.log('✅ Category performance loaded:', categoryPerformance.value)
-  } catch (error) {
-    console.error('❌ Error loading category performance:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
-    categoryPerformance.value = []
-  } finally {
-    isLoadingCategoryPerformance.value = false
-  }
-}
-
-// Load customer summary from API
-const loadCustomerSummary = async () => {
-  try {
-    isLoadingCustomerSummary.value = true
-    console.log('👥 Loading customer summary...')
-    const response = await thongKeService.getCustomerSummary()
-    console.log('👥 Customer summary response:', response)
-    customerSummary.value = response?.data ?? response
-    console.log('✅ Customer summary loaded:', customerSummary.value)
-  } catch (error) {
-    console.error('❌ Error loading customer summary:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
-    customerSummary.value = null
-  } finally {
-    isLoadingCustomerSummary.value = false
   }
 }
 
@@ -1036,22 +421,22 @@ const formatCurrency = (amount) => {
   }
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(num)
 }
 
 const mapOrderStatus = (status) => {
   // Map English status from API to CSS class
   const statusMap = {
-    'PENDING': 'pending',
-    'SHIPPING': 'shipping',
-    'COMPLETED': 'completed',
-    'CANCELLED': 'cancelled',
+    PENDING: 'pending',
+    SHIPPING: 'shipping',
+    COMPLETED: 'completed',
+    CANCELLED: 'cancelled',
     // Fallback for Vietnamese (backward compatibility)
     'Chờ xác nhận': 'pending',
     'Đang giao': 'shipping',
     'Hoàn tất': 'completed',
-    'Đã hủy': 'cancelled'
+    'Đã hủy': 'cancelled',
   }
   return statusMap[status] || 'pending'
 }
@@ -1059,18 +444,74 @@ const mapOrderStatus = (status) => {
 // Get Vietnamese display name for status
 const getStatusDisplayName = (status) => {
   const displayMap = {
-    'PENDING': 'Chờ xác nhận',
-    'SHIPPING': 'Đang giao',
-    'COMPLETED': 'Hoàn tất',
-    'CANCELLED': 'Đã hủy'
+    PENDING: 'Chờ xác nhận',
+    SHIPPING: 'Đang giao',
+    COMPLETED: 'Hoàn tất',
+    CANCELLED: 'Đã hủy',
   }
   return displayMap[status] || status
 }
 
-// Watch for metric and time range changes
-watch([selectedMetric, chartTimeRange], () => {
-  loadChartData()
-})
+// Format date time for display
+const formatDateTime = (timeString) => {
+  if (!timeString) return ''
+  try {
+    const date = new Date(timeString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+
+    // If today, show relative time
+    if (diffMins < 60) {
+      return diffMins <= 0 ? 'Vừa xong' : `${diffMins} phút trước`
+    } else if (diffHours < 24) {
+      return `${diffHours} giờ trước`
+    } else if (diffDays < 7) {
+      return `${diffDays} ngày trước`
+    }
+
+    // Otherwise show formatted date
+    const day = date.getDate()
+    const month = date.getMonth() + 1
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    return `${day} Th${month}, ${hours}:${minutes}`
+  } catch {
+    return timeString
+  }
+}
+
+// Get payment method display text
+const getPaymentMethodText = (method) => {
+  const methodMap = {
+    COD: 'COD',
+    VNPAY: 'VNPay',
+    BANKING: 'Banking',
+  }
+  return methodMap[method] || method || 'COD'
+}
+
+// Get payment method CSS class
+const getPaymentMethodClass = (method) => {
+  const classMap = {
+    COD: 'payment-cod',
+    VNPAY: 'payment-vnpay',
+    BANKING: 'payment-banking',
+  }
+  return classMap[method] || 'payment-cod'
+}
+
+// Get payment icon
+const getPaymentIcon = (method) => {
+  const iconMap = {
+    COD: 'bi bi-cash-coin',
+    VNPAY: 'bi bi-credit-card',
+    BANKING: 'bi bi-bank',
+  }
+  return iconMap[method] || 'bi bi-cash-coin'
+}
 
 // Initialize dashboard on mount
 onMounted(async () => {
@@ -1083,9 +524,10 @@ onMounted(async () => {
         const s = await thongKeService.getSummary({ lowStockThreshold: 10 })
         summary.value = s?.data ?? s
         console.log('✅ Summary loaded:', summary.value)
-        console.log('📊 Revenue Today:', summary.value?.revenueToday, typeof summary.value?.revenueToday)
-        console.log('📦 Low Stock Count:', summary.value?.lowStockCount, typeof summary.value?.lowStockCount)
-        console.log('👥 New Customers Today:', summary.value?.newCustomersToday, typeof summary.value?.newCustomersToday)
+        console.log('📊 Revenue Today:', summary.value?.revenueToday)
+        console.log('📊 New Orders 24h:', summary.value?.newOrders24h)
+        console.log('📊 New Customers Today:', summary.value?.newCustomersToday)
+        console.log('📊 Low Stock Count:', summary.value?.lowStockCount)
       } catch (error) {
         console.error('❌ Error loading summary:', error)
       } finally {
@@ -1103,12 +545,8 @@ onMounted(async () => {
         isLoadingAlerts.value = false
       }
     })(),
-    loadChartData(),
-    loadTopProducts(),
     loadRecentOrders(),
-    loadCategoryPerformance(),
-    loadCustomerSummary(),
-    loadOrderStatusCounts()
+    loadOrderStatusCounts(),
   ])
 })
 </script>
@@ -1119,8 +557,68 @@ onMounted(async () => {
   padding: 0;
   background: #f8fafc;
   color: #1f2937;
+  font-family: 'Inter', sans-serif;
 }
 
+/* Dashboard Header */
+.dashboard-header {
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.realtime-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #10b981;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.live-indicator i {
+  font-size: 0.5rem;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.last-updated {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
 
 /* Overview Section */
 .overview-section {
@@ -1164,6 +662,73 @@ onMounted(async () => {
   font-size: 1.25rem;
 }
 
+.card-info {
+  flex: 1;
+}
+
+.info-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-title h3 {
+  margin: 0;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.info-icon {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  cursor: help;
+  transition: color 0.2s;
+}
+
+.info-icon:hover {
+  color: #6366f1;
+}
+
+.tooltip-content {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  white-space: normal;
+  width: 250px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.tooltip-content::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+
+.tooltip-wrapper:hover .tooltip-content {
+  opacity: 1;
+  visibility: visible;
+}
+
 .overview-card.revenue .card-icon {
   background: #dcfce7;
   color: #16a34a;
@@ -1203,10 +768,23 @@ onMounted(async () => {
   align-items: center;
 }
 
+.value-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
 .main-value {
   font-size: 1.875rem;
   font-weight: 700;
   color: #1f2937;
+}
+
+.zero-hint {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin: 0;
+  font-style: italic;
 }
 
 .trend {
@@ -1229,342 +807,143 @@ onMounted(async () => {
   color: #d97706;
 }
 
-/* Actions & Alerts Section */
-.actions-alerts-section {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+/* Main Content Section */
+.main-content-section {
   margin-bottom: 2rem;
 }
 
-.quick-actions-panel, .alerts-panel {
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+/* Section Card */
+.section-card {
   background: #ffffff;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e5e7eb;
+  height: 100%;
 }
 
-.quick-actions-panel h3, .alerts-panel h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
-}
-
-.action-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.action-btn {
+.section-header {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-  color: #374151;
 }
 
-.action-btn:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-}
-
-.action-btn i {
-  font-size: 1.5rem;
+.section-title i {
   color: #6366f1;
 }
 
-.action-btn span {
-  font-size: 0.875rem;
-  font-weight: 500;
-  text-align: center;
-}
-
+/* Alerts */
 .alert-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .alert-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border-radius: 10px;
+  background: #f9fafb;
   transition: all 0.2s;
+  border-left: 3px solid transparent;
 }
 
 .alert-item:hover {
-  background: #f9fafb;
+  background: #f3f4f6;
+  transform: translateX(2px);
 }
 
 .alert-item.urgent {
-  border-left: 4px solid #ef4444;
+  border-left-color: #ef4444;
+  background: linear-gradient(to right, #fef2f2, #ffffff);
 }
 
 .alert-item.warning {
-  border-left: 4px solid #f59e0b;
+  border-left-color: #f59e0b;
+  background: linear-gradient(to right, #fffbeb, #ffffff);
 }
 
 .alert-item.info {
-  border-left: 4px solid #3b82f6;
+  border-left-color: #3b82f6;
+  background: linear-gradient(to right, #eff6ff, #ffffff);
 }
 
-.alert-item .alert-icon {
+.alert-icon {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 1.125rem;
+  flex-shrink: 0;
 }
 
 .alert-item.urgent .alert-icon {
-  background: #fef2f2;
+  background: #fee2e2;
   color: #dc2626;
 }
 
 .alert-item.warning .alert-icon {
-  background: #fffbeb;
+  background: #fef3c7;
   color: #f59e0b;
 }
 
 .alert-item.info .alert-icon {
-  background: #eff6ff;
+  background: #dbeafe;
   color: #3b82f6;
 }
 
 .alert-content {
   flex: 1;
+  min-width: 0;
 }
 
 .alert-title {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0 0 0.25rem 0;
 }
 
-.alert-time {
-  font-size: 0.75rem;
-  color: #9ca3af;
+.alert-subtitle {
+  font-size: 0.8125rem;
+  color: #6b7280;
   margin: 0;
 }
 
-.alert-action {
-  background: #6366f1;
-  color: #ffffff;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.alert-action:hover {
-  background: #4f46e5;
-}
-
-/* Analytics Section */
-.analytics-section {
-  margin-bottom: 2rem;
-}
-
-.analytics-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
-}
-
-.chart-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-}
-
-.chart-header {
-  margin-bottom: 1.5rem;
-}
-
-.chart-title-section {
-  margin-bottom: 1rem;
-}
-
-.chart-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.chart-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.growth-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.growth-badge i {
-  font-size: 0.75rem;
-}
-
-.metric-toggles {
-  display: flex;
-  gap: 0.5rem;
-  background: #f8fafc;
-  padding: 0.25rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  margin-bottom: 1rem;
-}
-
-.metric-toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1rem;
-  background: transparent;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.metric-toggle:hover {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.metric-toggle.active {
-  background: white;
-  color: #1e293b;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.metric-toggle i {
-  font-size: 0.75rem;
-}
-
-.chart-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.control-group {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.control-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.time-selector, .granularity-selector {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: #ffffff;
-  font-size: 0.875rem;
-  color: #374151;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.time-selector:focus, .granularity-selector:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-}
-
-.chart-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
+.alert-btn {
   background: #f3f4f6;
-  border: 1px solid #d1d5db;
+  color: #6b7280;
+  border: none;
+  width: 2rem;
+  height: 2rem;
   border-radius: 6px;
-  color: #374151;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.chart-action-btn:hover {
-  background: #e5e7eb;
-  border-color: #9ca3af;
-}
-
-.chart-insights {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.insight-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  transition: all 0.2s;
-}
-
-.insight-item:hover {
-  background: #f3f4f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.insight-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
+<<<<<<< HEAD
   font-size: 1rem;
 }
 
@@ -1659,93 +1038,41 @@ onMounted(async () => {
   color: #6366f1;
   font-size: 0.875rem;
   font-weight: 500;
+=======
+>>>>>>> master
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.view-all-btn:hover {
-  color: #4f46e5;
+.alert-btn:hover {
+  background: #6366f1;
+  color: #ffffff;
 }
 
-.products-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+/* Order Status */
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.875rem;
 }
 
-.product-item {
+.status-item {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 1.125rem;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
   transition: all 0.2s;
+  border: 2px solid transparent;
 }
 
-.product-item:hover {
-  background: #f9fafb;
-}
-
-.product-image img {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 6px;
-  object-fit: cover;
-}
-
-.product-info {
-  flex: 1;
-}
-
-.product-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.product-sales {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.product-revenue {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #16a34a;
-}
-
-/* Order Management Section */
-.order-management-section {
-  margin-bottom: 2rem;
-}
-
-.order-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.order-status-cards {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.status-card {
+.status-item:hover {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-  text-align: center;
-  transition: all 0.2s;
-}
-
-.status-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: currentColor;
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .status-icon {
@@ -1756,256 +1083,223 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-size: 1.25rem;
-  margin: 0 auto 1rem auto;
+  flex-shrink: 0;
 }
 
-.status-card.pending .status-icon {
+.status-item.pending .status-icon {
   background: #fef3c7;
   color: #d97706;
 }
 
-.status-card.processing .status-icon {
+.status-item.pending:hover {
+  border-color: #fbbf24;
+}
+
+.status-item.shipping .status-icon {
   background: #dbeafe;
-  color: #2563eb;
+  color: #3b82f6;
 }
 
-.status-card.shipping .status-icon {
-  background: #e9d5ff;
-  color: #8b5cf6;
+.status-item.shipping:hover {
+  border-color: #60a5fa;
 }
 
-.status-card.delivered .status-icon {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.status-card.completed .status-icon {
+.status-item.completed .status-icon {
   background: #dcfce7;
   color: #16a34a;
 }
 
+.status-item.completed:hover {
+  border-color: #4ade80;
+}
+
+.status-item.cancelled .status-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.status-item.cancelled:hover {
+  border-color: #f87171;
+}
+
 .status-info {
-  text-align: center;
+  flex: 1;
 }
 
 .status-count {
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: 700;
   color: #1f2937;
-  margin-bottom: 0.25rem;
+  line-height: 1;
+  margin-bottom: 0.375rem;
 }
 
 .status-label {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: #6b7280;
+  font-weight: 500;
 }
 
-.recent-orders-card {
+/* Recent Orders Section */
+.recent-orders-section {
+  margin-bottom: 2rem;
+}
+
+.view-all-link {
+  background: none;
+  border: none;
+  color: #6366f1;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  transition: all 0.2s;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+}
+
+.view-all-link:hover {
+  background: #f3f4f6;
+  color: #4f46e5;
+}
+
+.view-all-link i {
+  font-size: 0.75rem;
+}
+
+.orders-table {
   background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
 }
 
 .orders-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0;
 }
 
-.order-item {
-  display: flex;
+.order-row {
+  display: grid;
+  grid-template-columns: 100px 1.5fr 100px 130px 140px 110px 120px;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f3f4f6;
   transition: all 0.2s;
 }
 
-.order-item:hover {
+.order-row:last-child {
+  border-bottom: none;
+}
+
+.order-row:hover {
   background: #f9fafb;
 }
 
-.order-info {
-  flex: 1;
+.order-col {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.order-id {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.customer-name {
-  font-size: 0.875rem;
-  color: #374151;
-  margin-bottom: 0.25rem;
-}
-
-.order-time {
+.label-mobile {
+  display: none;
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: #6b7280;
+  font-weight: 500;
 }
 
-.order-amount {
+.order-col .value {
   font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.order-col.order-id .value {
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.order-col.customer .customer-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-col.products .product-count {
+  color: #6b7280;
+  font-size: 0.8125rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.order-col.products i {
+  font-size: 0.875rem;
+}
+
+.order-col.payment .payment-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.payment-method.payment-cod {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.payment-method.payment-vnpay {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.payment-method.payment-banking {
+  background: #e0e7ff;
+  color: #6366f1;
+}
+
+.order-col.time .time-text {
+  color: #6b7280;
+  font-size: 0.8125rem;
+}
+
+.order-col.amount .amount-text {
   font-weight: 600;
   color: #16a34a;
 }
 
-.order-status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
+.status-badge {
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
   font-size: 0.75rem;
-  font-weight: 500;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
 }
 
-.order-status.pending {
+.status-badge.pending {
   background: #fef3c7;
   color: #d97706;
 }
 
-.order-status.processing {
+.status-badge.shipping {
   background: #dbeafe;
   color: #2563eb;
 }
 
-.order-status.shipping {
-  background: #e9d5ff;
-  color: #8b5cf6;
-}
-
-.order-status.completed {
+.status-badge.completed {
   background: #dcfce7;
   color: #16a34a;
 }
 
-/* Customer Insights Section */
-.customer-insights-section {
-  margin-bottom: 2rem;
-}
-
-.insights-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-}
-
-.customer-stats-card, .category-performance-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.stat-item:hover {
-  background: #f9fafb;
-}
-
-.stat-item .stat-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.categories-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.category-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s;
-}
-
-.category-item:hover {
-  background: #f9fafb;
-}
-
-.category-info {
-  flex: 1;
-}
-
-.category-name {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.category-sales {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.category-revenue {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #16a34a;
-  margin-right: 1rem;
-}
-
-.category-trend {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.category-trend.positive {
-  color: #16a34a;
-}
-
-.category-trend.negative {
+.status-badge.cancelled {
+  background: #fee2e2;
   color: #dc2626;
 }
 
@@ -2049,9 +1343,9 @@ onMounted(async () => {
   background: #6366f1;
   border-color: #6366f1;
   color: #ffffff;
-  }
-  
-  .kpi-grid {
+}
+
+.kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1.5rem;
@@ -2143,299 +1437,58 @@ onMounted(async () => {
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-  .analytics-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .order-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .insights-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 1024px) {
-  .actions-alerts-section {
+  .content-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
-  
+
   .overview-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
-  .order-status-cards {
+
+  .status-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  .chart-metrics-toggle {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  .chart-controls {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.75rem;
-  }
-  
-  .control-group {
-    justify-content: space-between;
-  }
-  
-  .chart-insights {
-    grid-template-columns: 1fr;
-  }
-  
   .overview-grid {
     grid-template-columns: 1fr;
   }
-  
-  .actions-alerts-section {
+
+  .status-grid {
     grid-template-columns: 1fr;
   }
-  
-  .action-buttons {
+
+  .order-row {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
-  
-  .order-status-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .stats-grid {
-    grid-template-columns: 1fr;
+
+  .order-col .label-mobile {
+    display: block;
   }
 }
 
 @media (max-width: 480px) {
-  .overview-card {
-    padding: 1rem;
+  .dashboard-content {
+    padding: 0;
   }
-  
-  .quick-actions-panel, .alerts-panel {
-    padding: 1rem;
+
+  .section-card {
+    padding: 1.25rem;
   }
-  
-  .chart-card, .top-products-card {
-    padding: 1rem;
+
+  .kpi-card {
+    padding: 1.25rem;
   }
-}
 
-/* Beautiful Date Picker Styles */
-.date-picker-container {
-  position: relative;
-  display: inline-block;
-}
-
-.date-picker-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.date-picker-btn:hover {
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.date-picker-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: white;
-  border-radius: 8px;
-  font-size: 0.875rem;
-}
-
-.date-picker-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-}
-
-.date-picker-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.date-picker-value {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.date-picker-arrow {
-  display: flex;
-  align-items: center;
-  color: #64748b;
-  transition: transform 0.3s ease;
-}
-
-.date-picker-arrow .rotated {
-  transform: rotate(180deg);
-}
-
-.date-picker-dropdown {
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  right: 0;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  z-index: 1000;
-  min-width: 280px;
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.date-picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem 0.75rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.date-picker-header h6 {
-  margin: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: #f1f5f9;
-  border: none;
-  border-radius: 6px;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.close-btn:hover {
-  background: #e2e8f0;
-  color: #475569;
-}
-
-.date-picker-body {
-  padding: 1rem 1.25rem 1.25rem;
-}
-
-.quick-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.quick-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  padding: 0.75rem;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #475569;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: left;
-}
-
-.quick-option:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  transform: translateX(2px);
-}
-
-.quick-option i {
-  color: #3b82f6;
-  font-size: 0.875rem;
-}
-
-.date-separator {
-  position: relative;
-  text-align: center;
-  margin: 1rem 0;
-}
-
-.date-separator::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e2e8f0;
-}
-
-.date-separator span {
-  background: white;
-  padding: 0 1rem;
-  font-size: 0.75rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.custom-date {
-  margin-top: 0.5rem;
-}
-
-.date-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  color: #1e293b;
-  background: #f8fafc;
-  transition: all 0.2s ease;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  background: white;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .chart-actions {

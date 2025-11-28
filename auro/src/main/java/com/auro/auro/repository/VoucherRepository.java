@@ -23,17 +23,14 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
             """)
     List<Voucher> findActive(@Param("now") LocalDateTime now);
 
-    // Tìm theo trạng thái thời gian + còn số lượng
+    // Tìm theo trạng thái thời gian
     @Query("""
             SELECT v FROM Voucher v
             WHERE (:now BETWEEN v.batDauLuc AND v.ketThucLuc)
-              AND (v.gioiHanSuDung IS NULL OR v.gioiHanSuDung > 0 OR v.gioiHanSuDung = -1)
             """)
     Page<Voucher> findAvailable(@Param("now") LocalDateTime now, Pageable pageable);
 
-    // Tăng số lượng đã dùng (dùng khi áp voucher thành công)
-    @Modifying
-    @Query("UPDATE Voucher v SET v.gioiHanSuDung = v.gioiHanSuDung - 1 " +
-            "WHERE v.id = :id AND v.gioiHanSuDung IS NOT NULL AND v.gioiHanSuDung > 0")
-    int decreaseLimit(@Param("id") Long id);
+    // Lấy tất cả voucher, sắp xếp theo ngày tạo mới nhất
+    @Query("SELECT v FROM Voucher v ORDER BY v.taoLuc DESC")
+    List<Voucher> findAllOrderByTaoLucDesc();
 }

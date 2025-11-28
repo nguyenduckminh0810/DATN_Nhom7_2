@@ -18,7 +18,6 @@ export function useVoucher() {
       const response = await apiService.voucher.getAvailable()
       availableVouchers.value = response.data || []
     } catch (error) {
-      console.error('Lỗi khi tải voucher:', error)
       voucherMessage.value = {
         type: 'error',
         text: 'Không thể tải danh sách voucher'
@@ -44,8 +43,8 @@ export function useVoucher() {
         return { success: false, message: response.message }
       }
     } catch (error) {
-      console.error('Lỗi khi kiểm tra voucher:', error)
-      return { success: false, message: 'Lỗi khi kiểm tra voucher' }
+      const errorMessage = error?.data?.message || error?.message || 'Lỗi khi kiểm tra voucher'
+      return { success: false, message: errorMessage }
     }
   }
 
@@ -65,8 +64,8 @@ export function useVoucher() {
         return { success: false, message: response.message }
       }
     } catch (error) {
-      console.error('Lỗi khi áp dụng voucher:', error)
-      return { success: false, message: 'Lỗi khi áp dụng voucher' }
+      const errorMessage = error?.data?.message || error?.message || 'Lỗi khi áp dụng voucher'
+      return { success: false, message: errorMessage }
     }
   }
 
@@ -128,15 +127,17 @@ export function useVoucher() {
           text: `Voucher ${manualVoucherCode.value} hợp lệ!`
         }
       } else {
+        const errorMessage = result.message || 'Voucher không hợp lệ'
         voucherMessage.value = {
           type: 'error',
-          text: result.message || 'Voucher không hợp lệ'
+          text: errorMessage
         }
       }
     } catch (error) {
+      const errorMessage = error?.data?.message || error?.message || 'Lỗi khi kiểm tra voucher'
       voucherMessage.value = {
         type: 'error',
-        text: 'Lỗi khi kiểm tra voucher'
+        text: errorMessage
       }
     } finally {
       loading.value = false

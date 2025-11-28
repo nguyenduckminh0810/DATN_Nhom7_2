@@ -39,8 +39,98 @@
           <ProductGrid
             :products="filteredProducts"
             :loading="isLoading"
+            :server-side-pagination="true"
+            :current-page="currentPage"
+            :total-pages="totalPages"
+            :total-elements="totalElements"
             @clear-filters="clearFilters"
+            @page-change="changePage"
           />
+        </div>
+      </div>
+
+      <!-- Server-side Pagination -->
+      <div v-if="totalPages > 0 && totalElements > 0" class="pagination-wrapper mt-5">
+        <nav aria-label="Category pagination">
+          <ul class="pagination modern-pagination justify-content-center">
+            <!-- First Page -->
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button
+                class="page-link"
+                @click.prevent="changePage(1)"
+                :disabled="currentPage === 1"
+                title="Trang đầu"
+                type="button"
+              >
+                <i class="bi bi-chevron-double-left"></i>
+              </button>
+            </li>
+
+            <!-- Previous Page -->
+            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+              <button
+                class="page-link"
+                @click.prevent="changePage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                title="Trang trước"
+                type="button"
+              >
+                <i class="bi bi-chevron-left"></i>
+              </button>
+            </li>
+
+            <!-- Page Numbers -->
+            <template v-if="totalPages > 1">
+              <li
+                v-for="page in visiblePages"
+                :key="page"
+                class="page-item"
+                :class="{ active: page === currentPage }"
+              >
+                <button v-if="page !== '...'" class="page-link" @click.prevent="changePage(page)" type="button">
+                  {{ page }}
+                </button>
+                <span v-else class="page-link" style="pointer-events: none;">{{ page }}</span>
+              </li>
+            </template>
+            <li v-else class="page-item active">
+              <span class="page-link">1</span>
+            </li>
+
+            <!-- Next Page -->
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button
+                class="page-link"
+                @click.prevent="changePage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                title="Trang sau"
+                type="button"
+              >
+                <i class="bi bi-chevron-right"></i>
+              </button>
+            </li>
+
+            <!-- Last Page -->
+            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <button
+                class="page-link"
+                @click.prevent="changePage(totalPages)"
+                :disabled="currentPage === totalPages"
+                title="Trang cuối"
+                type="button"
+              >
+                <i class="bi bi-chevron-double-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+
+        <!-- Pagination Info -->
+        <div class="pagination-info text-center mt-3">
+          <small class="text-muted">
+            Trang {{ currentPage }} / {{ totalPages }} 
+            (Tổng {{ totalElements }} sản phẩm)
+          </small>
         </div>
       </div>
     </div>
@@ -80,10 +170,12 @@ const toTitle = (slug) =>
     .join(' ')
 
 const buildParams = () => {
+  const pageParam = Math.max(currentPage.value - 1, 0) // BE 0-based
   const params = {
-    page: Math.max(currentPage.value - 1, 0), // BE 0-based
+    page: pageParam,
     size: itemsPerPage,
   }
+  console.log('📋 buildParams:', { currentPage: currentPage.value, pageParam, size: itemsPerPage })
   // nếu bạn có ô search/filters riêng, có thể truyền thêm ở đây:
   if (searchStore?.keyword && searchStore.keyword.trim()) {
     params.search = searchStore.keyword.trim()
@@ -120,24 +212,68 @@ const buildParams = () => {
 
 // ======= API CALLS =======
 const fetchProductsByCategory = async (slug) => {
+  const requestedPage = currentPage.value
+  console.log('🔍 fetchProductsByCategory called:', { slug, requestedPage, params: buildParams() })
   isLoading.value = true
   error.value = null
   try {
     // lấy response thô (có thể là axios response hoặc service wrapper)
-    const resp = await sanPhamService.getByCategorySlug(slug, { params: buildParams() })
-    // lấy payload thực sự (resp.data nếu axios, hoặc resp nếu service trả thẳng)
-    const payload = resp?.data ?? resp
+    const params = buildParams()
+    console.log('📤 API Request:', { 
+      url: `/san-pham/danh-muc/${slug}`, 
+      params,
+      paramsString: new URLSearchParams(params).toString()
+    })
+    // sanPhamService.getByCategorySlug nhận params trực tiếp, không cần wrap
+    const resp = await sanPhamService.getByCategorySlug(slug, params)
+    console.log('📥 API Response (raw):', resp)
+    console.log('📥 API Response type:', typeof resp)
+    console.log('📥 API Response keys:', resp ? Object.keys(resp) : 'null')
+    // api.get() đã trả về response.data rồi, nên resp đã là Page object
+    // Không cần resp.data nữa
+    const payload = resp
     // debug nhanh nếu payload không như mong đợi
     if (!payload) {
       console.error('fetchProductsByCategory: empty payload', resp)
       throw new Error('Server trả về dữ liệu không hợp lệ')
     }
 
-    products.value = payload.content ?? []
-    totalPages.value = payload.totalPages ?? 0
+    products.value = (payload.content ?? []).slice(0, itemsPerPage) // Đảm bảo chỉ lấy đúng itemsPerPage
     totalElements.value = payload.totalElements ?? products.value.length
-    currentPage.value = (payload.number ?? 0) + 1
+    // Tính totalPages từ totalElements nếu API không trả về
+    if (payload.totalPages !== undefined && payload.totalPages !== null) {
+      totalPages.value = payload.totalPages
+    } else {
+      totalPages.value = Math.max(1, Math.ceil(totalElements.value / itemsPerPage))
+    }
+    // KHÔNG override currentPage từ API response
+    // Giữ nguyên currentPage đã được set bởi changePage
+    // Chỉ log để debug
+    if (payload.number !== undefined && payload.number !== null) {
+      const apiPage = (payload.number ?? 0) + 1
+      const requestedPage = currentPage.value
+      if (apiPage !== requestedPage) {
+        console.warn('⚠️ API returned different page than requested:', {
+          requestedPage,
+          apiPage,
+          apiPageNumber: payload.number,
+          'Will keep requestedPage': requestedPage
+        })
+      }
+      // KHÔNG update currentPage - giữ nguyên giá trị đã set bởi changePage
+    }
     categoryName.value = toTitle(slug)
+    
+    // Debug log
+    console.log('📄 Category pagination:', {
+      totalElements: totalElements.value,
+      totalPages: totalPages.value,
+      currentPage: currentPage.value,
+      requestedPage: currentPage.value,
+      apiPageNumber: payload.number,
+      itemsPerPage,
+      productsCount: products.value.length
+    })
   } catch (e) {
     console.error('fetchProductsByCategory error', e)
     error.value = e?.response?.data?.message || e?.message || 'Không thể tải sản phẩm theo danh mục'
@@ -150,11 +286,15 @@ const fetchProductsByCategory = async (slug) => {
 }
 
 const fetchAllProducts = async () => {
+  const requestedPage = currentPage.value
+  console.log('🔍 fetchAllProducts called:', { requestedPage, params: buildParams() })
   isLoading.value = true
   error.value = null
   try {
     // Xác định category name dựa trên sort parameter
     const sortParam = route.query.sort
+    const params = buildParams()
+    console.log('📤 API Request params:', params)
     let resp
     
     if (sortParam === 'sales') {
@@ -171,19 +311,61 @@ const fetchAllProducts = async () => {
       } else {
         categoryName.value = 'TẤT CẢ SẢN PHẨM'
       }
-      resp = await sanPhamService.page(buildParams())
+      const pageParams = buildParams()
+      console.log('📤 API Request (all products):', { 
+        url: '/san-pham', 
+        params: pageParams,
+        paramsString: new URLSearchParams(pageParams).toString()
+      })
+      resp = await sanPhamService.page(pageParams)
     }
     
-    const payload = resp?.data ?? resp
+    console.log('📥 API Response (raw):', resp)
+    console.log('📥 API Response type:', typeof resp)
+    console.log('📥 API Response keys:', resp ? Object.keys(resp) : 'null')
+    // api.get() đã trả về response.data rồi, nên resp đã là Page object
+    // Không cần resp.data nữa
+    const payload = resp
     if (!payload) {
       console.error('fetchAllProducts: empty payload', resp)
       throw new Error('Server trả về dữ liệu không hợp lệ')
     }
 
-    products.value = payload.content ?? []
-    totalPages.value = payload.totalPages ?? 0
+    products.value = (payload.content ?? []).slice(0, itemsPerPage) // Đảm bảo chỉ lấy đúng itemsPerPage
     totalElements.value = payload.totalElements ?? products.value.length
-    currentPage.value = (payload.number ?? 0) + 1
+    // Tính totalPages từ totalElements nếu API không trả về
+    if (payload.totalPages !== undefined && payload.totalPages !== null) {
+      totalPages.value = payload.totalPages
+    } else {
+      totalPages.value = Math.max(1, Math.ceil(totalElements.value / itemsPerPage))
+    }
+    // KHÔNG override currentPage từ API response
+    // Giữ nguyên currentPage đã được set bởi changePage
+    // Chỉ log để debug
+    if (payload.number !== undefined && payload.number !== null) {
+      const apiPage = (payload.number ?? 0) + 1
+      const requestedPage = currentPage.value
+      if (apiPage !== requestedPage) {
+        console.warn('⚠️ API returned different page than requested:', {
+          requestedPage,
+          apiPage,
+          apiPageNumber: payload.number,
+          'Will keep requestedPage': requestedPage
+        })
+      }
+      // KHÔNG update currentPage - giữ nguyên giá trị đã set bởi changePage
+    }
+    
+    // Debug log
+    console.log('📄 All products pagination:', {
+      totalElements: totalElements.value,
+      totalPages: totalPages.value,
+      currentPage: currentPage.value,
+      requestedPage: currentPage.value,
+      apiPageNumber: payload.number,
+      itemsPerPage,
+      productsCount: products.value.length
+    })
   } catch (e) {
     console.error('fetchAllProducts error', e)
     error.value = e?.response?.data?.message || e?.message || 'Có lỗi xảy ra từ server'
@@ -382,7 +564,7 @@ const filteredProducts = computed(() => {
     }
 
     // Map each product to include availableSizes from bienThes
-    return productList.map((product) => {
+    const mappedProducts = productList.map((product) => {
       // Extract available sizes from bienThes (variants with stock > 0)
       const availableSizes = product.bienThes
         ? [...new Set(product.bienThes.filter((bt) => bt.tonKho > 0).map((bt) => bt.kichThuoc))]
@@ -393,18 +575,57 @@ const filteredProducts = computed(() => {
         availableSizes,
       }
     })
+
+    // Khi dùng server-side pagination, giới hạn tối đa itemsPerPage (8) items
+    // để tránh hiển thị quá nhiều khi có filter
+    if (mappedProducts.length > itemsPerPage) {
+      console.warn(`⚠️ Filtered products (${mappedProducts.length}) exceeds itemsPerPage (${itemsPerPage}), limiting to ${itemsPerPage}`)
+      return mappedProducts.slice(0, itemsPerPage)
+    }
+
+    return mappedProducts
   } catch (err) {
     console.error('Error filtering products:', err)
-    return products.value
+    // Trả về tối đa itemsPerPage items
+    const fallback = products.value.slice(0, itemsPerPage)
+    return fallback
   }
 })
 
 // Hiển thị số trang trong pagination
 const visiblePages = computed(() => {
   const pages = []
-  const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, start + 4)
-  for (let i = start; i <= end; i++) pages.push(i)
+  const totalPagesVal = totalPages.value
+  const current = currentPage.value
+
+  if (totalPagesVal <= 7) {
+    for (let i = 1; i <= totalPagesVal; i++) {
+      pages.push(i)
+    }
+  } else {
+    if (current <= 4) {
+      for (let i = 1; i <= 5; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPagesVal)
+    } else if (current >= totalPagesVal - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = totalPagesVal - 4; i <= totalPagesVal; i++) {
+        pages.push(i)
+      }
+    } else {
+      pages.push(1)
+      pages.push('...')
+      for (let i = current - 1; i <= current + 1; i++) {
+        pages.push(i)
+      }
+      pages.push('...')
+      pages.push(totalPagesVal)
+    }
+  }
+
   return pages
 })
 
@@ -416,12 +637,23 @@ const clearFilters = () => {
 }
 
 const changePage = (page) => {
-  if (page < 1 || page > totalPages.value) return
+  console.log('🔄 changePage called:', { page, totalPages: totalPages.value, currentPage: currentPage.value })
+  if (page < 1 || page > totalPages.value) {
+    console.warn('⚠️ Invalid page:', page)
+    return
+  }
+  if (page === currentPage.value) {
+    console.log('ℹ️ Already on page:', page)
+    return
+  }
   currentPage.value = page
+  // Scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' })
   reload()
 }
 
 const reload = () => {
+  console.log('🔄 reload called, currentPage:', currentPage.value)
   const slug = route.params.slug
   if (slug) {
     fetchProductsByCategory(slug)
@@ -433,21 +665,29 @@ const reload = () => {
 // ======= WATCH & LIFECYCLE =======
 watch(
   () => route.params.slug,
-  (newSlug) => {
-    currentPage.value = 1
-    if (newSlug) fetchProductsByCategory(newSlug)
-    else fetchAllProducts()
+  (newSlug, oldSlug) => {
+    console.log('👀 Watch route.params.slug triggered:', { newSlug, oldSlug, currentPage: currentPage.value })
+    // Chỉ reset về page 1 khi slug thay đổi (không phải khi chỉ chuyển trang)
+    if (newSlug !== oldSlug) {
+      currentPage.value = 1
+      if (newSlug) fetchProductsByCategory(newSlug)
+      else fetchAllProducts()
+    }
   },
 )
 
 // Watch query parameters để reload khi sort thay đổi
 watch(
   () => route.query.sort,
-  () => {
-    currentPage.value = 1
-    const slug = route.params.slug
-    if (slug) fetchProductsByCategory(slug)
-    else fetchAllProducts()
+  (newSort, oldSort) => {
+    console.log('👀 Watch route.query.sort triggered:', { newSort, oldSort, currentPage: currentPage.value })
+    // Chỉ reset về page 1 khi sort thay đổi (không phải khi chỉ chuyển trang)
+    if (newSort !== oldSort) {
+      currentPage.value = 1
+      const slug = route.params.slug
+      if (slug) fetchProductsByCategory(slug)
+      else fetchAllProducts()
+    }
   },
 )
 
@@ -822,9 +1062,7 @@ onMounted(() => {
   gap: 1.5rem; /* Giảm từ 2rem */
 }
 
-.row {
-  --bs-gutter-x: 1.5rem; /* Giảm gutter */
-}
+/* Removed .row gutter to allow ProductGrid to control spacing */
 
 .product-card {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);

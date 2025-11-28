@@ -87,7 +87,6 @@
           <option value="percentage">Giảm %</option>
           <option value="fixed">Giảm cố định</option>
           <option value="freeship">Freeship</option>
-          <option value="bogo">Buy X Get Y</option>
         </select>
       </div>
     </div>
@@ -176,7 +175,7 @@
           <div class="promotion-details">
             <div class="detail-item">
               <i class="bi bi-calendar-range"></i>
-              <span>{{ formatDate(promotion.batDauLuc) }} - {{ formatDate(promotion.ketThucLuc) }}</span>
+              <span>{{ formatDate(promotion.batDauLuc) }} - {{ getEndDateDisplay(promotion.ketThucLuc) }}</span>
             </div>
             
             <div class="detail-item">
@@ -191,7 +190,7 @@
 
             <div class="detail-item">
               <i class="bi bi-bar-chart"></i>
-              <span>Giới hạn: {{ promotion.gioiHanSuDung === -1 || promotion.gioiHanSuDung === null ? '∞' : promotion.gioiHanSuDung }}</span>
+              <span>Giới hạn: Không giới hạn</span>
             </div>
           </div>
 
@@ -212,12 +211,36 @@
             >
               <i class="bi bi-pause"></i>
             </button>
+            <button
+              v-if="['active', 'scheduled'].includes(getVoucherStatus(promotion))"
+              class="btn btn-sm btn-outline-danger"
+              @click="deactivatePromotion(promotion)"
+              title="Ngừng hoạt động"
+            >
+              <i class="bi bi-stop-circle"></i>
+            </button>
             <button 
               v-if="getVoucherStatus(promotion) === 'scheduled'" 
               class="btn btn-sm btn-success" 
               @click="startPromotion(promotion)" 
               title="Chạy ngay">
               <i class="bi bi-play"></i>
+            </button>
+            <button 
+              v-if="['expired', 'cancelled', 'inactive'].includes(getVoucherStatus(promotion))" 
+              class="btn btn-sm btn-success" 
+              @click="reactivateVoucher(promotion)" 
+              title="Bật lại">
+              <i class="bi bi-arrow-clockwise"></i>
+              Bật lại
+            </button>
+            <button
+              v-if="getVoucherStatus(promotion) === 'inactive'"
+              class="btn btn-sm btn-outline-danger"
+              @click="deletePromotion(promotion)"
+              title="Xóa vĩnh viễn"
+            >
+              <i class="bi bi-trash"></i>
             </button>
             <button class="btn btn-sm btn-outline-primary" @click="viewPromotion(promotion)" title="Xem chi tiết">
               <i class="bi bi-eye"></i>
@@ -228,23 +251,9 @@
             <button class="btn btn-sm btn-outline-secondary" @click="duplicatePromotion(promotion)" title="Nhân bản">
               <i class="bi bi-copy"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" @click="deletePromotion(promotion)" title="Xóa">
-              <i class="bi bi-trash"></i>
-            </button>
           </div>
         </div>
 
-        <!-- Progress Bar -->
-        <div v-if="promotion.usageLimit" class="promotion-progress">
-          <div class="progress">
-            <div
-              class="progress-bar"
-              :class="getProgressBarClass(promotion)"
-              :style="{ width: (promotion.usedCount / promotion.usageLimit * 100) + '%' }"
-            ></div>
-          </div>
-          <small class="progress-text">{{ Math.round(promotion.usedCount / promotion.usageLimit * 100) }}% đã sử dụng</small>
-        </div>
       </div>
 
       <!-- Empty State -->
@@ -288,7 +297,6 @@
                   <option value="percentage">Giảm giá %</option>
                   <option value="fixed">Giảm giá cố định</option>
                   <option value="freeship">Miễn phí ship</option>
-                  <option value="bogo">Mua X tặng Y</option>
                 </select>
               </div>
 
@@ -349,10 +357,6 @@
                 </div>
               </div>
 
-              <div class="col-md-4">
-                <label class="form-label">Số lần sử dụng</label>
-                <input type="number" class="form-control" v-model.number="promotionForm.usageLimit" min="0" placeholder="Không giới hạn">
-              </div>
 
               <!-- Time Range -->
               <div class="col-12">
@@ -366,7 +370,24 @@
 
               <div class="col-md-6">
                 <label class="form-label">Ngày kết thúc *</label>
-                <input type="datetime-local" class="form-control" v-model="promotionForm.endDate" required>
+                <input
+                  type="datetime-local"
+                  class="form-control"
+                  v-model="promotionForm.endDate"
+                  :required="!noEndDate"
+                  :disabled="noEndDate"
+                >
+                <div class="form-check mt-2">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="noEndDateCheckbox"
+                    v-model="noEndDate"
+                  >
+                  <label class="form-check-label" for="noEndDateCheckbox">
+                    Không giới hạn thời gian
+                  </label>
+                </div>
               </div>
 
               <!-- Conditions -->
@@ -480,7 +501,7 @@
                 </div>
                 <div class="detail-item">
                   <label>Giới hạn sử dụng:</label>
-                  <span class="voucher-limit">{{ selectedPromotion.gioiHanSuDung === -1 ? 'Không giới hạn' : selectedPromotion.gioiHanSuDung }}</span>
+                  <span class="voucher-limit">Không giới hạn</span>
                 </div>
               </div>
             </div>
@@ -494,7 +515,7 @@
                 </div>
                 <div class="detail-item">
                   <label>Kết thúc:</label>
-                  <span class="voucher-date">{{ formatDate(selectedPromotion.ketThucLuc) }}</span>
+                  <span class="voucher-date">{{ getEndDateDisplay(selectedPromotion.ketThucLuc) }}</span>
                 </div>
                 <div class="detail-item">
                   <label>Trạng thái:</label>
@@ -516,9 +537,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import apiService from '@/services/api'
 import { useUserStore } from '@/stores/user'
+
+const SENTINEL_END_DATE = '2099-12-31T23:59:59'
+const SENTINEL_YEAR_THRESHOLD = 2090
 
 // Reactive data
 const searchQuery = ref('')
@@ -540,7 +564,6 @@ const promotionForm = ref({
   code: '',
   startDate: '',
   endDate: '',
-  usageLimit: null,
   minOrderValue: 0,
   applyTo: 'all',
   categories: [],
@@ -553,19 +576,30 @@ const promotions = ref([])
 const loading = ref(false)
 const error = ref(null)
 const { isAdmin } = useUserStore()
+const noEndDate = ref(false)
 
 // Computed
 const activePromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'active'))
 const scheduledPromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'scheduled'))
-const expiredPromotions = computed(() => promotions.value.filter(p => getVoucherStatus(p) === 'expired'))
+// Đã kết thúc: bao gồm cả voucher hết hạn và đã hủy
+const expiredPromotions = computed(() => promotions.value.filter(p => {
+  const status = getVoucherStatus(p)
+  return status === 'expired' || status === 'cancelled' || status === 'inactive'
+}))
 
 const totalVoucherUsed = computed(() => {
-  return promotions.value.reduce((sum, p) => sum + p.usedCount, 0)
+  return promotions.value.reduce((sum, p) => {
+    const used = typeof p.usedCount === 'number' ? p.usedCount : 0
+    return sum + used
+  }, 0)
 })
 
 const totalDiscountGiven = computed(() => {
-  // Giả sử mỗi lần dùng voucher giảm TB 100k
-  return totalVoucherUsed.value * 100000
+  return promotions.value.reduce((sum, p) => {
+    // Nếu backend có trả về tổng tiền giảm thì dùng, không thì fallback 0
+    const discount = typeof p.totalDiscount === 'number' ? p.totalDiscount : 0
+    return sum + discount
+  }, 0)
 })
 
 const filteredPromotions = computed(() => {
@@ -573,7 +607,17 @@ const filteredPromotions = computed(() => {
 
   // Tab filter
   if (activeTab.value !== 'all') {
-    filtered = filtered.filter(p => p.status === activeTab.value)
+    if (activeTab.value === 'expired') {
+      // Tab "Đã kết thúc" bao gồm expired, cancelled và inactive
+      filtered = filtered.filter(p => {
+        const status = getVoucherStatus(p)
+        return status === 'expired' || status === 'cancelled' || status === 'inactive'
+      })
+    } else if (activeTab.value === 'active') {
+      filtered = filtered.filter(p => getVoucherStatus(p) === 'active')
+    } else if (activeTab.value === 'scheduled') {
+      filtered = filtered.filter(p => getVoucherStatus(p) === 'scheduled')
+    }
   }
 
   // Search
@@ -604,8 +648,7 @@ const getTypeIcon = (type) => {
   const icons = {
     percentage: 'bi bi-percent',
     fixed: 'bi bi-cash',
-    freeship: 'bi bi-truck',
-    bogo: 'bi bi-gift'
+    freeship: 'bi bi-truck'
   }
   return icons[type] || 'bi bi-tag'
 }
@@ -614,15 +657,15 @@ const getTypeName = (type) => {
   const names = {
     percentage: 'Giảm %',
     fixed: 'Giảm cố định',
-    freeship: 'Freeship',
-    bogo: 'Mua X tặng Y'
+    freeship: 'Freeship'
   }
   return names[type] || type
 }
 
 // Helper function để tạo description cho voucher
 const getVoucherDescription = (voucher) => {
-  if (voucher.loai === 'percent' || voucher.loai === 'PHAN_TRAM') {
+  const normalizedLoai = normalizeLoai(voucher.loai)
+  if (normalizedLoai === 'PERCENT' || normalizedLoai === 'PHAN_TRAM') {
     return `Giảm ${voucher.giaTri}% cho đơn từ ${formatCurrency(voucher.donToiThieu || 0)}`
   } else {
     return `Giảm ${formatCurrency(voucher.giaTri)} cho đơn từ ${formatCurrency(voucher.donToiThieu || 0)}`
@@ -630,7 +673,8 @@ const getVoucherDescription = (voucher) => {
 }
 
 const getValueDisplay = (promotion) => {
-  if (promotion.loai === 'percent' || promotion.loai === 'PHAN_TRAM') {
+  const normalizedLoai = normalizeLoai(promotion.loai)
+  if (normalizedLoai === 'PERCENT' || normalizedLoai === 'PHAN_TRAM') {
     return `-${promotion.giaTri}%`
   } else {
     return `-${formatCurrency(promotion.giaTri)}`
@@ -639,10 +683,12 @@ const getValueDisplay = (promotion) => {
 
 const getStatusText = (status) => {
   const statuses = {
-    active: 'Đang chạy',
+    active: 'Đang diễn ra',
     scheduled: 'Sắp diễn ra',
-    expired: 'Đã kết thúc',
-    paused: 'Tạm dừng'
+    expired: 'Hết hạn',
+    cancelled: 'Đã hủy',
+    paused: 'Tạm dừng',
+    inactive: 'Ngừng hoạt động'
   }
   return statuses[status] || status
 }
@@ -656,13 +702,6 @@ const getConditionsSummary = (conditions) => {
     parts.push(`Danh mục: ${conditions.category}`)
   }
   return parts.join(', ') || 'Không có điều kiện'
-}
-
-const getProgressBarClass = (promotion) => {
-  const percent = (promotion.usedCount / promotion.usageLimit) * 100
-  if (percent >= 90) return 'bg-danger'
-  if (percent >= 70) return 'bg-warning'
-  return 'bg-success'
 }
 
 const formatCurrency = (amount) => {
@@ -690,6 +729,37 @@ const formatDate = (date) => {
     console.error('Error formatting date:', error, 'Input:', date)
     return ''
   }
+}
+
+const isInfiniteDate = (date) => {
+  if (!date) return false
+  const year = new Date(date).getFullYear()
+  return Number.isFinite(year) && year > SENTINEL_YEAR_THRESHOLD
+}
+
+const getEndDateDisplay = (date) => {
+  if (isInfiniteDate(date)) {
+    return 'Vô thời hạn'
+  }
+  return formatDate(date)
+}
+
+const setEndDateFormState = (endDate) => {
+  if (isInfiniteDate(endDate)) {
+    noEndDate.value = true
+    promotionForm.value.endDate = ''
+  } else {
+    noEndDate.value = false
+    promotionForm.value.endDate = endDate || ''
+  }
+}
+
+const getEndDatePayload = () => {
+  return noEndDate.value ? SENTINEL_END_DATE : promotionForm.value.endDate
+}
+
+const normalizeLoai = (loai) => {
+  return (loai || '').toString().trim().toUpperCase()
 }
 
 const generateCode = () => {
@@ -740,8 +810,7 @@ const duplicatePromotion = async (promotion) => {
       giamToiDa: promotion.giamToiDa,
       donToiThieu: promotion.donToiThieu,
       batDauLuc: promotion.batDauLuc,
-      ketThucLuc: promotion.ketThucLuc,
-      gioiHanSuDung: promotion.gioiHanSuDung
+      ketThucLuc: promotion.ketThucLuc
     }
 
     console.log('Duplicating voucher:', voucherData)
@@ -783,8 +852,7 @@ const startPromotion = async (promotion) => {
       giamToiDa: promotion.giamToiDa || 0,
       donToiThieu: promotion.donToiThieu || 0,
       batDauLuc: localNow, 
-      ketThucLuc: endDate, 
-      gioiHanSuDung: promotion.gioiHanSuDung || -1
+      ketThucLuc: endDate
     }
     
     console.log('Voucher data to update:', voucherData)
@@ -797,35 +865,59 @@ const startPromotion = async (promotion) => {
   }
 }
 
-// Helper function để xác định status của voucher
+// Helper function để xác định status của voucher dựa trên trangThai và thời gian
 const getVoucherStatus = (voucher) => {
-  console.log('Getting voucher status for:', voucher)
-  console.log('batDauLuc:', voucher.batDauLuc, 'ketThucLuc:', voucher.ketThucLuc)
+  if (!voucher) return 'unknown'
   
   const now = new Date()
-  const startDate = new Date(voucher.batDauLuc)
-  const endDate = new Date(voucher.ketThucLuc)
+  const endDate = voucher.ketThucLuc ? new Date(voucher.ketThucLuc) : null
+  const startDate = voucher.batDauLuc ? new Date(voucher.batDauLuc) : null
   
-  console.log('now:', now, 'startDate:', startDate, 'endDate:', endDate)
+  // Nếu trangThai == 0: Đã hủy
+  if (voucher.trangThai === 0) {
+    return 'cancelled'
+  }
+
+  if (voucher.trangThai === 2) {
+    return 'inactive'
+  }
   
-  if (now < startDate) {
-    console.log('Status: scheduled')
-    return 'scheduled'
+  // Nếu trangThai == 1: Kiểm tra thời gian
+  if (voucher.trangThai === 1) {
+    if (startDate && now < startDate) {
+      return 'scheduled' // Chưa đến ngày bắt đầu
+    }
+    if (endDate && now > endDate) {
+      return 'expired' // Hết hạn
+    }
+    if (endDate && now <= endDate) {
+      return 'active' // Đang diễn ra
+    }
   }
-  if (now > endDate) {
-    console.log('Status: expired')
-    return 'expired'
+  
+  // Fallback: kiểm tra theo thời gian nếu không có trangThai
+  if (voucher.batDauLuc && voucher.ketThucLuc) {
+    const start = new Date(voucher.batDauLuc)
+    if (now < start) {
+      return 'scheduled'
+    }
+    if (now > endDate) {
+      return 'expired'
+    }
+    return 'active'
   }
-  console.log('Status: active')
-  return 'active'
+  
+  return 'unknown'
 }
 
 const getVoucherStatusText = (promotion) => {
   const status = getVoucherStatus(promotion)
   switch (status) {
-    case 'active': return 'Đang chạy'
+    case 'active': return 'Đang diễn ra'
     case 'scheduled': return 'Sắp diễn ra'
-    case 'expired': return 'Đã kết thúc'
+    case 'expired': return 'Hết hạn'
+    case 'cancelled': return 'Đã hủy'
+    case 'inactive': return 'Ngừng hoạt động'
     default: return 'Không xác định'
   }
 }
@@ -841,7 +933,7 @@ const getVoucherTypeName = (type) => {
 
 // Cập nhật các method để sử dụng API
 const deletePromotion = (promotion) => {
-  deleteVoucher(promotion.id)
+  deleteVoucher(promotion)
 }
 
 const editPromotion = (promotion) => {
@@ -849,34 +941,35 @@ const editPromotion = (promotion) => {
   console.log('Promotion ID:', promotion.id, 'Type:', typeof promotion.id)
   editingPromotion.value = promotion
   
+  const normalizedLoai = normalizeLoai(promotion.loai)
   let formType = 'fixed'
-  if (promotion.loai === 'percent') formType = 'percentage'
-  else if (promotion.loai === 'freeship') formType = 'freeship'
-  else if (promotion.loai === 'buy_x_get_y') formType = 'bogo'
+  if (normalizedLoai === 'PERCENT' || normalizedLoai === 'PHAN_TRAM') formType = 'percentage'
+  else if (normalizedLoai === 'FREESHIP') formType = 'freeship'
   
   promotionForm.value = {
     name: promotion.ma,
     description: '',
     type: formType, 
-    percentValue: promotion.loai === 'percent' ? promotion.giaTri : 0,
+    percentValue: formType === 'percentage' ? promotion.giaTri : 0,
     maxDiscount: promotion.giamToiDa,
-    fixedValue: promotion.loai === 'fixed' ? promotion.giaTri : 0,
+    fixedValue: formType === 'fixed' ? promotion.giaTri : 0,
     code: promotion.ma,
     startDate: promotion.batDauLuc,
     endDate: promotion.ketThucLuc,
-    usageLimit: promotion.gioiHanSuDung === -1 ? null : promotion.gioiHanSuDung,
     minOrderValue: promotion.donToiThieu || 0,
     applyTo: 'all',
     categories: [],
     sizesFilter: '',
     colorsFilter: ''
   }
+  setEndDateFormState(promotion.ketThucLuc)
   showCreateModal.value = true
 }
 
 const closeCreateModal = () => {
   showCreateModal.value = false
   editingPromotion.value = null
+  noEndDate.value = false
   promotionForm.value = {
     name: '',
     description: '',
@@ -887,7 +980,6 @@ const closeCreateModal = () => {
     code: '',
     startDate: '',
     endDate: '',
-    usageLimit: null,
     minOrderValue: 0,
     applyTo: 'all',
     categories: [],
@@ -906,30 +998,38 @@ const loadVouchers = async () => {
   try {
     loading.value = true
     error.value = null
-    let response
-    if (isAdmin?.value) {
-      response = await apiService.adminVoucher.getAll()
-    } else {
-      response = await apiService.voucher.getAvailable()
+
+    let vouchers = null
+    let adminError = null
+
+    // Ưu tiên gọi API quản trị để lấy toàn bộ voucher (kể cả đã hết hạn)
+    try {
+      const adminResponse = await apiService.adminVoucher.getAll()
+      console.log('Loaded vouchers from admin API:', adminResponse.data)
+      vouchers = adminResponse.data || []
+    } catch (err) {
+      adminError = err
+      if (err?.status !== 401 && err?.status !== 403) {
+        throw err
+      }
+      console.warn('Admin voucher API từ chối, fallback sang API công khai:', err)
     }
-    console.log('Loaded vouchers from API:', response.data)
-    promotions.value = response.data || []
+
+    // Nếu chưa có dữ liệu (không phải admin / bị 401-403) thì fallback sang API public
+    if (vouchers === null) {
+      const publicResponse = await apiService.voucher.getAvailable()
+      console.log('Loaded vouchers from public API:', publicResponse.data)
+      vouchers = publicResponse.data || []
+      if (adminError) {
+        error.value = null
+      }
+    }
+
+    promotions.value = vouchers
     console.log('Promotions array after load:', promotions.value)
   } catch (err) {
-    // Fallback nếu 403 từ admin API
-    if (err?.status === 403) {
-      try {
-        const res = await apiService.voucher.getAvailable()
-        promotions.value = res.data || []
-        error.value = null
-      } catch (e2) {
-        error.value = 'Không thể tải danh sách voucher'
-        console.error('Lỗi khi tải voucher (fallback):', e2)
-      }
-    } else {
-      error.value = 'Không thể tải danh sách voucher'
-      console.error('Lỗi khi tải voucher:', err)
-    }
+    error.value = 'Không thể tải danh sách voucher'
+    console.error('Lỗi khi tải voucher:', err)
   } finally {
     loading.value = false
   }
@@ -954,6 +1054,16 @@ const createVoucher = async () => {
       error.value = 'Giá trị voucher không được để trống hoặc bằng 0'
       return
     }
+
+    if (!promotionForm.value.startDate) {
+      error.value = 'Ngày bắt đầu không được để trống'
+      return
+    }
+
+    if (!noEndDate.value && !promotionForm.value.endDate) {
+      error.value = 'Ngày kết thúc không được để trống'
+      return
+    }
     
     const voucherData = {
       ma: promotionForm.value.code,
@@ -963,8 +1073,7 @@ const createVoucher = async () => {
       giamToiDa: promotionForm.value.maxDiscount || 0,
       donToiThieu: promotionForm.value.minOrderValue || 0,
       batDauLuc: promotionForm.value.startDate,
-      ketThucLuc: promotionForm.value.endDate,
-      gioiHanSuDung: promotionForm.value.usageLimit === null ? -1 : promotionForm.value.usageLimit
+      ketThucLuc: getEndDatePayload()
     }
     
     const response = await apiService.adminVoucher.create(voucherData)
@@ -1009,12 +1118,17 @@ const updateVoucher = async (id, voucherData) => {
 }
 
 // Xóa voucher
-const deleteVoucher = async (id) => {
-  if (confirm('Bạn có chắc chắn muốn xóa voucher này?')) {
+const deleteVoucher = async (promotion) => {
+  if (getVoucherStatus(promotion) !== 'inactive') {
+    alert('Chỉ có thể xóa voucher sau khi đã chuyển sang trạng thái ngừng hoạt động.')
+    return
+  }
+
+  if (confirm(`Bạn có chắc chắn muốn xóa hoàn toàn voucher ${promotion.ma}? Hành động này không thể hoàn tác.`)) {
     try {
       loading.value = true
-      await apiService.adminVoucher.delete(id)
-      promotions.value = promotions.value.filter(p => p.id !== id)
+      await apiService.adminVoucher.delete(promotion.id)
+      promotions.value = promotions.value.filter(p => p.id !== promotion.id)
     } catch (err) {
       error.value = 'Không thể xóa voucher'
       console.error('Lỗi khi xóa voucher:', err)
@@ -1024,12 +1138,72 @@ const deleteVoucher = async (id) => {
   }
 }
 
+// Tái kích hoạt voucher: mở form chi tiết để admin chỉnh chính xác thời gian
+const reactivateVoucher = (promotion) => {
+  editingPromotion.value = promotion
+
+  const normalizedLoaiForReactivate = normalizeLoai(promotion.loai)
+  let formType = 'fixed'
+  if (normalizedLoaiForReactivate === 'PERCENT' || normalizedLoaiForReactivate === 'PHAN_TRAM') formType = 'percentage'
+  else if (normalizedLoaiForReactivate === 'FREESHIP') formType = 'freeship'
+
+  const now = new Date()
+  const defaultStart = promotion.batDauLuc && new Date(promotion.batDauLuc) > now
+    ? promotion.batDauLuc
+    : formatLocalDateTime(now)
+
+  const defaultEnd = promotion.ketThucLuc && new Date(promotion.ketThucLuc) > now
+    ? promotion.ketThucLuc
+    : formatLocalDateTime(new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000))
+
+  promotionForm.value = {
+    name: promotion.ma,
+    description: '',
+    type: formType,
+    percentValue: formType === 'percentage' ? promotion.giaTri : 0,
+    maxDiscount: promotion.giamToiDa,
+    fixedValue: formType === 'fixed' ? promotion.giaTri : 0,
+    code: promotion.ma,
+    startDate: defaultStart,
+    endDate: defaultEnd,
+    minOrderValue: promotion.donToiThieu || 0,
+    applyTo: 'all',
+    categories: [],
+    sizesFilter: '',
+    colorsFilter: ''
+  }
+
+  setEndDateFormState(promotion.ketThucLuc || defaultEnd)
+  showCreateModal.value = true
+}
+
+const deactivatePromotion = async (promotion) => {
+  if (!confirm(`Chuyển voucher ${promotion.ma} sang trạng thái ngừng hoạt động?`)) {
+    return
+  }
+
+  try {
+    loading.value = true
+    error.value = null
+    const response = await apiService.adminVoucher.deactivate(promotion.id)
+    const index = promotions.value.findIndex(p => p.id === promotion.id)
+    if (index > -1) {
+      promotions.value[index] = response.data
+    }
+  } catch (err) {
+    error.value = 'Không thể ngừng hoạt động voucher: ' + (err.message || 'Lỗi không xác định')
+    console.error('Lỗi khi ngừng hoạt động voucher:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
 const savePromotion = async () => {
   try {
     loading.value = true
     error.value = null
     
-    if (!promotionForm.value.code || !promotionForm.value.startDate || !promotionForm.value.endDate) {
+    if (!promotionForm.value.code || !promotionForm.value.startDate || (!noEndDate.value && !promotionForm.value.endDate)) {
       error.value = 'Vui lòng điền đầy đủ thông tin bắt buộc'
       loading.value = false
       return
@@ -1042,11 +1216,9 @@ const savePromotion = async () => {
       giaTri = promotionForm.value.fixedValue
     } else if (promotionForm.value.type === 'freeship') {
       giaTri = 0
-    } else if (promotionForm.value.type === 'bogo') {
-      giaTri = 0
     }
     
-    if (!promotionForm.value.type.includes('freeship') && !promotionForm.value.type.includes('bogo') && (!giaTri || giaTri <= 0)) {
+    if (!promotionForm.value.type.includes('freeship') && (!giaTri || giaTri <= 0)) {
       error.value = 'Giá trị voucher không được để trống hoặc bằng 0'
       loading.value = false
       return
@@ -1055,14 +1227,12 @@ const savePromotion = async () => {
     const voucherData = {
       ma: promotionForm.value.code,
       loai: promotionForm.value.type === 'percentage' ? 'percent' : 
-            promotionForm.value.type === 'freeship' ? 'freeship' :
-            promotionForm.value.type === 'bogo' ? 'buy_x_get_y' : 'fixed',
+            promotionForm.value.type === 'freeship' ? 'freeship' : 'fixed',
       giaTri: giaTri,
       giamToiDa: promotionForm.value.maxDiscount || 0,
       donToiThieu: promotionForm.value.minOrderValue || 0,
       batDauLuc: promotionForm.value.startDate,
-      ketThucLuc: promotionForm.value.endDate,
-      gioiHanSuDung: promotionForm.value.usageLimit === null ? -1 : promotionForm.value.usageLimit
+      ketThucLuc: getEndDatePayload()
     }
     
     console.log('Voucher data to save:', voucherData)
@@ -1084,6 +1254,24 @@ const savePromotion = async () => {
 onMounted(() => {
   loadVouchers()
 })
+
+watch(
+  () => isAdmin?.value,
+  (current, previous) => {
+    if (current !== previous) {
+      loadVouchers()
+    }
+  }
+)
+
+watch(
+  () => noEndDate.value,
+  (current) => {
+    if (current) {
+      promotionForm.value.endDate = ''
+    }
+  }
+)
 
 // const formatDateForAPI = (date) => {
 //   if (!date) return null
@@ -1304,7 +1492,12 @@ onMounted(() => {
 
 .promotion-card.promotion-expired {
   opacity: 0.7;
-  border-left: 4px solid #94a3b8;
+  border-left: 4px solid #f59e0b;
+}
+
+.promotion-card.promotion-cancelled {
+  opacity: 0.7;
+  border-left: 4px solid #ef4444;
 }
 
 .promotion-header {
@@ -1340,10 +1533,6 @@ onMounted(() => {
   color: #d97706;
 }
 
-.type-bogo {
-  background: #fce7f3;
-  color: #db2777;
-}
 
 .promotion-name {
   font-size: 1.25rem;
@@ -1381,9 +1570,6 @@ onMounted(() => {
   color: #f59e0b;
 }
 
-.value-bogo {
-  color: #db2777;
-}
 
 .promotion-status {
   margin-top: 0.5rem;
@@ -1406,7 +1592,13 @@ onMounted(() => {
 }
 
 .status-expired {
-  background: #94a3b8;
+  background: #f59e0b;
+  color: white;
+}
+
+.status-cancelled {
+  background: #ef4444;
+  color: white;
 }
 
 .status-paused {
@@ -1738,6 +1930,11 @@ onMounted(() => {
 }
 
 .voucher-status.expired {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.voucher-status.cancelled {
   background: #fee2e2;
   color: #991b1b;
 }
