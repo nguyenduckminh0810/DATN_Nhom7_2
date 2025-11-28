@@ -55,6 +55,7 @@
                 <i class="bi bi-bell me-2"></i>Thông báo
               </a>
               <a
+              style=""
                 href="#"
                 class="list-group-item list-group-item-action text-danger py-3"
                 @click.prevent="logout"
