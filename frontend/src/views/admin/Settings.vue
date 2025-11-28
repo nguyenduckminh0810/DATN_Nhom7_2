@@ -99,18 +99,24 @@
             <h5 class="card-title">
               <i class="bi bi-rulers me-2"></i>
               Cấu hình Size
+              <span v-if="isLoadingSizes" class="ms-2">
+                <i class="bi bi-arrow-repeat spin"></i>
+              </span>
             </h5>
             
             <div class="size-config-section">
               <h6 class="subsection-title">Size ÁO (Chữ)</h6>
               <div class="size-tags-group">
                 <span
-                  v-for="(size, index) in settings.products.sizes.ao"
-                  :key="index"
+                  v-for="size in sizesAo"
+                  :key="size.id"
                   class="size-tag"
                 >
-                  {{ size }}
-                  <button type="button" @click="removeSize('ao', index)" class="tag-remove-btn">
+                  {{ size.ten }}
+                  <button type="button" @click="editSize(size)" class="tag-edit-btn" title="Sửa">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button type="button" @click="removeSize(size.id, 'ao')" class="tag-remove-btn" title="Xóa">
                     <i class="bi bi-x"></i>
                   </button>
                 </span>
@@ -120,8 +126,12 @@
                   @keydown.enter="addSize('ao')"
                   class="size-input"
                   placeholder="Thêm size..."
-                  maxlength="4"
+                  maxlength="10"
+                  :disabled="isSavingSize"
                 />
+                <button v-if="newSizeAo.trim()" @click="addSize('ao')" class="btn btn-sm btn-primary" :disabled="isSavingSize">
+                  <i class="bi bi-plus"></i>
+                </button>
               </div>
               <small class="text-muted">VD: S, M, L, XL, XXL, 3XL</small>
             </div>
@@ -130,12 +140,15 @@
               <h6 class="subsection-title">Size QUẦN (Số - Tiêu chuẩn Việt Nam)</h6>
               <div class="size-tags-group">
                 <span
-                  v-for="(size, index) in settings.products.sizes.quan"
-                  :key="index"
+                  v-for="size in sizesQuan"
+                  :key="size.id"
                   class="size-tag"
                 >
-                  {{ size }}
-                  <button type="button" @click="removeSize('quan', index)" class="tag-remove-btn">
+                  {{ size.ten }}
+                  <button type="button" @click="editSize(size)" class="tag-edit-btn" title="Sửa">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button type="button" @click="removeSize(size.id, 'quan')" class="tag-remove-btn" title="Xóa">
                     <i class="bi bi-x"></i>
                   </button>
                 </span>
@@ -145,8 +158,12 @@
                   @keydown.enter="addSize('quan')"
                   class="size-input"
                   placeholder="Thêm size..."
-                  maxlength="2"
+                  maxlength="10"
+                  :disabled="isSavingSize"
                 />
+                <button v-if="newSizeQuan.trim()" @click="addSize('quan')" class="btn btn-sm btn-primary" :disabled="isSavingSize">
+                  <i class="bi bi-plus"></i>
+                </button>
               </div>
               <small class="text-muted">VD: 28, 29, 30, 31, 32, 33, 34, 36, 38, 40 (vòng eo tính theo cm)</small>
             </div>
@@ -157,34 +174,48 @@
             <h5 class="card-title">
               <i class="bi bi-palette me-2"></i>
               Màu sắc phổ biến
+              <span v-if="isLoadingColors" class="ms-2">
+                <i class="bi bi-arrow-repeat spin"></i>
+              </span>
             </h5>
             
             <div class="color-presets-grid">
               <div
-                v-for="(color, index) in settings.products.colors"
-                :key="index"
+                v-for="color in colors"
+                :key="color.id"
                 class="color-preset-card"
               >
-                <div class="color-swatch" :style="{ backgroundColor: color.hex }"></div>
+                
                 <input
                   type="text"
-                  v-model="color.name"
-                  class="form-control form-control-sm"
+                  v-model="color.ten"
+                  @blur="updateColor(color)"
+                  class="form-control form-control-sm color-name-input"
                   placeholder="Tên màu"
+                  :disabled="isSavingColor === color.id"
                 />
                 <input
                   type="color"
-                  v-model="color.hex"
-                  class="form-control form-control-color form-control-sm"
+                  :value="color.ma || '#000000'"
+                  @change="updateColorHex(color, $event.target.value)"
+                  class="form-control form-control-color color-picker-input"
+                  :disabled="isSavingColor === color.id"
                 />
-                <button type="button" @click="removeColor(index)" class="btn btn-sm btn-outline-danger">
-                  <i class="bi bi-trash"></i>
+                <button 
+                  type="button" 
+                  @click="removeColor(color.id)" 
+                  class="btn btn-sm btn-outline-danger"
+                  :disabled="isDeletingColor === color.id"
+                >
+                  <i v-if="isDeletingColor === color.id" class="bi bi-arrow-repeat spin"></i>
+                  <i v-else class="bi bi-trash"></i>
                 </button>
               </div>
               
-              <div class="color-preset-card add-color-card" @click="addNewColor">
-                <i class="bi bi-plus-circle"></i>
-                <span>Thêm màu mới</span>
+              <div class="color-preset-card add-color-card" @click="addNewColor" :class="{ disabled: isAddingColor }">
+                <i v-if="isAddingColor" class="bi bi-arrow-repeat spin"></i>
+                <i v-else class="bi bi-plus-circle"></i>
+                <span>{{ isAddingColor ? 'Đang thêm...' : 'Thêm màu mới' }}</span>
               </div>
             </div>
           </div>
@@ -194,17 +225,30 @@
             <h5 class="card-title">
               <i class="bi bi-tags me-2"></i>
               Chất liệu phổ biến
+              <span v-if="isLoadingMaterials" class="ms-2">
+                <i class="bi bi-arrow-repeat spin"></i>
+              </span>
             </h5>
             
             <div class="material-tags-group">
               <span
-                v-for="(material, index) in settings.products.materials"
-                :key="index"
+                v-for="material in materials"
+                :key="material.id"
                 class="material-tag"
               >
-                {{ material }}
-                <button type="button" @click="removeMaterial(index)" class="tag-remove-btn">
-                  <i class="bi bi-x"></i>
+                {{ material.ten }}
+                <button type="button" @click="editMaterial(material)" class="tag-edit-btn" title="Sửa">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button 
+                  type="button" 
+                  @click="removeMaterial(material.id)" 
+                  class="tag-remove-btn" 
+                  title="Xóa"
+                  :disabled="isDeletingMaterial === material.id"
+                >
+                  <i v-if="isDeletingMaterial === material.id" class="bi bi-arrow-repeat spin"></i>
+                  <i v-else class="bi bi-x"></i>
                 </button>
               </span>
               <input
@@ -213,7 +257,11 @@
                 @keydown.enter="addMaterial"
                 class="material-input"
                 placeholder="Thêm chất liệu..."
+                :disabled="isAddingMaterial"
               />
+              <button v-if="newMaterial.trim()" @click="addMaterial" class="btn btn-sm btn-primary" :disabled="isAddingMaterial">
+                <i class="bi bi-plus"></i>
+              </button>
             </div>
           </div>
         </div>
@@ -428,11 +476,61 @@
       <i class="bi bi-check-circle me-2"></i>
       Đã lưu cài đặt thành công!
     </div>
+
+    <!-- Error Toast -->
+    <div v-if="errorMessage" class="error-toast">
+      <i class="bi bi-exclamation-circle me-2"></i>
+      {{ errorMessage }}
+      <button @click="errorMessage = ''" class="ms-2 btn-close-toast">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+
+    <!-- Edit Size Modal -->
+    <div v-if="editingSize" class="modal-overlay" @click.self="editingSize = null">
+      <div class="modal-content">
+        <h5>Sửa size</h5>
+        <input
+          type="text"
+          v-model="editingSizeName"
+          class="form-control mb-3"
+          placeholder="Tên size"
+        />
+        <div class="modal-actions">
+          <button @click="saveSizeEdit" class="btn btn-primary" :disabled="isSavingSize">
+            Lưu
+          </button>
+          <button @click="editingSize = null" class="btn btn-secondary">Hủy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Material Modal -->
+    <div v-if="editingMaterial" class="modal-overlay" @click.self="editingMaterial = null">
+      <div class="modal-content">
+        <h5>Sửa chất liệu</h5>
+        <input
+          type="text"
+          v-model="editingMaterialName"
+          class="form-control mb-3"
+          placeholder="Tên chất liệu"
+        />
+        <div class="modal-actions">
+          <button @click="saveMaterialEdit" class="btn btn-primary" :disabled="isSavingMaterial">
+            Lưu
+          </button>
+          <button @click="editingMaterial = null" class="btn btn-secondary">Hủy</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import colorService from '@/services/colorService'
+import materialService from '@/services/materialService'
+import sizeService from '@/services/sizeService'
 
 // Tabs configuration
 const tabs = [
@@ -445,11 +543,62 @@ const tabs = [
 
 const activeTab = ref('store')
 const showSaveSuccess = ref(false)
+const errorMessage = ref('')
+
+// Loading states
+const isLoadingColors = ref(false)
+const isLoadingMaterials = ref(false)
+const isLoadingSizes = ref(false)
+const isSavingColor = ref(null)
+const isAddingColor = ref(false)
+const isDeletingColor = ref(null)
+const isAddingMaterial = ref(false)
+const isSavingMaterial = ref(false)
+const isDeletingMaterial = ref(null)
+const isSavingSize = ref(false)
+
+// Data from DB
+const colors = ref([])
+const materials = ref([])
+const allSizes = ref([])
 
 // New inputs
 const newSizeAo = ref('')
 const newSizeQuan = ref('')
 const newMaterial = ref('')
+
+// Edit states
+const editingSize = ref(null)
+const editingSizeName = ref('')
+const editingMaterial = ref(null)
+const editingMaterialName = ref('')
+
+// Computed: Filter sizes by type
+const sizesAo = computed(() => {
+  return allSizes.value.filter(size => {
+    const ten = size.ten?.toUpperCase().trim()
+    // Size áo thường là chữ: S, M, L, XL, XXL, 3XL, etc.
+    return /^[A-Z0-9]+$/.test(ten) && !/^\d+$/.test(ten)
+  }).sort((a, b) => {
+    // Sort by thuTu if available, otherwise by name
+    if (a.thuTu != null && b.thuTu != null) return a.thuTu - b.thuTu
+    return (a.ten || '').localeCompare(b.ten || '')
+  })
+})
+
+const sizesQuan = computed(() => {
+  return allSizes.value.filter(size => {
+    const ten = size.ten?.trim()
+    // Size quần thường là số: 28, 29, 30, etc.
+    return /^\d+$/.test(ten)
+  }).sort((a, b) => {
+    // Sort by thuTu if available, otherwise by numeric value
+    if (a.thuTu != null && b.thuTu != null) return a.thuTu - b.thuTu
+    const numA = parseInt(a.ten) || 0
+    const numB = parseInt(b.ten) || 0
+    return numA - numB
+  })
+})
 
 // Settings data
 const settings = ref({
@@ -467,26 +616,7 @@ const settings = ref({
     }
   },
   products: {
-    sizes: {
-      ao: ['S', 'M', 'L', 'XL', 'XXL', '3XL'],
-      quan: ['28', '29', '30', '31', '32', '33', '34', '36', '38', '40']
-    },
-    colors: [
-      { name: 'Đen', hex: '#000000' },
-      { name: 'Trắng', hex: '#FFFFFF' },
-      { name: 'Xám', hex: '#808080' },
-      { name: 'Xanh navy', hex: '#000080' },
-      { name: 'Nâu', hex: '#8B4513' },
-      { name: 'Be', hex: '#F5F5DC' }
-    ],
-    materials: [
-      'Cotton 100%',
-      'Cotton Polyester (80/20)',
-      'Linen',
-      'Kaki',
-      'Jean/Denim',
-      'Vải Wool'
-    ]
+    // Dữ liệu size, color, material giờ được load từ DB
   },
   shipping: {
     fees: {
@@ -527,51 +657,261 @@ const settings = ref({
   }
 })
 
-// Methods
-const addSize = (type) => {
-  if (type === 'ao' && newSizeAo.value.trim()) {
-    if (!settings.value.products.sizes.ao.includes(newSizeAo.value.trim().toUpperCase())) {
-      settings.value.products.sizes.ao.push(newSizeAo.value.trim().toUpperCase())
-    }
-    newSizeAo.value = ''
-  } else if (type === 'quan' && newSizeQuan.value.trim()) {
-    if (!settings.value.products.sizes.quan.includes(newSizeQuan.value.trim())) {
-      settings.value.products.sizes.quan.push(newSizeQuan.value.trim())
-    }
-    newSizeQuan.value = ''
+// Load data from API
+const loadColors = async () => {
+  isLoadingColors.value = true
+  try {
+    const data = await colorService.getAll()
+    colors.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Error loading colors:', error)
+    showError('Không thể tải danh sách màu sắc')
+  } finally {
+    isLoadingColors.value = false
   }
 }
 
-const removeSize = (type, index) => {
-  settings.value.products.sizes[type].splice(index, 1)
-}
-
-const addNewColor = () => {
-  settings.value.products.colors.push({
-    name: 'Màu mới',
-    hex: '#000000'
-  })
-}
-
-const removeColor = (index) => {
-  if (settings.value.products.colors.length > 1) {
-    settings.value.products.colors.splice(index, 1)
-  } else {
-    alert('Cần ít nhất 1 màu!')
+const loadMaterials = async () => {
+  isLoadingMaterials.value = true
+  try {
+    const data = await materialService.getAll()
+    materials.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Error loading materials:', error)
+    showError('Không thể tải danh sách chất liệu')
+  } finally {
+    isLoadingMaterials.value = false
   }
 }
 
-const addMaterial = () => {
-  if (newMaterial.value.trim()) {
-    if (!settings.value.products.materials.includes(newMaterial.value.trim())) {
-      settings.value.products.materials.push(newMaterial.value.trim())
+const loadSizes = async () => {
+  isLoadingSizes.value = true
+  try {
+    const data = await sizeService.getAll()
+    allSizes.value = Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error('Error loading sizes:', error)
+    showError('Không thể tải danh sách size')
+  } finally {
+    isLoadingSizes.value = false
+  }
+}
+
+// Color methods
+const addNewColor = async () => {
+  if (isAddingColor.value) return
+  isAddingColor.value = true
+  try {
+    const newColor = {
+      ten: 'Màu mới',
+      ma: '#000000'
     }
+    const created = await colorService.create(newColor)
+    colors.value.push(created)
+    showSuccess('Đã thêm màu mới')
+  } catch (error) {
+    console.error('Error adding color:', error)
+    showError('Không thể thêm màu mới')
+  } finally {
+    isAddingColor.value = false
+  }
+}
+
+const updateColor = async (color) => {
+  if (isSavingColor.value === color.id) return
+  isSavingColor.value = color.id
+  try {
+    await colorService.update(color.id, {
+      ten: color.ten,
+      ma: color.ma
+    })
+    showSuccess('Đã cập nhật màu')
+  } catch (error) {
+    console.error('Error updating color:', error)
+    showError('Không thể cập nhật màu')
+    // Reload to get correct data
+    await loadColors()
+  } finally {
+    isSavingColor.value = null
+  }
+}
+
+const updateColorHex = async (color, hex) => {
+  color.ma = hex
+  await updateColor(color)
+}
+
+const removeColor = async (id) => {
+  if (!confirm('Bạn có chắc muốn xóa màu này?')) return
+  if (isDeletingColor.value === id) return
+  isDeletingColor.value = id
+  try {
+    await colorService.delete(id)
+    colors.value = colors.value.filter(c => c.id !== id)
+    showSuccess('Đã xóa màu')
+  } catch (error) {
+    console.error('Error deleting color:', error)
+    showError('Không thể xóa màu. Có thể màu đang được sử dụng.')
+  } finally {
+    isDeletingColor.value = null
+  }
+}
+
+// Material methods
+const addMaterial = async () => {
+  if (!newMaterial.value.trim() || isAddingMaterial.value) return
+  isAddingMaterial.value = true
+  try {
+    const created = await materialService.create({ ten: newMaterial.value.trim() })
+    materials.value.push(created)
     newMaterial.value = ''
+    showSuccess('Đã thêm chất liệu')
+  } catch (error) {
+    console.error('Error adding material:', error)
+    const errorMsg = error.response?.data?.message || 'Không thể thêm chất liệu'
+    showError(errorMsg)
+  } finally {
+    isAddingMaterial.value = false
   }
 }
 
-const removeMaterial = (index) => {
-  settings.value.products.materials.splice(index, 1)
+const editMaterial = (material) => {
+  editingMaterial.value = material
+  editingMaterialName.value = material.ten
+}
+
+const saveMaterialEdit = async () => {
+  if (!editingMaterialName.value.trim() || isSavingMaterial.value) return
+  isSavingMaterial.value = true
+  try {
+    const updated = await materialService.update(editingMaterial.value.id, {
+      ten: editingMaterialName.value.trim()
+    })
+    const index = materials.value.findIndex(m => m.id === editingMaterial.value.id)
+    if (index !== -1) {
+      materials.value[index] = updated
+    }
+    editingMaterial.value = null
+    editingMaterialName.value = ''
+    showSuccess('Đã cập nhật chất liệu')
+  } catch (error) {
+    console.error('Error updating material:', error)
+    const errorMsg = error.response?.data?.message || 'Không thể cập nhật chất liệu'
+    showError(errorMsg)
+  } finally {
+    isSavingMaterial.value = false
+  }
+}
+
+const removeMaterial = async (id) => {
+  if (!confirm('Bạn có chắc muốn xóa chất liệu này?')) return
+  if (isDeletingMaterial.value === id) return
+  isDeletingMaterial.value = id
+  try {
+    await materialService.delete(id)
+    materials.value = materials.value.filter(m => m.id !== id)
+    showSuccess('Đã xóa chất liệu')
+  } catch (error) {
+    console.error('Error deleting material:', error)
+    const errorMsg = error.response?.data?.message || 'Không thể xóa chất liệu. Có thể chất liệu đang được sử dụng.'
+    showError(errorMsg)
+  } finally {
+    isDeletingMaterial.value = null
+  }
+}
+
+// Size methods
+const addSize = async (type) => {
+  const sizeName = type === 'ao' ? newSizeAo.value.trim() : newSizeQuan.value.trim()
+  if (!sizeName || isSavingSize.value) return
+  
+  isSavingSize.value = true
+  try {
+    // Find max thuTu to add new size at the end
+    const maxThuTu = allSizes.value.length > 0 
+      ? Math.max(...allSizes.value.map(s => s.thuTu || 0))
+      : 0
+    
+    const created = await sizeService.create({
+      ten: sizeName,
+      thuTu: maxThuTu + 1
+    })
+    allSizes.value.push(created)
+    
+    if (type === 'ao') {
+      newSizeAo.value = ''
+    } else {
+      newSizeQuan.value = ''
+    }
+    showSuccess('Đã thêm size')
+  } catch (error) {
+    console.error('Error adding size:', error)
+    const errorMsg = error.response?.data?.message || 'Không thể thêm size'
+    showError(errorMsg)
+  } finally {
+    isSavingSize.value = false
+  }
+}
+
+const editSize = (size) => {
+  editingSize.value = size
+  editingSizeName.value = size.ten
+}
+
+const saveSizeEdit = async () => {
+  if (!editingSizeName.value.trim() || isSavingSize.value) return
+  isSavingSize.value = true
+  try {
+    const updated = await sizeService.update(editingSize.value.id, {
+      ten: editingSizeName.value.trim(),
+      thuTu: editingSize.value.thuTu
+    })
+    const index = allSizes.value.findIndex(s => s.id === editingSize.value.id)
+    if (index !== -1) {
+      allSizes.value[index] = updated
+    }
+    editingSize.value = null
+    editingSizeName.value = ''
+    showSuccess('Đã cập nhật size')
+  } catch (error) {
+    console.error('Error updating size:', error)
+    const errorMsg = error.response?.data?.message || 'Không thể cập nhật size'
+    showError(errorMsg)
+  } finally {
+    isSavingSize.value = false
+  }
+}
+
+const removeSize = async (id, type) => {
+  if (!confirm('Bạn có chắc muốn xóa size này?')) return
+  if (isSavingSize.value) return
+  isSavingSize.value = true
+  try {
+    await sizeService.delete(id)
+    allSizes.value = allSizes.value.filter(s => s.id !== id)
+    showSuccess('Đã xóa size')
+  } catch (error) {
+    console.error('Error deleting size:', error)
+    const errorMsg = error.response?.data?.message || 'Không thể xóa size. Có thể size đang được sử dụng.'
+    showError(errorMsg)
+  } finally {
+    isSavingSize.value = false
+  }
+}
+
+// Helper methods
+const showSuccess = (message) => {
+  showSaveSuccess.value = true
+  setTimeout(() => {
+    showSaveSuccess.value = false
+  }, 3000)
+}
+
+const showError = (message) => {
+  errorMessage.value = message
+  setTimeout(() => {
+    errorMessage.value = ''
+  }, 5000)
 }
 
 const hasUnsavedChanges = (tabId) => {
@@ -612,7 +952,14 @@ const loadSettings = () => {
 }
 
 // Initialize
-loadSettings()
+onMounted(async () => {
+  await Promise.all([
+    loadColors(),
+    loadMaterials(),
+    loadSizes()
+  ])
+  loadSettings()
+})
 </script>
 
 <style scoped>
@@ -820,7 +1167,7 @@ loadSettings()
 /* Color Presets */
 .color-presets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1rem;
 }
 
@@ -833,6 +1180,7 @@ loadSettings()
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   transition: all 0.2s;
+  flex-wrap: nowrap;
 }
 
 .color-preset-card:hover {
@@ -841,11 +1189,35 @@ loadSettings()
 }
 
 .color-swatch {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  min-height: 60px;
   border-radius: 8px;
   border: 2px solid #e2e8f0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.color-name-input {
+  flex: 1;
+  min-width: 150px;
+  width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.color-picker-input {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  min-height: 50px;
+  padding: 0;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .add-color-card {
@@ -997,6 +1369,106 @@ loadSettings()
   .color-presets-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Loading spinner */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Edit button */
+.tag-edit-btn {
+  background: none;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  transition: color 0.2s;
+  margin-right: 0.25rem;
+}
+
+.tag-edit-btn:hover {
+  color: #4338ca;
+}
+
+/* Disabled state */
+.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Error Toast */
+.error-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: #ef4444;
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  z-index: 1001;
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+}
+
+.btn-close-toast {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  min-width: 400px;
+  max-width: 90%;
+}
+
+.modal-content h5 {
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
 }
 </style>
 
