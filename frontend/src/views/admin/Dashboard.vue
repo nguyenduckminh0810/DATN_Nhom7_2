@@ -943,7 +943,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-<<<<<<< HEAD
   font-size: 1rem;
 }
 
@@ -1038,8 +1037,6 @@ onMounted(async () => {
   color: #6366f1;
   font-size: 0.875rem;
   font-weight: 500;
-=======
->>>>>>> master
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;

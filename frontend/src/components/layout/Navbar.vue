@@ -275,11 +275,8 @@ function childrenFor(parentSlug) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-// Check if user is admin
-const isAdmin = computed(() => {
-  const role = userStore.userRole
-  return role === 'admin' || role === 'ADM'
-})
+// Check if user is admin - use store's isAdmin getter
+const isAdmin = computed(() => userStore.isAdmin)
 
 // Login popup methods
 const openLoginPopup = () => {
