@@ -2,23 +2,29 @@
 import { toRefs } from 'vue'
 
 const emit = defineEmits([
-  'edit','add-child','delete','drag-start','drag-end','drop','toggle'
+  'edit',
+  'add-child',
+  'delete',
+  'drag-start',
+  'drag-end',
+  'drop',
+  'toggle',
 ])
 
 const props = defineProps({
   node: { type: Object, required: true },
-  dragMode: { type: Boolean, default: false }
+  dragMode: { type: Boolean, default: false },
 })
 
 const { node, dragMode } = toRefs(props)
 
-const onToggle    = () => emit('toggle', node.value)
-const onEdit      = () => emit('edit', node.value)
-const onAdd       = () => emit('add-child', node.value)
-const onDelete    = () => emit('delete', node.value)
+const onToggle = () => emit('toggle', node.value)
+const onEdit = () => emit('edit', node.value)
+const onAdd = () => emit('add-child', node.value)
+const onDelete = () => emit('delete', node.value)
 const onDragStart = () => emit('drag-start', node.value)
-const onDragEnd   = () => emit('drag-end')
-const onDrop      = (e) => emit('drop', e)
+const onDragEnd = () => emit('drag-end')
+const onDrop = (e) => emit('drop', e)
 </script>
 
 <template>
@@ -63,10 +69,10 @@ const onDrop      = (e) => emit('drop', e)
             </span>
           </div>
           <div class="node-meta">
-            <i class="bi bi-diagram-3"></i>
-            <span>Id: {{ node.id }}</span>
-            <span v-if="node.parentId" class="dot">•</span>
-            <span v-if="node.parentId">Con của #{{ node.parentId }}</span>
+            <!-- <i class="bi bi-diagram-3"></i> -->
+            <!-- <span>Id: {{ node.id }}</span> -->
+            <!-- <span v-if="node.parentId" class="dot">•</span> -->
+            <!-- <span v-if="node.parentId">Con của #{{ node.parentId }}</span> -->
           </div>
         </div>
       </div>
@@ -75,7 +81,11 @@ const onDrop      = (e) => emit('drop', e)
         <button class="btn btn-sm btn-outline-primary" @click.stop="onEdit" title="Chỉnh sửa">
           <i class="bi bi-pencil"></i>
         </button>
-        <button class="btn btn-sm btn-outline-success" @click.stop="onAdd" title="Thêm danh mục con">
+        <button
+          class="btn btn-sm btn-outline-success"
+          @click.stop="onAdd"
+          title="Thêm danh mục con"
+        >
           <i class="bi bi-plus"></i>
         </button>
         <button class="btn btn-sm btn-outline-danger" @click.stop="onDelete" title="Xóa">
@@ -86,22 +96,19 @@ const onDrop      = (e) => emit('drop', e)
 
     <!-- Children nằm TRONG khối cha -->
     <transition name="branch">
-      <div
-        v-if="node.expanded && node.children && node.children.length"
-        class="node-children"
-      >
+      <div v-if="node.expanded && node.children && node.children.length" class="node-children">
         <TreeNode
           v-for="child in node.children"
           :key="child.id"
           :node="child"
           :dragMode="dragMode"
-          @edit="$emit('edit',$event)"
-          @add-child="$emit('add-child',$event)"
-          @delete="$emit('delete',$event)"
-          @drag-start="$emit('drag-start',$event)"
+          @edit="$emit('edit', $event)"
+          @add-child="$emit('add-child', $event)"
+          @delete="$emit('delete', $event)"
+          @drag-start="$emit('drag-start', $event)"
           @drag-end="$emit('drag-end')"
-          @drop="$emit('drop',$event)"
-          @toggle="$emit('toggle',$event)"
+          @drop="$emit('drop', $event)"
+          @toggle="$emit('toggle', $event)"
         />
       </div>
     </transition>
@@ -114,18 +121,21 @@ const onDrop      = (e) => emit('drop', e)
   border: 1px solid #e9ecef;
   border-radius: 12px;
   background: #fff;
-  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .tree-node:hover {
   border-color: #6366f1;
-  box-shadow: 0 4px 18px rgba(99,102,241,.08);
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.08);
 }
 
 .node-content {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 0.75rem;
   padding: 1rem;
   cursor: pointer;
   border-radius: 12px;
@@ -146,7 +156,7 @@ const onDrop      = (e) => emit('drop', e)
   border-radius: 10px;
   background: #fff;
   color: #6b7280;
-  transition: all .18s ease;
+  transition: all 0.18s ease;
   flex-shrink: 0;
 }
 .expand-btn:hover {
@@ -159,7 +169,7 @@ const onDrop      = (e) => emit('drop', e)
 .node-info {
   display: flex;
   align-items: center;
-  gap: .75rem;
+  gap: 0.75rem;
   flex: 1;
   min-width: 0;
 }
@@ -185,13 +195,13 @@ const onDrop      = (e) => emit('drop', e)
 .node-topline {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 0.5rem;
 }
 
 .node-name {
   font-weight: 700;
   color: #1f2937;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -200,10 +210,10 @@ const onDrop      = (e) => emit('drop', e)
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
-  font-size: .75rem;
+  gap: 0.35rem;
+  font-size: 0.75rem;
   border-radius: 999px;
-  padding: .15rem .5rem;
+  padding: 0.15rem 0.5rem;
   line-height: 1;
   white-space: nowrap;
 }
@@ -214,22 +224,24 @@ const onDrop      = (e) => emit('drop', e)
 }
 
 .node-meta {
-  margin-top: .2rem;
-  font-size: .83rem;
+  margin-top: 0.2rem;
+  font-size: 0.83rem;
   color: #6b7280;
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: 0.4rem;
 }
-.node-meta .dot { opacity: .6; }
+.node-meta .dot {
+  opacity: 0.6;
+}
 
 /* ====== Actions ====== */
 .node-actions {
   display: flex;
-  gap: .4rem;
+  gap: 0.4rem;
 }
 .node-actions .btn {
-  padding: .35rem .55rem;
+  padding: 0.35rem 0.55rem;
   border-radius: 10px;
 }
 
@@ -237,7 +249,7 @@ const onDrop      = (e) => emit('drop', e)
 .node-children {
   border-top: 1px solid #edf0f3;
   background: #fbfbfe;
-  padding: .6rem .6rem .8rem .9rem;
+  padding: 0.6rem 0.6rem 0.8rem 0.9rem;
   position: relative;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
@@ -245,11 +257,11 @@ const onDrop      = (e) => emit('drop', e)
 
 /* Connector dọc */
 .node-children::before {
-  content: "";
+  content: '';
   position: absolute;
-  top: .4rem;
-  bottom: .6rem;
-  left: .55rem;
+  top: 0.4rem;
+  bottom: 0.6rem;
+  left: 0.55rem;
   width: 2px;
   background: #e5e7eb;
   border-radius: 2px;
@@ -260,25 +272,27 @@ const onDrop      = (e) => emit('drop', e)
   border: none;
   box-shadow: none;
   background: transparent;
-  margin: .25rem 0 0 .5rem;
+  margin: 0.25rem 0 0 0.5rem;
 }
 .node-children .tree-node > .node-content {
-  padding: .65rem .75rem;
+  padding: 0.65rem 0.75rem;
   border: 1px solid #eef1f4;
   border-radius: 10px;
   background: #fff;
-  transition: border-color .15s ease, box-shadow .15s ease;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .node-children .tree-node > .node-content:hover {
   border-color: #cad2ff;
-  box-shadow: 0 2px 10px rgba(99,102,241,.06);
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.06);
 }
 
 /* Root nhấn mạnh nhẹ */
 .root-node > .node-content {
   padding: 1.05rem 1rem;
   background: linear-gradient(90deg, #ffffff, #fbfbfe);
-  border-left: 4px solid rgba(99,102,241,.16);
+  border-left: 4px solid rgba(99, 102, 241, 0.16);
 }
 
 /* ====== Transition mở/đóng nhánh ====== */
@@ -289,6 +303,6 @@ const onDrop      = (e) => emit('drop', e)
 }
 .branch-enter-active,
 .branch-leave-active {
-  transition: all .18s ease;
+  transition: all 0.18s ease;
 }
 </style>
