@@ -22,6 +22,29 @@
                 <option value="custom">Tùy chỉnh</option>
               </select>
             </div>
+
+            <!-- Custom Date Range Picker -->
+            <div v-if="selectedDateRange === 'custom'" class="custom-date-range">
+              <div class="date-input-group">
+                <label>Từ ngày:</label>
+                <input
+                  type="date"
+                  v-model="customStartDate"
+                  @change="applyDateRange"
+                  class="form-control form-control-sm"
+                />
+              </div>
+              <div class="date-input-group">
+                <label>Đến ngày:</label>
+                <input
+                  type="date"
+                  v-model="customEndDate"
+                  @change="applyDateRange"
+                  class="form-control form-control-sm"
+                />
+              </div>
+            </div>
+
             <button class="btn btn-primary btn-sm" @click="refreshData">
               <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
             </button>
@@ -1275,6 +1298,7 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .date-range-selector select {
@@ -1282,6 +1306,62 @@ defineExpose({
   border: 1px solid #e9ecef;
   border-radius: 6px;
   font-size: 0.875rem;
+}
+
+.custom-date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-input-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #495057;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.date-input-group input[type='date'] {
+  padding: 0.375rem 0.5rem;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  transition: all 0.2s;
+  min-width: 150px;
+}
+
+.date-input-group input[type='date']:focus {
+  border-color: #ff6b35;
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.15);
+  outline: none;
+}
+
+.date-input-group input[type='date']:hover {
+  border-color: #adb5bd;
 }
 
 .realtime-status {
@@ -3011,6 +3091,31 @@ defineExpose({
 
   .quick-actions {
     flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .date-range-selector {
+    width: 100%;
+  }
+
+  .date-range-selector select {
+    width: 100%;
+  }
+
+  .custom-date-range {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .date-input-group {
+    width: 100%;
+  }
+
+  .date-input-group input[type='date'] {
+    flex: 1;
+    min-width: auto;
   }
 
   .filter-row {

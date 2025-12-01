@@ -792,7 +792,7 @@ const totalPages = ref(1)
 const totalItems = ref(0)
 
 const searchQuery = ref('')
-const selectedStatus = ref('')
+const selectedStatus = ref('PENDING')
 const selectedPayment = ref('')
 const selectedDate = ref('')
 const amountRange = ref({ min: null, max: null })
@@ -800,7 +800,7 @@ const sortBy = ref('newest')
 const sortDir = ref('desc')
 
 // UI state
-const showAdvancedFilters = ref(false)
+const showAdvancedFilters = ref(true)
 const viewMode = ref('table')
 
 // UI state cho modal chỉnh sửa
@@ -1111,7 +1111,7 @@ const bulkUpdateStatus = async (statusCode) => {
             trangThai: statusLabel,
           }
           const response = await axios.put(`/api/don-hang/${orderId}`, updates)
-          
+
           // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
           const responseData = response.data?.data || response.data
           const updatedPaymentStatus = responseData?.paymentStatus || order.paymentStatus
@@ -1137,7 +1137,7 @@ const bulkUpdateStatus = async (statusCode) => {
               selectedOrder.value = {
                 ...updatedOrder,
                 // Đảm bảo selectedOrder cũng có payment status mới nhất
-                paymentStatus: updatedPaymentStatus
+                paymentStatus: updatedPaymentStatus,
               }
             }
           }
@@ -1230,7 +1230,7 @@ const saveOrderChanges = async () => {
     }
 
     const response = await axios.put(`/api/don-hang/${editingOrder.value.id}`, updates)
-    
+
     // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
     const responseData = response.data?.data || response.data
     const updatedPaymentStatus = responseData?.paymentStatus || editingOrder.value.paymentStatus
@@ -1259,10 +1259,10 @@ const saveOrderChanges = async () => {
         selectedOrder.value = {
           ...updatedOrder,
           // Đảm bảo selectedOrder cũng có payment status mới nhất
-          paymentStatus: updatedPaymentStatus
+          paymentStatus: updatedPaymentStatus,
         }
       }
-      
+
       console.log('✅ Updated order payment status:', updatedPaymentStatus)
     }
 
@@ -1305,7 +1305,7 @@ const quickUpdateStatus = async (order, newStatusCode) => {
 
       const response = await axios.put(`/api/don-hang/${order.id}`, updates)
       console.log('Response:', response.data)
-      
+
       // ✅ Lấy payment status từ response (backend đã tự động cập nhật nếu là COD và đã hoàn tất)
       const responseData = response.data?.data || response.data
       const updatedPaymentStatus = responseData?.paymentStatus || order.paymentStatus
@@ -1331,10 +1331,10 @@ const quickUpdateStatus = async (order, newStatusCode) => {
           selectedOrder.value = {
             ...updatedOrder,
             // Đảm bảo selectedOrder cũng có payment status mới nhất
-            paymentStatus: updatedPaymentStatus
+            paymentStatus: updatedPaymentStatus,
           }
         }
-        
+
         console.log('✅ Updated order payment status:', updatedPaymentStatus)
       }
 
