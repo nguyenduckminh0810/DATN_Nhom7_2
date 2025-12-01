@@ -578,7 +578,10 @@
                   <tr v-if="selectedOrder.statusCode === 'CANCELLED' || selectedOrder.statusCode === 'DA_HUY' || selectedOrder.statusLabel === 'Đã hủy'">
                     <td>Lý do hủy:</td>
                     <td>
-                      <span v-if="selectedOrder.lyDoHuy" class="text-danger">{{ selectedOrder.lyDoHuy }}</span>
+                      <div v-if="selectedOrder.lyDoHuy">
+
+                        <div class="text-danger">{{ selectedOrder.lyDoHuy }}</div>
+                      </div>
                       <span v-else class="text-muted">Không có lý do được ghi nhận</span>
                     </td>
                   </tr>
@@ -813,6 +816,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import apiService from '@/services/api'
 import {
   ORDER_STATUS_FOR_ADMIN,
   ORDER_STATUS_FOR_KANBAN,
@@ -1426,7 +1430,8 @@ const confirmCancelOrder = async () => {
   }
 
   try {
-    const response = await axios.delete(`/api/don-hang/${cancelingOrder.value.id}`, {
+    // Sử dụng apiService để tự động thêm JWT token
+    const response = await apiService.client.delete(`/don-hang/${cancelingOrder.value.id}`, {
       data: { lyDoHuy: cancelReason.value.trim() }
     })
 

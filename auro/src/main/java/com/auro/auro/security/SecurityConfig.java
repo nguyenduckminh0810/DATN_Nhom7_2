@@ -102,10 +102,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/hinh-anh/**").hasAnyRole("STF", "ADM")
                         .requestMatchers(HttpMethod.DELETE, "/api/hinh-anh/**").hasAnyRole("STF", "ADM")
 
-                        // crud danh mục
-                        .requestMatchers(HttpMethod.POST, "/api/danh-muc").hasAnyRole("STF", "ADM")
-                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasAnyRole("STF", "ADM")
-                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasAnyRole("STF", "ADM")
+                        // crud danh mục - chỉ admin
+                        .requestMatchers(HttpMethod.POST, "/api/danh-muc/**").hasRole("ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasRole("ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasRole("ADM")
 
                         // quản lý đơn hàng
                         .requestMatchers("/api/don-hang/quan-ly/**").hasAnyRole("STF", "ADM")

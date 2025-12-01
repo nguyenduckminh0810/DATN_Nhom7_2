@@ -20,6 +20,7 @@ public class DonHangResponse {
     private String paymentStatus;
     private String paymentMethod;
     private String lyDoHuy;
+    private String emailNguoiHuy;
 
     // Danh sách chi tiết đơn hàng
     private List<DonHangChiTietResponse> chiTietList;
@@ -143,6 +144,14 @@ public class DonHangResponse {
 
     public void setLyDoHuy(String lyDoHuy) {
         this.lyDoHuy = lyDoHuy;
+    }
+
+    public String getEmailNguoiHuy() {
+        return emailNguoiHuy;
+    }
+
+    public void setEmailNguoiHuy(String emailNguoiHuy) {
+        this.emailNguoiHuy = emailNguoiHuy;
     }
 
 }

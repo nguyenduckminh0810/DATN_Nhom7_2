@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -114,6 +115,7 @@ public class AdminController {
                 .body(ApiResponse.success(result, "Tạo tài khoản admin đầu tiên thành công"));
     }
 
+    @PreAuthorize("hasRole('ADM')")
     @PostMapping("/register-staff")
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> registerStaff(

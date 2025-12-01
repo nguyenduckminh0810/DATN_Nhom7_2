@@ -437,9 +437,9 @@ public class DonHangService {
     // - Cho phép hủy đơn ở trạng thái: PENDING, SHIPPING, DELIVERED
     // - Không cho phép hủy đơn đã HOAN_TAT
     // - Hoàn lại số lượng khi hủy đơn ở trạng thái SHIPPING hoặc DELIVERED
-    // - Lưu lý do hủy
+    // - Lưu lý do hủy và email người hủy
     @Transactional
-    public void softDeleteDonHang(Long id, String lyDoHuy) {
+    public void softDeleteDonHang(Long id, String lyDoHuy, String emailNguoiHuy) {
         DonHang donHang = donHangRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
 
@@ -447,7 +447,7 @@ public class DonHangService {
         String normalizedStatus = normalizeTrangThaiKey(currentStatus);
         
         log.info("=== HỦY ĐƠN HÀNG (ADMIN) ===");
-        log.info("Order ID: {}", id);
+        log.info("Order ID: {}, Email người hủy: {}", id, emailNguoiHuy);
         log.info("Order #{} current status: {} (normalized: {})", donHang.getSoDonHang(), currentStatus, normalizedStatus);
 
         // Kiểm tra trạng thái có được phép hủy không
@@ -505,18 +505,29 @@ public class DonHangService {
             log.info("Stock restoration NOT triggered (order status: {} - not SHIPPING or DELIVERED)", currentStatus);
         }
 
+        // ✅ KẾT HỢP EMAIL VÀO LÝ DO HỦY
+        String lyDoHuyDayDu = lyDoHuy != null ? lyDoHuy.trim() : "";
+        if (emailNguoiHuy != null && !emailNguoiHuy.trim().isEmpty()) {
+            if (!lyDoHuyDayDu.isEmpty()) {
+                lyDoHuyDayDu = String.format("Email người hủy: %s - Lý do: %s", emailNguoiHuy.trim(), lyDoHuyDayDu);
+            } else {
+                lyDoHuyDayDu = String.format("Email người hủy: %s", emailNguoiHuy.trim());
+            }
+        }
+
         // ✅ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY
         donHang.setTrangThai(OrderStatus.DA_HUY);
-        donHang.setLyDoHuy(lyDoHuy != null ? lyDoHuy.trim() : null);
+        donHang.setLyDoHuy(lyDoHuyDayDu);
+        donHang.setEmailNguoiHuy(emailNguoiHuy != null ? emailNguoiHuy.trim() : null);
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
         
         if (needsStockRestore) {
-            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (Stock restored)", 
-                    donHang.getSoDonHang(), currentStatus);
+            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (Stock restored). Reason: {}", 
+                    donHang.getSoDonHang(), currentStatus, lyDoHuyDayDu);
         } else {
-            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock restoration needed)", 
-                    donHang.getSoDonHang(), currentStatus);
+            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock restoration needed). Reason: {}", 
+                    donHang.getSoDonHang(), currentStatus, lyDoHuyDayDu);
         }
     }
 
@@ -566,6 +577,7 @@ public class DonHangService {
         dto.setPaymentStatus(dh.getPaymentStatus() != null ? dh.getPaymentStatus() : "pending");
         dto.setPaymentMethod(dh.getPaymentMethod() != null ? dh.getPaymentMethod() : "COD");
         dto.setLyDoHuy(dh.getLyDoHuy());
+        dto.setEmailNguoiHuy(dh.getEmailNguoiHuy());
 
         // Convert chi tiết list (nếu có)
         if (dh.getChiTietList() != null) {
@@ -1088,9 +1100,9 @@ public class DonHangService {
 
     // ✅ HỦY ĐƠN HÀNG - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
     @Transactional
-    public DonHangResponse huyDonHang(Long donHangId, Long khachHangId, String lyDoHuy) {
+    public DonHangResponse huyDonHang(Long donHangId, Long khachHangId, String lyDoHuy, String emailNguoiHuy) {
         log.info("=== HỦY ĐƠN HÀNG ===");
-        log.info("Order ID: {}, Customer ID: {}", donHangId, khachHangId);
+        log.info("Order ID: {}, Customer ID: {}, Email người hủy: {}", donHangId, khachHangId, emailNguoiHuy);
         
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
                 .orElseThrow(() -> {
@@ -1122,14 +1134,25 @@ public class DonHangService {
             throw new RuntimeException(errorMsg);
         }
 
+        // ✅ KẾT HỢP EMAIL VÀO LÝ DO HỦY
+        String lyDoHuyDayDu = lyDoHuy != null ? lyDoHuy.trim() : "";
+        if (emailNguoiHuy != null && !emailNguoiHuy.trim().isEmpty()) {
+            if (!lyDoHuyDayDu.isEmpty()) {
+                lyDoHuyDayDu = String.format("Email người hủy: %s - Lý do: %s", emailNguoiHuy.trim(), lyDoHuyDayDu);
+            } else {
+                lyDoHuyDayDu = String.format("Email người hủy: %s", emailNguoiHuy.trim());
+            }
+        }
+
         // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
         donHang.setTrangThai(OrderStatus.DA_HUY);
-        donHang.setLyDoHuy(lyDoHuy != null ? lyDoHuy.trim() : null);
+        donHang.setLyDoHuy(lyDoHuyDayDu);
+        donHang.setEmailNguoiHuy(emailNguoiHuy != null ? emailNguoiHuy.trim() : null);
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang savedDonHang = donHangRepository.save(donHang);
 
         log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock deduction). Reason: {}", 
-                savedDonHang.getSoDonHang(), currentStatus, lyDoHuy);
+                savedDonHang.getSoDonHang(), currentStatus, lyDoHuyDayDu);
         
         return convertToDTO(savedDonHang);
     }

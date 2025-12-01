@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -130,6 +131,7 @@ public class DanhMucController {
         return res;
     }
 
+    @PreAuthorize("hasRole('ADM')")
     @PostMapping("/create")
     public ResponseEntity<DanhMucResponse> create(@Valid @RequestBody DanhMucCreateRequest req) {
         if (danhMucRepository.existsBySlug(req.getSlug())) {
@@ -151,6 +153,7 @@ public class DanhMucController {
         return ResponseEntity.ok(out);
     }
 
+    @PreAuthorize("hasRole('ADM')")
     @org.springframework.web.bind.annotation.PutMapping("/{id}")
     public ResponseEntity<DanhMucResponse> update(@org.springframework.web.bind.annotation.PathVariable("id") Long id,
             @Valid @RequestBody DanhMucCreateRequest req) {
@@ -180,6 +183,7 @@ public class DanhMucController {
 
     // Delete category (soft/hard logic). If force=true, will delete related
     // products and descendant categories.
+    @PreAuthorize("hasRole('ADM')")
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<?> deleteCategory(@PathVariable Long id,

@@ -275,10 +275,10 @@ function childrenFor(parentSlug) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-// Check if user is admin
+// Check if user is admin or staff
 const isAdmin = computed(() => {
   const role = userStore.userRole
-  return role === 'admin' || role === 'ADM'
+  return role === 'admin' || role === 'ADM' || role === 'STF' || role === 'staff'
 })
 
 // Login popup methods

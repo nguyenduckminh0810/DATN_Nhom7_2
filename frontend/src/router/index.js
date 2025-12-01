@@ -168,7 +168,7 @@ const router = createRouter({
           path: 'categories',
           name: 'admin-categories',
           component: AdminCategories,
-          meta: { title: 'Quản lý danh mục - AURO', requiresAuth: true, requiresAdmin: true },
+          meta: { title: 'Quản lý danh mục - AURO', requiresAuth: true, requiresAdmin: true, requiresOnlyAdmin: true },
         },
         {
           path: 'orders',
@@ -192,7 +192,7 @@ const router = createRouter({
           path: 'settings',
           name: 'admin-settings',
           component: AdminSettings,
-          meta: { title: 'Cài đặt - AURO', requiresAuth: true, requiresAdmin: true },
+          meta: { title: 'Cài đặt - AURO', requiresAuth: true, requiresAdmin: true, requiresOnlyAdmin: true },
         },
         {
           path: 'inventory',
@@ -210,7 +210,7 @@ const router = createRouter({
           path: 'register-staff',
           name: 'admin-register-staff',
           component: () => import('@/views/admin/RegisterStaff.vue'),
-          meta: { title: 'Đăng ký nhân viên - AURO', requiresAuth: true, requiresAdmin: true },
+          meta: { title: 'Đăng ký nhân viên - AURO', requiresAuth: true, requiresAdmin: true, requiresOnlyAdmin: true },
         },
       ],
     },
@@ -256,11 +256,21 @@ router.beforeEach((to, from, next) => {
     const userRole = user.vaiTroMa || user.vaiTro || user.role
     console.log('Router check - User role:', userRole)
 
-    if (!userRole || !['ADM', 'STF', 'admin', 'staff'].includes(userRole)) {
-      // Redirect to home if not admin/staff
-      console.log('Access denied - redirecting to home')
-      next('/')
-      return
+    // Nếu route yêu cầu chỉ admin (requiresOnlyAdmin), chỉ cho phép ADM
+    if (to.meta.requiresOnlyAdmin) {
+      if (!userRole || !['ADM', 'admin'].includes(userRole)) {
+        console.log('Access denied - Only admin can access this page')
+        next('/')
+        return
+      }
+    } else {
+      // Các route khác cho phép cả admin và staff
+      if (!userRole || !['ADM', 'STF', 'admin', 'staff'].includes(userRole)) {
+        // Redirect to home if not admin/staff
+        console.log('Access denied - redirecting to home')
+        next('/')
+        return
+      }
     }
   }
 

@@ -8,7 +8,11 @@
           <p class="page-subtitle">Quản lý tài khoản khách hàng và nhân viên</p>
         </div>
         <div class="header-right">
-          <router-link to="/admin/register-staff" class="btn btn-primary me-3">
+          <router-link 
+            v-if="isAdmin" 
+            to="/admin/register-staff" 
+            class="btn btn-primary me-3"
+          >
             <i class="bi bi-person-plus me-2"></i>Thêm nhân viên
           </router-link>
           <div class="header-stats">
