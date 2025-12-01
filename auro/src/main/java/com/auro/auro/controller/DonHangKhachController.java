@@ -130,7 +130,11 @@ public class DonHangKhachController {
                 errorResponse.put("error", "Vui lòng nhập lý do hủy đơn hàng");
                 return ResponseEntity.badRequest().body(errorResponse);
             }
-            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId, lyDoHuy);
+            
+            // Lấy email từ Authentication
+            String emailNguoiHuy = layEmailTuAuth(auth);
+            
+            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId, lyDoHuy, emailNguoiHuy);
             return ResponseEntity.ok(dh);
         } catch (RuntimeException e) {
             // Trả về message lỗi để frontend hiển thị
@@ -290,6 +294,20 @@ public class DonHangKhachController {
             return (khachHang != null) ? khachHang.getId() : null;
         } catch (Exception e) {
             log.error("Error in layKhachHangIdTuAuth: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private String layEmailTuAuth(Authentication auth) {
+        if (auth == null || auth.getPrincipal() == null) {
+            return null;
+        }
+        try {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            TaiKhoan taiKhoan = userDetails.getTaiKhoan();
+            return taiKhoan.getEmail();
+        } catch (Exception e) {
+            log.error("Error in layEmailTuAuth: {}", e.getMessage());
             return null;
         }
     }

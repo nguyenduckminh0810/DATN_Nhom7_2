@@ -93,6 +93,9 @@ public class DonHang {
     @Column(name = "ly_do_huy", columnDefinition = "NVARCHAR(500)")
     private String lyDoHuy;
 
+    @Column(name = "email_nguoi_huy", columnDefinition = "NVARCHAR(150)")
+    private String emailNguoiHuy;
+
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DonHangChiTiet> chiTietList;
 }
