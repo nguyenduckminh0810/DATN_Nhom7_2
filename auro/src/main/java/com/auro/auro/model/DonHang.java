@@ -50,8 +50,28 @@ public class DonHang {
     @EqualsAndHashCode.Exclude
     private Voucher voucher;
 
-    @Column(name = "dia_chi_giao", columnDefinition = "NVARCHAR(MAX)")
-    private String diaChiGiao;
+
+
+    @Column(name = "ten_nguoi_nhan", columnDefinition = "NVARCHAR(150)")
+    private String tenNguoiNhan;
+
+    @Column(name = "sdt_nguoi_nhan", columnDefinition = "NVARCHAR(20)")
+    private String sdtNguoiNhan;
+
+    @Column(name = "email_nguoi_nhan", columnDefinition = "NVARCHAR(150)")
+    private String emailNguoiNhan;
+
+    @Column(name = "dia_chi_chi_tiet", columnDefinition = "NVARCHAR(255)")
+    private String diaChiChiTiet;
+
+    @Column(name = "phuong_xa", columnDefinition = "NVARCHAR(100)")
+    private String phuongXa;
+
+    @Column(name = "quan_huyen", columnDefinition = "NVARCHAR(100)")
+    private String quanHuyen;
+
+    @Column(name = "tinh_thanh", columnDefinition = "NVARCHAR(100)")
+    private String tinhThanh;
 
     @Column(name = "ghi_chu", columnDefinition = "NVARCHAR(500)")
     private String ghiChu;
