@@ -53,6 +53,9 @@ public class AuthService {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.jwt.expiration:900000}")
+    private Long jwtExpiration;
+
     @Transactional
     public JwtResponse dangKy(DangKyRequest request) {
 
@@ -160,7 +163,7 @@ public class AuthService {
                 .build();
 
         String accessToken = jwtService.generateToken(userDetails);
-        Long expiresIn = 900000L;
+        Long expiresIn = jwtExpiration;
 
         UserInfoResponse userInfo = mapToUserInfoResponse(savedTaiKhoan);
 
@@ -224,7 +227,7 @@ public class AuthService {
         System.out.println("UserDetails authorities: " + userDetails.getAuthorities());
 
         String accessToken = jwtService.generateToken(userDetails);
-        Long expiresIn = 900000L;
+        Long expiresIn = jwtExpiration;
 
         UserInfoResponse userInfo = mapToUserInfoResponse(taiKhoan);
 

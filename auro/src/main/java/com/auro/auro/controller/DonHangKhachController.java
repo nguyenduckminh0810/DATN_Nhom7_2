@@ -117,10 +117,20 @@ public class DonHangKhachController {
     // Hủy đơn hàng
     @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @PutMapping("/{donHangId}/huy")
-    public ResponseEntity<?> huyDonHang(@PathVariable Long donHangId, Authentication auth) {
+    public ResponseEntity<?> huyDonHang(
+            @PathVariable Long donHangId, 
+            @RequestBody(required = false) Map<String, String> request,
+            Authentication auth) {
         try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
-            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId);
+            String lyDoHuy = request != null ? request.get("reason") : null;
+            if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "Vui lòng nhập lý do hủy đơn hàng");
+                errorResponse.put("error", "Vui lòng nhập lý do hủy đơn hàng");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId, lyDoHuy);
             return ResponseEntity.ok(dh);
         } catch (RuntimeException e) {
             // Trả về message lỗi để frontend hiển thị
