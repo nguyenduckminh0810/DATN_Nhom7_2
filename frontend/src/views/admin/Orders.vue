@@ -357,9 +357,11 @@
                     <i class="bi bi-check"></i>
                   </button>
                   <button
-                    v-if="order.statusCode === STATUS_CODES.PENDING"
+                    v-if="order.statusCode === STATUS_CODES.PENDING || 
+                          order.statusCode === STATUS_CODES.SHIPPING || 
+                          order.statusCode === STATUS_CODES.DELIVERED"
                     class="btn btn-sm btn-outline-danger"
-                    @click="quickUpdateStatus(order, STATUS_CODES.CANCELLED)"
+                    @click="openCancelModal(order)"
                     title="Hủy đơn hàng"
                   >
                     <i class="bi bi-x"></i>
@@ -573,6 +575,13 @@
                     <td>Ghi chú:</td>
                     <td>{{ selectedOrder.ghiChu }}</td>
                   </tr>
+                  <tr v-if="selectedOrder.statusCode === 'CANCELLED' || selectedOrder.statusCode === 'DA_HUY' || selectedOrder.statusLabel === 'Đã hủy'">
+                    <td>Lý do hủy:</td>
+                    <td>
+                      <span v-if="selectedOrder.lyDoHuy" class="text-danger">{{ selectedOrder.lyDoHuy }}</span>
+                      <span v-else class="text-muted">Không có lý do được ghi nhận</span>
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -764,6 +773,40 @@
         </div>
       </div>
     </div>
+
+    <!-- Cancel Order Modal -->
+    <div v-if="showCancelModal" class="modal-overlay" @click="closeCancelModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h5 class="modal-title">Hủy đơn hàng #{{ cancelingOrder?.soDonHang }}</h5>
+          <button class="btn-close" @click="closeCancelModal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Bạn có chắc chắn muốn hủy đơn hàng này? Vui lòng nhập lý do hủy.
+          </div>
+          <div class="mb-3">
+            <label for="cancelReason" class="form-label">Lý do hủy <span class="text-danger">*</span></label>
+            <textarea
+              id="cancelReason"
+              class="form-control"
+              rows="4"
+              v-model="cancelReason"
+              placeholder="Nhập lý do hủy đơn hàng..."
+              required
+            ></textarea>
+            <small class="form-text text-muted">Lý do hủy sẽ được lưu và hiển thị trong chi tiết đơn hàng.</small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" @click="closeCancelModal">Hủy</button>
+          <button type="button" class="btn btn-danger" @click="confirmCancelOrder" :disabled="!cancelReason || cancelReason.trim().length === 0">
+            Xác nhận hủy đơn
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -813,6 +856,11 @@ const showOrderModal = ref(false)
 const selectedOrder = ref(null)
 const selectAll = ref(false)
 const selectedOrders = ref([])
+
+// Cancel order modal
+const showCancelModal = ref(false)
+const cancelingOrder = ref(null)
+const cancelReason = ref('')
 
 // ======= CONSTANTS =======
 const adminStatuses = ORDER_STATUS_FOR_ADMIN.slice().sort((a, b) => a.sortOrder - b.sortOrder)
@@ -1355,6 +1403,57 @@ const quickUpdateStatus = async (order, newStatusCode) => {
         alert('❌ Có lỗi khi cập nhật trạng thái:\n\n' + errorMessage)
       }
     }
+  }
+}
+
+// Hủy đơn hàng với lý do
+const openCancelModal = (order) => {
+  cancelingOrder.value = order
+  cancelReason.value = ''
+  showCancelModal.value = true
+}
+
+const closeCancelModal = () => {
+  showCancelModal.value = false
+  cancelingOrder.value = null
+  cancelReason.value = ''
+}
+
+const confirmCancelOrder = async () => {
+  if (!cancelReason.value || cancelReason.value.trim().length === 0) {
+    alert('Vui lòng nhập lý do hủy đơn hàng')
+    return
+  }
+
+  try {
+    const response = await axios.delete(`/api/don-hang/${cancelingOrder.value.id}`, {
+      data: { lyDoHuy: cancelReason.value.trim() }
+    })
+
+    console.log('Order cancelled:', response.data)
+
+    // Cập nhật trạng thái đơn hàng trong danh sách
+    const index = orders.value.findIndex((o) => o.id === cancelingOrder.value.id)
+    if (index !== -1) {
+      const statusInfo = normalizeOrderStatus(STATUS_CODES.CANCELLED)
+      orders.value[index] = {
+        ...orders.value[index],
+        trangThai: statusInfo.code,
+        statusCode: statusInfo.code,
+        statusLabel: statusInfo.label,
+        statusClass: statusInfo.badgeClass,
+        statusColor: statusInfo.color,
+        lyDoHuy: cancelReason.value.trim(),
+        capNhatLuc: new Date().toISOString(),
+      }
+    }
+
+    alert('✅ Đã hủy đơn hàng thành công!')
+    closeCancelModal()
+  } catch (err) {
+    console.error('Error cancelling order:', err)
+    const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Lỗi không xác định'
+    alert('❌ Có lỗi khi hủy đơn hàng:\n\n' + errorMessage)
   }
 }
 

@@ -103,13 +103,21 @@ public class DonHangController {
 
     // Xóa mềm đơn hàng (chuyển sang trạng thái Đã hủy)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteDonHang(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteDonHang(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> request) {
         Map<String, String> response = new HashMap<>();
 
         try {
             System.out.println("Xóa mềm đơn hàng ID: " + id);
+            
+            String lyDoHuy = request != null ? request.get("lyDoHuy") : null;
+            if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+                response.put("error", "Vui lòng nhập lý do hủy đơn hàng");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
 
-            donHangService.softDeleteDonHang(id);
+            donHangService.softDeleteDonHang(id, lyDoHuy);
 
             response.put("message", "Đã hủy đơn hàng thành công");
             return ResponseEntity.ok(response);

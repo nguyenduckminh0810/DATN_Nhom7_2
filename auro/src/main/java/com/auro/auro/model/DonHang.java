@@ -70,6 +70,9 @@ public class DonHang {
     @Column(name = "payment_method")
     private String paymentMethod; // COD, VNPAY
 
+    @Column(name = "ly_do_huy", columnDefinition = "NVARCHAR(500)")
+    private String lyDoHuy;
+
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DonHangChiTiet> chiTietList;
 }

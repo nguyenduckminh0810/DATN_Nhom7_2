@@ -436,27 +436,91 @@ public class DonHangService {
         donHangRepository.deleteById(id);
     }
 
-    // ✅ XÓA MỀM ĐƠN HÀNG (chuyển trạng thái sang Đã hủy) - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
+        // ✅ XÓA MỀM ĐƠN HÀNG (chuyển trạng thái sang Đã hủy)
+    // - Cho phép hủy đơn ở trạng thái: PENDING, SHIPPING, DELIVERED
+    // - Không cho phép hủy đơn đã HOAN_TAT
+    // - Hoàn lại số lượng khi hủy đơn ở trạng thái SHIPPING hoặc DELIVERED
+    // - Lưu lý do hủy
     @Transactional
-    public void softDeleteDonHang(Long id) {
+    public void softDeleteDonHang(Long id, String lyDoHuy) {
         DonHang donHang = donHangRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + id));
 
+        String currentStatus = donHang.getTrangThai();
+        String normalizedStatus = normalizeTrangThaiKey(currentStatus);
+        
+        log.info("=== HỦY ĐƠN HÀNG (ADMIN) ===");
+        log.info("Order ID: {}", id);
+        log.info("Order #{} current status: {} (normalized: {})", donHang.getSoDonHang(), currentStatus, normalizedStatus);
+
         // Kiểm tra trạng thái có được phép hủy không
-        if (OrderStatus.HOAN_TAT.equals(donHang.getTrangThai())) {
+        if (OrderStatus.HOAN_TAT.equals(donHang.getTrangThai()) || 
+            "HOAN_TAT".equals(normalizedStatus) ||
+            "HOAN_THANH".equals(normalizedStatus) ||
+            "COMPLETED".equals(normalizedStatus)) {
             throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
         }
 
-        if (OrderStatus.DA_HUY.equals(donHang.getTrangThai())) {
+        if (OrderStatus.DA_HUY.equals(donHang.getTrangThai()) || 
+            "DA_HUY".equals(normalizedStatus) ||
+            "CANCELLED".equals(normalizedStatus)) {
             throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
         }
 
-        // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
+        // Kiểm tra xem đơn hàng có đang ở trạng thái "đang giao" hoặc "đã giao" không
+        boolean isDangGiao = "DANG_GIAO".equals(normalizedStatus) ||
+                             "SHIPPING".equals(normalizedStatus);
+        boolean isDaGiao = "DA_GIAO".equals(normalizedStatus) ||
+                          "DA_GIAO_HANG".equals(normalizedStatus) ||
+                          "DELIVERED".equals(normalizedStatus);
+        
+        boolean needsStockRestore = isDangGiao || isDaGiao;
+        
+        log.info("isDangGiao: {}, isDaGiao: {}, needsStockRestore: {}", isDangGiao, isDaGiao, needsStockRestore);
+
+        // ✅ HOÀN LẠI SỐ LƯỢNG KHI HỦY ĐƠN Ở TRẠNG THÁI "ĐANG GIAO" HOẶC "ĐÃ GIAO"
+        if (needsStockRestore) {
+            log.info(">>> TRIGGERING STOCK RESTORATION (Order being cancelled from SHIPPING/DELIVERED status) <<<");
+            List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
+            log.info("Found {} order items to restore stock", chiTietList.size());
+
+            // Hoàn lại số lượng cho tất cả sản phẩm
+            for (DonHangChiTiet chiTiet : chiTietList) {
+                BienTheSanPham bienThe = chiTiet.getBienThe();
+                int soLuongDat = chiTiet.getSoLuong();
+                int tonHienTai = bienThe.getSoLuongTon();
+
+                // Hoàn lại tồn kho
+                int soLuongMoi = tonHienTai + soLuongDat;
+                bienThe.setSoLuongTon(soLuongMoi);
+                bienTheSanPhamRepository.save(bienThe);
+
+                log.info("Stock restored! Variant ID: {}, Product: {}, Old stock: {}, Restored: {}, New stock: {}",
+                        bienThe.getId(),
+                        bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "N/A",
+                        tonHienTai,
+                        soLuongDat,
+                        soLuongMoi);
+            }
+
+            log.info(">>> STOCK RESTORATION COMPLETED - All {} items processed <<<", chiTietList.size());
+        } else {
+            log.info("Stock restoration NOT triggered (order status: {} - not SHIPPING or DELIVERED)", currentStatus);
+        }
+
+        // ✅ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY
         donHang.setTrangThai(OrderStatus.DA_HUY);
+        donHang.setLyDoHuy(lyDoHuy != null ? lyDoHuy.trim() : null);
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
         
-        log.info("✅ Order #{} soft deleted - Status changed to DA_HUY (NO stock deduction)", donHang.getSoDonHang());
+        if (needsStockRestore) {
+            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (Stock restored)", 
+                    donHang.getSoDonHang(), currentStatus);
+        } else {
+            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock restoration needed)", 
+                    donHang.getSoDonHang(), currentStatus);
+        }
     }
 
     // Lấy toàn bộ đơn hàng DTO
@@ -501,6 +565,7 @@ public class DonHangService {
 
         dto.setPaymentStatus(dh.getPaymentStatus() != null ? dh.getPaymentStatus() : "pending");
         dto.setPaymentMethod(dh.getPaymentMethod() != null ? dh.getPaymentMethod() : "COD");
+        dto.setLyDoHuy(dh.getLyDoHuy());
 
         // Convert chi tiết list (nếu có)
         if (dh.getChiTietList() != null) {
@@ -953,7 +1018,7 @@ public class DonHangService {
 
     // ✅ HỦY ĐƠN HÀNG - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
     @Transactional
-    public DonHangResponse huyDonHang(Long donHangId, Long khachHangId) {
+    public DonHangResponse huyDonHang(Long donHangId, Long khachHangId, String lyDoHuy) {
         log.info("=== HỦY ĐƠN HÀNG ===");
         log.info("Order ID: {}, Customer ID: {}", donHangId, khachHangId);
         
@@ -987,13 +1052,14 @@ public class DonHangService {
             throw new RuntimeException(errorMsg);
         }
 
-        // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
+        // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
         donHang.setTrangThai(OrderStatus.DA_HUY);
+        donHang.setLyDoHuy(lyDoHuy != null ? lyDoHuy.trim() : null);
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang savedDonHang = donHangRepository.save(donHang);
 
-        log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock deduction)", 
-                savedDonHang.getSoDonHang(), currentStatus);
+        log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock deduction). Reason: {}", 
+                savedDonHang.getSoDonHang(), currentStatus, lyDoHuy);
         
         return convertToDTO(savedDonHang);
     }
