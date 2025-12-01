@@ -178,9 +178,6 @@ public class DonHangService {
         String trangThaiCuNormalized = normalizeTrangThaiKey(trangThaiCu);
 
         // Cập nhật các field
-        if (updates.containsKey("diaChiGiao")) {
-            donHang.setDiaChiGiao((String) updates.get("diaChiGiao"));
-        }
         if (updates.containsKey("ghiChu")) {
             donHang.setGhiChu((String) updates.get("ghiChu"));
         }
@@ -558,7 +555,10 @@ public class DonHangService {
         dto.setTongThanhToan(tongThanhToan);
 
         dto.setTrangThai(dh.getTrangThai());
-        dto.setDiaChiGiaoSnapshot(dh.getDiaChiGiao());
+
+        
+        String diaChiSnapshot = buildDiaChiSnapshot(dh);
+        dto.setDiaChiGiaoSnapshot(diaChiSnapshot);
         dto.setGhiChu(dh.getGhiChu());
         dto.setTaoLuc(dh.getTaoLuc());
         dto.setCapNhatLuc(dh.getCapNhatLuc());
@@ -642,6 +642,77 @@ public class DonHangService {
         return digitsOnly;
     }
 
+    /**
+     * Build chuỗi địa chỉ snapshot từ các field snapshot trong DonHang.
+     * Format: "Tên - SĐT - Địa chỉ, Phường/Xã, Quận/Huyện, Tỉnh/Thành".
+     * Bỏ qua field null/rỗng, không in ra "null".
+     */
+    private String buildDiaChiSnapshot(DonHang donHang) {
+        if (donHang == null) {
+            return "";
+        }
+
+        String ten = safeTrim(donHang.getTenNguoiNhan());
+        String sdt = safeTrim(donHang.getSdtNguoiNhan());
+        String diaChi = safeTrim(donHang.getDiaChiChiTiet());
+        String phuongXa = safeTrim(donHang.getPhuongXa());
+        String quanHuyen = safeTrim(donHang.getQuanHuyen());
+        String tinhThanh = safeTrim(donHang.getTinhThanh());
+
+        List<String> headParts = new ArrayList<>();
+        if (!ten.isEmpty()) headParts.add(ten);
+        if (!sdt.isEmpty()) headParts.add(sdt);
+        if (!diaChi.isEmpty()) headParts.add(diaChi);
+
+        List<String> tailParts = new ArrayList<>();
+        if (!phuongXa.isEmpty()) tailParts.add(phuongXa);
+        if (!quanHuyen.isEmpty()) tailParts.add(quanHuyen);
+        if (!tinhThanh.isEmpty()) tailParts.add(tinhThanh);
+
+        String head = String.join(" - ", headParts);
+        String tail = String.join(", ", tailParts);
+
+        if (head.isEmpty() && tail.isEmpty()) {
+            return "";
+        }
+        if (head.isEmpty()) {
+            return tail;
+        }
+        if (tail.isEmpty()) {
+            return head;
+        }
+        return head + ", " + tail;
+    }
+
+    /**
+     * Build chuỗi thuộc tính hiển thị từ snapshot màu/size.
+     * Format: "Màu: {mauSac}, Size: {kichCo}".
+     */
+    private String buildThuocTinhSnapshot(DonHangChiTiet ct) {
+        if (ct == null) {
+            return "";
+        }
+        String mau = safeTrim(ct.getMauSac());
+        String size = safeTrim(ct.getKichCo());
+
+        StringBuilder sb = new StringBuilder();
+        if (!mau.isEmpty()) {
+            sb.append("Màu: ").append(mau);
+        }
+        if (!size.isEmpty()) {
+            if (sb.length() > 0) {
+                sb.append(", ");
+            }
+            sb.append("Size: ").append(size);
+        }
+
+        return sb.toString();
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
+
     private DonHangChiTietResponse mapChiTietToResponse(DonHangChiTiet ct) {
         DonHangChiTietResponse ctDTO = new DonHangChiTietResponse();
         ctDTO.setId(ct.getId());
@@ -649,6 +720,10 @@ public class DonHangService {
         ctDTO.setDonGia(ct.getDonGia());
         ctDTO.setSoLuong(ct.getSoLuong());
         ctDTO.setThanhTien(ct.getThanhTien());
+
+        // Thuộc tính hiển thị cho FE (snapshot từ màu/size, fallback về chuỗi cũ nếu cần)
+        String thuocTinhSnapshot = buildThuocTinhSnapshot(ct);
+        ctDTO.setThuocTinh(thuocTinhSnapshot);
 
         if (ct.getBienThe() != null) {
             ctDTO.setBienTheId(ct.getBienThe().getId());
@@ -709,14 +784,6 @@ public class DonHangService {
         if (!diaChi.getKhachHang().getId().equals(khachHangId)) {
             throw new RuntimeException("Địa chỉ không thuộc về khách hàng này");
         }
-
-        String diaChiSnapshot = String.format("%s - %s - %s, %s, %s, %s",
-                diaChi.getHoTen(),
-                diaChi.getSoDienThoai(),
-                diaChi.getDiaChi1(),
-                diaChi.getPhuongXa(),
-                diaChi.getQuanHuyen(),
-                diaChi.getTinhThanh());
 
         // Lấy chi tiết giỏ hàng
         List<GioHangChiTiet> gioHangItems = gioHangService.layGioHangChiTietKhach(khachHangId);
@@ -889,11 +956,19 @@ public class DonHangService {
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
         donHang.setVoucher(voucherGiamGia);
-        
+
         // Log để debug
         log.info("📦 Creating order - tamTinh: {}, giamGiaTong: {}, phiVanChuyen: {}, voucher: {}", 
                 tamTinh, giamGiaTong, phiVanChuyen, voucherGiamGia != null ? voucherGiamGia.getMa() : "null");
-        donHang.setDiaChiGiao(diaChiSnapshot);
+
+        // --- SNAPSHOT địa chỉ & người nhận (User chọn từ sổ địa chỉ) ---
+        donHang.setTenNguoiNhan(diaChi.getHoTen());
+        donHang.setSdtNguoiNhan(diaChi.getSoDienThoai());
+        donHang.setEmailNguoiNhan(khachHang.getEmail());
+        donHang.setDiaChiChiTiet(diaChi.getDiaChi1());
+        donHang.setPhuongXa(diaChi.getPhuongXa());
+        donHang.setQuanHuyen(diaChi.getQuanHuyen());
+        donHang.setTinhThanh(diaChi.getTinhThanh());
         donHang.setGhiChu(request.getGhiChu());
         donHang.setPaymentMethod(request.getPhuongThucThanhToan());
         donHang.setPaymentStatus("pending");
@@ -923,26 +998,21 @@ public class DonHangService {
             if (donGia == null) {
                 throw new RuntimeException("Không tìm thấy giá cho sản phẩm: " + tenHienThi);
             }
-            StringBuilder thuocTinh = new StringBuilder();
-            if (bienThe.getMauSac() != null) {
-                thuocTinh.append("Màu: ").append(bienThe.getMauSac().getTen());
-            }
-            if (bienThe.getKichCo() != null) {
-                if (thuocTinh.length() > 0)
-                    thuocTinh.append(", ");
-                thuocTinh.append("Size: ").append(bienThe.getKichCo().getTen());
-            }
-            if (bienThe.getChatLieu() != null) {
-                if (thuocTinh.length() > 0)
-                    thuocTinh.append(", ");
-                thuocTinh.append("Chất liệu: ").append(bienThe.getChatLieu().getTen());
-            }
-
             DonHangChiTiet chiTiet = new DonHangChiTiet();
             chiTiet.setDonHang(savedDonHang);
             chiTiet.setBienThe(bienThe);
             chiTiet.setTenHienThi(tenHienThi);
-            chiTiet.setThuocTinh(thuocTinh.toString());
+
+            // --- SNAPSHOT thuộc tính sản phẩm ---
+            if (bienThe.getMauSac() != null) {
+                chiTiet.setMauSac(bienThe.getMauSac().getTen());
+            }
+            if (bienThe.getKichCo() != null) {
+                chiTiet.setKichCo(bienThe.getKichCo().getTen());
+            }
+            if (bienThe.getChatLieu() != null) {
+                chiTiet.setChatLieu(bienThe.getChatLieu().getTen());
+            }
             chiTiet.setSoLuong(item.getSoLuong());
             chiTiet.setDonGia(donGia);
             chiTiet.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));
@@ -1133,7 +1203,10 @@ public class DonHangService {
         if (order.getTrangThai() != null && order.getTrangThai().toLowerCase(Locale.ROOT).contains(lower)) {
             return true;
         }
-        if (order.getDiaChiGiao() != null && order.getDiaChiGiao().toLowerCase(Locale.ROOT).contains(lower)) {
+
+        // Tìm theo địa chỉ snapshot mới
+        String diaChiSnapshot = buildDiaChiSnapshot(order);
+        if (!diaChiSnapshot.isEmpty() && diaChiSnapshot.toLowerCase(Locale.ROOT).contains(lower)) {
             return true;
         }
         if (order.getGhiChu() != null && order.getGhiChu().toLowerCase(Locale.ROOT).contains(lower)) {
@@ -1152,8 +1225,10 @@ public class DonHangService {
                         && chiTiet.getTenHienThi().toLowerCase(Locale.ROOT).contains(lower)) {
                     return true;
                 }
-                if (chiTiet.getThuocTinh() != null
-                        && chiTiet.getThuocTinh().toLowerCase(Locale.ROOT).contains(lower)) {
+
+                String thuocTinhSnapshot = buildThuocTinhSnapshot(chiTiet);
+                if (!thuocTinhSnapshot.isEmpty()
+                        && thuocTinhSnapshot.toLowerCase(Locale.ROOT).contains(lower)) {
                     return true;
                 }
             }
@@ -1383,15 +1458,6 @@ public class DonHangService {
             }
         }
 
-        String diaChiSnapshot = String.format(
-                "%s - %s - %s, %s, %s, %s",
-                request.getHoTen(),
-                request.getSoDienThoai(),
-                request.getDiaChi(),
-                request.getPhuongXa() != null ? request.getPhuongXa() : "",
-                request.getQuanHuyen(),
-                request.getTinhThanh());
-
         // tạo đơn hàng guest
         DonHang donHang = new DonHang();
         donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
@@ -1401,7 +1467,14 @@ public class DonHangService {
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
         donHang.setVoucher(appliedVoucher);
-        donHang.setDiaChiGiao(diaChiSnapshot);
+
+        donHang.setTenNguoiNhan(request.getHoTen());
+        donHang.setSdtNguoiNhan(request.getSoDienThoai());
+        donHang.setEmailNguoiNhan(request.getEmail());
+        donHang.setDiaChiChiTiet(request.getDiaChi());
+        donHang.setPhuongXa(request.getPhuongXa());
+        donHang.setQuanHuyen(request.getQuanHuyen());
+        donHang.setTinhThanh(request.getTinhThanh());
         donHang.setGhiChu(request.getGhiChu());
         donHang.setPaymentMethod(request.getPhuongThucThanhToan());
         donHang.setPaymentStatus("pending");
@@ -1430,26 +1503,21 @@ public class DonHangService {
                 throw new RuntimeException("Không tìm thấy giá cho sản phẩm: " + tenHienThi);
             }
 
-            StringBuilder thuocTinh = new StringBuilder();
-            if (bienThe.getMauSac() != null) {
-                thuocTinh.append("Màu: ").append(bienThe.getMauSac().getTen());
-            }
-            if (bienThe.getKichCo() != null) {
-                if (thuocTinh.length() > 0)
-                    thuocTinh.append(", ");
-                thuocTinh.append("Size: ").append(bienThe.getKichCo().getTen());
-            }
-            if (bienThe.getChatLieu() != null) {
-                if (thuocTinh.length() > 0)
-                    thuocTinh.append(", ");
-                thuocTinh.append("Chất liệu: ").append(bienThe.getChatLieu().getTen());
-            }
-
             DonHangChiTiet ct = new DonHangChiTiet();
             ct.setDonHang(savedDonHang);
             ct.setBienThe(bienThe);
             ct.setTenHienThi(tenHienThi);
-            ct.setThuocTinh(thuocTinh.toString());
+
+            // --- SNAPSHOT thuộc tính sản phẩm ---
+            if (bienThe.getMauSac() != null) {
+                ct.setMauSac(bienThe.getMauSac().getTen());
+            }
+            if (bienThe.getKichCo() != null) {
+                ct.setKichCo(bienThe.getKichCo().getTen());
+            }
+            if (bienThe.getChatLieu() != null) {
+                ct.setChatLieu(bienThe.getChatLieu().getTen());
+            }
             ct.setSoLuong(item.getSoLuong());
             ct.setDonGia(donGia);
             ct.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));

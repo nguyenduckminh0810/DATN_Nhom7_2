@@ -141,7 +141,9 @@ private String layEmailNguoiNhan(KhachHang khachHang) {
         html.append("<p><strong>Mã đơn hàng:</strong> ").append(donHang.getSoDonHang()).append("</p>");
         html.append("<p><strong>Ngày đặt:</strong> ").append(formatDate(donHang.getTaoLuc())).append("</p>");
         html.append("<p><strong>Trạng thái:</strong> ").append(donHang.getTrangThai()).append("</p>");
-        html.append("<p><strong>Địa chỉ giao hàng:</strong><br>").append(donHang.getDiaChiGiao()).append("</p>");
+        html.append("<p><strong>Địa chỉ giao hàng:</strong><br>")
+                .append(buildDiaChiSnapshot(donHang))
+                .append("</p>");
         html.append("</div>");
         
         // Chi tiết đơn hàng
@@ -220,7 +222,9 @@ private String layEmailNguoiNhan(KhachHang khachHang) {
         html.append("</div>");
         
         html.append("<p>Đơn hàng của bạn sẽ được xử lý và giao đến địa chỉ:</p>");
-        html.append("<p style='padding: 10px; background-color: #f4f4f4; border-radius: 5px;'>").append(donHang.getDiaChiGiao()).append("</p>");
+        html.append("<p style='padding: 10px; background-color: #f4f4f4; border-radius: 5px;'>")
+                .append(buildDiaChiSnapshot(donHang))
+                .append("</p>");
         
         html.append("<p style='margin-top: 30px;'>Cảm ơn bạn đã tin tưởng AURO Store!</p>");
         html.append("<p>Trân trọng,<br><strong>AURO Store Team</strong></p>");
@@ -237,6 +241,55 @@ private String layEmailNguoiNhan(KhachHang khachHang) {
     }
 
     // Helper methods
+    private String buildDiaChiSnapshot(DonHang donHang) {
+        if (donHang == null) {
+            return "";
+        }
+
+        String ten = safeTrim(donHang.getTenNguoiNhan());
+        String sdt = safeTrim(donHang.getSdtNguoiNhan());
+        String diaChi = safeTrim(donHang.getDiaChiChiTiet());
+        String phuongXa = safeTrim(donHang.getPhuongXa());
+        String quanHuyen = safeTrim(donHang.getQuanHuyen());
+        String tinhThanh = safeTrim(donHang.getTinhThanh());
+
+        StringBuilder head = new StringBuilder();
+        if (!ten.isEmpty()) {
+            head.append(ten);
+        }
+        if (!sdt.isEmpty()) {
+            if (!head.isEmpty()) head.append(" - ");
+            head.append(sdt);
+        }
+        if (!diaChi.isEmpty()) {
+            if (!head.isEmpty()) head.append(" - ");
+            head.append(diaChi);
+        }
+
+        StringBuilder tail = new StringBuilder();
+        if (!phuongXa.isEmpty()) {
+            tail.append(phuongXa);
+        }
+        if (!quanHuyen.isEmpty()) {
+            if (!tail.isEmpty()) tail.append(", ");
+            tail.append(quanHuyen);
+        }
+        if (!tinhThanh.isEmpty()) {
+            if (!tail.isEmpty()) tail.append(", ");
+            tail.append(tinhThanh);
+        }
+
+        if (head.isEmpty() && tail.isEmpty()) {
+            return "";
+        }
+        if (head.isEmpty()) return tail.toString();
+        if (tail.isEmpty()) return head.toString();
+        return head + ", " + tail;
+    }
+
+    private String safeTrim(String value) {
+        return value == null ? "" : value.trim();
+    }
     private String formatMoney(BigDecimal amount) {
         if (amount == null) return "0đ";
         NumberFormat formatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));

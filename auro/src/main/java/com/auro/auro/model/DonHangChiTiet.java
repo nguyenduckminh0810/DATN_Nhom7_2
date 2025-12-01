@@ -30,8 +30,14 @@ public class DonHangChiTiet {
     @Column(name = "ten_hien_thi", columnDefinition = "NVARCHAR(255)")
     private String tenHienThi;
 
-    @Column(name = "thuoc_tinh", columnDefinition = "NVARCHAR(MAX)")
-    private String thuocTinh;
+    @Column(name = "mau_sac", columnDefinition = "NVARCHAR(100)")
+    private String mauSac;
+
+    @Column(name = "kich_co", columnDefinition = "NVARCHAR(50)")
+    private String kichCo;
+
+    @Column(name = "chat_lieu", columnDefinition = "NVARCHAR(100)")
+    private String chatLieu;
 
     @Column(name = "so_luong", nullable = false)
     private Integer soLuong;
