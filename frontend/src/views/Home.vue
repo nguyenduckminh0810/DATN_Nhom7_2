@@ -103,7 +103,7 @@ const heroSlides = ref([
     promoImage:
       'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
     ctaText: 'MUA NGAY',
-    ctaLink: '/category/ao',
+    ctaLink: '/san-pham?sort=createdAt',
     backgroundImage:
       'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
     mainImage:
@@ -120,7 +120,7 @@ const heroSlides = ref([
     promoImage:
       'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
     ctaText: 'KHÁM PHÁ',
-    ctaLink: '/category/quan',
+    ctaLink: '/san-pham?sort=createdAt',
     backgroundImage:
       'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
     mainImage:
@@ -137,7 +137,7 @@ const heroSlides = ref([
     promoImage:
       'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80',
     ctaText: 'SHOPPING',
-    ctaLink: '/category/sale',
+    ctaLink: '/san-pham?sort=createdAt',
     backgroundImage:
       'https://images.unsplash.com/photo-1558769132-cb1aea1f5d8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
     mainImage:

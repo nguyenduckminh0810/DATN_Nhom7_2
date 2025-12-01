@@ -19,7 +19,7 @@
       <div class="row mb-5">
         <div class="col-12">
           <div class="category-header text-center">
-            <h1 class="display-4 fw-bold mb-3">{{ categoryName || 'Tất cả sản phẩm' }}</h1>
+            <h1 style="padding-top: 10px;" class="display-4 fw-bold mb-3">{{ categoryName || 'Tất cả sản phẩm' }}</h1>
             <p class="text-muted fs-5">{{ products.length }} sản phẩm</p>
             <div class="section-divider"></div>
           </div>
