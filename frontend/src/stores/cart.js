@@ -124,47 +124,68 @@ export const useCartStore = defineStore('cart', () => {
   const isEmpty = computed(() => items.value.length === 0)
 
   // Actions
-  const addItem = (product, quantity = 1) => {
-    // Validate and sanitize product data
-    const sanitizedProduct = {
-      id: product.id || null,
-      name: product.name || 'Sản phẩm không tên',
-      price: parseFloat(product.price) || 0,
-      image: product.image || '',
-      variantId: product.variantId || null,
-      color: product.color || null,
-      size: product.size || null,
-      quantity: parseInt(product.quantity) || parseInt(quantity) || 1,
-      stock: parseInt(product.stock) || 1,
+  const addItem = async (product, quantity = 1) => {
+    try {
+      // Validate and sanitize product data
+      const sanitizedProduct = {
+        id: product.id || null,
+        name: product.name || 'Sản phẩm không tên',
+        price: parseFloat(product.price) || 0,
+        image: product.image || '',
+        variantId: product.variantId || product.bienTheId || null,
+        color: product.color || null,
+        size: product.size || null,
+        quantity: parseInt(product.quantity) || parseInt(quantity) || 1,
+        stock: parseInt(product.stock) || 1,
+      }
+
+      console.log('🛒 [ADD ITEM] Adding product:', sanitizedProduct)
+
+      // ✅ GỌI API BACKEND ĐỂ THÊM VÀO GIỎ HÀNG
+      if (sanitizedProduct.variantId) {
+        const payload = {
+          bienTheId: sanitizedProduct.variantId,
+          soLuong: sanitizedProduct.quantity,
+        }
+        console.log('📡 [ADD ITEM] Calling API with payload:', payload)
+        await cartService.addToCart(payload)
+        console.log('✅ [ADD ITEM] Added to backend successfully')
+
+        // Sau khi thêm thành công, reload giỏ hàng từ backend
+        await loadCart()
+        console.log('✅ [ADD ITEM] Reloaded cart from backend')
+      } else {
+        console.warn('⚠️ [ADD ITEM] No variantId found, cannot add to backend cart')
+
+        // FALLBACK: Nếu không có variantId, thêm vào localStorage (cho guest user)
+        const itemKey = sanitizedProduct.id
+        const existingItem = items.value.find(
+          (item) => item.itemKey === itemKey || item.id === sanitizedProduct.id,
+        )
+
+        if (existingItem) {
+          existingItem.quantity += sanitizedProduct.quantity
+          existingItem.price = sanitizedProduct.price
+        } else {
+          items.value.push({
+            id: sanitizedProduct.id,
+            itemKey: itemKey,
+            variantId: sanitizedProduct.variantId,
+            color: sanitizedProduct.color,
+            size: sanitizedProduct.size,
+            name: sanitizedProduct.name,
+            price: sanitizedProduct.price,
+            image: sanitizedProduct.image,
+            quantity: sanitizedProduct.quantity,
+            addedAt: new Date().toISOString(),
+          })
+        }
+        saveToStorage()
+      }
+    } catch (error) {
+      console.error('❌ [ADD ITEM] Error:', error)
+      throw error
     }
-
-    // Create unique key for variant-based products
-    const itemKey = sanitizedProduct.variantId || sanitizedProduct.id
-    const existingItem = items.value.find(
-      (item) =>
-        item.itemKey === itemKey ||
-        (item.id === sanitizedProduct.id && !item.variantId && !sanitizedProduct.variantId),
-    )
-
-    if (existingItem) {
-      existingItem.quantity += sanitizedProduct.quantity
-      existingItem.price = sanitizedProduct.price // Update price in case it changed
-    } else {
-      items.value.push({
-        id: sanitizedProduct.id,
-        itemKey: itemKey,
-        variantId: sanitizedProduct.variantId,
-        color: sanitizedProduct.color,
-        size: sanitizedProduct.size,
-        name: sanitizedProduct.name,
-        price: sanitizedProduct.price,
-        image: sanitizedProduct.image,
-        quantity: sanitizedProduct.quantity,
-        addedAt: new Date().toISOString(),
-      })
-    }
-
-    saveToStorage()
   }
 
   const removeItem = async (itemKey) => {
@@ -315,7 +336,7 @@ export const useCartStore = defineStore('cart', () => {
       const previousCart = localStorage.getItem('auro_cart_v1')
       const previousItems = previousCart ? JSON.parse(previousCart) : []
       const selectedStateMap = new Map()
-      
+
       // Tạo map để lưu selected state theo itemKey (hoặc id, bienTheId)
       previousItems.forEach((prevItem) => {
         if (prevItem.selected !== undefined) {
@@ -363,13 +384,21 @@ export const useCartStore = defineStore('cart', () => {
           }
 
           // ✅ Restore selected state từ localStorage nếu có, nếu không thì mặc định = true
-          const preservedSelected = selectedStateMap.get(mapped.id) || 
-                                   selectedStateMap.get(mapped.itemKey) || 
-                                   selectedStateMap.get(mapped.bienTheId) || 
-                                   true // Mặc định tất cả items được chọn
+          const preservedSelected =
+            selectedStateMap.get(mapped.id) ||
+            selectedStateMap.get(mapped.itemKey) ||
+            selectedStateMap.get(mapped.bienTheId) ||
+            true // Mặc định tất cả items được chọn
           mapped.selected = preservedSelected
 
-          console.log('📦 [MAPPED ITEM] stock =', mapped.stock, ', tonKho =', item.tonKho, ', selected =', mapped.selected)
+          console.log(
+            '📦 [MAPPED ITEM] stock =',
+            mapped.stock,
+            ', tonKho =',
+            item.tonKho,
+            ', selected =',
+            mapped.selected,
+          )
           return mapped
         })
 
