@@ -132,18 +132,6 @@
     <div v-if="viewMode === 'tree'" class="categories-tree">
       <div class="tree-header">
         <h3>Danh mục</h3>
-        <div class="tree-actions">
-          <button class="btn btn-sm btn-outline-secondary" @click="expandAll">
-            <i class="bi bi-arrows-expand me-1"></i>Mở rộng tất cả
-          </button>
-          <button class="btn btn-sm btn-outline-secondary" @click="collapseAll">
-            <i class="bi bi-arrows-collapse me-1"></i>Thu gọn tất cả
-          </button>
-          <button class="btn btn-sm btn-outline-primary" @click="toggleDragMode">
-            <i :class="dragMode ? 'bi bi-hand-index' : 'bi bi-hand-index'" class="me-1"></i>
-            {{ dragMode ? 'Tắt' : 'Bật' }} kéo thả
-          </button>
-        </div>
       </div>
 
       <div class="tree-content">

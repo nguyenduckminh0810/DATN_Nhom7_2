@@ -384,6 +384,8 @@ class ApiService {
     softDelete: (id) => this.delete(`/nguoi-dung/${id}`),
     // Bulk update trạng thái: PUT /api/admin/users/bulk-status
     bulkStatus: (data) => this.put('/admin/users/bulk-status', data),
+    // Get orders by user ID
+    getOrdersByUserId: (userId, params = {}) => this.get(`/don-hang/nguoi-dung/${userId}`, { params }),
   }
 
   // Contact endpoints
