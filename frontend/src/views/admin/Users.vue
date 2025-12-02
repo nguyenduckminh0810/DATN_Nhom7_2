@@ -3,30 +3,44 @@
     <div class="admin-users">
       <!-- Page Header -->
       <div class="page-header">
-        <div class="header-left">
-          <h1 class="page-title">Quản lý người dùng</h1>
-          <p class="page-subtitle">Quản lý tài khoản khách hàng và nhân viên</p>
+        <div class="header-content">
+          <div class="header-left">
+            <h1 class="page-title">Quản lý người dùng</h1>
+            <p class="page-subtitle">Quản lý tài khoản khách hàng và nhân viên</p>
+          </div>
+          <div class="header-actions" v-if="isAdmin">
+            <router-link to="/admin/register-staff" class="btn btn-primary btn-add-staff">
+              <i class="bi bi-person-plus-fill me-2"></i>
+              <span>Thêm nhân viên</span>
+            </router-link>
+          </div>
         </div>
-        <div class="header-right">
-          <router-link 
-            v-if="isAdmin" 
-            to="/admin/register-staff" 
-            class="btn btn-primary me-3"
-          >
-            <i class="bi bi-person-plus me-2"></i>Thêm nhân viên
-          </router-link>
-          <div class="header-stats">
-            <div class="stat-item">
-              <span class="stat-label">Tổng người dùng:</span>
+        <div class="header-stats-row">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary-subtle">
+              <i class="bi bi-people-fill text-primary"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Tổng người dùng</span>
               <span class="stat-value">{{ totalUsers }}</span>
             </div>
-            <div class="stat-item">
-              <span class="stat-label">Khách hàng:</span>
-              <span class="stat-value text-primary">{{ customerCount }}</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon bg-info-subtle">
+              <i class="bi bi-person-fill text-info"></i>
             </div>
-            <div class="stat-item">
-              <span class="stat-label">Nhân viên:</span>
-              <span class="stat-value text-success">{{ staffCount }}</span>
+            <div class="stat-content">
+              <span class="stat-label">Khách hàng</span>
+              <span class="stat-value">{{ customerCount }}</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon bg-success-subtle">
+              <i class="bi bi-person-badge-fill text-success"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Nhân viên</span>
+              <span class="stat-value">{{ staffCount }}</span>
             </div>
           </div>
         </div>
@@ -884,7 +898,9 @@ const fetchUsers = async () => {
     users.value = Array.isArray(content)
       ? content.map((u) => {
           const email = u.email || ''
-          const baseName = email ? email.split('@')[0] || 'Người dùng' : u.soDienThoai || 'Người dùng'
+          const baseName = email
+            ? email.split('@')[0] || 'Người dùng'
+            : u.soDienThoai || 'Người dùng'
           const roleMap = { ADM: 'admin', STF: 'staff', CUS: 'customer', GST: 'customer' }
 
           // Lấy orderCount và totalSpent từ backend
@@ -1416,10 +1432,22 @@ onMounted(() => {
 }
 
 .page-header {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2rem;
+}
+
+.header-left {
+  flex: 1;
 }
 
 .page-title {
@@ -1432,29 +1460,79 @@ onMounted(() => {
 .page-subtitle {
   color: #6c757d;
   margin: 0;
+  font-size: 1rem;
 }
 
-.header-stats {
+.header-actions {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
 }
 
-.stat-item {
-  text-align: center;
+.btn-add-staff {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.btn-add-staff:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
+}
+
+.header-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 1.5rem;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .stat-label {
-  display: block;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #6c757d;
-  margin-bottom: 0.25rem;
+  font-weight: 500;
 }
 
 .stat-value {
-  display: block;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #2c3e50;
+  line-height: 1;
 }
 
 .filters-section {
@@ -2221,16 +2299,30 @@ onMounted(() => {
 }
 
 /* Responsive */
+@media (max-width: 992px) {
+  .header-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  .page-header {
+  .header-content {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .header-stats {
+  .header-actions {
     width: 100%;
-    justify-content: space-around;
+  }
+
+  .btn-add-staff {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-stats-row {
+    grid-template-columns: 1fr;
   }
 
   .users-table {
