@@ -58,9 +58,6 @@
               <router-link to="/addresses" class="list-group-item list-group-item-action py-3">
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-bell me-2"></i>Thông báo
-              </a>
               <a
                 href="#"
                 class="list-group-item list-group-item-action text-danger py-3"
@@ -90,33 +87,13 @@
                   <!-- Email -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Email *</label>
-                    <input v-model="form.email" type="email" class="form-control" required />
+                    <input v-model="form.email" type="email" class="form-control" disabled />
                   </div>
 
                   <!-- Phone -->
                   <div class="col-md-6 mb-3">
                     <label class="form-label">Số điện thoại *</label>
-                    <input v-model="form.phone" type="tel" class="form-control" required />
-                  </div>
-
-
-
-
-
-                  <!-- Newsletter -->
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Nhận thông báo</label>
-                    <div class="form-check">
-                      <input
-                        v-model="form.subscribeNewsletter"
-                        class="form-check-input"
-                        type="checkbox"
-                        id="newsletter"
-                      />
-                      <label class="form-check-label" for="newsletter">
-                        Nhận thông tin khuyến mãi và sản phẩm mới
-                      </label>
-                    </div>
+                    <input v-model="form.phone" type="tel" class="form-control" disabled />
                   </div>
                 </div>
 
@@ -262,38 +239,35 @@ const passwordForm = ref({
 // Methods
 const loadUserData = async () => {
   try {
-    // Gọi API để lấy thông tin user mới nhất
-    const response = await apiService.auth.me()
-    
+    const response = await apiService.user.getProfile()
+
     if (response.success && response.data) {
-      // Map data từ API response
+      const data = response.data
+
       const userData = {
-        id: response.data.id,
-        name: response.data.hoTen || response.data.name || response.data.email?.split('@')[0],
-        email: response.data.email,
-        phone: response.data.soDienThoai,
-        avatar: response.data.avatar,
-        role: response.data.vaiTro,
+        id: data.id,
+        name: data.fullName || data.email?.split('@')[0],
+        email: data.email,
+        phone: data.phone,
+        avatar: data.avatar,
+        role: data.role,
       }
-      
+
       user.value = userData
-      
-      // Cập nhật localStorage
+
       localStorage.setItem('auro_user', JSON.stringify(userData))
-      
-      // Cập nhật form
+
       form.value = {
         fullName: userData.name || '',
         email: userData.email || '',
         phone: userData.phone || '',
-        dateOfBirth: user.value.dateOfBirth || '',
-        gender: user.value.gender || '',
-        subscribeNewsletter: user.value.subscribeNewsletter || false,
+        dateOfBirth: '',
+        gender: '',
+        subscribeNewsletter: false,
       }
     }
   } catch (error) {
     console.error('Load user data error:', error)
-    // Fallback to localStorage nếu API fail
     const storedUser = localStorage.getItem('auro_user')
     if (storedUser) {
       user.value = JSON.parse(storedUser)
@@ -301,9 +275,9 @@ const loadUserData = async () => {
         fullName: user.value.name || '',
         email: user.value.email || '',
         phone: user.value.phone || '',
-        dateOfBirth: user.value.dateOfBirth || '',
-        gender: user.value.gender || '',
-        subscribeNewsletter: user.value.subscribeNewsletter || false,
+        dateOfBirth: '',
+        gender: '',
+        subscribeNewsletter: false,
       }
     }
   }
@@ -313,28 +287,33 @@ const handleUpdateProfile = async () => {
   isSubmitting.value = true
 
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Update user data
-    const updatedUser = {
-      ...user.value,
-      name: form.value.fullName,
-      email: form.value.email,
-      phone: form.value.phone,
-      dateOfBirth: form.value.dateOfBirth,
-      gender: form.value.gender,
-      subscribeNewsletter: form.value.subscribeNewsletter,
+    const payload = {
+      fullName: form.value.fullName,
     }
 
-    // Update localStorage
-    localStorage.setItem('auro_user', JSON.stringify(updatedUser))
-    user.value = updatedUser
+    const response = await apiService.user.updateProfile(payload)
 
-    alert('Cập nhật thông tin thành công!')
+    if (response.success && response.data) {
+      const data = response.data
+      const updatedUser = {
+        id: data.id,
+        name: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        avatar: data.avatar,
+        role: data.role,
+      }
+
+      user.value = updatedUser
+      localStorage.setItem('auro_user', JSON.stringify(updatedUser))
+
+      alert('Cập nhật thông tin thành công!')
+    } else {
+      alert(response.message || 'Có lỗi xảy ra khi cập nhật thông tin')
+    }
   } catch (error) {
     console.error('Update profile error:', error)
-    alert('Có lỗi xảy ra khi cập nhật thông tin')
+    alert(error.message || 'Có lỗi xảy ra khi cập nhật thông tin')
   } finally {
     isSubmitting.value = false
   }
@@ -355,20 +334,26 @@ const handleChangePassword = async () => {
   isChangingPassword.value = true
 
   try {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Clear password form
-    passwordForm.value = {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
+    const payload = {
+      currentPassword: passwordForm.value.currentPassword,
+      newPassword: passwordForm.value.newPassword,
     }
 
-    alert('Đổi mật khẩu thành công!')
+    const response = await apiService.user.changePassword(payload)
+
+    if (response.success) {
+      passwordForm.value = {
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }
+      alert('Đổi mật khẩu thành công!')
+    } else {
+      alert(response.message || 'Có lỗi xảy ra khi đổi mật khẩu')
+    }
   } catch (error) {
     console.error('Change password error:', error)
-    alert('Có lỗi xảy ra khi đổi mật khẩu')
+    alert(error.message || 'Có lỗi xảy ra khi đổi mật khẩu')
   } finally {
     isChangingPassword.value = false
   }

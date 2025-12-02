@@ -41,9 +41,6 @@ public class Voucher {
     @Column(name = "so_luong", nullable = true)
     private Integer gioiHanSuDung;
 
-    @Column(name = "dieu_kien_json", columnDefinition = "NVARCHAR(MAX)")
-    private String dieuKienJson;
-
     @Column(name = "ngay_tao")
     private LocalDateTime taoLuc;
 
@@ -51,5 +48,5 @@ public class Voucher {
     private LocalDateTime capNhatLuc;
 
     @Column(name = "trang_thai", nullable = false)
-    private Integer trangThai = 1; // 0 = Đã hủy, 1 = Active
+    private Integer trangThai = 1; // 0 = Đã hủy, 1 = Active , 2 = unactive
 }

@@ -274,9 +274,9 @@ class ApiService {
 
   // User endpoints
   user = {
-    getProfile: () => this.get('/auth/me'),
-    updateProfile: (data) => this.put('/user/profile', data),
-    changePassword: (data) => this.post('/user/change-password', data),
+    getProfile: () => this.get('/profile'),
+    updateProfile: (data) => this.put('/profile', data),
+    changePassword: (data) => this.post('/profile/change-password', data),
     uploadAvatar: async (file) => {
       const formData = new FormData()
       formData.append('file', file)
