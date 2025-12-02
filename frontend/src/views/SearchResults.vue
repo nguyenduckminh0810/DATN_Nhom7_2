@@ -497,6 +497,24 @@ watch(sortBy, () => {
   margin: 0 auto;
 }
 
+.search-input-container .input-group {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.search-input-container .input-group:hover {
+  border-color: #b8860b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.search-input-container .input-group:focus-within {
+  border-color: #b8860b;
+  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.25);
+}
+
 .modern-search-input {
   font-size: 1.1rem;
   padding: 12px 16px;
@@ -507,7 +525,7 @@ watch(sortBy, () => {
 
 .modern-search-input:focus {
   background: white;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  box-shadow: none;
 }
 
 .results-summary {
