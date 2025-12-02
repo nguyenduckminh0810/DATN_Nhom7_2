@@ -382,10 +382,8 @@ class ApiService {
     getById: (id) => this.get(`/nguoi-dung/${id}`),
     update: (id, data) => this.put(`/nguoi-dung/${id}`, data),
     softDelete: (id) => this.delete(`/nguoi-dung/${id}`),
-    // Future endpoints:
-    // create: (data) => this.post('/nguoi-dung', data),
-    // resetPassword: (id, data) => this.post(`/nguoi-dung/${id}/reset-mat-khau`, data),
-    // toggleStatus: (id, enabled) => this.put(`/nguoi-dung/${id}`, { trangThai: enabled }),
+    // Bulk update trạng thái: PUT /api/admin/users/bulk-status
+    bulkStatus: (data) => this.put('/admin/users/bulk-status', data),
   }
 
   // Contact endpoints

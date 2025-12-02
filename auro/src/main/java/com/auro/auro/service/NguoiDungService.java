@@ -3,13 +3,19 @@ package com.auro.auro.service;
 import com.auro.auro.dto.request.UserUpdateRequest;
 import com.auro.auro.dto.response.UserAdminResponse;
 import com.auro.auro.model.TaiKhoan;
+import com.auro.auro.model.VaiTro;
 import com.auro.auro.repository.TaiKhoanRepository;
+import com.auro.auro.repository.VaiTroRepository;
+import com.auro.auro.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,9 +25,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class NguoiDungService {
+    private static final String STAFF_EDIT_INFO_FORBIDDEN = "Nhân viên không được phép sửa thông tin tài khoản";
+
     private final TaiKhoanRepository taiKhoanRepository;
     private final com.auro.auro.repository.DonHangRepository donHangRepository;
     private final com.auro.auro.repository.KhachHangRepository khachHangRepository;
+    private final VaiTroRepository vaiTroRepository;
 
     public Page<UserAdminResponse> listUsers(Integer page, Integer size, String vaiTroMa, Boolean trangThai,
             String search) {
@@ -49,6 +58,28 @@ public class NguoiDungService {
 
         List<UserAdminResponse> data = filtered.stream().map(this::toResponse).collect(Collectors.toList());
         return new PageImpl<>(data, pageable, tkPage.getTotalElements());
+    }
+
+    private TaiKhoan getCurrentTaiKhoan() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails principal)) {
+            throw new AccessDeniedException("Không xác định được người dùng hiện tại");
+        }
+        return principal.getTaiKhoan();
+    }
+
+    private String getRoleCode(TaiKhoan tk) {
+        return tk.getVaiTro() != null ? tk.getVaiTro().getMa() : null;
+    }
+
+    private boolean isAdmin(TaiKhoan tk) {
+        String ma = getRoleCode(tk);
+        return ma != null && "ADM".equalsIgnoreCase(ma);
+    }
+
+    private boolean isStaff(TaiKhoan tk) {
+        String ma = getRoleCode(tk);
+        return ma != null && "STF".equalsIgnoreCase(ma);
     }
 
     private UserAdminResponse toResponse(TaiKhoan tk) {
@@ -85,15 +116,58 @@ public class NguoiDungService {
     }
 
     public UserAdminResponse updateUser(Long id, UserUpdateRequest req) {
-        TaiKhoan tk = taiKhoanRepository.findById(id)
+        TaiKhoan current = getCurrentTaiKhoan();
+        TaiKhoan target = taiKhoanRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
-        if (req.getEmail() != null)
-            tk.setEmail(req.getEmail());
-        if (req.getSoDienThoai() != null)
-            tk.setSoDienThoai(req.getSoDienThoai());
-        if (req.getTrangThai() != null)
-            tk.setTrangThai(req.getTrangThai());
-        TaiKhoan saved = taiKhoanRepository.save(tk);
+
+        String targetRole = getRoleCode(target);
+
+        boolean currentIsAdmin = isAdmin(current);
+        boolean currentIsStaff = isStaff(current);
+
+        // STAFF rules
+        if (currentIsStaff) {
+            // 1) Cấm sửa email / sđt
+            if (req.getEmail() != null && !req.getEmail().equals(target.getEmail())) {
+                throw new AccessDeniedException(STAFF_EDIT_INFO_FORBIDDEN);
+            }
+            if (req.getSoDienThoai() != null && !req.getSoDienThoai().equals(target.getSoDienThoai())) {
+                throw new AccessDeniedException(STAFF_EDIT_INFO_FORBIDDEN);
+            }
+
+            // 2) Cấm sửa vai trò
+            if (req.getVaiTroMa() != null
+                    && !req.getVaiTroMa().equalsIgnoreCase(targetRole)) {
+                throw new AccessDeniedException(STAFF_EDIT_INFO_FORBIDDEN);
+            }
+
+            // 3) Chỉ được đổi trạng thái cho khách hàng (CUS)
+            if (req.getTrangThai() != null
+                    && !req.getTrangThai().equals(target.getTrangThai())
+                    && !"CUS".equalsIgnoreCase(targetRole)) {
+                throw new AccessDeniedException("Nhân viên chỉ được phép đổi trạng thái tài khoản khách hàng");
+            }
+        }
+
+        // ADMIN có full quyền: sửa email, sđt, vai trò, trạng thái
+        if (req.getEmail() != null) {
+            target.setEmail(req.getEmail());
+        }
+        if (req.getSoDienThoai() != null) {
+            target.setSoDienThoai(req.getSoDienThoai());
+        }
+        if (req.getTrangThai() != null) {
+            target.setTrangThai(req.getTrangThai());
+        }
+
+        // Cập nhật vai trò nếu có vaiTroMa và người sửa là ADMIN
+        if (req.getVaiTroMa() != null && currentIsAdmin) {
+            VaiTro vaiTro = vaiTroRepository.findByMa(req.getVaiTroMa())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy vai trò: " + req.getVaiTroMa()));
+            target.setVaiTro(vaiTro);
+        }
+
+        TaiKhoan saved = taiKhoanRepository.save(target);
         return toResponse(saved);
     }
 
@@ -102,5 +176,37 @@ public class NguoiDungService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
         tk.setTrangThai(false);
         taiKhoanRepository.save(tk);
+    }
+
+    public void bulkUpdateStatus(List<Long> ids, Boolean trangThai) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+
+        TaiKhoan current = getCurrentTaiKhoan();
+        boolean currentIsStaff = isStaff(current);
+
+        List<TaiKhoan> targets = taiKhoanRepository.findAllById(ids);
+
+        if (targets.size() != ids.size()) {
+            throw new RuntimeException("Một số tài khoản không tồn tại");
+        }
+
+        // RBAC cho STAFF
+        if (currentIsStaff) {
+            for (TaiKhoan target : targets) {
+                String targetRole = getRoleCode(target);
+                // STAFF chỉ được đổi trạng thái cho CUS
+                if (!"CUS".equalsIgnoreCase(targetRole)) {
+                    throw new AccessDeniedException("Nhân viên chỉ được phép đổi trạng thái tài khoản khách hàng");
+                }
+            }
+        }
+
+        for (TaiKhoan target : targets) {
+            target.setTrangThai(trangThai);
+        }
+
+        taiKhoanRepository.saveAll(targets);
     }
 }

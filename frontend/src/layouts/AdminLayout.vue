@@ -66,7 +66,7 @@
             </router-link>
           </li>
 
-          <li class="nav-item">
+          <li v-if="isAdmin" class="nav-item">
             <router-link
               to="/admin/analytics"
               class="nav-link"
