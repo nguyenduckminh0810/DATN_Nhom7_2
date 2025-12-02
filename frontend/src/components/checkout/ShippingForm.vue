@@ -316,9 +316,9 @@ const loadSavedAddresses = async () => {
       })
 
       // Format địa chỉ đầy đủ cho mỗi địa chỉ
-      savedAddresses.value = savedAddresses.value.map(addr => ({
+      savedAddresses.value = savedAddresses.value.map((addr) => ({
         ...addr,
-        diaChiDayDu: addressService.formatFullAddress(addr)
+        diaChiDayDu: addressService.formatFullAddress(addr),
       }))
 
       console.log('✅ Loaded saved addresses:', savedAddresses.value.length)
@@ -351,52 +351,57 @@ const selectAddress = async (address) => {
   shippingInfo.value.fullName = address.hoTen
   shippingInfo.value.phone = address.soDienThoai
   shippingInfo.value.address = address.diaChi1
-  
+
   // Fill email from user if available
   if (!shippingInfo.value.email && userStore.userEmail) {
     shippingInfo.value.email = userStore.userEmail
   }
 
+  // IMPORTANT: Set province/district/ward text values first (for validation)
+  shippingInfo.value.province = address.tinhThanh
+  shippingInfo.value.district = address.quanHuyen
+  shippingInfo.value.ward = address.phuongXa
+
   console.log('🔍 Looking for province:', address.tinhThanh)
-  
+
   // Find and set province using helper
   const province = addressService.findProvinceInGHN(address.tinhThanh, provinces.value)
-  
+
   if (province) {
     console.log('✅ Found province:', province.ProvinceName)
     selectedProvince.value = province.ProvinceID
-    
+
     // Update shippingInfo with province name
     shippingInfo.value.province = province.ProvinceName
     shippingInfo.value.provinceId = province.ProvinceID
-    
+
     await loadDistricts(province.ProvinceID)
 
     console.log('🔍 Looking for district:', address.quanHuyen)
-    
+
     // Find and set district using helper
     const district = addressService.findDistrictInGHN(address.quanHuyen, districts.value)
-    
+
     if (district) {
       console.log('✅ Found district:', district.DistrictName)
       selectedDistrict.value = district.DistrictID
-      
+
       // Update shippingInfo with district name
       shippingInfo.value.district = district.DistrictName
       shippingInfo.value.districtId = district.DistrictID
-      
+
       await loadWards(district.DistrictID)
       await loadServices(district.DistrictID)
 
       console.log('🔍 Looking for ward:', address.phuongXa)
-      
+
       // Find and set ward using helper
       const ward = addressService.findWardInGHN(address.phuongXa, wards.value)
-      
+
       if (ward) {
         console.log('✅ Found ward:', ward.WardName)
         selectedWard.value = ward.WardCode
-        
+
         // Update shippingInfo with ward name
         shippingInfo.value.ward = ward.WardName
         shippingInfo.value.wardCode = ward.WardCode
@@ -405,13 +410,13 @@ const selectAddress = async (address) => {
         console.log('💰 Auto-calculating shipping fee...')
         console.log('⚖️ Total weight:', totalWeight.value)
         console.log('💵 Total value:', total.value)
-        
+
         try {
           const result = await calculateShippingFee({
             totalWeight: totalWeight.value,
             insuranceValue: total.value,
           })
-          
+
           if (result && result.success) {
             console.log('✅ Shipping fee calculated:', result.shippingFee)
           } else {
@@ -422,15 +427,33 @@ const selectAddress = async (address) => {
         }
       } else {
         console.warn('⚠️ Ward not found:', address.phuongXa)
-        console.warn('Available wards:', wards.value.map(w => w.WardName))
+        console.warn(
+          'Available wards:',
+          wards.value.map((w) => w.WardName),
+        )
+        // Giữ lại giá trị ward từ địa chỉ đã lưu để validation vẫn pass
+        shippingInfo.value.ward = address.phuongXa
       }
     } else {
       console.warn('⚠️ District not found:', address.quanHuyen)
-      console.warn('Available districts:', districts.value.map(d => d.DistrictName))
+      console.warn(
+        'Available districts:',
+        districts.value.map((d) => d.DistrictName),
+      )
+      // Giữ lại giá trị district từ địa chỉ đã lưu để validation vẫn pass
+      shippingInfo.value.district = address.quanHuyen
+      shippingInfo.value.ward = address.phuongXa
     }
   } else {
     console.warn('⚠️ Province not found:', address.tinhThanh)
-    console.warn('Available provinces:', provinces.value.slice(0, 5).map(p => p.ProvinceName))
+    console.warn(
+      'Available provinces:',
+      provinces.value.slice(0, 5).map((p) => p.ProvinceName),
+    )
+    // Giữ lại giá trị province/district/ward từ địa chỉ đã lưu để validation vẫn pass
+    shippingInfo.value.province = address.tinhThanh
+    shippingInfo.value.district = address.quanHuyen
+    shippingInfo.value.ward = address.phuongXa
   }
 }
 
@@ -831,7 +854,7 @@ watch(
     // Chỉ xử lý khi chuyển từ false -> true (user vừa login)
     if (isAuthenticated && !wasAuthenticated) {
       console.log('🔑 [SHIPPING FORM] User just logged in, loading addresses...')
-      
+
       try {
         // Đảm bảo provinces đã được load trước khi load addresses
         // (vì selectAddress cần provinces để map địa chỉ)
@@ -839,15 +862,17 @@ watch(
           console.log('📍 [SHIPPING FORM] Provinces not loaded yet, loading first...')
           await loadProvinces()
         }
-        
+
         // Load saved addresses (sẽ tự động chọn địa chỉ mặc định nếu có)
         await loadSavedAddresses()
-        
+
         // Auto-fill user info nếu chưa có địa chỉ được chọn
         // (loadSavedAddresses đã tự động chọn default address nếu có)
         if (!selectedAddressId.value && !reorderPrefilled.value) {
-          console.log('🔑 [SHIPPING FORM] No default address found, auto-filling basic user info...')
-          
+          console.log(
+            '🔑 [SHIPPING FORM] No default address found, auto-filling basic user info...',
+          )
+
           // Fill basic user info
           if (!shippingInfo.value.fullName && userStore.userName) {
             shippingInfo.value.fullName = userStore.userName
@@ -858,7 +883,7 @@ watch(
           if (!shippingInfo.value.phone && userStore.userPhone) {
             shippingInfo.value.phone = userStore.userPhone
           }
-          
+
           console.log('✅ [SHIPPING FORM] Auto-filled after login:', {
             fullName: shippingInfo.value.fullName,
             email: shippingInfo.value.email,
@@ -872,7 +897,7 @@ watch(
       }
     }
   },
-  { immediate: false }
+  { immediate: false },
 )
 
 // 🔥 FIX: Watch for user data changes (khi user info được update)
@@ -882,16 +907,16 @@ watch(
     // Chỉ xử lý khi user data thay đổi và user đã authenticated
     if (newUser && userStore.isAuthenticated && newUser !== oldUser) {
       console.log('👤 [SHIPPING FORM] User data updated, refreshing addresses...')
-      
+
       // Reload addresses để đảm bảo có data mới nhất
       if (userStore.isAuthenticated) {
-        loadSavedAddresses().catch(error => {
+        loadSavedAddresses().catch((error) => {
           console.error('❌ [SHIPPING FORM] Error reloading addresses:', error)
         })
       }
     }
   },
-  { immediate: false }
+  { immediate: false },
 )
 </script>
 

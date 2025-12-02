@@ -65,7 +65,7 @@
     <!-- Key Performance Indicators -->
     <div class="kpi-section">
       <div class="row g-4">
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-4 col-md-6">
           <div class="kpi-card revenue">
             <div class="kpi-icon">
               <i class="bi bi-currency-dollar"></i>
@@ -85,7 +85,7 @@
           </div>
         </div>
 
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-4 col-md-6">
           <div class="kpi-card orders">
             <div class="kpi-icon">
               <i class="bi bi-bag"></i>
@@ -107,29 +107,7 @@
           </div>
         </div>
 
-        <div class="col-lg-3 col-md-6">
-          <div class="kpi-card customers">
-            <div class="kpi-icon">
-              <i class="bi bi-people"></i>
-            </div>
-            <div class="kpi-content">
-              <div class="kpi-value" v-if="!isLoadingKpis">
-                {{ totalCustomers.toLocaleString('vi-VN') }}
-              </div>
-              <div class="kpi-value loading-placeholder" v-else>Đang tải...</div>
-              <div class="kpi-label">Khách hàng</div>
-              <div class="kpi-change" :class="customersChange.type" v-if="!isLoadingKpis">
-                <i :class="customersChange.icon"></i>
-                {{ customersChange.value }}% so với kỳ trước
-              </div>
-            </div>
-            <div class="kpi-trend">
-              <i class="bi bi-graph-up"></i>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-4 col-md-6">
           <div class="kpi-card products">
             <div class="kpi-icon">
               <i class="bi bi-box"></i>
@@ -179,13 +157,6 @@
               >
                 <i class="bi bi-cart3"></i>
                 Đơn hàng
-              </button>
-              <button
-                :class="['metric-toggle', { active: selectedChartMetric === 'customers' }]"
-                @click="selectedChartMetric = 'customers'"
-              >
-                <i class="bi bi-people"></i>
-                Khách hàng
               </button>
             </div>
           </div>
@@ -286,7 +257,7 @@
     <div class="additional-analytics">
       <div class="row g-4">
         <!-- Revenue Trends -->
-        <div class="col-lg-3">
+        <div class="col-lg-4">
           <div class="metric-card-small trend-revenue">
             <div class="metric-header">
               <span class="metric-label">Xu hướng doanh thu</span>
@@ -300,7 +271,7 @@
         </div>
 
         <!-- Order Performance -->
-        <div class="col-lg-3">
+        <div class="col-lg-4">
           <div class="metric-card-small trend-orders">
             <div class="metric-header">
               <span class="metric-label">Hiệu suất đơn hàng</span>
@@ -318,7 +289,7 @@
         </div>
 
         <!-- Average Order Value -->
-        <div class="col-lg-3">
+        <div class="col-lg-4">
           <div class="metric-card-small trend-average">
             <div class="metric-header">
               <span class="metric-label">Giá trị đơn hàng TB</span>
@@ -328,20 +299,6 @@
               {{ formatCurrency(totalOrders > 0 ? totalRevenue / totalOrders : 0) }}
             </div>
             <div class="metric-subtitle">Trung bình mỗi đơn</div>
-          </div>
-        </div>
-
-        <!-- Customer Growth -->
-        <div class="col-lg-3">
-          <div class="metric-card-small trend-customers">
-            <div class="metric-header">
-              <span class="metric-label">Tăng trưởng KH</span>
-              <i class="bi bi-people-fill trend-icon"></i>
-            </div>
-            <div class="metric-value">
-              {{ customersGrowth >= 0 ? '+' : '' }}{{ customersGrowth.toFixed(1) }}%
-            </div>
-            <div class="metric-subtitle">Khách hàng mới</div>
           </div>
         </div>
       </div>
@@ -840,33 +797,6 @@ const enhancedChartData = computed(() => {
 
     datasets.push({
       label: 'Số đơn hàng kỳ trước',
-      data: chartData.value.previous || [],
-      borderColor: '#0ea5e9',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      borderDash: [0, 0],
-      yAxisID: 'y',
-    })
-  } else if (selectedChartMetric.value === 'customers') {
-    datasets.push({
-      label: 'Khách hàng mới',
-      data: chartData.value.current || [],
-      borderColor: '#ef4444',
-      backgroundColor: 'transparent',
-      borderWidth: 2,
-      fill: false,
-      tension: 0.3,
-      pointRadius: 0,
-      pointStyle: 'circle',
-      yAxisID: 'y',
-    })
-
-    datasets.push({
-      label: 'Khách hàng kỳ trước',
       data: chartData.value.previous || [],
       borderColor: '#0ea5e9',
       backgroundColor: 'transparent',
