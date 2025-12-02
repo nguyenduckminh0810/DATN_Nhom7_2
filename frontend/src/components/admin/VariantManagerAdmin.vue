@@ -273,10 +273,6 @@
             <i class="bi bi-files me-1"></i>
             Copy từ biến thể
           </button>
-          <button type="button" class="btn btn-sm btn-outline-success" @click="exportVariants">
-            <i class="bi bi-download me-1"></i>
-            Xuất Excel
-          </button>
         </div>
       </div>
 

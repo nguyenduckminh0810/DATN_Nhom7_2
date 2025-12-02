@@ -227,4 +227,24 @@ public class DonHangController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    /**
+     * Lấy đơn hàng theo user ID (admin endpoint)
+     * Endpoint: GET /api/don-hang/nguoi-dung/{userId}
+     */
+    @PreAuthorize("hasAnyRole('STF', 'ADM')")
+    @GetMapping("/nguoi-dung/{userId}")
+    public ResponseEntity<Map<String, Object>> getDonHangByUserId(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Map<String, Object> result = donHangService.getDonHangByUserId(userId, page, size);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        }
+    }
 }

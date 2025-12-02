@@ -297,10 +297,15 @@ public class VoucherService {
     // Xóa voucher
     @Transactional
     public void deleteVoucher(Long id) {
-        if(!voucherRepository.existsById(id)) {
-            throw new IllegalArgumentException("Voucher " + id +  " không tồn tại");
-        }
-        voucherRepository.deleteById(id);
+        Voucher voucher = voucherRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Voucher " + id + " không tồn tại"));
+
+        // Soft delete: đánh dấu voucher đã hủy, không xóa vật lý để tránh lỗi FK với đơn hàng
+        voucher.setTrangThai(0); // 0 = Đã hủy
+        voucher.setCapNhatLuc(LocalDateTime.now());
+        voucherRepository.save(voucher);
+
+        log.info("Soft deleted voucher id={}, ma={}", voucher.getId(), voucher.getMa());
     }
 
     // getAll voucher admin - lấy tất cả, không filter theo ngày

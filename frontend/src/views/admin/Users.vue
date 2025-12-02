@@ -598,14 +598,17 @@
                       </button>
                     </li>
                     <li class="nav-item">
-                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders-tab">
+                      <button
+                        class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#orders-tab"
+                        @click="onOrdersTabClick"
+                      >
                         Đơn hàng ({{ selectedUser.orderCount }})
                       </button>
                     </li>
                     <li class="nav-item">
-                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity-tab">
-                        Hoạt động
-                      </button>
+
                     </li>
                   </ul>
 
@@ -657,8 +660,13 @@
                     <!-- Orders Tab -->
                     <div class="tab-pane fade" id="orders-tab">
                       <div class="orders-list">
+                        <div v-if="ordersLoading" class="text-center py-4">
+                          <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                          </div>
+                        </div>
                         <div
-                          v-if="selectedUser.orders && selectedUser.orders.length > 0"
+                          v-else-if="userOrders && userOrders.length > 0"
                           class="table-responsive"
                         >
                           <table class="table table-sm">
@@ -668,21 +676,63 @@
                                 <th>Ngày đặt</th>
                                 <th>Tổng tiền</th>
                                 <th>Trạng thái</th>
+                                <th>Thao tác</th>
                               </tr>
                             </thead>
                             <tbody>
-                              <tr v-for="order in selectedUser.orders" :key="order.id">
-                                <td>#{{ order.orderNumber }}</td>
-                                <td>{{ formatDate(order.createdAt) }}</td>
-                                <td>{{ formatCurrency(order.total) }}</td>
+                              <tr v-for="order in userOrders" :key="order.id">
+                                <td>{{ order.soDonHang || `#${order.id}` }}</td>
+                                <td>{{ formatDate(order.taoLuc || order.createdAt) }}</td>
+                                <td>{{ formatCurrency(order.tongThanhToan || order.total || 0) }}</td>
                                 <td>
-                                  <span :class="['status-badge', getStatusClass(order.status)]">
-                                    {{ getStatusText(order.status) }}
+                                  <span :class="['status-badge', getOrderStatusClass(order.trangThai || order.status)]">
+                                    {{ getOrderStatusText(order.trangThai || order.status) }}
                                   </span>
+                                </td>
+                                <td>
+                                  <button
+                                    class="btn btn-sm btn-outline-primary"
+                                    @click="viewOrderDetail(order.id)"
+                                    title="Xem chi tiết"
+                                  >
+                                    <i class="bi bi-eye"></i>
+                                  </button>
                                 </td>
                               </tr>
                             </tbody>
                           </table>
+                          <!-- Pagination for orders -->
+                          <div v-if="ordersTotalPages > 1" class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="pagination-info">
+                              Hiển thị {{ (ordersCurrentPage - 1) * ordersPageSize + 1 }} -
+                              {{ Math.min(ordersCurrentPage * ordersPageSize, ordersTotalItems) }} trong tổng số
+                              {{ ordersTotalItems }} đơn hàng
+                            </div>
+                            <nav>
+                              <ul class="pagination mb-0">
+                                <li class="page-item" :class="{ disabled: ordersCurrentPage === 1 }">
+                                  <a class="page-link" href="#" @click.prevent="changeOrdersPage(ordersCurrentPage - 1)">
+                                    Trước
+                                  </a>
+                                </li>
+                                <li
+                                  class="page-item"
+                                  v-for="page in visibleOrdersPages"
+                                  :key="page"
+                                  :class="{ active: ordersCurrentPage === page }"
+                                >
+                                  <a class="page-link" href="#" @click.prevent="changeOrdersPage(page)">
+                                    {{ page }}
+                                  </a>
+                                </li>
+                                <li class="page-item" :class="{ disabled: ordersCurrentPage === ordersTotalPages }">
+                                  <a class="page-link" href="#" @click.prevent="changeOrdersPage(ordersCurrentPage + 1)">
+                                    Sau
+                                  </a>
+                                </li>
+                              </ul>
+                            </nav>
+                          </div>
                         </div>
                         <div v-else class="empty-state">
                           <i class="bi bi-bag display-4 text-muted"></i>
@@ -710,10 +760,6 @@
                               </div>
                             </div>
                           </div>
-                        </div>
-                        <div v-else class="empty-state">
-                          <i class="bi bi-clock display-4 text-muted"></i>
-                          <p class="text-muted">Chưa có hoạt động nào</p>
                         </div>
                       </div>
                     </div>
@@ -840,7 +886,7 @@
 defineOptions({
   name: 'AdminUsersPage',
 })
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import api from '@/services/api'
 import { useUserStore } from '@/stores/user'
 import { useToast } from '@/composables/useToast'
@@ -876,6 +922,14 @@ const editForm = ref({
   status: 'active',
   note: '',
 })
+
+// Orders state
+const userOrders = ref([])
+const ordersLoading = ref(false)
+const ordersCurrentPage = ref(1)
+const ordersPageSize = ref(10)
+const ordersTotalItems = ref(0)
+const ordersTotalPages = ref(0)
 
 // User types for filtering
 const userTypes = ref([
@@ -1069,24 +1123,45 @@ const formatCurrency = (amount) => {
 }
 
 const formatDate = (date) => {
-  return new Intl.DateTimeFormat('vi-VN').format(date)
+  if (!date) return 'Chưa cập nhật'
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date)
+    if (isNaN(dateObj.getTime())) return 'Chưa cập nhật'
+    return new Intl.DateTimeFormat('vi-VN').format(dateObj)
+  } catch (e) {
+    return 'Chưa cập nhật'
+  }
 }
 
 const formatTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  if (!date) return ''
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date)
+    if (isNaN(dateObj.getTime())) return ''
+    return new Intl.DateTimeFormat('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(dateObj)
+  } catch (e) {
+    return ''
+  }
 }
 
 const formatDateTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  if (!date) return 'Chưa cập nhật'
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date)
+    if (isNaN(dateObj.getTime())) return 'Chưa cập nhật'
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(dateObj)
+  } catch (e) {
+    return 'Chưa cập nhật'
+  }
 }
 
 const getRoleText = (role) => {
@@ -1123,6 +1198,60 @@ const getStatusClass = (status) => {
     banned: 'bg-danger',
   }
   return classes[status] || 'bg-secondary'
+}
+
+// Order status mapping
+const getOrderStatusText = (status) => {
+  if (!status) return 'Không xác định'
+  
+  const statusStr = String(status).toUpperCase()
+  const statusMap = {
+    // English statuses
+    'PENDING': 'Chờ xác nhận',
+    'CHO_XAC_NHAN': 'Chờ xác nhận',
+    'SHIPPING': 'Đang giao',
+    'DANG_GIAO': 'Đang giao',
+    'DELIVERING': 'Đang giao',
+    'COMPLETED': 'Hoàn tất',
+    'HOAN_TAT': 'Hoàn tất',
+    'FINISHED': 'Hoàn tất',
+    'CANCELLED': 'Đã hủy',
+    'DA_HUY': 'Đã hủy',
+    'CANCELED': 'Đã hủy',
+    // Vietnamese statuses (keep as is)
+    'Chờ xác nhận': 'Chờ xác nhận',
+    'Đang giao': 'Đang giao',
+    'Hoàn tất': 'Hoàn tất',
+    'Đã hủy': 'Đã hủy',
+  }
+  
+  return statusMap[statusStr] || statusMap[status] || status
+}
+
+const getOrderStatusClass = (status) => {
+  if (!status) return 'bg-secondary'
+  
+  const statusStr = String(status).toUpperCase()
+  const classMap = {
+    'PENDING': 'bg-warning',
+    'CHO_XAC_NHAN': 'bg-warning',
+    'SHIPPING': 'bg-info',
+    'DANG_GIAO': 'bg-info',
+    'DELIVERING': 'bg-info',
+    'COMPLETED': 'bg-success',
+    'HOAN_TAT': 'bg-success',
+    'FINISHED': 'bg-success',
+    'CANCELLED': 'bg-danger',
+    'DA_HUY': 'bg-danger',
+    'CANCELED': 'bg-danger',
+    // Vietnamese
+    'Chờ xác nhận': 'bg-warning',
+    'Đang giao': 'bg-info',
+    'Hoàn tất': 'bg-success',
+    'Đã hủy': 'bg-danger',
+  }
+  
+  return classMap[statusStr] || classMap[status] || 'bg-secondary'
 }
 
 const getActivityIcon = (type) => {
@@ -1207,12 +1336,107 @@ const changePage = (page) => {
 const viewUser = (user) => {
   selectedUser.value = user
   showUserModal.value = true
+  // Reset orders state when opening modal
+  userOrders.value = []
+  ordersCurrentPage.value = 1
+  ordersTotalItems.value = 0
+  ordersTotalPages.value = 0
+
+  // Setup Bootstrap tab event listener after modal is shown
+  nextTick(() => {
+    const ordersTab = document.getElementById('orders-tab')
+    if (ordersTab) {
+      // Remove existing listener if any
+      ordersTab.removeEventListener('shown.bs.tab', handleOrdersTabShown)
+      // Add new listener
+      ordersTab.addEventListener('shown.bs.tab', handleOrdersTabShown)
+    }
+  })
+}
+
+// Handle orders tab shown event
+const handleOrdersTabShown = () => {
+  if (selectedUser.value && selectedUser.value.id) {
+    fetchUserOrders()
+  }
 }
 
 const closeUserModal = () => {
   showUserModal.value = false
   selectedUser.value = null
+  // Reset orders state when closing modal
+  userOrders.value = []
+  ordersCurrentPage.value = 1
+  ordersTotalItems.value = 0
+  ordersTotalPages.value = 0
 }
+
+// Fetch orders for selected user
+const fetchUserOrders = async () => {
+  if (!selectedUser.value || !selectedUser.value.id) return
+
+  try {
+    ordersLoading.value = true
+    const response = await api.adminUsers.getOrdersByUserId(selectedUser.value.id, {
+      page: ordersCurrentPage.value - 1,
+      size: ordersPageSize.value,
+    })
+
+    const data = response || {}
+    userOrders.value = data.content || []
+    ordersTotalItems.value = data.totalItems || 0
+    ordersTotalPages.value = data.totalPages || 0
+
+    // Update current page if needed
+    if (data.currentPage !== undefined) {
+      ordersCurrentPage.value = data.currentPage + 1
+    }
+  } catch (error) {
+    console.error('Error fetching user orders:', error)
+    toastError('Không thể tải danh sách đơn hàng')
+    userOrders.value = []
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
+// Pagination for orders
+const visibleOrdersPages = computed(() => {
+  const pages = []
+  const start = Math.max(1, ordersCurrentPage.value - 2)
+  const end = Math.min(ordersTotalPages.value, start + 4)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  return pages
+})
+
+const changeOrdersPage = (page) => {
+  if (page >= 1 && page <= ordersTotalPages.value) {
+    ordersCurrentPage.value = page
+    fetchUserOrders()
+  }
+}
+
+// View order detail
+const viewOrderDetail = (orderId) => {
+  // Navigate to order detail page
+  window.open(`/admin/orders?orderId=${orderId}`, '_blank')
+}
+
+// Handle orders tab click
+const onOrdersTabClick = () => {
+  // Use nextTick to ensure tab is shown before fetching
+  nextTick(() => {
+    // Fetch orders when tab is clicked
+    if (selectedUser.value && selectedUser.value.id) {
+      fetchUserOrders()
+    }
+  })
+}
+
 
 const userStore = useUserStore()
 const isAdmin = computed(() => {

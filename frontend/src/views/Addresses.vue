@@ -51,9 +51,6 @@
               >
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-bell me-2"></i>Thông báo
-              </a>
               <a
               style=""
                 href="#"

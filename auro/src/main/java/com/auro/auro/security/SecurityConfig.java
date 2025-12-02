@@ -88,6 +88,7 @@ public class SecurityConfig {
 
                         // Thông tin hồ sơ địa chỉ
                         .requestMatchers("/api/ho-so/**").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers("/api/profile/**").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers("/api/dia-chi/**").hasAnyRole("CUS", "STF", "ADM")
 
                         // Staff + admin endpoints

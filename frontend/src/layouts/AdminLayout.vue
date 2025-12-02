@@ -88,16 +88,6 @@
             </router-link>
           </li>
 
-          <li v-if="isAdmin" class="nav-item">
-            <router-link
-              to="/admin/settings"
-              class="nav-link"
-              :class="{ active: $route.path.startsWith('/admin/settings') }"
-            >
-              <i class="bi bi-gear"></i>
-              <span v-if="!sidebarCollapsed">Cài đặt</span>
-            </router-link>
-          </li>
         </ul>
       </nav>
 
@@ -149,10 +139,9 @@
                   <i class="bi bi-house me-2"></i>Về trang chủ
                 </router-link>
                 <hr class="dropdown-divider" />
-                <a href="#" class="dropdown-item">
+                <router-link class="dropdown-item modern-dropdown-item" to="/profile">
                   <i class="bi bi-person me-2"></i>Thông tin cá nhân
-                </a>
-                <a href="#" class="dropdown-item"> <i class="bi bi-gear me-2"></i>Cài đặt </a>
+                </router-link>
                 <hr class="dropdown-divider" />
                 <a href="#" class="dropdown-item" @click="logout">
                   <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
@@ -274,7 +263,6 @@ const currentPageTitle = computed(() => {
     '/admin/analytics': 'Thống kê',
     '/admin/inventory': 'Quản lý tồn kho',
     '/admin/promotions': 'Khuyến mãi & Voucher',
-    '/admin/settings': 'Cài đặt',
   }
 
   for (const [path, title] of Object.entries(titles)) {

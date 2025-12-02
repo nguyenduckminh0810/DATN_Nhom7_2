@@ -64,26 +64,12 @@
             </select>
           </div>
           <div class="col-md-2">
-            <label class="form-label">Ngày đặt</label>
-            <input type="date" class="form-control" v-model="selectedDate" />
+            <label class="form-label">Từ ngày</label>
+            <input type="date" class="form-control" v-model="dateFrom" />
           </div>
           <div class="col-md-2">
-            <label class="form-label">Khoảng tiền</label>
-            <div class="amount-range">
-              <input
-                type="number"
-                class="form-control"
-                placeholder="Từ"
-                v-model.number="amountRange.min"
-              />
-              <span class="range-separator">-</span>
-              <input
-                type="number"
-                class="form-control"
-                placeholder="Đến"
-                v-model.number="amountRange.max"
-              />
-            </div>
+            <label class="form-label">Đến ngày</label>
+            <input type="date" class="form-control" v-model="dateTo" />
           </div>
           <div class="col-md-2">
             <label class="form-label">Sắp xếp</label>
@@ -195,7 +181,7 @@
         </div>
         <div class="table-stats">
           <span class="stats-text">
-            Hiển thị {{ filteredOrders.length }} / {{ orders.length }} đơn hàng
+            Hiển thị {{ paginatedOrders.length }} / {{ filteredTotalItems }} đơn hàng (tổng {{ orders.length }})
           </span>
         </div>
       </div>
@@ -247,7 +233,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in filteredOrders" :key="order.id">
+            <tr v-for="order in paginatedOrders" :key="order.id">
               <td>
                 <input
                   type="checkbox"
@@ -463,7 +449,7 @@
         <div class="col-md-6">
           <div class="pagination-info">
             Hiển thị {{ (currentPage - 1) * pageSize + 1 }} -
-            {{ Math.min(currentPage * pageSize, totalItems) }} trong tổng số {{ totalItems }} đơn
+            {{ Math.min(currentPage * pageSize, filteredTotalItems) }} trong tổng số {{ filteredTotalItems }} đơn
             hàng
           </div>
         </div>
@@ -481,7 +467,7 @@
               >
                 <a class="page-link" href="#" @click.prevent="changePage(page)">{{ page }}</a>
               </li>
-              <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+              <li class="page-item" :class="{ disabled: currentPage === filteredTotalPages }">
                 <a class="page-link" href="#" @click.prevent="changePage(currentPage + 1)">Sau</a>
               </li>
             </ul>
@@ -814,7 +800,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import apiService from '@/services/api'
 import {
@@ -839,9 +825,10 @@ const totalPages = ref(1)
 const totalItems = ref(0)
 
 const searchQuery = ref('')
-const selectedStatus = ref('PENDING')
+const selectedStatus = ref('PENDING') // Default to PENDING status
 const selectedPayment = ref('')
-const selectedDate = ref('')
+const dateFrom = ref('')
+const dateTo = ref('')
 const amountRange = ref({ min: null, max: null })
 const sortBy = ref('newest')
 const sortDir = ref('desc')
@@ -916,11 +903,19 @@ const formatDateTime = (date) => {
 const fetchOrders = async () => {
   loading.value = true
   try {
-    const pageToSend = Math.max(0, currentPage.value - 1)
+    // Check if we have any filters applied
+    const hasFilters = selectedStatus.value || selectedPayment.value || dateFrom.value || dateTo.value || 
+                      searchQuery.value || amountRange.value.min !== null || amountRange.value.max !== null
+    
+    // If filters are applied, fetch all orders (or a large number) for client-side filtering
+    // Otherwise, use pagination from API
+    const sizeToFetch = hasFilters ? 10000 : pageSize.value
+    const pageToSend = hasFilters ? 0 : Math.max(0, currentPage.value - 1)
+    
     const response = await axios.get('/api/don-hang/phan-trang', {
       params: {
         page: pageToSend,
-        size: pageSize.value,
+        size: sizeToFetch,
         sortBy: 'id',
         sortDir: sortDir.value,
       },
@@ -932,10 +927,19 @@ const fetchOrders = async () => {
     orders.value = (data.content || []).map((order) => {
       const statusInfo = normalizeOrderStatus(order.trangThai)
 
+      // Debug: Log status normalization
+      if (order.trangThai && order.trangThai !== statusInfo.code) {
+        console.log('📝 Normalizing status:', {
+          raw: order.trangThai,
+          normalized: statusInfo.code,
+          label: statusInfo.label,
+        })
+      }
+
       return {
         ...order,
         trangThai: statusInfo.code,
-        statusCode: statusInfo.code,
+        statusCode: statusInfo.code, // Ensure statusCode is always set
         statusLabel: statusInfo.label,
         statusClass: statusInfo.badgeClass,
         statusColor: statusInfo.color,
@@ -945,10 +949,16 @@ const fetchOrders = async () => {
       }
     })
 
-    totalPages.value = data.totalPages || 1
-    totalItems.value = data.totalItems || orders.value.length
+    // Only use API pagination if no filters are applied
+    if (!hasFilters) {
+      totalPages.value = data.totalPages || 1
+      totalItems.value = data.totalItems || orders.value.length
+    } else {
+      // Reset to first page when filters are applied
+      currentPage.value = 1
+    }
 
-    console.log('Processed orders:', orders.value)
+    console.log('Processed orders:', orders.value.length, 'orders')
   } catch (err) {
     console.error('Lỗi khi tải đơn hàng:', err)
     if (err.response) {
@@ -1024,19 +1034,74 @@ const filteredOrders = computed(() => {
     )
   }
 
-  if (selectedStatus.value) {
-    filtered = filtered.filter((o) => o.statusCode === selectedStatus.value)
+  // Filter by status - only filter if a status is selected (not empty string)
+  if (selectedStatus.value && selectedStatus.value.trim() !== '') {
+    // Normalize selected status to ensure it matches the statusCode format
+    const selectedStatusNormalized = normalizeOrderStatus(selectedStatus.value).code
+    
+    // Debug: Log filter info
+    console.log('🔍 Filtering by status:', {
+      selectedStatus: selectedStatus.value,
+      selectedStatusNormalized,
+      totalOrders: orders.value.length,
+      ordersStatusCodes: orders.value.map(o => ({ 
+        id: o.id, 
+        statusCode: o.statusCode, 
+        rawStatus: o.rawStatus,
+        soDonHang: o.soDonHang
+      }))
+    })
+    
+    filtered = filtered.filter((o) => {
+      // Compare normalized statusCode with normalized selectedStatus
+      const orderStatusCode = o.statusCode || ''
+      const matches = String(orderStatusCode).toUpperCase().trim() === String(selectedStatusNormalized).toUpperCase().trim()
+      
+      if (!matches && orderStatusCode) {
+        console.log('❌ Status mismatch:', {
+          orderId: o.id,
+          soDonHang: o.soDonHang,
+          orderStatusCode,
+          selectedStatusNormalized,
+          rawStatus: o.rawStatus,
+        })
+      }
+      
+      return matches
+    })
+    
+    console.log('✅ Filtered orders count:', filtered.length, 'out of', orders.value.length)
   }
 
   if (selectedPayment.value) {
     filtered = filtered.filter((o) => o.paymentStatus === selectedPayment.value)
   }
 
-  if (selectedDate.value) {
+  // Filter by date range
+  if (dateFrom.value || dateTo.value) {
     filtered = filtered.filter((o) => {
       const orderDate = new Date(o.taoLuc)
-      const selectedDateObj = new Date(selectedDate.value)
-      return orderDate.toDateString() === selectedDateObj.toDateString()
+      orderDate.setHours(0, 0, 0, 0) // Reset time to start of day
+      
+      if (dateFrom.value && dateTo.value) {
+        // Both dates selected - filter by range
+        const fromDate = new Date(dateFrom.value)
+        fromDate.setHours(0, 0, 0, 0)
+        const toDate = new Date(dateTo.value)
+        toDate.setHours(23, 59, 59, 999) // End of day
+        return orderDate >= fromDate && orderDate <= toDate
+      } else if (dateFrom.value) {
+        // Only from date selected
+        const fromDate = new Date(dateFrom.value)
+        fromDate.setHours(0, 0, 0, 0)
+        return orderDate >= fromDate
+      } else if (dateTo.value) {
+        // Only to date selected
+        const toDate = new Date(dateTo.value)
+        toDate.setHours(23, 59, 59, 999)
+        return orderDate <= toDate
+      }
+      return true
     })
   }
 
@@ -1066,10 +1131,22 @@ const filteredOrders = computed(() => {
   return filtered
 })
 
+// Paginated orders based on filtered results
+const paginatedOrders = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredOrders.value.slice(start, end)
+})
+
+// Recalculate total items and pages based on filtered orders
+const filteredTotalItems = computed(() => filteredOrders.value.length)
+const filteredTotalPages = computed(() => Math.ceil(filteredTotalItems.value / pageSize.value))
+
 const visiblePages = computed(() => {
   const pages = []
+  const totalPagesToUse = filteredTotalPages.value
   const start = Math.max(1, currentPage.value - 2)
-  const end = Math.min(totalPages.value, start + 4)
+  const end = Math.min(totalPagesToUse, start + 4)
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
 })
@@ -1107,9 +1184,11 @@ const sortTable = (field) => {
 }
 
 const changePage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
+  if (page >= 1 && page <= filteredTotalPages.value) {
     currentPage.value = page
-    fetchOrders()
+    // Only fetch from API if we don't have all orders loaded
+    // For now, we'll just change the page without fetching
+    // If needed, we can fetch all orders when filters are applied
   }
 }
 
@@ -1121,7 +1200,8 @@ const clearFilters = () => {
   searchQuery.value = ''
   selectedStatus.value = ''
   selectedPayment.value = ''
-  selectedDate.value = ''
+  dateFrom.value = ''
+  dateTo.value = ''
   amountRange.value = { min: null, max: null }
   sortBy.value = 'newest'
 }
@@ -1138,7 +1218,7 @@ const closeOrderModal = () => {
 
 const toggleSelectAll = () => {
   if (selectAll.value) {
-    selectedOrders.value = filteredOrders.value.map((o) => o.id)
+    selectedOrders.value = paginatedOrders.value.map((o) => o.id)
   } else {
     selectedOrders.value = []
   }
@@ -1461,6 +1541,23 @@ const confirmCancelOrder = async () => {
     alert('❌ Có lỗi khi hủy đơn hàng:\n\n' + errorMessage)
   }
 }
+
+// ======= WATCHERS =======
+// Watch for filter changes and refetch orders
+watch([selectedStatus, selectedPayment, dateFrom, dateTo, amountRange], () => {
+  fetchOrders()
+}, { deep: true })
+
+// Watch search query with debounce
+let searchTimeout = null
+watch(searchQuery, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+  searchTimeout = setTimeout(() => {
+    fetchOrders()
+  }, 500) // Wait 500ms after user stops typing
+})
 
 // ======= LIFECYCLE =======
 onMounted(() => {

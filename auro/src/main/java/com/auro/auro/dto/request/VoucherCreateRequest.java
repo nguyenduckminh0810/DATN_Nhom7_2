@@ -29,5 +29,4 @@ public class VoucherCreateRequest {
     private LocalDateTime ketThucLuc;
 
     private Integer gioiHanSuDung;
-    private String dieuKienJson;
 }
