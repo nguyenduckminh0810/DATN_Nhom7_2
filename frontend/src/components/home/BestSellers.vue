@@ -9,6 +9,7 @@
     <!-- Full-width products carousel -->
     <div class="products-carousel-container">
       <button
+        style="margin-left: 36px;"
         class="section-nav-btn prev"
         @click="scrollProducts('prev')"
         :disabled="products.length <= 5"
@@ -60,6 +61,7 @@
       </div>
 
       <button
+      style="margin-right: 36px;"
         class="section-nav-btn next"
         @click="scrollProducts('next')"
         :disabled="products.length <= 5"

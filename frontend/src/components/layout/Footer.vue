@@ -131,34 +131,6 @@
       </div>
 
       <!-- Newsletter -->
-      <div class="row mt-5 mb-4">
-        <div class="col-12">
-          <div class="newsletter-section">
-            <div class="row align-items-center">
-              <div class="col-md-6 mb-3 mb-md-0 text-md-start text-center">
-                <h6 class="fw-bold mb-1 text-white">Đăng ký nhận tin mới</h6>
-                <p class="text-white-50 mb-0 small">
-                  Nhận thông tin sản phẩm mới và ưu đãi đặc biệt
-                </p>
-              </div>
-              <div class="col-md-6">
-                <form @submit.prevent="handleNewsletter">
-                  <div class="input-group newsletter-input">
-                    <input
-                      v-model="email"
-                      type="email"
-                      class="form-control"
-                      placeholder="Nhập email của bạn"
-                      required
-                    />
-                    <button class="btn btn-auro-primary" type="submit">Đăng ký</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Copyright -->
       <div class="row mt-4">
