@@ -31,6 +31,8 @@ import com.auro.auro.model.DonHang;
 import com.auro.auro.model.DonHangChiTiet;
 import com.auro.auro.model.GioHang;
 import com.auro.auro.model.GioHangChiTiet;
+import com.auro.auro.model.TaiKhoan;
+import com.auro.auro.model.KhachHang;
 import com.auro.auro.repository.DonHangChiTietRepository;
 import com.auro.auro.repository.DonHangRepository;
 import com.auro.auro.model.*;
@@ -69,6 +71,7 @@ public class DonHangService {
     private final GioHangService gioHangService;
     private final KhachHangRepository khachHangRepository;
     private final DiaChiRepository diaChiRepository;
+    private final com.auro.auro.repository.TaiKhoanRepository taiKhoanRepository;
     private final VoucherRepository voucherRepository;
     private final BienTheSanPhamRepository bienTheSanPhamRepository;
     private final DanhGiaSanPhamRepository danhGiaSanPhamRepository;
@@ -1602,6 +1605,66 @@ public class DonHangService {
 
         log.info("Fixed {} orders with null tongThanhToan", count);
         return count;
+    }
+
+    /**
+     * Lấy đơn hàng theo user ID (admin endpoint)
+     * @param userId ID của tài khoản
+     * @param page Số trang (0-based)
+     * @param size Kích thước trang
+     * @return Map chứa danh sách đơn hàng và thông tin phân trang
+     */
+    public Map<String, Object> getDonHangByUserId(Long userId, int page, int size) {
+        // Tìm tài khoản
+        TaiKhoan taiKhoan = taiKhoanRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với ID: " + userId));
+
+        // Tìm khách hàng từ tài khoản
+        Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
+        
+        if (!khachHangOpt.isPresent()) {
+            // Nếu không có khách hàng, trả về danh sách rỗng
+            Map<String, Object> emptyResult = new LinkedHashMap<>();
+            emptyResult.put("content", new ArrayList<>());
+            emptyResult.put("currentPage", 0);
+            emptyResult.put("totalItems", 0L);
+            emptyResult.put("totalPages", 0);
+            return emptyResult;
+        }
+
+        Long khachHangId = khachHangOpt.get().getId();
+        
+        // Lấy tất cả đơn hàng của khách hàng
+        List<DonHang> allOrders = donHangRepository.findByKhachHang_IdWithDetails(khachHangId);
+        
+        // Tính toán phân trang
+        int totalElements = allOrders.size();
+        int totalPages = size > 0 ? (int) Math.ceil((double) totalElements / (double) size) : 0;
+        int safePage = Math.max(page, 0);
+        int start = safePage * size;
+        if (start >= totalElements) {
+            start = Math.max(totalElements - size, 0);
+        }
+        int end = Math.min(start + size, totalElements);
+        
+        // Lấy danh sách đơn hàng theo trang
+        List<DonHang> paginatedOrders = totalElements > 0 
+            ? allOrders.subList(start, end) 
+            : new ArrayList<>();
+        
+        // Chuyển đổi sang DTO
+        List<DonHangResponse> responses = paginatedOrders.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        
+        // Tạo response
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("content", responses);
+        result.put("currentPage", totalElements == 0 ? 0 : Math.min(safePage, Math.max(totalPages - 1, 0)));
+        result.put("totalItems", (long) totalElements);
+        result.put("totalPages", totalPages);
+        
+        return result;
     }
 
 }
