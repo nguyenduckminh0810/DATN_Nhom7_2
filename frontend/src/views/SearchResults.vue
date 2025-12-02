@@ -21,22 +21,22 @@
               <i class="bi bi-search me-2"></i>
               Kết quả tìm kiếm
             </h2>
-            
+
             <!-- Search Input -->
             <div class="search-input-container mb-4">
               <div class="input-group">
                 <span class="input-group-text bg-transparent border-0">
                   <i class="bi bi-search text-muted"></i>
                 </span>
-                <input 
-                  type="text" 
-                  class="form-control modern-search-input border-0" 
+                <input
+                  type="text"
+                  class="form-control modern-search-input border-0"
                   placeholder="Tìm kiếm sản phẩm..."
                   v-model="searchQuery"
                   @keyup.enter="performSearch"
-                >
-                <button 
-                  class="btn btn-auro-primary" 
+                />
+                <button
+                  class="btn btn-auro-primary"
                   type="button"
                   @click="performSearch"
                   :disabled="!searchQuery.trim()"
@@ -51,14 +51,18 @@
               <div class="row align-items-center">
                 <div class="col-md-6">
                   <p class="mb-0">
-                    <span class="fw-bold">{{ resultCount }}</span> sản phẩm cho 
+                    <span class="fw-bold">{{ resultCount }}</span> sản phẩm cho
                     <span class="fw-bold text-primary">"{{ searchQuery }}"</span>
                   </p>
                 </div>
                 <div class="col-md-6 text-md-end">
                   <div class="d-flex align-items-center justify-content-md-end gap-3">
                     <!-- Sort Options -->
-                    <select class="form-select form-select-sm" v-model="sortBy" @change="sortResults">
+                    <select
+                      class="form-select form-select-sm"
+                      v-model="sortBy"
+                      @change="sortResults"
+                    >
                       <option value="relevance">Sắp xếp theo độ liên quan</option>
                       <option value="price-asc">Giá tăng dần</option>
                       <option value="price-desc">Giá giảm dần</option>
@@ -87,13 +91,15 @@
       <div v-else-if="!isSearching && searchQuery.trim()">
         <!-- Debug Info (remove in production) -->
         <div v-if="false" class="alert alert-info">
-          Debug: hasResults={{ hasResults }}, resultCount={{ resultCount }}, sortedResults.length={{ sortedResults.length }}
+          Debug: hasResults={{ hasResults }}, resultCount={{ resultCount }}, sortedResults.length={{
+            sortedResults.length
+          }}
         </div>
 
         <!-- No Results -->
         <div v-if="!hasResults" class="no-results text-center py-5">
           <div class="no-results-icon mb-4">
-            <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+            <i class="bi bi-search text-muted" style="font-size: 4rem"></i>
           </div>
           <h4 class="mb-3">Không tìm thấy sản phẩm</h4>
           <p class="text-muted mb-4">
@@ -116,54 +122,71 @@
         </div>
 
         <!-- Has Results -->
-        <div v-else class="search-results-grid" style="min-height: 200px;">
+        <div v-else class="search-results-grid" style="min-height: 200px">
           <div class="row g-4">
-            <div class="col-md-6 col-lg-4 col-xl-3" v-for="product in paginatedResults" :key="`product-${product.id}`">
+            <div
+              class="col-md-6 col-lg-4 col-xl-3"
+              v-for="product in paginatedResults"
+              :key="`product-${product.id}`"
+            >
               <div class="card product-card h-100">
-                <div class="position-relative product-image-container">
-                  <img 
-                    :src="product.image || ''" 
-                    :alt="product.name || 'Sản phẩm'" 
+                <router-link
+                  :to="`/product/${product.id}`"
+                  class="position-relative product-image-container text-decoration-none"
+                >
+                  <img
+                    :src="product.image || ''"
+                    :alt="product.name || 'Sản phẩm'"
                     class="card-img-top"
                     @error="handleImageError"
-                    style="width: 100%; height: 300px; object-fit: cover; background-color: #f8f9fa;"
-                  >
+                    style="width: 100%; height: 300px; object-fit: cover; background-color: #f8f9fa"
+                  />
                   <div v-if="product.discount > 0" class="position-absolute top-0 end-0 m-3">
                     <span class="badge bg-danger">-{{ product.discount }}%</span>
                   </div>
-                  <div class="product-overlay">
-                    <button class="btn btn-primary btn-sm" @click="addToCart(product)">
-                      <i class="bi bi-cart3 me-1"></i>Thêm vào giỏ
-                    </button>
-                  </div>
-                </div>
+                </router-link>
                 <div class="card-body d-flex flex-column">
-                  <h6 class="card-title fw-bold mb-2">{{ product.name || 'Sản phẩm không có tên' }}</h6>
-                  <p class="card-text text-muted small flex-grow-1 mb-3">{{ product.description || '' }}</p>
-                  <div class="d-flex justify-content-between align-items-center">
+                  <router-link :to="`/product/${product.id}`" class="text-decoration-none">
+                    <h6 class="card-title fw-bold mb-2 text-dark">
+                      {{ product.name || 'Sản phẩm không có tên' }}
+                    </h6>
+                  </router-link>
+                  <p class="card-text text-muted small flex-grow-1 mb-3">
+                    {{ product.description || '' }}
+                  </p>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
-                      <span class="price h5 mb-0">{{ formatPrice(product.price || 0) }}</span>
-                      <small v-if="product.originalPrice > product.price" class="text-muted text-decoration-line-through ms-2">
+                      <span class="price h5 mb-0 text-danger">{{
+                        formatPrice(product.price || 0)
+                      }}</span>
+                      <small
+                        v-if="product.originalPrice > product.price"
+                        class="text-muted text-decoration-line-through ms-2 d-block"
+                      >
                         {{ formatPrice(product.originalPrice || product.price || 0) }}
                       </small>
                     </div>
-                    <div v-if="product.danhGia || product.rating" class="product-rating">
-                      <i 
-                        v-for="star in 5" 
-                        :key="star"
-                        :class="star <= Math.round(product.danhGia || product.rating || 0) ? 'bi bi-star-fill text-warning' : 'bi bi-star text-warning'"
-                      ></i>
-                      <small class="ms-1 text-muted">
-                        ({{ (product.danhGia || product.rating || 0).toFixed(1) }})
-                        <span v-if="product.soLuongDanhGia || product.reviewCount">
-                          - {{ product.soLuongDanhGia || product.reviewCount }} đánh giá
-                        </span>
-                      </small>
-                    </div>
                   </div>
-                  <router-link :to="`/product/${product.id}`" class="btn btn-outline-primary mt-3">
-                    Xem chi tiết
-                  </router-link>
+                  <div v-if="product.danhGia || product.rating" class="product-rating mb-3">
+                    <i
+                      v-for="star in 5"
+                      :key="star"
+                      :class="
+                        star <= Math.round(product.danhGia || product.rating || 0)
+                          ? 'bi bi-star-fill text-warning'
+                          : 'bi bi-star text-warning'
+                      "
+                    ></i>
+                    <small class="ms-1 text-muted">
+                      ({{ (product.danhGia || product.rating || 0).toFixed(1) }})
+                      <span v-if="product.soLuongDanhGia || product.reviewCount">
+                        - {{ product.soLuongDanhGia || product.reviewCount }}
+                      </span>
+                    </small>
+                  </div>
+                  <button class="btn btn-auro-primary w-100" @click="addToCart(product)">
+                    <i class="bi bi-eye me-1"></i>Xem chi tiết
+                  </button>
                 </div>
               </div>
             </div>
@@ -199,12 +222,13 @@
 
                 <!-- Page Numbers -->
                 <li
-                  v-for="page in visiblePages"
-                  :key="page"
+                  v-for="(page, index) in visiblePages"
+                  :key="`page-${index}`"
                   class="page-item"
-                  :class="{ active: page === currentPage }"
+                  :class="{ active: page === currentPage, disabled: page === '...' }"
                 >
-                  <button class="page-link" @click="changePage(page)">
+                  <span v-if="page === '...'" class="page-link">...</span>
+                  <button v-else class="page-link" @click="changePage(page)">
                     {{ page }}
                   </button>
                 </li>
@@ -238,8 +262,8 @@
             <!-- Pagination Info -->
             <div class="pagination-info text-center mt-3">
               <small class="text-muted">
-                Trang {{ currentPage }} / {{ totalPages }} 
-                (Hiển thị {{ startIndex + 1 }} - {{ endIndex }} trong {{ sortedResults.length }} sản phẩm)
+                Trang {{ currentPage }} / {{ totalPages }} (Hiển thị {{ startIndex + 1 }} -
+                {{ endIndex }} trong {{ sortedResults.length }} sản phẩm)
               </small>
             </div>
           </div>
@@ -249,25 +273,24 @@
       <!-- Empty State (No search query) -->
       <div v-else class="empty-state text-center py-5">
         <div class="empty-state-icon mb-4">
-          <i class="bi bi-search text-muted" style="font-size: 4rem;"></i>
+          <i class="bi bi-search text-muted" style="font-size: 4rem"></i>
         </div>
         <h4 class="mb-3">Tìm kiếm sản phẩm</h4>
-        <p class="text-muted mb-4">
-          Nhập từ khóa để tìm kiếm sản phẩm bạn quan tâm
-        </p>
-        
+        <p class="text-muted mb-4">Nhập từ khóa để tìm kiếm sản phẩm bạn quan tâm</p>
+
         <!-- Popular Searches -->
         <div class="popular-searches">
           <h6 class="mb-3">Tìm kiếm phổ biến:</h6>
           <div class="popular-tags">
-            <span 
-              v-for="tag in popularSearches" 
+            <button
+              v-for="tag in popularSearches"
               :key="tag"
               class="badge popular-tag me-2 mb-2"
               @click="searchTag(tag)"
+              type="button"
             >
               {{ tag }}
-            </span>
+            </button>
           </div>
         </div>
       </div>
@@ -301,7 +324,7 @@ const popularSearches = computed(() => searchStore.popularSearches)
 
 const sortedResults = computed(() => {
   const results = [...searchResults.value]
-  
+
   switch (sortBy.value) {
     case 'price-asc':
       return results.sort((a, b) => a.price - b.price)
@@ -398,54 +421,82 @@ const searchTag = (tag) => {
 }
 
 const addToCart = (product) => {
-  cartStore.addItem(product)
-  
+  // Redirect to product detail page to select variant (color/size)
+  // This is better UX as users need to choose variant before adding to cart
+  router.push(`/product/${product.id}`)
+
+  // Optional: Show toast to inform user
   if (window.$toast) {
-    window.$toast.success(
-      `${product.name} đã được thêm vào giỏ hàng`,
-      'Thêm vào giỏ hàng thành công'
-    )
+    window.$toast.info('Vui lòng chọn màu sắc và kích cỡ', 'Chọn tùy chọn sản phẩm')
   }
 }
 
 const formatPrice = (price) => {
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
-    currency: 'VND'
+    currency: 'VND',
   }).format(price)
 }
 
 const handleImageError = (event) => {
   // Fallback to data URI placeholder if image fails to load
-  const placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U5ZWNlZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2Yzc1N2QiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
+  const placeholder =
+    'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2U5ZWNlZiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM2Yzc1N2QiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
   if (event.target.src !== placeholder) {
     event.target.src = placeholder
   }
 }
 
 // Debug: Watch search results
-watch(searchResults, (newResults) => {
-  console.log('🔍 SearchResults.vue - searchResults changed:', newResults.length, newResults)
-}, { immediate: true, deep: true })
+watch(
+  searchResults,
+  (newResults) => {
+    console.log('🔍 SearchResults.vue - searchResults changed:', newResults.length, newResults)
+  },
+  { immediate: true, deep: true },
+)
 
-watch(hasResults, (newValue) => {
-  console.log('🔍 SearchResults.vue - hasResults:', newValue, 'isSearching:', isSearching.value, 'searchQuery:', searchQuery.value)
-}, { immediate: true })
+watch(
+  hasResults,
+  (newValue) => {
+    console.log(
+      '🔍 SearchResults.vue - hasResults:',
+      newValue,
+      'isSearching:',
+      isSearching.value,
+      'searchQuery:',
+      searchQuery.value,
+    )
+  },
+  { immediate: true },
+)
 
-watch(resultCount, (newValue) => {
-  console.log('🔍 SearchResults.vue - resultCount:', newValue)
-}, { immediate: true })
+watch(
+  resultCount,
+  (newValue) => {
+    console.log('🔍 SearchResults.vue - resultCount:', newValue)
+  },
+  { immediate: true },
+)
 
-watch(sortedResults, (newValue) => {
-  console.log('🔍 SearchResults.vue - sortedResults:', newValue.length, newValue)
-  if (newValue.length > 0) {
-    console.log('🔍 First product:', newValue[0])
-  }
-}, { immediate: true, deep: true })
+watch(
+  sortedResults,
+  (newValue) => {
+    console.log('🔍 SearchResults.vue - sortedResults:', newValue.length, newValue)
+    if (newValue.length > 0) {
+      console.log('🔍 First product:', newValue[0])
+    }
+  },
+  { immediate: true, deep: true },
+)
 
-watch(isSearching, (newValue) => {
-  console.log('🔍 SearchResults.vue - isSearching changed:', newValue)
-}, { immediate: true })
+watch(
+  isSearching,
+  (newValue) => {
+    console.log('🔍 SearchResults.vue - isSearching changed:', newValue)
+  },
+  { immediate: true },
+)
 
 // Lifecycle
 onMounted(() => {
@@ -459,13 +510,16 @@ onMounted(() => {
 })
 
 // Watch for route changes
-watch(() => route.query.q, (newQuery) => {
-  console.log('🔍 SearchResults.vue - route.query.q changed:', newQuery)
-  if (newQuery && newQuery !== searchQuery.value) {
-    searchQuery.value = newQuery
-    performSearch()
-  }
-})
+watch(
+  () => route.query.q,
+  (newQuery) => {
+    console.log('🔍 SearchResults.vue - route.query.q changed:', newQuery)
+    if (newQuery && newQuery !== searchQuery.value) {
+      searchQuery.value = newQuery
+      performSearch()
+    }
+  },
+)
 
 // Watch for sort changes to reset pagination
 watch(sortBy, () => {
@@ -498,21 +552,14 @@ watch(sortBy, () => {
 }
 
 .search-input-container .input-group {
-  border: 1px solid #e9ecef;
   border-radius: 12px;
   overflow: hidden;
-  background: white;
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
 }
 
 .search-input-container .input-group:hover {
-  border-color: #b8860b;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.search-input-container .input-group:focus-within {
-  border-color: #b8860b;
-  box-shadow: 0 0 0 0.2rem rgba(184, 134, 11, 0.25);
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.2);
 }
 
 .modern-search-input {
@@ -521,11 +568,20 @@ watch(sortBy, () => {
   border-radius: 12px;
   background: #f8f9fa;
   transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.modern-search-input:hover {
+  background: white;
+  border-color: #b8860b;
+  box-shadow: 0 2px 8px rgba(184, 134, 11, 0.15);
 }
 
 .modern-search-input:focus {
   background: white;
-  box-shadow: none;
+  border-color: #b8860b;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
+  outline: none;
 }
 
 .results-summary {
@@ -543,12 +599,49 @@ watch(sortBy, () => {
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9rem;
+  border: none;
 }
 
 .popular-tag:hover {
   background: var(--auro-accent);
   color: var(--auro-dark);
   transform: translateY(-2px);
+}
+
+/* Product Card Styles */
+.product-card {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.product-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px);
+}
+
+.product-image-container {
+  position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+.product-image-container img {
+  transition: transform 0.3s ease;
+}
+
+.product-card:hover .product-image-container img {
+  transform: scale(1.05);
+}
+
+.product-rating {
+  font-size: 0.9rem;
+}
+
+.product-rating i {
+  font-size: 0.85rem;
 }
 
 .no-results-icon,
@@ -640,8 +733,16 @@ watch(sortBy, () => {
 }
 
 /* Stagger animation for multiple elements */
-.animate-on-scroll:nth-child(1) { transition-delay: 0.1s; }
-.animate-on-scroll:nth-child(2) { transition-delay: 0.2s; }
-.animate-on-scroll:nth-child(3) { transition-delay: 0.3s; }
-.animate-on-scroll:nth-child(4) { transition-delay: 0.4s; }
+.animate-on-scroll:nth-child(1) {
+  transition-delay: 0.1s;
+}
+.animate-on-scroll:nth-child(2) {
+  transition-delay: 0.2s;
+}
+.animate-on-scroll:nth-child(3) {
+  transition-delay: 0.3s;
+}
+.animate-on-scroll:nth-child(4) {
+  transition-delay: 0.4s;
+}
 </style>
