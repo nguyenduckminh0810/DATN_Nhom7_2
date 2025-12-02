@@ -778,13 +778,14 @@ public class DonHangService {
         return ctDTO;
     }
 
-    // Tạo đơn từ giỏ
+    // Tạo đơn từ giỏ cho khách đã đăng nhập
     @Transactional
     public DonHangResponse taoDonTuGioHang(TaoDonTuGioHangRequest request, Long khachHangId) {
         // check trống giỏ hàng
         if (gioHangService.gioHangTrong(khachHangId)) {
             throw new RuntimeException("Giỏ hàng trống, không thể tạo đơn hàng");
         }
+
         // Lấy thông tin khách
         KhachHang khachHang = khachHangRepository.findById(khachHangId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
@@ -800,9 +801,8 @@ public class DonHangService {
         // Lấy chi tiết giỏ hàng
         List<GioHangChiTiet> gioHangItems = gioHangService.layGioHangChiTietKhach(khachHangId);
 
-        // check số lượng
+        // check số lượng & tính tạm tính
         BigDecimal tamTinh = BigDecimal.ZERO;
-
         for (GioHangChiTiet item : gioHangItems) {
             BienTheSanPham bienThe = item.getBienThe();
 
@@ -827,7 +827,6 @@ public class DonHangService {
                 throw new RuntimeException("Không tìm thấy giá cho sản phẩm");
             }
 
-            // Tính tổng
             BigDecimal thanhTien = gia.multiply(BigDecimal.valueOf(item.getSoLuong()));
             tamTinh = tamTinh.add(thanhTien);
         }
@@ -837,7 +836,7 @@ public class DonHangService {
         Voucher voucherGiamGia = null;
         Voucher voucherFreeShip = null;
 
-        // check guest không thể dùng vc
+        // check guest không thể dùng vc (phòng trường hợp misuse API)
         if (request.getVoucherId() != null || request.getFreeshipVoucherId() != null) {
             if (khachHangId == null) {
                 throw new RuntimeException("Bạn phải đăng nhập để sử dụng voucher");
@@ -849,7 +848,7 @@ public class DonHangService {
             try {
                 voucherGiamGia = voucherRepository.findById(request.getVoucherId())
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher"));
-                
+
                 VoucherValidationResult validation = voucherService.validateVoucher(
                         voucherGiamGia.getMa(), khachHangId, tamTinh);
 
@@ -878,7 +877,7 @@ public class DonHangService {
                         } else {
                             giamGiaTong = result.getGiamGia();
                             voucherGiamGia = result.getVoucher();
-                            log.info("✅ Voucher applied successfully - maVoucher: {}, giamGiaTong: {}, tamTinh: {}", 
+                            log.info("✅ Voucher applied successfully - maVoucher: {}, giamGiaTong: {}, tamTinh: {}",
                                     voucherGiamGia.getMa(), giamGiaTong, tamTinh);
                         }
                     }
@@ -891,46 +890,45 @@ public class DonHangService {
 
         // vc freeship
         if (request.getFreeshipVoucherId() != null) {
-            voucherFreeShip = voucherRepository.findById(request.getFreeshipVoucherId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy voucher freeship"));
-            VoucherValidationResult validation = voucherService.validateVoucher(
-                    voucherFreeShip.getMa(),
-                    khachHangId,
-                    tamTinh);
+            try {
+                voucherFreeShip = voucherRepository.findById(request.getFreeshipVoucherId())
+                        .orElse(null);
 
-            if (!validation.isValid()) {
-                throw new RuntimeException(validation.getMessage());
+                if (voucherFreeShip == null) {
+                    log.warn("Không tìm thấy voucher freeship với id={}", request.getFreeshipVoucherId());
+                } else {
+                    VoucherValidationResult validation = voucherService.validateVoucher(
+                            voucherFreeShip.getMa(),
+                            khachHangId,
+                            tamTinh);
+
+                    if (!validation.isValid()) {
+                        log.warn("Voucher freeship không hợp lệ: {}", validation.getMessage());
+                        voucherFreeShip = null;
+                    } else if (!"FREESHIP".equalsIgnoreCase(
+                            voucherFreeShip.getLoai() != null ? voucherFreeShip.getLoai().trim() : "")) {
+                        log.warn("Voucher id={} ma={} không phải loại FREESHIP, loại hiện tại: {}",
+                                voucherFreeShip.getId(), voucherFreeShip.getMa(), voucherFreeShip.getLoai());
+                        voucherFreeShip = null;
+                    } else {
+                        log.info("Voucher freeship hợp lệ - id={}, ma={}", voucherFreeShip.getId(), voucherFreeShip.getMa());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Lỗi xử lý voucher freeship: {}", e.getMessage(), e);
+                voucherFreeShip = null;
             }
-
-            // check loại voucher phải là FREESHIP
-            if (!"FREESHIP".equals(voucherFreeShip.getLoai())) {
-                throw new RuntimeException("Voucher này không phải voucher freeship");
-            }
-
-            // freeship voucher (giảm số lượng và lưu VoucherKhach)
-            VoucherApplicationResult result = voucherService.applyVoucher(
-                    voucherFreeShip.getMa(),
-                    khachHangId,
-                    tamTinh);
-
-            if (!result.isSuccess()) {
-                throw new RuntimeException(result.getMessage());
-            }
-
-            voucherFreeShip = result.getVoucher();
         }
 
         // Tính phí vận chuyển từ GHN API
         BigDecimal phiVanChuyen;
         try {
             if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
-                // Tạo request để gọi GHN API
                 GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
                 ghnRequest.setToDistrictId(request.getDistrictId());
                 ghnRequest.setToWardCode(request.getWardCode());
                 ghnRequest.setServiceId(request.getServiceId());
 
-                // Tính tổng khối lượng và số lượng sản phẩm
                 int totalWeight = 0;
                 for (GioHangChiTiet item : gioHangItems) {
                     totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
@@ -938,9 +936,7 @@ public class DonHangService {
                 ghnRequest.setWeight(totalWeight);
                 ghnRequest.setInsuranceValue(tamTinh.intValue());
 
-                // Gọi GHN API
                 GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
-
                 if (ghnResponse != null && ghnResponse.getData() != null) {
                     Integer totalFee = ghnResponse.getData().getTotal();
                     phiVanChuyen = BigDecimal.valueOf(totalFee);
@@ -968,10 +964,6 @@ public class DonHangService {
         donHang.setGiamGiaTong(giamGiaTong);
         donHang.setPhiVanChuyen(phiVanChuyen);
         donHang.setVoucher(voucherGiamGia);
-
-        // Log để debug
-        log.info("📦 Creating order - tamTinh: {}, giamGiaTong: {}, phiVanChuyen: {}, voucher: {}", 
-                tamTinh, giamGiaTong, phiVanChuyen, voucherGiamGia != null ? voucherGiamGia.getMa() : "null");
 
         // --- SNAPSHOT địa chỉ & người nhận (User chọn từ sổ địa chỉ) ---
         donHang.setTenNguoiNhan(diaChi.getHoTen());
@@ -1036,7 +1028,7 @@ public class DonHangService {
             // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
             // bienTheSanPhamRepository.save(bienThe);
         }
-        // Xóa giỏ hàng
+
         // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
         // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
         gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
@@ -1048,12 +1040,14 @@ public class DonHangService {
             log.error("Flush failed in taoDonTuGioHang: {}", e.getMessage(), e);
             throw e;
         }
+
         try {
             emailService.guiEmailXacNhanDonHang(savedDonHang);
         } catch (Exception e) {
             log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}",
                     savedDonHang.getSoDonHang(), e.getMessage());
         }
+
         return convertToDTO(savedDonHang);
     }
 
@@ -1315,260 +1309,260 @@ public class DonHangService {
         KhachHang khachHang;
         GioHang gioHang;
 
-        // Nếu user đã login, dùng KhachHang của họ và lấy giỏ hàng theo khachHangId
-        if (authenticatedKhachHangId != null) {
-            khachHang = khachHangRepository.findById(authenticatedKhachHangId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+            // Nếu user đã login, dùng KhachHang của họ và lấy giỏ hàng theo khachHangId
+            if (authenticatedKhachHangId != null) {
+                khachHang = khachHangRepository.findById(authenticatedKhachHangId)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
 
-            // Lấy giỏ hàng theo khachHangId cho user đã đăng nhập
-            gioHang = gioHangService.layGioHangCuaKhach(authenticatedKhachHangId);
-        } else {
-            // Tạo KhachHang GUEST mới và lấy giỏ hàng theo sessionId
-            khachHang = new KhachHang();
-            khachHang.setTaiKhoan(null);
-            khachHang.setHoTen(request.getHoTen());
-            khachHang.setEmail(request.getEmail());
-            khachHang.setSoDienThoai(request.getSoDienThoai());
-            khachHang.setKieu("GUEST");
-            khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
-            khachHang = khachHangRepository.save(khachHang);
+                // Lấy giỏ hàng theo khachHangId cho user đã đăng nhập
+                gioHang = gioHangService.layGioHangCuaKhach(authenticatedKhachHangId);
+            } else {
+                // Tạo KhachHang GUEST mới và lấy giỏ hàng theo sessionId
+                khachHang = new KhachHang();
+                khachHang.setTaiKhoan(null);
+                khachHang.setHoTen(request.getHoTen());
+                khachHang.setEmail(request.getEmail());
+                khachHang.setSoDienThoai(request.getSoDienThoai());
+                khachHang.setKieu("GUEST");
+                khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
+                khachHang = khachHangRepository.save(khachHang);
 
-            // Lấy giỏ hàng theo sessionId cho guest
-            gioHang = gioHangService.layGioHangTheoSession(sessionId);
-        }
-
-        // ✅ Lấy CHỈ các chi tiết giỏ hàng đã được chọn (nếu có danh sách ID)
-        // Nếu không có danh sách ID, lấy toàn bộ giỏ hàng (tương thích ngược)
-        List<GioHangChiTiet> allItems = gioHangService.layChiTietGioHang(gioHang.getId());
-        List<GioHangChiTiet> gioHangItems;
-        
-        if (request.getSelectedCartItemIds() != null && !request.getSelectedCartItemIds().isEmpty()) {
-            // Chỉ lấy các chi tiết giỏ hàng đã được chọn
-            gioHangItems = allItems.stream()
-                    .filter(item -> request.getSelectedCartItemIds().contains(item.getId()))
-                    .collect(java.util.stream.Collectors.toList());
-        } else {
-            // Fallback: lấy toàn bộ giỏ hàng (tương thích ngược)
-            gioHangItems = allItems;
-        }
-        
-        if (gioHangItems == null || gioHangItems.isEmpty()) {
-            throw new RuntimeException("Giỏ hàng trống hoặc không có sản phẩm được chọn");
-        }
-
-        BigDecimal tamTinh = BigDecimal.ZERO;
-        for (GioHangChiTiet item : gioHangItems) {
-            BienTheSanPham bienThe = item.getBienThe();
-            if (bienThe.getSoLuongTon() < item.getSoLuong()) {
-                String tenSP = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
-                throw new RuntimeException(String.format(
-                        "Sản phẩm '%s' chỉ còn %d sản phẩm trong kho, không đủ số lượng yêu cầu (%d)",
-                        tenSP, bienThe.getSoLuongTon(), item.getSoLuong()));
+                // Lấy giỏ hàng theo sessionId cho guest
+                gioHang = gioHangService.layGioHangTheoSession(sessionId);
             }
-            BigDecimal gia = item.getGiaTaiThoiDiem();
-            if (gia == null) {
-                gia = bienThe.getGia();
-                if (gia == null && bienThe.getSanPham() != null) {
-                    gia = bienThe.getSanPham().getGia();
+
+            // ✅ Lấy CHỈ các chi tiết giỏ hàng đã được chọn (nếu có danh sách ID)
+            // Nếu không có danh sách ID, lấy toàn bộ giỏ hàng (tương thích ngược)
+            List<GioHangChiTiet> allItems = gioHangService.layChiTietGioHang(gioHang.getId());
+            List<GioHangChiTiet> gioHangItems;
+
+            if (request.getSelectedCartItemIds() != null && !request.getSelectedCartItemIds().isEmpty()) {
+                // Chỉ lấy các chi tiết giỏ hàng đã được chọn
+                gioHangItems = allItems.stream()
+                        .filter(item -> request.getSelectedCartItemIds().contains(item.getId()))
+                        .collect(java.util.stream.Collectors.toList());
+            } else {
+                // Fallback: lấy toàn bộ giỏ hàng (tương thích ngược)
+                gioHangItems = allItems;
+            }
+
+            if (gioHangItems == null || gioHangItems.isEmpty()) {
+                throw new RuntimeException("Giỏ hàng trống hoặc không có sản phẩm được chọn");
+            }
+
+            BigDecimal tamTinh = BigDecimal.ZERO;
+            for (GioHangChiTiet item : gioHangItems) {
+                BienTheSanPham bienThe = item.getBienThe();
+                if (bienThe.getSoLuongTon() < item.getSoLuong()) {
+                    String tenSP = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
+                    throw new RuntimeException(String.format(
+                            "Sản phẩm '%s' chỉ còn %d sản phẩm trong kho, không đủ số lượng yêu cầu (%d)",
+                            tenSP, bienThe.getSoLuongTon(), item.getSoLuong()));
                 }
-            }
-            if (gia == null) {
-                throw new RuntimeException("Không tìm thấy giá cho sản phẩm");
-            }
-            tamTinh = tamTinh.add(gia.multiply(BigDecimal.valueOf(item.getSoLuong())));
-        }
-
-        // Tính phí vận chuyển từ GHN API
-        BigDecimal phiVanChuyen;
-        try {
-            if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
-                log.info("🚚 Calculating shipping fee from GHN API...");
-                log.info("📍 To: districtId={}, wardCode={}, serviceId={}",
-                        request.getDistrictId(), request.getWardCode(), request.getServiceId());
-
-                // Tạo request để gọi GHN API
-                GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
-                ghnRequest.setToDistrictId(request.getDistrictId());
-                ghnRequest.setToWardCode(request.getWardCode());
-                ghnRequest.setServiceId(request.getServiceId());
-
-                // Tính tổng khối lượng và số lượng sản phẩm
-                int totalWeight = 0;
-                for (GioHangChiTiet item : gioHangItems) {
-                    totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
+                BigDecimal gia = item.getGiaTaiThoiDiem();
+                if (gia == null) {
+                    gia = bienThe.getGia();
+                    if (gia == null && bienThe.getSanPham() != null) {
+                        gia = bienThe.getSanPham().getGia();
+                    }
                 }
-                ghnRequest.setWeight(totalWeight);
-                ghnRequest.setInsuranceValue(tamTinh.intValue());
+                if (gia == null) {
+                    throw new RuntimeException("Không tìm thấy giá cho sản phẩm");
+                }
+                tamTinh = tamTinh.add(gia.multiply(BigDecimal.valueOf(item.getSoLuong())));
+            }
 
-                // Gọi GHN API
-                GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
+            // Tính phí vận chuyển từ GHN API
+            BigDecimal phiVanChuyen;
+            try {
+                if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
+                    log.info("🚚 Calculating shipping fee from GHN API...");
+                    log.info("📍 To: districtId={}, wardCode={}, serviceId={}",
+                            request.getDistrictId(), request.getWardCode(), request.getServiceId());
 
-                if (ghnResponse != null && ghnResponse.getData() != null) {
-                    Integer totalFee = ghnResponse.getData().getTotal();
-                    phiVanChuyen = BigDecimal.valueOf(totalFee);
+                    // Tạo request để gọi GHN API
+                    GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
+                    ghnRequest.setToDistrictId(request.getDistrictId());
+                    ghnRequest.setToWardCode(request.getWardCode());
+                    ghnRequest.setServiceId(request.getServiceId());
+
+                    // Tính tổng khối lượng và số lượng sản phẩm
+                    int totalWeight = 0;
+                    for (GioHangChiTiet item : gioHangItems) {
+                        totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
+                    }
+                    ghnRequest.setWeight(totalWeight);
+                    ghnRequest.setInsuranceValue(tamTinh.intValue());
+
+                    // Gọi GHN API
+                    GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
+
+                    if (ghnResponse != null && ghnResponse.getData() != null) {
+                        Integer totalFee = ghnResponse.getData().getTotal();
+                        phiVanChuyen = BigDecimal.valueOf(totalFee);
+                    } else {
+                        phiVanChuyen = BigDecimal.valueOf(30000);
+                    }
                 } else {
                     phiVanChuyen = BigDecimal.valueOf(30000);
                 }
-            } else {
+            } catch (Exception e) {
+                log.warn("Error calculating shipping fee from GHN, using default: {}", e.getMessage());
                 phiVanChuyen = BigDecimal.valueOf(30000);
             }
-        } catch (Exception e) {
-            log.warn("Error calculating shipping fee from GHN, using default: {}", e.getMessage());
-            phiVanChuyen = BigDecimal.valueOf(30000);
-        }
 
-        // Áp dụng voucher nếu có
-        Voucher appliedVoucher = null;
-        BigDecimal giamGiaTong = BigDecimal.ZERO;
-        
-        // Kiểm tra maVoucher có giá trị không
-        String maVoucher = request.getMaVoucher();
-        if (maVoucher != null) {
-            maVoucher = maVoucher.trim();
-        }
-        
-        if (maVoucher != null && !maVoucher.isEmpty()) {
-            String code = maVoucher;
-            try {
-                // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
-                Optional<Voucher> voucherOpt = voucherRepository.findByMa(code);
-                if (voucherOpt.isEmpty()) {
-                    voucherOpt = voucherRepository.findByMa(code.toUpperCase());
-                }
-                if (voucherOpt.isEmpty()) {
-                    voucherOpt = voucherRepository.findByMa(code.toLowerCase());
-                }
-                Voucher voucher = voucherOpt.orElse(null);
-                if (voucher != null) {
-                    // Lấy mã voucher từ DB (đảm bảo đúng case)
-                    String voucherMaFromDB = voucher.getMa();
-                    // Normalize loại voucher thành uppercase để đảm bảo consistency
-                    String loai = voucher.getLoai() != null ? voucher.getLoai().trim().toUpperCase() : "";
-                    if ("FREESHIP".equalsIgnoreCase(loai)) {
-                        // Freeship: miễn phí ship
-                        phiVanChuyen = BigDecimal.ZERO;
-                        appliedVoucher = voucher;
-                    } else {
-                        // Giảm giá: sử dụng service để tính đúng giamGiaTong
-                        // QUAN TRỌNG: Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request
-                        // để đảm bảo tìm được voucher trong validateVoucher()
-                        VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB,
-                                authenticatedKhachHangId, tamTinh, phiVanChuyen);
-                        if (!result.isSuccess()) {
-                            log.warn("Voucher apply failed: {}", result.getMessage());
-                            // Không throw exception trong transaction, chỉ log và set giamGiaTong = 0
-                            // Voucher không hợp lệ → không áp dụng giảm giá, nhưng vẫn cho phép đặt hàng
-                            giamGiaTong = BigDecimal.ZERO;
-                            appliedVoucher = null;
+            // Áp dụng voucher nếu có
+            Voucher appliedVoucher = null;
+            BigDecimal giamGiaTong = BigDecimal.ZERO;
+
+            // Kiểm tra maVoucher có giá trị không
+            String maVoucher = request.getMaVoucher();
+            if (maVoucher != null) {
+                maVoucher = maVoucher.trim();
+            }
+
+            if (maVoucher != null && !maVoucher.isEmpty()) {
+                String code = maVoucher;
+                try {
+                    // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
+                    Optional<Voucher> voucherOpt = voucherRepository.findByMa(code);
+                    if (voucherOpt.isEmpty()) {
+                        voucherOpt = voucherRepository.findByMa(code.toUpperCase());
+                    }
+                    if (voucherOpt.isEmpty()) {
+                        voucherOpt = voucherRepository.findByMa(code.toLowerCase());
+                    }
+                    Voucher voucher = voucherOpt.orElse(null);
+                    if (voucher != null) {
+                        // Lấy mã voucher từ DB (đảm bảo đúng case)
+                        String voucherMaFromDB = voucher.getMa();
+                        // Normalize loại voucher thành uppercase để đảm bảo consistency
+                        String loai = voucher.getLoai() != null ? voucher.getLoai().trim().toUpperCase() : "";
+                        if ("FREESHIP".equalsIgnoreCase(loai)) {
+                            // Freeship: miễn phí ship
+                            phiVanChuyen = BigDecimal.ZERO;
+                            appliedVoucher = voucher;
                         } else {
-                            // Đảm bảo giamGia không null
-                            BigDecimal calculatedGiamGia = result.getGiamGia();
-                            if (calculatedGiamGia == null) {
-                                log.warn("⚠️ Voucher apply success but giamGia is null, setting to ZERO");
-                                calculatedGiamGia = BigDecimal.ZERO;
+                            // Giảm giá: sử dụng service để tính đúng giamGiaTong
+                            // QUAN TRỌNG: Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request
+                            // để đảm bảo tìm được voucher trong validateVoucher()
+                            VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB,
+                                    authenticatedKhachHangId, tamTinh, phiVanChuyen);
+                            if (!result.isSuccess()) {
+                                log.warn("Voucher apply failed: {}", result.getMessage());
+                                // Không throw exception trong transaction, chỉ log và set giamGiaTong = 0
+                                // Voucher không hợp lệ → không áp dụng giảm giá, nhưng vẫn cho phép đặt hàng
+                                giamGiaTong = BigDecimal.ZERO;
+                                appliedVoucher = null;
+                            } else {
+                                // Đảm bảo giamGia không null
+                                BigDecimal calculatedGiamGia = result.getGiamGia();
+                                if (calculatedGiamGia == null) {
+                                    log.warn("⚠️ Voucher apply success but giamGia is null, setting to ZERO");
+                                    calculatedGiamGia = BigDecimal.ZERO;
+                                }
+                                giamGiaTong = calculatedGiamGia;
+                                appliedVoucher = result.getVoucher();
                             }
-                            giamGiaTong = calculatedGiamGia;
-                            appliedVoucher = result.getVoucher();
                         }
                     }
+                } catch (Exception e) {
+                    // Các exception khác (database error, etc.) → log và bỏ qua
+                    // Không throw để không làm rollback transaction
+                    log.error("Error applying voucher: {}", e.getMessage(), e);
+                    // giamGiaTong đã được set = 0 ở đầu, không cần làm gì thêm
+                    // Cho phép đặt hàng tiếp tục dù voucher fail
                 }
+            }
+
+            // tạo đơn hàng guest
+            DonHang donHang = new DonHang();
+            donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            donHang.setKhachHang(khachHang);
+            donHang.setTrangThai("Chờ xác nhận");
+            donHang.setTamTinh(tamTinh);
+            donHang.setGiamGiaTong(giamGiaTong);
+            donHang.setPhiVanChuyen(phiVanChuyen);
+            donHang.setVoucher(appliedVoucher);
+
+            donHang.setTenNguoiNhan(request.getHoTen());
+            donHang.setSdtNguoiNhan(request.getSoDienThoai());
+            donHang.setEmailNguoiNhan(request.getEmail());
+            donHang.setDiaChiChiTiet(request.getDiaChi());
+            donHang.setPhuongXa(request.getPhuongXa());
+            donHang.setQuanHuyen(request.getQuanHuyen());
+            donHang.setTinhThanh(request.getTinhThanh());
+            donHang.setGhiChu(request.getGhiChu());
+            donHang.setPaymentMethod(request.getPhuongThucThanhToan());
+            donHang.setPaymentStatus("pending");
+            donHang.setTaoLuc(LocalDateTime.now());
+            donHang.setCapNhatLuc(LocalDateTime.now());
+            donHang.setDatLuc(LocalDateTime.now());
+            donHang.setTongThanhToan(
+                    donHang.getTamTinh()
+                            .subtract(donHang.getGiamGiaTong() != null ? donHang.getGiamGiaTong() : BigDecimal.ZERO)
+                            .add(donHang.getPhiVanChuyen() != null ? donHang.getPhiVanChuyen() : BigDecimal.ZERO));
+
+            DonHang savedDonHang = donHangRepository.save(donHang);
+
+            for (GioHangChiTiet item : gioHangItems) {
+                BienTheSanPham bienThe = item.getBienThe();
+
+                BigDecimal donGia = item.getGiaTaiThoiDiem();
+                if (donGia == null) {
+                    donGia = bienThe.getGia();
+                    if (donGia == null && bienThe.getSanPham() != null) {
+                        donGia = bienThe.getSanPham().getGia();
+                    }
+                }
+                String tenHienThi = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
+                if (donGia == null) {
+                    throw new RuntimeException("Không tìm thấy giá cho sản phẩm: " + tenHienThi);
+                }
+
+                DonHangChiTiet ct = new DonHangChiTiet();
+                ct.setDonHang(savedDonHang);
+                ct.setBienThe(bienThe);
+                ct.setTenHienThi(tenHienThi);
+
+                // --- SNAPSHOT thuộc tính sản phẩm ---
+                if (bienThe.getMauSac() != null) {
+                    ct.setMauSac(bienThe.getMauSac().getTen());
+                }
+                if (bienThe.getKichCo() != null) {
+                    ct.setKichCo(bienThe.getKichCo().getTen());
+                }
+                if (bienThe.getChatLieu() != null) {
+                    ct.setChatLieu(bienThe.getChatLieu().getTen());
+                }
+                ct.setSoLuong(item.getSoLuong());
+                ct.setDonGia(donGia);
+                ct.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));
+                donHangChiTietRepository.save(ct);
+
+                // ❌ KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
+                // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+                // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
+                // bienTheSanPhamRepository.save(bienThe);
+            }
+
+            // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
+            // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
+            gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
+
+            // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
+            try {
+                donHangRepository.flush();
             } catch (Exception e) {
-                // Các exception khác (database error, etc.) → log và bỏ qua
-                // Không throw để không làm rollback transaction
-                log.error("Error applying voucher: {}", e.getMessage(), e);
-                // giamGiaTong đã được set = 0 ở đầu, không cần làm gì thêm
-                // Cho phép đặt hàng tiếp tục dù voucher fail
-            }
-        }
-
-        // tạo đơn hàng guest
-        DonHang donHang = new DonHang();
-        donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-        donHang.setKhachHang(khachHang);
-        donHang.setTrangThai("Chờ xác nhận");
-        donHang.setTamTinh(tamTinh);
-        donHang.setGiamGiaTong(giamGiaTong);
-        donHang.setPhiVanChuyen(phiVanChuyen);
-        donHang.setVoucher(appliedVoucher);
-
-        donHang.setTenNguoiNhan(request.getHoTen());
-        donHang.setSdtNguoiNhan(request.getSoDienThoai());
-        donHang.setEmailNguoiNhan(request.getEmail());
-        donHang.setDiaChiChiTiet(request.getDiaChi());
-        donHang.setPhuongXa(request.getPhuongXa());
-        donHang.setQuanHuyen(request.getQuanHuyen());
-        donHang.setTinhThanh(request.getTinhThanh());
-        donHang.setGhiChu(request.getGhiChu());
-        donHang.setPaymentMethod(request.getPhuongThucThanhToan());
-        donHang.setPaymentStatus("pending");
-        donHang.setTaoLuc(LocalDateTime.now());
-        donHang.setCapNhatLuc(LocalDateTime.now());
-        donHang.setDatLuc(LocalDateTime.now());
-        donHang.setTongThanhToan(
-                donHang.getTamTinh()
-                        .subtract(donHang.getGiamGiaTong() != null ? donHang.getGiamGiaTong() : BigDecimal.ZERO)
-                        .add(donHang.getPhiVanChuyen() != null ? donHang.getPhiVanChuyen() : BigDecimal.ZERO));
-
-        DonHang savedDonHang = donHangRepository.save(donHang);
-
-        for (GioHangChiTiet item : gioHangItems) {
-            BienTheSanPham bienThe = item.getBienThe();
-
-            BigDecimal donGia = item.getGiaTaiThoiDiem();
-            if (donGia == null) {
-                donGia = bienThe.getGia();
-                if (donGia == null && bienThe.getSanPham() != null) {
-                    donGia = bienThe.getSanPham().getGia();
-                }
-            }
-            String tenHienThi = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
-            if (donGia == null) {
-                throw new RuntimeException("Không tìm thấy giá cho sản phẩm: " + tenHienThi);
+                log.error("Flush failed in taoDonHangGuest: {}", e.getMessage(), e);
+                throw e;
             }
 
-            DonHangChiTiet ct = new DonHangChiTiet();
-            ct.setDonHang(savedDonHang);
-            ct.setBienThe(bienThe);
-            ct.setTenHienThi(tenHienThi);
-
-            // --- SNAPSHOT thuộc tính sản phẩm ---
-            if (bienThe.getMauSac() != null) {
-                ct.setMauSac(bienThe.getMauSac().getTen());
+            try {
+                emailService.guiEmailXacNhanDonHang(savedDonHang);
+            } catch (Exception e) {
+                log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}", savedDonHang.getSoDonHang(), e.getMessage());
             }
-            if (bienThe.getKichCo() != null) {
-                ct.setKichCo(bienThe.getKichCo().getTen());
-            }
-            if (bienThe.getChatLieu() != null) {
-                ct.setChatLieu(bienThe.getChatLieu().getTen());
-            }
-            ct.setSoLuong(item.getSoLuong());
-            ct.setDonGia(donGia);
-            ct.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));
-            donHangChiTietRepository.save(ct);
-
-            // ❌ KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
-            // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
-            // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
-            // bienTheSanPhamRepository.save(bienThe);
-        }
-
-        // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
-        // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
-        gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
-
-        // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
-        try {
-            donHangRepository.flush();
-        } catch (Exception e) {
-            log.error("Flush failed in taoDonHangGuest: {}", e.getMessage(), e);
-            throw e;
-        }
-
-        try {
-            emailService.guiEmailXacNhanDonHang(savedDonHang);
-        } catch (Exception e) {
-            log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}", savedDonHang.getSoDonHang(), e.getMessage());
-        }
 
         DonHangResponse response = convertToDTO(savedDonHang);
 

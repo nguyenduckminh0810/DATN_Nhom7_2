@@ -26,7 +26,6 @@ const AdminCategories = () =>
 const AdminOrders = () => import(/* webpackChunkName: "admin" */ '../views/admin/Orders.vue')
 const AdminUsers = () => import(/* webpackChunkName: "admin" */ '../views/admin/Users.vue')
 const AdminAnalytics = () => import(/* webpackChunkName: "admin" */ '../views/admin/Analytics.vue')
-const AdminSettings = () => import(/* webpackChunkName: "admin" */ '../views/admin/Settings.vue')
 const AdminInventory = () => import(/* webpackChunkName: "admin" */ '../views/admin/Inventory.vue')
 const AdminPromotions = () =>
   import(/* webpackChunkName: "admin" */ '../views/admin/Promotions.vue')
@@ -187,12 +186,6 @@ const router = createRouter({
           name: 'admin-analytics',
           component: AdminAnalytics,
           meta: { title: 'Thống kê & Báo cáo - AURO', requiresAuth: true, requiresAdmin: true },
-        },
-        {
-          path: 'settings',
-          name: 'admin-settings',
-          component: AdminSettings,
-          meta: { title: 'Cài đặt - AURO', requiresAuth: true, requiresAdmin: true, requiresOnlyAdmin: true },
         },
         {
           path: 'inventory',
