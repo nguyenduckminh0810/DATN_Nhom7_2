@@ -116,13 +116,23 @@
                 </div>
 
                 <!-- Order Timeline -->
-                <div v-if="order.trangThai !== 'CANCELLED'" class="order-timeline mb-4">
+                <div
+                  v-if="order.trangThai !== 'CANCELLED' && order.trangThai !== 'DA_HUY'"
+                  class="order-timeline mb-4"
+                >
+                  <div class="mb-2 text-center">
+                    <small class="text-muted"
+                      >Trạng thái: <strong>{{ order.trangThai }}</strong></small
+                    >
+                  </div>
                   <div class="timeline-steps">
                     <div
                       v-for="(step, index) in getTimelineSteps()"
                       :key="index"
                       class="timeline-step"
                       :class="getStepClass(order.trangThai, step.status)"
+                      :data-step="step.status"
+                      :data-class="getStepClass(order.trangThai, step.status)"
                     >
                       <div class="timeline-icon">
                         <i :class="step.icon"></i>
@@ -165,10 +175,6 @@
                       {{
                         order.paymentMethod ? order.paymentMethod.toUpperCase() : 'Chưa cập nhật'
                       }}
-                    </p>
-                    <p class="mb-2">
-                      <strong>Trạng thái thanh toán:</strong>
-                      <span class="text-capitalize">{{ order.paymentStatus || 'pending' }}</span>
                     </p>
                     <p class="mb-2">
                       <strong>Địa chỉ giao:</strong>
@@ -248,10 +254,23 @@ const fallbackImage = 'https://via.placeholder.com/80x80/EEE/555?text=AURO'
 
 const statusMap = {
   PENDING: { label: 'Chờ xác nhận', class: 'bg-warning text-dark', order: 1 },
+  CHO_XAC_NHAN: { label: 'Chờ xác nhận', class: 'bg-warning text-dark', order: 1 },
+  'CHỜ XÁC NHẬN': { label: 'Chờ xác nhận', class: 'bg-warning text-dark', order: 1 },
   CONFIRMED: { label: 'Đã xác nhận', class: 'bg-info text-dark', order: 2 },
+  DA_XAC_NHAN: { label: 'Đã xác nhận', class: 'bg-info text-dark', order: 2 },
+  'ĐÃ XÁC NHẬN': { label: 'Đã xác nhận', class: 'bg-info text-dark', order: 2 },
   SHIPPING: { label: 'Đang giao', class: 'bg-primary', order: 3 },
-  COMPLETED: { label: 'Hoàn tất', class: 'bg-success', order: 4 },
+  DANG_GIAO: { label: 'Đang giao', class: 'bg-primary', order: 3 },
+  'ĐANG GIAO': { label: 'Đang giao', class: 'bg-primary', order: 3 },
+  DELIVERED: { label: 'Đã giao', class: 'bg-info', order: 4 },
+  DA_GIAO: { label: 'Đã giao', class: 'bg-info', order: 4 },
+  'ĐÃ GIAO': { label: 'Đã giao', class: 'bg-info', order: 4 },
+  COMPLETED: { label: 'Hoàn tất', class: 'bg-success', order: 5 },
+  HOAN_TAT: { label: 'Hoàn tất', class: 'bg-success', order: 5 },
+  'HOÀN TẤT': { label: 'Hoàn tất', class: 'bg-success', order: 5 },
   CANCELLED: { label: 'Đã hủy', class: 'bg-secondary', order: -1 },
+  DA_HUY: { label: 'Đã hủy', class: 'bg-secondary', order: -1 },
+  'ĐÃ HỦY': { label: 'Đã hủy', class: 'bg-secondary', order: -1 },
 }
 
 // Validation for phone number (9-11 digits)
@@ -317,18 +336,41 @@ const normalizePayload = (payload) => {
 
 // Timeline steps configuration
 const getTimelineSteps = () => [
-  { status: 'PENDING', label: 'Chờ xác nhận', icon: 'bi bi-clock-history' },
+  { status: 'CHO_XAC_NHAN', label: 'Chờ xác nhận', icon: 'bi bi-clock-history' },
   { status: 'CONFIRMED', label: 'Đã xác nhận', icon: 'bi bi-check-circle' },
-  { status: 'SHIPPING', label: 'Đang giao', icon: 'bi bi-truck' },
-  { status: 'COMPLETED', label: 'Hoàn tất', icon: 'bi bi-box-seam' },
+  { status: 'DANG_GIAO', label: 'Đang giao', icon: 'bi bi-truck' },
+  { status: 'DA_GIAO', label: 'Đã giao', icon: 'bi bi-box-seam' },
+  { status: 'HOAN_TAT', label: 'Hoàn tất', icon: 'bi bi-check-circle-fill' },
 ]
 
 const getStepClass = (currentStatus, stepStatus) => {
-  const current = statusMap[currentStatus]?.order || 0
-  const step = statusMap[stepStatus]?.order || 0
+  // Try exact match first (for Vietnamese with diacritics)
+  const currentUpper = currentStatus?.toUpperCase()
+  const stepUpper = stepStatus?.toUpperCase()
 
-  if (current >= step) return 'completed'
-  if (current + 1 === step) return 'active'
+  let current = statusMap[currentUpper]?.order
+  let step = statusMap[stepUpper]?.order
+
+  // If not found, try normalized version (replace spaces with underscore)
+  if (!current) {
+    const normalizedCurrent = currentUpper?.replace(/\s/g, '_').replace(/-/g, '_')
+    current = statusMap[normalizedCurrent]?.order || 0
+  }
+
+  if (!step) {
+    const normalizedStep = stepUpper?.replace(/\s/g, '_').replace(/-/g, '_')
+    step = statusMap[normalizedStep]?.order || 0
+  }
+
+  // If order is cancelled or invalid, return empty
+  if (current <= 0) return ''
+
+  // Mark as completed if current status order is greater than or equal to step order
+  if (current >= step && step > 0) return 'completed'
+
+  // Mark as active if current status is exactly one step before
+  if (current === step - 1) return 'active'
+
   return ''
 }
 
@@ -520,15 +562,31 @@ const resetForm = () => {
   }
 }
 
-/* Progress Line */
-.timeline-step.completed + .timeline-step::before {
+/* Progress Line between completed steps */
+.timeline-step.completed::after {
   content: '';
   position: absolute;
   top: 20px;
-  left: -50%;
+  left: 50%;
   width: 100%;
   height: 3px;
   background: linear-gradient(to right, #10b981, #059669);
+  z-index: -1;
+}
+
+.timeline-step:last-child.completed::after {
+  display: none;
+}
+
+/* Progress line for active step (from previous completed) */
+.timeline-step.active::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  right: 50%;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(to right, #10b981, #f59e0b);
   z-index: -1;
 }
 
