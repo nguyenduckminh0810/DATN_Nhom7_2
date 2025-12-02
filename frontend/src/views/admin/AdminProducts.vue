@@ -1218,13 +1218,7 @@ async function loadCategories() {
   }
 }
 
-// NEW: Computed for discount
-const discountPercent = computed(() => {
-  if (productForm.value.originalPrice && productForm.value.price) {
-    return Math.round((1 - productForm.value.price / productForm.value.originalPrice) * 100)
-  }
-  return 0
-})
+
 
 // NEW: Helper methods
 const getCategoryType = (categoryId) => {
@@ -1235,11 +1229,7 @@ const getCategoryType = (categoryId) => {
   return 'ao'
 }
 
-const generateSKU = () => {
-  const prefix = getCategoryType(productForm.value.categoryId).toUpperCase()
-  const timestamp = Date.now().toString().slice(-6)
-  productForm.value.sku = `${prefix}-${timestamp}`
-}
+
 
 // SEO & tag helpers removed with SEO tab
 

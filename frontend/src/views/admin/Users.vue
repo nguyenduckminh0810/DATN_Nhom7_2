@@ -756,6 +756,7 @@
                   v-model="editForm.email"
                   placeholder="Nhập email"
                   required
+                  :disabled="!canEditInfo"
                 />
               </div>
               <div class="col-md-6">
@@ -767,11 +768,12 @@
                   class="form-control"
                   v-model="editForm.phone"
                   placeholder="Nhập số điện thoại"
+                  :disabled="!canEditInfo"
                 />
               </div>
               <div class="col-md-6">
                 <label class="form-label"> <i class="bi bi-person-badge me-1"></i>Vai trò </label>
-                <select class="form-select" v-model="editForm.role">
+                <select class="form-select" v-model="editForm.role" :disabled="!canEditInfo">
                   <option value="customer">Khách hàng</option>
                   <option value="staff">Nhân viên</option>
                   <option value="admin">Quản trị viên</option>
@@ -781,7 +783,7 @@
                 <label class="form-label">
                   <i class="bi bi-check-circle me-1"></i>Trạng thái
                 </label>
-                <select class="form-select" v-model="editForm.status">
+                <select class="form-select" v-model="editForm.status" :disabled="!canEditStatus">
                   <option value="active">Hoạt động</option>
                   <option value="inactive">Ngừng hoạt động</option>
                   <option value="banned">Bị cấm</option>
@@ -807,7 +809,8 @@
             type="button"
             class="btn btn-primary"
             @click="saveUserEdit"
-            :disabled="editLoading"
+            :disabled="editLoading || !canSave"
+            v-if="canSave"
           >
             <span v-if="editLoading" class="spinner-border spinner-border-sm me-1"></span>
             <i v-else class="bi bi-check-circle me-1"></i>
@@ -820,6 +823,9 @@
 </template>
 
 <script setup>
+defineOptions({
+  name: 'AdminUsersPage',
+})
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { useUserStore } from '@/stores/user'
@@ -865,195 +871,55 @@ const userTypes = ref([
   { value: 'high-value', label: 'Chi tiêu cao', icon: 'bi bi-currency-dollar' },
 ])
 
-// Mock data (sẽ được thay thế bằng dữ liệu từ API nếu có)
-const users = ref([
-  {
-    id: 1,
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@email.com',
-    phone: '0123456789',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    birthday: new Date('1990-05-15'),
-    gender: 'Nam',
-    role: 'customer',
-    status: 'active',
-    avatar: null,
-    orderCount: 5,
-    totalSpent: 2500000,
-    avgOrderValue: 500000,
-    createdAt: new Date('2024-01-10'),
-    lastLogin: new Date('2024-01-20'),
-    isVip: true,
-    isNew: false,
-    isHighValue: true,
-    orders: [
-      {
-        id: 1,
-        orderNumber: 'ORD-001',
-        total: 450000,
-        status: 'delivered',
-        createdAt: new Date('2024-01-15'),
-      },
-      {
-        id: 2,
-        orderNumber: 'ORD-002',
-        total: 650000,
-        status: 'shipped',
-        createdAt: new Date('2024-01-18'),
-      },
-    ],
-    activities: [
-      {
-        id: 1,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-20'),
-      },
-      {
-        id: 2,
-        type: 'order',
-        description: 'Đặt đơn hàng #ORD-002',
-        createdAt: new Date('2024-01-18'),
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Trần Thị B',
-    email: 'tranthib@email.com',
-    phone: '0987654321',
-    address: '456 Đường XYZ, Quận 2, TP.HCM',
-    birthday: new Date('1985-08-22'),
-    gender: 'Nữ',
-    role: 'customer',
-    status: 'active',
-    avatar: null,
-    orderCount: 3,
-    totalSpent: 1200000,
-    avgOrderValue: 400000,
-    createdAt: new Date('2024-01-12'),
-    lastLogin: new Date('2024-01-19'),
-    isVip: false,
-    isNew: false,
-    isHighValue: false,
-    orders: [
-      {
-        id: 3,
-        orderNumber: 'ORD-003',
-        total: 350000,
-        status: 'delivered',
-        createdAt: new Date('2024-01-16'),
-      },
-    ],
-    activities: [
-      {
-        id: 3,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-19'),
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Lê Văn C',
-    email: 'levanc@email.com',
-    phone: '0369852147',
-    address: '789 Đường DEF, Quận 3, TP.HCM',
-    birthday: new Date('1992-12-10'),
-    gender: 'Nam',
-    role: 'staff',
-    status: 'active',
-    avatar: null,
-    orderCount: 0,
-    totalSpent: 0,
-    avgOrderValue: 0,
-    createdAt: new Date('2024-01-05'),
-    lastLogin: new Date('2024-01-21'),
-    isVip: false,
-    isNew: false,
-    isHighValue: false,
-    orders: [],
-    activities: [
-      {
-        id: 4,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-21'),
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: 'Phạm Thị D',
-    email: 'phamthid@email.com',
-    phone: '0741852963',
-    address: '321 Đường GHI, Quận 4, TP.HCM',
-    birthday: new Date('1988-03-25'),
-    gender: 'Nữ',
-    role: 'admin',
-    status: 'active',
-    avatar: null,
-    orderCount: 0,
-    totalSpent: 0,
-    avgOrderValue: 0,
-    createdAt: new Date('2024-01-01'),
-    lastLogin: new Date('2024-01-21'),
-    orders: [],
-    activities: [
-      {
-        id: 5,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-21'),
-      },
-    ],
-  },
-])
+// Dữ liệu người dùng lấy từ API
+const users = ref([])
 
-// Fetch from backend admin API if available
+const { success: toastSuccess, error: toastError } = useToast()
+
+// Fetch from backend admin API
 const fetchUsers = async () => {
   try {
     const res = await api.adminUsers.getAll({ page: 0, size: 50 })
     const content = res?.content || res?.data || []
-    if (Array.isArray(content) && content.length) {
-      users.value = content.map((u) => {
-        const email = u.email || ''
-        const baseName = email ? email.split('@')[0] || 'Người dùng' : u.soDienThoai || 'Người dùng'
-        const roleMap = { ADM: 'admin', STF: 'staff', CUS: 'customer', GST: 'customer' }
+    users.value = Array.isArray(content)
+      ? content.map((u) => {
+          const email = u.email || ''
+          const baseName = email ? email.split('@')[0] || 'Người dùng' : u.soDienThoai || 'Người dùng'
+          const roleMap = { ADM: 'admin', STF: 'staff', CUS: 'customer', GST: 'customer' }
 
-        // Lấy orderCount và totalSpent từ backend
-        const orderCount = u.orderCount || 0
-        const totalSpent = u.totalSpent || 0
-        const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0
+          // Lấy orderCount và totalSpent từ backend
+          const orderCount = u.orderCount || 0
+          const totalSpent = u.totalSpent || 0
+          const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0
 
-        return {
-          id: u.id,
-          name: baseName,
-          email: u.email || 'N/A',
-          phone: u.soDienThoai || 'Chưa cập nhật',
-          address: '—',
-          birthday: null,
-          gender: null,
-          role: roleMap[u.vaiTroMa] || 'customer',
-          status: u.trangThai ? 'active' : 'inactive',
-          avatar: null,
-          orderCount: orderCount,
-          totalSpent: totalSpent,
-          avgOrderValue: avgOrderValue,
-          createdAt: u.taoLuc ? new Date(u.taoLuc) : new Date(),
-          lastLogin: null,
-          isVip: totalSpent > 10000000, // VIP nếu chi tiêu > 10 triệu
-          isNew: false,
-          isHighValue: totalSpent > 5000000, // High value nếu chi tiêu > 5 triệu
-          orders: [],
-          activities: [],
-        }
-      })
-    }
+          return {
+            id: u.id,
+            name: baseName,
+            email: u.email || 'N/A',
+            phone: u.soDienThoai || 'Chưa cập nhật',
+            address: '—',
+            birthday: null,
+            gender: null,
+            role: roleMap[u.vaiTroMa] || 'customer',
+            status: u.trangThai ? 'active' : 'inactive',
+            avatar: null,
+            orderCount,
+            totalSpent,
+            avgOrderValue,
+            createdAt: u.taoLuc ? new Date(u.taoLuc) : new Date(),
+            lastLogin: null,
+            isVip: totalSpent > 10000000, // VIP nếu chi tiêu > 10 triệu
+            isNew: false,
+            isHighValue: totalSpent > 5000000, // High value nếu chi tiêu > 5 triệu
+            orders: [],
+            activities: [],
+          }
+        })
+      : []
   } catch (e) {
-    // keep mock data as fallback
-    console.warn('Không thể tải danh sách người dùng từ API, dùng mock tạm thời.', e)
+    console.error('Không thể tải danh sách người dùng từ API.', e)
+    users.value = []
+    toastError('Không thể tải danh sách người dùng từ server')
   }
 }
 
@@ -1339,6 +1205,21 @@ const isAdmin = computed(() => {
   return role === 'admin' || role === 'ADM'
 })
 
+const isStaff = computed(() => {
+  const role = userStore.userRole
+  return role === 'staff' || role === 'STF'
+})
+
+const canEditInfo = computed(() => isAdmin.value)
+const canEditStatus = computed(() => {
+  if (isAdmin.value) return true
+  if (isStaff.value) {
+    return editForm.value.role === 'customer'
+  }
+  return false
+})
+const canSave = computed(() => canEditInfo.value || canEditStatus.value)
+
 // Confirm modal state
 const showConfirm = ref(false)
 const confirmTitle = ref('Xác nhận')
@@ -1366,12 +1247,10 @@ const onConfirm = async () => {
   }
 }
 
-const { success: toastSuccess, error: toastError } = useToast()
-
 const editUser = (user) => {
-  if (!isAdmin.value) return
+  // Cho phép ADMIN và STAFF mở modal (STAFF chỉ được đổi status cho customer, form sẽ readonly)
+  if (!isAdmin.value && !isStaff.value) return
 
-  // Populate edit form
   editForm.value = {
     id: user.id,
     email: user.email || '',
@@ -1397,23 +1276,34 @@ const closeEditModal = () => {
 }
 
 const saveUserEdit = async () => {
-  if (!isAdmin.value) return
+  if (!canSave.value) return
 
   try {
     editLoading.value = true
 
-    // Map role to backend format
     const roleMap = {
       customer: 'CUS',
       staff: 'STF',
       admin: 'ADM',
     }
 
-    const payload = {
-      email: editForm.value.email,
-      soDienThoai: editForm.value.phone,
-      vaiTroMa: roleMap[editForm.value.role] || 'CUS',
-      trangThai: editForm.value.status === 'active',
+    let payload = {}
+
+    if (canEditInfo.value) {
+      payload = {
+        email: editForm.value.email,
+        soDienThoai: editForm.value.phone,
+        vaiTroMa: roleMap[editForm.value.role] || 'CUS',
+        trangThai: editForm.value.status === 'active',
+      }
+    } else if (canEditStatus.value && isStaff.value) {
+      // STAFF chỉ được đổi trạng thái cho customer – UI đã chặn, backend kiểm lại
+      payload = {
+        trangThai: editForm.value.status === 'active',
+      }
+    } else {
+      toastError('Bạn không có quyền cập nhật thông tin này')
+      return
     }
 
     await api.adminUsers.update(editForm.value.id, payload)
@@ -1421,9 +1311,11 @@ const saveUserEdit = async () => {
     // Update user in list
     const userIndex = users.value.findIndex((u) => u.id === editForm.value.id)
     if (userIndex !== -1) {
-      users.value[userIndex].email = editForm.value.email
-      users.value[userIndex].phone = editForm.value.phone
-      users.value[userIndex].role = editForm.value.role
+      if (canEditInfo.value) {
+        users.value[userIndex].email = editForm.value.email
+        users.value[userIndex].phone = editForm.value.phone
+        users.value[userIndex].role = editForm.value.role
+      }
       users.value[userIndex].status = editForm.value.status
       users.value[userIndex].note = editForm.value.note
     }
@@ -1459,18 +1351,50 @@ const softDeleteUser = async (user) => {
   )
 }
 
-const bulkUpdateStatus = (status) => {
+const bulkUpdateStatus = async (status) => {
+  if (selectedUsers.value.length === 0) return
+
+  // Map status string -> Boolean trangThai
+  const enabled = status === 'active'
+
+  // RBAC FE: STAFF chỉ được bulk trên customer
+  if (isStaff.value) {
+    const invalidTargets = selectedUsers.value
+      .map((id) => users.value.find((u) => u.id === id))
+      .filter((u) => u && u.role !== 'customer')
+
+    if (invalidTargets.length > 0) {
+      toastError('Nhân viên chỉ được phép đổi trạng thái tài khoản khách hàng')
+      return
+    }
+  }
+
   if (
-    confirm(
+    !confirm(
       `Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedUsers.value.length} người dùng?`,
     )
   ) {
+    return
+  }
+
+  try {
+    await api.adminUsers.bulkStatus({
+      ids: selectedUsers.value,
+      trangThai: enabled,
+    })
+
     selectedUsers.value.forEach((userId) => {
       const user = users.value.find((u) => u.id === userId)
       if (user) {
         user.status = status
       }
     })
+
+    toastSuccess('Cập nhật trạng thái hàng loạt thành công')
+  } catch (e) {
+    console.error('Bulk update status failed', e)
+    toastError('Không thể cập nhật trạng thái hàng loạt: ' + (e.message || 'Lỗi không xác định'))
+  } finally {
     selectedUsers.value = []
     selectAll.value = false
   }

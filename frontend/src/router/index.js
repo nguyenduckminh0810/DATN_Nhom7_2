@@ -256,6 +256,14 @@ router.beforeEach((to, from, next) => {
     const userRole = user.vaiTroMa || user.vaiTro || user.role
     console.log('Router check - User role:', userRole)
 
+    if (to.name === 'admin-analytics' || to.path.startsWith('/admin/analytics')) {
+      if (!userRole || !['ADM', 'admin'].includes(userRole)) {
+        console.log('Access denied - Analytics reserved for admin only')
+        next({ name: 'admin-products' })
+        return
+      }
+    }
+
     // Nếu route yêu cầu chỉ admin (requiresOnlyAdmin), chỉ cho phép ADM
     if (to.meta.requiresOnlyAdmin) {
       if (!userRole || !['ADM', 'admin'].includes(userRole)) {

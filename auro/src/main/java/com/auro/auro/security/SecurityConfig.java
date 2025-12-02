@@ -121,7 +121,7 @@ public class SecurityConfig {
                         // Quản lý người dùng: cho phép STF/ADM truy cập, hạn chế hành vi bằng
                         // @PreAuthorize ở controller
                         .requestMatchers("/api/nguoi-dung/**").hasAnyRole("STF", "ADM")
-                        .requestMatchers("/api/thong-ke/**").hasRole("ADM")
+                        .requestMatchers("/api/thong-ke/**").hasAnyRole("STF", "ADM")
                         .requestMatchers("/api/cai-dat/**").hasRole("ADM")
                         .requestMatchers("/api/vai-tro/**").hasRole("ADM")
 
