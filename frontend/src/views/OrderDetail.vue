@@ -53,6 +53,18 @@
           </div>
         </div>
 
+        <!-- Lý do hủy (nếu đơn đã hủy) -->
+        <div v-if="order.statusCode === 'CANCELLED' || order.statusCode === 'DA_HUY' || order.statusLabel === 'Đã hủy' || order.rawStatus === 'DA_HUY' || (order.rawStatus && order.rawStatus.toUpperCase().includes('HUY'))" class="alert alert-danger mb-4">
+          <div class="d-flex align-items-start">
+            <i class="bi bi-exclamation-triangle-fill me-2 fs-5"></i>
+            <div>
+              <strong>Lý do hủy đơn hàng:</strong>
+              <p class="mb-0 mt-1" v-if="order.lyDoHuy">{{ order.lyDoHuy }}</p>
+              <p class="mb-0 mt-1 text-muted" v-else>Không có lý do được ghi nhận.</p>
+            </div>
+          </div>
+        </div>
+
         <div class="row">
           <!-- Left Column -->
           <div class="col-lg-8">
@@ -237,7 +249,7 @@
             <!-- Actions -->
             <div class="card mt-4" v-if="canCancelOrder">
               <div class="card-body text-center">
-                <button class="btn btn-danger w-100" @click="cancelOrder">
+                <button class="btn btn-danger w-100" @click="openCancelModal">
                   <i class="bi bi-x-circle me-2"></i>
                   Hủy đơn hàng
                 </button>
@@ -314,6 +326,41 @@
         </div>
       </div>
     </div>
+
+    <!-- Cancel Order Modal -->
+    <div v-if="showCancelModal" class="rating-modal">
+      <div class="rating-modal__overlay" @click="closeCancelModal"></div>
+      <div class="rating-modal__content">
+        <div class="rating-modal__header">
+          <h5 class="mb-0">Hủy đơn hàng #{{ order?.soDonHang }}</h5>
+          <button type="button" class="btn-close" @click="closeCancelModal"></button>
+        </div>
+        <div class="rating-modal__body">
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            Bạn có chắc chắn muốn hủy đơn hàng này? Vui lòng nhập lý do hủy.
+          </div>
+          <div class="mb-3">
+            <label for="cancelReason" class="form-label">Lý do hủy <span class="text-danger">*</span></label>
+            <textarea
+              id="cancelReason"
+              class="form-control"
+              rows="4"
+              v-model="cancelReason"
+              placeholder="Nhập lý do hủy đơn hàng..."
+              required
+            ></textarea>
+            <small class="form-text text-muted">Lý do hủy sẽ được lưu và hiển thị trong chi tiết đơn hàng.</small>
+          </div>
+        </div>
+        <div class="rating-modal__footer">
+          <button type="button" class="btn btn-secondary" @click="closeCancelModal">Hủy</button>
+          <button type="button" class="btn btn-danger" @click="confirmCancelOrder" :disabled="!cancelReason || cancelReason.trim().length === 0">
+            Xác nhận hủy đơn
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -349,6 +396,10 @@ const ratingForm = reactive({
   comment: '',
 })
 const hoverRating = ref(0)
+
+// Cancel order modal state
+const showCancelModal = ref(false)
+const cancelReason = ref('')
 
 const canCancelOrder = computed(() => {
   if (!order.value) return false
@@ -438,22 +489,44 @@ const parseAmount = (value) => {
   return Number.isFinite(numberValue) ? numberValue : 0
 }
 
-const cancelOrder = async () => {
-  if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return
+const openCancelModal = () => {
+  cancelReason.value = ''
+  showCancelModal.value = true
+}
+
+const closeCancelModal = () => {
+  showCancelModal.value = false
+  cancelReason.value = ''
+}
+
+const confirmCancelOrder = async () => {
+  if (!cancelReason.value || cancelReason.value.trim().length === 0) {
+    if (window.$toast) {
+      window.$toast.error('Vui lòng nhập lý do hủy đơn hàng')
+    } else {
+      alert('Vui lòng nhập lý do hủy đơn hàng')
+    }
+    return
+  }
   
   try {
-    await orderService.cancelOrder(order.value.id, 'Khách hàng hủy đơn')
+    await orderService.cancelOrder(order.value.id, cancelReason.value.trim())
     
     if (window.$toast) {
       window.$toast.success('Đơn hàng đã được hủy')
     }
     
+    closeCancelModal()
+    
     // Refresh order detail
     await fetchOrderDetail()
   } catch (err) {
     console.error('Error canceling order:', err)
+    const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Không thể hủy đơn hàng'
     if (window.$toast) {
-      window.$toast.error(err.message || 'Không thể hủy đơn hàng')
+      window.$toast.error(errorMessage)
+    } else {
+      alert(errorMessage)
     }
   }
 }

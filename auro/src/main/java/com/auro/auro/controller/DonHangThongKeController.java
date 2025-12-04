@@ -1,7 +1,5 @@
 package com.auro.auro.controller;
 
-import com.auro.auro.model.DonHang;
-import com.auro.auro.repository.DonHangRepository;
 import com.auro.auro.service.ThongKeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -9,15 +7,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/thong-ke")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class DonHangThongKeController {
-
-    private final DonHangRepository donHangRepository;
 
     private final ThongKeService thongKeService;
 
@@ -80,7 +75,7 @@ public class DonHangThongKeController {
     }
 
     @GetMapping("/analytics/kpis")
-    // @PreAuthorize("hasAnyRole('ADM', 'STF')")
+    @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<Map<String, Object>> analyticsKpis(
             @RequestParam(name = "startDate", required = false) String startDate,
             @RequestParam(name = "endDate", required = false) String endDate) {
@@ -89,7 +84,7 @@ public class DonHangThongKeController {
     }
 
     @GetMapping("/analytics/business-insights")
-    // @PreAuthorize("hasAnyRole('ADM', 'STF')")
+    @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<Map<String, Object>> businessInsights(
             @RequestParam(name = "startDate", required = false) String startDate,
             @RequestParam(name = "endDate", required = false) String endDate) {
@@ -98,14 +93,14 @@ public class DonHangThongKeController {
     }
 
     @GetMapping("/analytics/hourly-sales")
-    // @PreAuthorize("hasAnyRole('ADM', 'STF')")
+    @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<List<Map<String, Object>>> hourlySales(
             @RequestParam(name = "date", required = false) String date) {
         return ResponseEntity.ok(thongKeService.getHourlySales(date));
     }
 
     @GetMapping("/analytics/performance")
-    // @PreAuthorize("hasAnyRole('ADM', 'STF')")
+    @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<Map<String, Object>> performanceMetrics(
             @RequestParam(name = "startDate", required = false) String startDate,
             @RequestParam(name = "endDate", required = false) String endDate) {
@@ -114,7 +109,7 @@ public class DonHangThongKeController {
     }
 
     @GetMapping("/analytics/order-distribution")
-    // @PreAuthorize("hasAnyRole('ADM', 'STF')")
+    @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<Map<String, Object>> orderDistribution(
             @RequestParam(name = "type", defaultValue = "status") String type,
             @RequestParam(name = "startDate", required = false) String startDate,
@@ -124,7 +119,7 @@ public class DonHangThongKeController {
     }
 
     @GetMapping("/analytics/customer-analytics")
-    // @PreAuthorize("hasAnyRole('ADM', 'STF')")
+    @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<Map<String, Object>> customerAnalytics(
             @RequestParam(name = "type", defaultValue = "segments") String type,
             @RequestParam(name = "startDate", required = false) String startDate,

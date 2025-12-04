@@ -25,6 +25,8 @@ public class BienTheService {
     private final KichCoRepository kichCoRepository;
     private final ChatLieuRepository chatLieuRepository;
     private final HinhAnhRepository hinhAnhRepository;
+    private final GioHangChiTietRepository gioHangChiTietRepository;
+    private final DonHangChiTietRepository donHangChiTietRepository;
 
     /**
      * Lấy danh sách biến thể của sản phẩm
@@ -152,8 +154,9 @@ public class BienTheService {
                 variant.setGia(null);
             }
 
-            BienTheSanPham saved = bienTheSanPhamRepository.save(variant);
-            bienTheSanPhamRepository.flush();
+            // Sử dụng saveAndFlush để đảm bảo cập nhật được commit ngay
+            // Cho phép cập nhật tồn kho ngay cả khi biến thể đang có trong giỏ hàng
+            BienTheSanPham saved = bienTheSanPhamRepository.saveAndFlush(variant);
             
             processedVariantIds.add(saved.getId());
 
@@ -177,19 +180,41 @@ public class BienTheService {
         
         // ✅ XÓA CÁC BIẾN THỂ KHÔNG CÒN TRONG DANH SÁCH MỚI
         // (Chỉ xóa nếu không có trong giỏ hàng hoặc đơn hàng)
+        // ⚠️ QUAN TRỌNG: Không xóa biến thể đang có trong giỏ hàng để tránh lỗi foreign key
         for (BienTheSanPham existingVariant : existingVariants) {
             if (!processedVariantIds.contains(existingVariant.getId())) {
                 try {
-                    // Xóa hình ảnh trước
-                    hinhAnhRepository.deleteByBienThe_Id(existingVariant.getId());
-                    hinhAnhRepository.flush();
+                    // Kiểm tra xem biến thể có đang được sử dụng trong giỏ hàng hoặc đơn hàng không
+                    long cartCount = gioHangChiTietRepository.countByBienThe_Id(existingVariant.getId());
+                    long orderCount = donHangChiTietRepository.countByBienThe_Id(existingVariant.getId());
                     
-                    // Xóa biến thể
-                    bienTheSanPhamRepository.deleteById(existingVariant.getId());
+                    if (cartCount > 0 || orderCount > 0) {
+                        // Nếu có tham chiếu, chỉ cập nhật tồn kho về 0 thay vì xóa
+                        existingVariant.setSoLuongTon(0);
+                        bienTheSanPhamRepository.saveAndFlush(existingVariant);
+                        System.out.println("⚠️ Variant ID " + existingVariant.getId() + 
+                                " is in cart/order (cart: " + cartCount + ", order: " + orderCount + 
+                                "), set stock to 0 instead of deleting");
+                    } else {
+                        // Nếu không có tham chiếu, xóa bình thường
+                        // Xóa hình ảnh trước
+                        hinhAnhRepository.deleteByBienThe_Id(existingVariant.getId());
+                        hinhAnhRepository.flush();
+                        
+                        // Xóa biến thể
+                        bienTheSanPhamRepository.deleteById(existingVariant.getId());
+                    }
                 } catch (Exception e) {
-                    // Nếu không xóa được (do có tham chiếu), bỏ qua
-                    System.out.println("⚠️ Cannot delete variant ID " + existingVariant.getId() + 
-                            " (may be referenced by cart or order): " + e.getMessage());
+                    // Nếu không xóa được (do có tham chiếu), chỉ cập nhật tồn kho về 0
+                    try {
+                        existingVariant.setSoLuongTon(0);
+                        bienTheSanPhamRepository.saveAndFlush(existingVariant);
+                        System.out.println("⚠️ Cannot delete variant ID " + existingVariant.getId() + 
+                                " (may be referenced by cart or order), set stock to 0 instead: " + e.getMessage());
+                    } catch (Exception e2) {
+                        System.out.println("⚠️ Cannot update variant ID " + existingVariant.getId() + 
+                                ": " + e2.getMessage());
+                    }
                 }
             }
         }
@@ -203,14 +228,19 @@ public class BienTheService {
 
     /**
      * Cập nhật tồn kho của một biến thể
+     * ✅ Cho phép cập nhật ngay cả khi biến thể đang có trong giỏ hàng
      */
     @Transactional
     public VariantResponse updateStock(Long id, Integer stock) {
+        // Sử dụng findById với flush để đảm bảo lấy dữ liệu mới nhất
         BienTheSanPham variant = bienTheSanPhamRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy biến thể với id: " + id));
 
+        // Cập nhật số lượng tồn kho
         variant.setSoLuongTon(stock);
-        BienTheSanPham updated = bienTheSanPhamRepository.save(variant);
+        
+        // Lưu và flush ngay để đảm bảo cập nhật được commit
+        BienTheSanPham updated = bienTheSanPhamRepository.saveAndFlush(variant);
 
         return toVariantResponse(updated);
     }

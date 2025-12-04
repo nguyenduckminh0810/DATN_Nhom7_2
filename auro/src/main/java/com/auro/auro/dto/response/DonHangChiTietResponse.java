@@ -6,6 +6,7 @@ public class DonHangChiTietResponse {
     private Long id;
     private String tenSanPham;
     private String hinhAnh;
+    private String thuocTinh;
     private BigDecimal donGia;
     private Integer soLuong;
     private BigDecimal thanhTien;
@@ -43,6 +44,14 @@ public class DonHangChiTietResponse {
 
     public void setHinhAnh(String hinhAnh) {
         this.hinhAnh = hinhAnh;
+    }
+
+    public String getThuocTinh() {
+        return thuocTinh;
+    }
+
+    public void setThuocTinh(String thuocTinh) {
+        this.thuocTinh = thuocTinh;
     }
 
     public BigDecimal getDonGia() {

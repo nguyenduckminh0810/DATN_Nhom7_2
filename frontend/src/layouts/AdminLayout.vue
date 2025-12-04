@@ -32,7 +32,7 @@
             </router-link>
           </li>
 
-          <li class="nav-item">
+          <li v-if="isAdmin" class="nav-item">
             <router-link
               to="/admin/categories"
               class="nav-link"
@@ -66,7 +66,7 @@
             </router-link>
           </li>
 
-          <li class="nav-item">
+          <li v-if="isAdmin" class="nav-item">
             <router-link
               to="/admin/analytics"
               class="nav-link"
@@ -88,16 +88,6 @@
             </router-link>
           </li>
 
-          <li class="nav-item">
-            <router-link
-              to="/admin/settings"
-              class="nav-link"
-              :class="{ active: $route.path.startsWith('/admin/settings') }"
-            >
-              <i class="bi bi-gear"></i>
-              <span v-if="!sidebarCollapsed">Cài đặt</span>
-            </router-link>
-          </li>
         </ul>
       </nav>
 
@@ -107,8 +97,8 @@
             <i class="bi bi-person-circle"></i>
           </div>
           <div v-if="!sidebarCollapsed" class="user-details">
-            <div class="user-name">Admin User</div>
-            <div class="user-role">Quản trị viên</div>
+            <div class="user-name">{{ userName || 'Người dùng' }}</div>
+            <div class="user-role">{{ roleLabel }}</div>
           </div>
         </div>
       </div>
@@ -122,27 +112,13 @@
           <button class="mobile-sidebar-toggle" @click="toggleSidebar">
             <i class="bi bi-list"></i>
           </button>
-          <div class="breadcrumb">
+          <div class="breadcrumb" style="padding-top: 8px;">
             <span class="breadcrumb-item">{{ currentPageTitle }}</span>
           </div>
         </div>
 
         <div class="header-right">
           <!-- Search -->
-          <div class="header-search">
-            <div class="search-input-group">
-              <i class="bi bi-search search-icon"></i>
-              <input type="text" class="search-input" placeholder="Tìm kiếm..." />
-            </div>
-          </div>
-
-          <!-- Notifications -->
-          <div class="header-notifications">
-            <button class="notification-btn" @click="toggleNotifications">
-              <i class="bi bi-bell"></i>
-              <span class="notification-badge">5</span>
-            </button>
-          </div>
 
           <!-- User Menu -->
           <div class="header-user">
@@ -151,7 +127,10 @@
                 <div class="user-avatar-small">
                   <i class="bi bi-person-circle"></i>
                 </div>
-                <span class="user-name">Admin</span>
+                <div class="user-info-header">
+                  <span class="user-name">{{ userName || 'Người dùng' }}</span>
+                  <span class="user-role-small">{{ roleLabel }}</span>
+                </div>
                 <i class="bi bi-caret-down"></i>
               </button>
 
@@ -160,10 +139,9 @@
                   <i class="bi bi-house me-2"></i>Về trang chủ
                 </router-link>
                 <hr class="dropdown-divider" />
-                <a href="#" class="dropdown-item">
+                <router-link class="dropdown-item modern-dropdown-item" to="/profile">
                   <i class="bi bi-person me-2"></i>Thông tin cá nhân
-                </a>
-                <a href="#" class="dropdown-item"> <i class="bi bi-gear me-2"></i>Cài đặt </a>
+                </router-link>
                 <hr class="dropdown-divider" />
                 <a href="#" class="dropdown-item" @click="logout">
                   <i class="bi bi-box-arrow-right me-2"></i>Đăng xuất
@@ -247,6 +225,33 @@ const showMobileOverlay = ref(false)
 
 // Removed lowStockCount since inventory menu item is hidden
 
+// Check if user is admin
+const isAdmin = computed(() => {
+  const role = userStore.userRole
+  return role === 'admin' || role === 'ADM'
+})
+
+// Get user name
+const userName = computed(() => {
+  return userStore.userName || userStore.userEmail || 'Người dùng'
+})
+
+// Get role label in Vietnamese
+const roleLabel = computed(() => {
+  const role = userStore.userRole
+  const roleMap = {
+    'admin': 'Quản trị viên',
+    'ADM': 'Quản trị viên',
+    'staff': 'Nhân viên',
+    'STF': 'Nhân viên',
+    'customer': 'Khách hàng',
+    'CUS': 'Khách hàng',
+    'guest': 'Khách vãng lai',
+    'GST': 'Khách vãng lai'
+  }
+  return roleMap[role] || 'Người dùng'
+})
+
 // Computed
 const currentPageTitle = computed(() => {
   const titles = {
@@ -258,7 +263,6 @@ const currentPageTitle = computed(() => {
     '/admin/analytics': 'Thống kê',
     '/admin/inventory': 'Quản lý tồn kho',
     '/admin/promotions': 'Khuyến mãi & Voucher',
-    '/admin/settings': 'Cài đặt',
   }
 
   for (const [path, title] of Object.entries(titles)) {
@@ -669,6 +673,19 @@ onUnmounted(() => {
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+}
+
+.user-info-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+}
+
+.user-role-small {
+  font-size: 0.75rem;
+  color: #6c757d;
+  font-weight: 400;
 }
 
 .user-btn:hover {

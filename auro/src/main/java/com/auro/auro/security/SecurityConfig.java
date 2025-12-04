@@ -88,6 +88,7 @@ public class SecurityConfig {
 
                         // Thông tin hồ sơ địa chỉ
                         .requestMatchers("/api/ho-so/**").hasAnyRole("CUS", "STF", "ADM")
+                        .requestMatchers("/api/profile/**").hasAnyRole("CUS", "STF", "ADM")
                         .requestMatchers("/api/dia-chi/**").hasAnyRole("CUS", "STF", "ADM")
 
                         // Staff + admin endpoints
@@ -102,10 +103,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/hinh-anh/**").hasAnyRole("STF", "ADM")
                         .requestMatchers(HttpMethod.DELETE, "/api/hinh-anh/**").hasAnyRole("STF", "ADM")
 
-                        // crud danh mục
-                        .requestMatchers(HttpMethod.POST, "/api/danh-muc").hasAnyRole("STF", "ADM")
-                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasAnyRole("STF", "ADM")
-                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasAnyRole("STF", "ADM")
+                        // crud danh mục - chỉ admin
+                        .requestMatchers(HttpMethod.POST, "/api/danh-muc/**").hasRole("ADM")
+                        .requestMatchers(HttpMethod.PUT, "/api/danh-muc/**").hasRole("ADM")
+                        .requestMatchers(HttpMethod.DELETE, "/api/danh-muc/**").hasRole("ADM")
 
                         // quản lý đơn hàng
                         .requestMatchers("/api/don-hang/quan-ly/**").hasAnyRole("STF", "ADM")
@@ -121,7 +122,7 @@ public class SecurityConfig {
                         // Quản lý người dùng: cho phép STF/ADM truy cập, hạn chế hành vi bằng
                         // @PreAuthorize ở controller
                         .requestMatchers("/api/nguoi-dung/**").hasAnyRole("STF", "ADM")
-                        .requestMatchers("/api/thong-ke/**").hasRole("ADM")
+                        .requestMatchers("/api/thong-ke/**").hasAnyRole("STF", "ADM")
                         .requestMatchers("/api/cai-dat/**").hasRole("ADM")
                         .requestMatchers("/api/vai-tro/**").hasRole("ADM")
 

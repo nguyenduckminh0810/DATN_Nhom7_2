@@ -274,9 +274,9 @@ class ApiService {
 
   // User endpoints
   user = {
-    getProfile: () => this.get('/auth/me'),
-    updateProfile: (data) => this.put('/user/profile', data),
-    changePassword: (data) => this.post('/user/change-password', data),
+    getProfile: () => this.get('/profile'),
+    updateProfile: (data) => this.put('/profile', data),
+    changePassword: (data) => this.post('/profile/change-password', data),
     uploadAvatar: async (file) => {
       const formData = new FormData()
       formData.append('file', file)
@@ -382,10 +382,10 @@ class ApiService {
     getById: (id) => this.get(`/nguoi-dung/${id}`),
     update: (id, data) => this.put(`/nguoi-dung/${id}`, data),
     softDelete: (id) => this.delete(`/nguoi-dung/${id}`),
-    // Future endpoints:
-    // create: (data) => this.post('/nguoi-dung', data),
-    // resetPassword: (id, data) => this.post(`/nguoi-dung/${id}/reset-mat-khau`, data),
-    // toggleStatus: (id, enabled) => this.put(`/nguoi-dung/${id}`, { trangThai: enabled }),
+    // Bulk update trạng thái: PUT /api/admin/users/bulk-status
+    bulkStatus: (data) => this.put('/admin/users/bulk-status', data),
+    // Get orders by user ID
+    getOrdersByUserId: (userId, params = {}) => this.get(`/don-hang/nguoi-dung/${userId}`, { params }),
   }
 
   // Contact endpoints

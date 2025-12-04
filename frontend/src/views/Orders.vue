@@ -53,9 +53,6 @@
               >
                 <i class="bi bi-geo-alt me-2"></i>Địa chỉ giao hàng
               </router-link>
-              <a href="#" class="list-group-item list-group-item-action py-3">
-                <i class="bi bi-bell me-2"></i>Thông báo
-              </a>
               <a
                 href="#"
                 class="list-group-item list-group-item-action text-danger py-3"
@@ -246,7 +243,7 @@
                       <button
                         v-if="order.status === 'PENDING'"
                         class="btn btn-outline-danger btn-sm"
-                        @click="cancelOrder(order)"
+                        @click="openCancelModal(order)"
                       >
                         <i class="bi bi-x-circle me-1"></i>Hủy đơn hàng
                       </button>
@@ -397,6 +394,48 @@
       </div>
     </div>
   </div>
+
+  <!-- Cancel Order Modal -->
+  <div v-if="showCancelModal" class="rating-modal">
+    <div class="rating-modal__overlay" @click="closeCancelModal"></div>
+    <div class="rating-modal__content">
+      <div class="rating-modal__header">
+        <h5 class="mb-0">Hủy đơn hàng #{{ cancelingOrder?.orderNumber }}</h5>
+        <button type="button" class="btn-close" @click="closeCancelModal"></button>
+      </div>
+      <div class="rating-modal__body">
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Bạn có chắc chắn muốn hủy đơn hàng này? Vui lòng nhập lý do hủy.
+        </div>
+        <div class="mb-3">
+          <label for="cancelReason" class="form-label">Lý do hủy <span class="text-danger">*</span></label>
+          <textarea
+            id="cancelReason"
+            class="form-control"
+            rows="4"
+            v-model="cancelReason"
+            placeholder="Nhập lý do hủy đơn hàng..."
+            required
+          ></textarea>
+          <small class="form-text text-muted">Lý do hủy sẽ được lưu và hiển thị trong chi tiết đơn hàng.</small>
+        </div>
+      </div>
+      <div class="rating-modal__footer">
+        <button type="button" class="btn btn-outline-secondary" @click="closeCancelModal">
+          Hủy
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          @click="confirmCancelOrder"
+          :disabled="!cancelReason || cancelReason.trim().length === 0"
+        >
+          Xác nhận hủy đơn
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -459,6 +498,11 @@ const statusRows = computed(() => {
 })
 
 const activeTab = ref('ALL')
+
+// Cancel order modal state
+const showCancelModal = ref(false)
+const cancelingOrder = ref(null)
+const cancelReason = ref('')
 const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
@@ -722,20 +766,94 @@ const viewOrderDetail = (order) => {
   router.push(`/orders/${order.id}`)
 }
 
-const cancelOrder = async (order) => {
-  if (!confirm(`Bạn có chắc chắn muốn hủy đơn hàng #${order.orderNumber}?`)) {
+const openCancelModal = (order) => {
+  cancelingOrder.value = order
+  cancelReason.value = ''
+  showCancelModal.value = true
+}
+
+const closeCancelModal = () => {
+  showCancelModal.value = false
+  cancelingOrder.value = null
+  cancelReason.value = ''
+}
+
+const confirmCancelOrder = async () => {
+  if (!cancelReason.value || cancelReason.value.trim().length === 0) {
+    if (window.$toast) {
+      window.$toast.error('Vui lòng nhập lý do hủy đơn hàng')
+    } else {
+      alert('Vui lòng nhập lý do hủy đơn hàng')
+    }
     return
   }
 
+  // Lưu thông tin order trước khi đóng modal để tránh lỗi null
+  if (!cancelingOrder.value || !cancelingOrder.value.id) {
+    console.error('Canceling order is null or missing id')
+    if (window.$toast) {
+      window.$toast.error('Lỗi: Không tìm thấy thông tin đơn hàng')
+    } else {
+      alert('Lỗi: Không tìm thấy thông tin đơn hàng')
+    }
+    return
+  }
+
+  const orderId = cancelingOrder.value.id
+  const orderNumber = cancelingOrder.value.orderNumber
+  const reason = cancelReason.value.trim()
+
   try {
     loading.value = true
-    await orderService.cancelOrder(order.id)
-    alert('Đơn hàng đã được hủy thành công!')
-    // Reload orders
-    await fetchOrders()
+    const response = await orderService.cancelOrder(orderId, reason)
+    
+    // Cập nhật trạng thái đơn hàng trong danh sách mà không cần reload
+    const orderIndex = orders.value.findIndex((o) => o.id === orderId)
+    if (orderIndex !== -1) {
+      const responseData = response?.data || response
+      const updatedStatus = responseData?.trangThai || 'CANCELLED'
+      const statusInfo = normalizeOrderStatus(updatedStatus)
+      
+      orders.value[orderIndex] = {
+        ...orders.value[orderIndex],
+        status: statusInfo.code,
+        statusLabel: statusInfo.label,
+        statusClass: statusInfo.badgeClass,
+        lyDoHuy: reason,
+        trangThai: updatedStatus,
+      }
+      
+      // Cập nhật statusCounts dựa trên orders hiện tại
+      const counts = {}
+      orders.value.forEach((order) => {
+        const status = order.status || 'ALL'
+        counts[status] = (counts[status] || 0) + 1
+        counts['ALL'] = (counts['ALL'] || 0) + 1
+      })
+      statusCounts.value = counts
+    }
+    
+    // Đóng modal sau khi đã cập nhật xong
+    closeCancelModal()
+    
+    // Hiển thị thông báo thành công sau khi đã đóng modal
+    await new Promise(resolve => setTimeout(resolve, 150))
+    if (window.$toast) {
+      window.$toast.success('Đơn hàng đã được hủy thành công!')
+    } else {
+      alert('Đơn hàng đã được hủy thành công!')
+    }
   } catch (err) {
     console.error('Error canceling order:', err)
-    alert('Lỗi khi hủy đơn hàng: ' + (err.response?.data?.message || err.message))
+    const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Không thể hủy đơn hàng'
+    // Đảm bảo modal vẫn đóng ngay cả khi có lỗi
+    closeCancelModal()
+    await new Promise(resolve => setTimeout(resolve, 150))
+    if (window.$toast) {
+      window.$toast.error(errorMessage)
+    } else {
+      alert('Lỗi khi hủy đơn hàng: ' + errorMessage)
+    }
   } finally {
     loading.value = false
   }
@@ -986,6 +1104,7 @@ const fetchOrders = async () => {
         paymentMethod: order.paymentMethod,
         shippingSnapshot: order.diaChiGiaoSnapshot || order.diaChiGiao || '',
         shippingNote: order.ghiChu || '',
+        lyDoHuy: order.lyDoHuy || null,
         items,
       }
     })

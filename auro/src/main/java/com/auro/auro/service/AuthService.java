@@ -53,6 +53,9 @@ public class AuthService {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.jwt.expiration:900000}")
+    private Long jwtExpiration;
+
     @Transactional
     public JwtResponse dangKy(DangKyRequest request) {
 
@@ -160,7 +163,7 @@ public class AuthService {
                 .build();
 
         String accessToken = jwtService.generateToken(userDetails);
-        Long expiresIn = 900000L;
+        Long expiresIn = jwtExpiration;
 
         UserInfoResponse userInfo = mapToUserInfoResponse(savedTaiKhoan);
 
@@ -175,15 +178,15 @@ public class AuthService {
     @Transactional(readOnly = true)
     public JwtResponse dangNhap(DangNhapRequest request) {
 
-        // Tìm TaiKhoan
+        // Tìm TaiKhoan không phân biệt trạng thái để có thể kiểm tra trạng thái
         TaiKhoan taiKhoan = taiKhoanRepository
-                .findByEmailOrSoDienThoaiAndTrangThaiTrue(request.getLogin())
+                .findByEmailOrSoDienThoaiIgnoreStatus(request.getLogin())
                 .orElseThrow(() -> new UnauthorizedException(
                         "Email/số điện thoại hoặc mật khẩu không chính xác"));
 
-        // check trạng thái
+        // Check trạng thái tài khoản trước khi verify mật khẩu
         if (!Boolean.TRUE.equals(taiKhoan.getTrangThai())) {
-            throw new UnauthorizedException("Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên");
+            throw new UnauthorizedException("Tài khoản đã bị khóa hoặc ngừng hoạt động. Vui lòng liên hệ quản trị viên");
         }
 
         // Verify mật khẩu
@@ -224,7 +227,7 @@ public class AuthService {
         System.out.println("UserDetails authorities: " + userDetails.getAuthorities());
 
         String accessToken = jwtService.generateToken(userDetails);
-        Long expiresIn = 900000L;
+        Long expiresIn = jwtExpiration;
 
         UserInfoResponse userInfo = mapToUserInfoResponse(taiKhoan);
 

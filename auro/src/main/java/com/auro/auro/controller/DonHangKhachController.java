@@ -117,10 +117,24 @@ public class DonHangKhachController {
     // Hủy đơn hàng
     @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @PutMapping("/{donHangId}/huy")
-    public ResponseEntity<?> huyDonHang(@PathVariable Long donHangId, Authentication auth) {
+    public ResponseEntity<?> huyDonHang(
+            @PathVariable Long donHangId, 
+            @RequestBody(required = false) Map<String, String> request,
+            Authentication auth) {
         try {
             Long khachHangId = layKhachHangIdTuAuth(auth);
-            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId);
+            String lyDoHuy = request != null ? request.get("reason") : null;
+            if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "Vui lòng nhập lý do hủy đơn hàng");
+                errorResponse.put("error", "Vui lòng nhập lý do hủy đơn hàng");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+            
+            // Lấy email từ Authentication
+            String emailNguoiHuy = layEmailTuAuth(auth);
+            
+            DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId, lyDoHuy, emailNguoiHuy);
             return ResponseEntity.ok(dh);
         } catch (RuntimeException e) {
             // Trả về message lỗi để frontend hiển thị
@@ -280,6 +294,20 @@ public class DonHangKhachController {
             return (khachHang != null) ? khachHang.getId() : null;
         } catch (Exception e) {
             log.error("Error in layKhachHangIdTuAuth: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private String layEmailTuAuth(Authentication auth) {
+        if (auth == null || auth.getPrincipal() == null) {
+            return null;
+        }
+        try {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            TaiKhoan taiKhoan = userDetails.getTaiKhoan();
+            return taiKhoan.getEmail();
+        } catch (Exception e) {
+            log.error("Error in layEmailTuAuth: {}", e.getMessage());
             return null;
         }
     }

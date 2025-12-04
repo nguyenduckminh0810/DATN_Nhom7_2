@@ -389,13 +389,10 @@ public class ThongKeService {
             int productCount = order.getChiTietList() != null ? order.getChiTietList().size() : 0;
             orderMap.put("productCount", productCount);
 
-            // Extract city from shipping address
+            // Extract city/province from shipping snapshot (use tinhThanh trực tiếp)
             String city = "";
-            if (order.getDiaChiGiao() != null && !order.getDiaChiGiao().isEmpty()) {
-                String[] parts = order.getDiaChiGiao().split(",");
-                if (parts.length > 0) {
-                    city = parts[parts.length - 1].trim(); // Last part is usually the city/province
-                }
+            if (order.getTinhThanh() != null && !order.getTinhThanh().trim().isEmpty()) {
+                city = order.getTinhThanh().trim();
             }
             orderMap.put("shippingCity", city);
 
@@ -884,11 +881,6 @@ public class ThongKeService {
     }
 
     public Map<String, Object> getCustomerAnalytics(String type, String startDateStr, String endDateStr) {
-        // Note: startDate and endDate are parsed but not used in current implementation
-        // They are reserved for future filtering by date range
-        // LocalDateTime startDate = parseDate(startDateStr,
-        // LocalDate.now().minusDays(30));
-        // LocalDateTime endDate = parseDate(endDateStr, LocalDate.now());
 
         Map<String, Object> analytics = new HashMap<>();
 

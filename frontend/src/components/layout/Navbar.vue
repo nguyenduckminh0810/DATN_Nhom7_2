@@ -127,13 +127,13 @@
             </router-link>
           </li>
           <!-- Cart -->
-          <li class="nav-item me-3">
+          <li class="nav-item me-3 cart-nav-item">
             <button class="nav-link modern-nav-link cart-trigger" @click="toggleMiniCart">
               <i class="bi bi-cart3 cart-icon"></i>
-              <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
-                {{ cartStore.itemCount }}
-              </span>
             </button>
+            <span v-if="isLoggedIn && cartStore.itemCount > 0" class="badge modern-cart-badge">
+              {{ cartStore.itemCount }}
+            </span>
           </li>
 
           <!-- User Menu -->
@@ -143,7 +143,7 @@
             </button>
           </li>
 
-          <li v-else class="nav-item dropdown dropdown-hover">
+          <li v-else class="nav-item dropdown dropdown-hover user-dropdown">
             <a
               class="nav-link modern-nav-link dropdown-toggle"
               href="#"
@@ -153,7 +153,7 @@
             >
               <i class="bi bi-person-circle"></i>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end modern-dropdown">
+            <ul class="dropdown-menu modern-dropdown">
               <li v-if="isAdmin">
                 <router-link class="dropdown-item modern-dropdown-item admin-link" to="/admin">
                   <i class="bi bi-speedometer2 me-2"></i>Trang quản trị
@@ -275,8 +275,11 @@ function childrenFor(parentSlug) {
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-// Check if user is admin - use store's isAdmin getter
-const isAdmin = computed(() => userStore.isAdmin)
+// Check if user is admin or staff
+const isAdmin = computed(() => {
+  const role = userStore.userRole
+  return role === 'admin' || role === 'staff'
+})
 
 // Login popup methods
 const openLoginPopup = () => {
@@ -740,6 +743,11 @@ router-link:focus-visible {
 }
 
 /* Cart Badge */
+.cart-nav-item {
+  position: relative;
+  overflow: visible !important;
+}
+
 .modern-cart-badge {
   background: var(--auro-gradient-accent) !important;
   color: var(--auro-dark) !important;
@@ -753,8 +761,8 @@ router-link:focus-visible {
   justify-content: center;
   position: absolute;
   top: -6px;
-  right: -12px;
-  z-index: 1001;
+  right: -6px;
+  z-index: 1002;
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
   border: 2px solid #fff;
@@ -762,26 +770,44 @@ router-link:focus-visible {
 
 /* Cart Trigger Button */
 .cart-trigger {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
+  width: auto;
+  min-width: 52px;
   height: 52px;
-  padding: 0;
-  overflow: visible;
+  padding: 0.75rem !important;
+  overflow: hidden;
+  border-radius: 8px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .nav-item {
   position: relative;
   overflow: visible;
+  padding: 0;
+  display: flex;
+  align-items: center;
 }
+
+/* Đảm bảo nav-item không tạo vùng hover không mong muốn */
+.nav-item.me-3 {
+  margin-right: 1rem !important;
+}
+
+/* Đảm bảo chỉ phần tử con mới có vùng hover, không phải nav-item */
 
 .cart-trigger:hover {
   color: var(--auro-accent) !important;
+}
+
+/* Đảm bảo cart-trigger có background khi hover */
+.cart-trigger.modern-nav-link:hover {
+  background: rgba(184, 134, 11, 0.08) !important;
 }
 
 .cart-icon {
@@ -809,6 +835,12 @@ router-link:focus-visible {
   left: 0;
   z-index: 1000;
   margin-top: 0;
+}
+
+/* User dropdown alignment - căn phải dropdown với icon user */
+.user-dropdown .dropdown-menu {
+  right: 0;
+  left: auto;
 }
 
 /* Add hover area to prevent dropdown from closing */
@@ -1065,21 +1097,27 @@ router-link:focus-visible {
   color: #b8860b;
 }
 
+.cart-nav-item {
+  position: relative;
+  overflow: visible !important;
+}
+
 .modern-cart-badge {
   background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
   color: #fff !important;
   border-radius: 999px;
-  font-size: 12px;
+  font-size:9px;
   font-weight: 700;
-  min-width: 26px;
-  height: 26px;
+  min-width: 22px;
+  height: 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   position: absolute;
-  top: -8px;
+  top: 0px;
   right: -8px;
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.35);
+  z-index: 1002;
+  pointer-events: none;
   border: 2px solid #fff;
   padding: 0 6px;
 }
@@ -1130,8 +1168,98 @@ router-link:focus-visible {
   align-items: center;
   gap: 0.35rem;
   white-space: nowrap; /* Ngăn chữ bị vỡ xuống dòng */
-  padding: 0.5rem 1rem; /* Tăng padding để có đủ không gian */
+  padding: 0.5rem 1rem !important; /* Tăng padding để có đủ không gian */
   min-width: fit-content; /* Đảm bảo đủ rộng cho nội dung */
+}
+
+/* Đảm bảo hover chỉ hoạt động trên phần tử thực tế, không phải khoảng trống */
+.track-order-link,
+.cart-trigger {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Loại bỏ padding mặc định của modern-nav-link cho các phần tử này */
+.track-order-link.modern-nav-link {
+  padding: 0.5rem 1rem !important;
+}
+
+.cart-trigger.modern-nav-link {
+  padding: 0.75rem !important;
+  width: auto;
+  min-width: 52px;
+  height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* Đảm bảo hover chỉ kích hoạt khi trỏ vào chính phần tử, không phải khoảng trống */
+.nav-item .modern-nav-link {
+  width: fit-content;
+  min-width: fit-content;
+}
+
+/* Đảm bảo cart-trigger có vùng hover đầy đủ */
+.nav-item .cart-trigger.modern-nav-link {
+  width: auto;
+  min-width: 52px;
+  padding: 0.75rem !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+/* Ngăn hover effect xuất hiện ở khoảng trống giữa các nav-item */
+.navbar-nav > .nav-item {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Loại bỏ hiệu ứng hover mặc định - chỉ áp dụng khi thực sự hover */
+.track-order-link.modern-nav-link,
+.cart-trigger.modern-nav-link {
+  background: transparent !important;
+  transform: none !important;
+  box-shadow: none !important;
+  color: var(--auro-text) !important;
+}
+
+.track-order-link.modern-nav-link::before,
+.cart-trigger.modern-nav-link::before {
+  width: 0 !important;
+  display: none;
+}
+
+.track-order-link.modern-nav-link::after,
+.cart-trigger.modern-nav-link::after {
+  left: -100% !important;
+  display: none;
+}
+
+/* Chỉ áp dụng hover khi thực sự hover */
+.track-order-link.modern-nav-link:hover,
+.cart-trigger.modern-nav-link:hover {
+  background: rgba(184, 134, 11, 0.08) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px rgba(184, 134, 11, 0.2) !important;
+  color: #b8860b !important;
+  border-radius: 8px !important;
+}
+
+.track-order-link.modern-nav-link:hover::before,
+.cart-trigger.modern-nav-link:hover::before {
+  width: 90% !important;
+  display: block;
+}
+
+.track-order-link.modern-nav-link:hover::after,
+.cart-trigger.modern-nav-link:hover::after {
+  left: 100% !important;
+  display: block;
 }
 
 .track-order-link .bi {

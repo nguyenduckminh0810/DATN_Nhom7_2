@@ -26,8 +26,12 @@ import com.auro.auro.model.DonHang;
 import com.auro.auro.model.DonHangChiTiet;
 import com.auro.auro.exception.BadRequestException;
 import com.auro.auro.service.DonHangService;
+import com.auro.auro.security.CustomUserDetails;
+import com.auro.auro.model.TaiKhoan;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/don-hang")
@@ -102,14 +106,31 @@ public class DonHangController {
     }
 
     // Xóa mềm đơn hàng (chuyển sang trạng thái Đã hủy)
+    @PreAuthorize("hasAnyRole('STF', 'ADM')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Map<String, String>> deleteDonHang(@PathVariable Long id) {
+    public ResponseEntity<Map<String, String>> deleteDonHang(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, String> request,
+            Authentication auth) {
         Map<String, String> response = new HashMap<>();
 
         try {
-            System.out.println("Xóa mềm đơn hàng ID: " + id);
+            System.out.println("=== XÓA MỀM ĐƠN HÀNG (ADMIN) ===");
+            System.out.println("Order ID: " + id);
+            System.out.println("Authentication: " + (auth != null ? "Có" : "NULL"));
+            System.out.println("Principal: " + (auth != null && auth.getPrincipal() != null ? auth.getPrincipal().getClass().getSimpleName() : "NULL"));
+            
+            String lyDoHuy = request != null ? request.get("lyDoHuy") : null;
+            if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+                response.put("error", "Vui lòng nhập lý do hủy đơn hàng");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
 
-            donHangService.softDeleteDonHang(id);
+            // Lấy email từ Authentication
+            String emailNguoiHuy = layEmailTuAuth(auth);
+            System.out.println("Email người hủy: " + (emailNguoiHuy != null ? emailNguoiHuy : "NULL"));
+
+            donHangService.softDeleteDonHang(id, lyDoHuy, emailNguoiHuy);
 
             response.put("message", "Đã hủy đơn hàng thành công");
             return ResponseEntity.ok(response);
@@ -124,6 +145,43 @@ public class DonHangController {
             e.printStackTrace();
             response.put("error", "Lỗi hệ thống: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    private String layEmailTuAuth(Authentication auth) {
+        if (auth == null) {
+            System.err.println("❌ Authentication is NULL");
+            return null;
+        }
+        
+        if (auth.getPrincipal() == null) {
+            System.err.println("❌ Authentication.getPrincipal() is NULL");
+            return null;
+        }
+        
+        try {
+            System.out.println("Principal type: " + auth.getPrincipal().getClass().getName());
+            
+            if (!(auth.getPrincipal() instanceof CustomUserDetails)) {
+                System.err.println("❌ Principal is not CustomUserDetails, it's: " + auth.getPrincipal().getClass().getName());
+                return null;
+            }
+            
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            TaiKhoan taiKhoan = userDetails.getTaiKhoan();
+            
+            if (taiKhoan == null) {
+                System.err.println("❌ TaiKhoan is NULL");
+                return null;
+            }
+            
+            String email = taiKhoan.getEmail();
+            System.out.println("✅ Successfully extracted email: " + email);
+            return email;
+        } catch (Exception e) {
+            System.err.println("❌ Error in layEmailTuAuth: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
     }
 
@@ -167,6 +225,26 @@ public class DonHangController {
             response.put("success", false);
             response.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Lấy đơn hàng theo user ID (admin endpoint)
+     * Endpoint: GET /api/don-hang/nguoi-dung/{userId}
+     */
+    @PreAuthorize("hasAnyRole('STF', 'ADM')")
+    @GetMapping("/nguoi-dung/{userId}")
+    public ResponseEntity<Map<String, Object>> getDonHangByUserId(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Map<String, Object> result = donHangService.getDonHangByUserId(userId, page, size);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
     }
 }

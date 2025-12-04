@@ -384,61 +384,6 @@
       </div>
     </section>
 
-    <!-- Sản phẩm đã xem -->
-    <section
-      id="da-xem"
-      class="content-section"
-      v-if="viewedProductsStore.getRecentViewedProducts.length > 0"
-    >
-      <div class="content-wrapper">
-        <div class="section-header">
-          <h2>Sản phẩm đã xem</h2>
-          <p class="section-subtitle">Những sản phẩm bạn đã xem gần đây</p>
-        </div>
-        <div class="section-content">
-          <div class="viewed-products">
-            <div
-              v-for="viewedProduct in viewedProductsStore.getRecentViewedProducts"
-              :key="viewedProduct.id"
-              class="viewed-product-card"
-              @click="router.push(`/product/${viewedProduct.id}`)"
-            >
-              <div class="product-image">
-                <img
-                  :src="
-                    viewedProduct.image ||
-                    'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=250&h=250&fit=crop'
-                  "
-                  :alt="viewedProduct.name"
-                  loading="lazy"
-                />
-                <div class="viewed-badge">
-                  <i class="bi bi-eye"></i>
-                </div>
-              </div>
-              <div class="product-info">
-                <h4>{{ viewedProduct.name }}</h4>
-                <div class="price-info">
-                  <span class="current-price">{{ formatPrice(viewedProduct.price) }}</span>
-                  <span
-                    v-if="
-                      viewedProduct.originalPrice &&
-                      viewedProduct.originalPrice > viewedProduct.price
-                    "
-                    class="original-price"
-                    >{{ formatPrice(viewedProduct.originalPrice) }}</span
-                  >
-                </div>
-                <div v-if="viewedProduct.discount" class="discount-badge">
-                  -{{ viewedProduct.discount }}%
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <section id="lien-quan" class="content-section">
       <div class="content-wrapper">
         <div class="section-header">

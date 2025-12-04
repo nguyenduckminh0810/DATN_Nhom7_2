@@ -3,26 +3,44 @@
     <div class="admin-users">
       <!-- Page Header -->
       <div class="page-header">
-        <div class="header-left">
-          <h1 class="page-title">Quản lý người dùng</h1>
-          <p class="page-subtitle">Quản lý tài khoản khách hàng và nhân viên</p>
+        <div class="header-content">
+          <div class="header-left">
+            <h1 class="page-title">Quản lý người dùng</h1>
+            <p class="page-subtitle">Quản lý tài khoản khách hàng và nhân viên</p>
+          </div>
+          <div class="header-actions" v-if="isAdmin">
+            <router-link to="/admin/register-staff" class="btn btn-primary btn-add-staff">
+              <i class="bi bi-person-plus-fill me-2"></i>
+              <span>Thêm nhân viên</span>
+            </router-link>
+          </div>
         </div>
-        <div class="header-right">
-          <router-link to="/admin/register-staff" class="btn btn-primary me-3">
-            <i class="bi bi-person-plus me-2"></i>Thêm nhân viên
-          </router-link>
-          <div class="header-stats">
-            <div class="stat-item">
-              <span class="stat-label">Tổng người dùng:</span>
+        <div class="header-stats-row">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary-subtle">
+              <i class="bi bi-people-fill text-primary"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Tổng người dùng</span>
               <span class="stat-value">{{ totalUsers }}</span>
             </div>
-            <div class="stat-item">
-              <span class="stat-label">Khách hàng:</span>
-              <span class="stat-value text-primary">{{ customerCount }}</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon bg-info-subtle">
+              <i class="bi bi-person-fill text-info"></i>
             </div>
-            <div class="stat-item">
-              <span class="stat-label">Nhân viên:</span>
-              <span class="stat-value text-success">{{ staffCount }}</span>
+            <div class="stat-content">
+              <span class="stat-label">Khách hàng</span>
+              <span class="stat-value">{{ customerCount }}</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon bg-success-subtle">
+              <i class="bi bi-person-badge-fill text-success"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Nhân viên</span>
+              <span class="stat-value">{{ staffCount }}</span>
             </div>
           </div>
         </div>
@@ -580,14 +598,17 @@
                       </button>
                     </li>
                     <li class="nav-item">
-                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#orders-tab">
+                      <button
+                        class="nav-link"
+                        data-bs-toggle="tab"
+                        data-bs-target="#orders-tab"
+                        @click="onOrdersTabClick"
+                      >
                         Đơn hàng ({{ selectedUser.orderCount }})
                       </button>
                     </li>
                     <li class="nav-item">
-                      <button class="nav-link" data-bs-toggle="tab" data-bs-target="#activity-tab">
-                        Hoạt động
-                      </button>
+
                     </li>
                   </ul>
 
@@ -639,8 +660,13 @@
                     <!-- Orders Tab -->
                     <div class="tab-pane fade" id="orders-tab">
                       <div class="orders-list">
+                        <div v-if="ordersLoading" class="text-center py-4">
+                          <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                          </div>
+                        </div>
                         <div
-                          v-if="selectedUser.orders && selectedUser.orders.length > 0"
+                          v-else-if="userOrders && userOrders.length > 0"
                           class="table-responsive"
                         >
                           <table class="table table-sm">
@@ -650,21 +676,63 @@
                                 <th>Ngày đặt</th>
                                 <th>Tổng tiền</th>
                                 <th>Trạng thái</th>
+                                <th>Thao tác</th>
                               </tr>
                             </thead>
                             <tbody>
-                              <tr v-for="order in selectedUser.orders" :key="order.id">
-                                <td>#{{ order.orderNumber }}</td>
-                                <td>{{ formatDate(order.createdAt) }}</td>
-                                <td>{{ formatCurrency(order.total) }}</td>
+                              <tr v-for="order in userOrders" :key="order.id">
+                                <td>{{ order.soDonHang || `#${order.id}` }}</td>
+                                <td>{{ formatDate(order.taoLuc || order.createdAt) }}</td>
+                                <td>{{ formatCurrency(order.tongThanhToan || order.total || 0) }}</td>
                                 <td>
-                                  <span :class="['status-badge', getStatusClass(order.status)]">
-                                    {{ getStatusText(order.status) }}
+                                  <span :class="['status-badge', getOrderStatusClass(order.trangThai || order.status)]">
+                                    {{ getOrderStatusText(order.trangThai || order.status) }}
                                   </span>
+                                </td>
+                                <td>
+                                  <button
+                                    class="btn btn-sm btn-outline-primary"
+                                    @click="viewOrderDetail(order.id)"
+                                    title="Xem chi tiết"
+                                  >
+                                    <i class="bi bi-eye"></i>
+                                  </button>
                                 </td>
                               </tr>
                             </tbody>
                           </table>
+                          <!-- Pagination for orders -->
+                          <div v-if="ordersTotalPages > 1" class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="pagination-info">
+                              Hiển thị {{ (ordersCurrentPage - 1) * ordersPageSize + 1 }} -
+                              {{ Math.min(ordersCurrentPage * ordersPageSize, ordersTotalItems) }} trong tổng số
+                              {{ ordersTotalItems }} đơn hàng
+                            </div>
+                            <nav>
+                              <ul class="pagination mb-0">
+                                <li class="page-item" :class="{ disabled: ordersCurrentPage === 1 }">
+                                  <a class="page-link" href="#" @click.prevent="changeOrdersPage(ordersCurrentPage - 1)">
+                                    Trước
+                                  </a>
+                                </li>
+                                <li
+                                  class="page-item"
+                                  v-for="page in visibleOrdersPages"
+                                  :key="page"
+                                  :class="{ active: ordersCurrentPage === page }"
+                                >
+                                  <a class="page-link" href="#" @click.prevent="changeOrdersPage(page)">
+                                    {{ page }}
+                                  </a>
+                                </li>
+                                <li class="page-item" :class="{ disabled: ordersCurrentPage === ordersTotalPages }">
+                                  <a class="page-link" href="#" @click.prevent="changeOrdersPage(ordersCurrentPage + 1)">
+                                    Sau
+                                  </a>
+                                </li>
+                              </ul>
+                            </nav>
+                          </div>
                         </div>
                         <div v-else class="empty-state">
                           <i class="bi bi-bag display-4 text-muted"></i>
@@ -692,10 +760,6 @@
                               </div>
                             </div>
                           </div>
-                        </div>
-                        <div v-else class="empty-state">
-                          <i class="bi bi-clock display-4 text-muted"></i>
-                          <p class="text-muted">Chưa có hoạt động nào</p>
                         </div>
                       </div>
                     </div>
@@ -752,6 +816,7 @@
                   v-model="editForm.email"
                   placeholder="Nhập email"
                   required
+                  :disabled="!canEditInfo"
                 />
               </div>
               <div class="col-md-6">
@@ -763,11 +828,12 @@
                   class="form-control"
                   v-model="editForm.phone"
                   placeholder="Nhập số điện thoại"
+                  :disabled="!canEditInfo"
                 />
               </div>
               <div class="col-md-6">
                 <label class="form-label"> <i class="bi bi-person-badge me-1"></i>Vai trò </label>
-                <select class="form-select" v-model="editForm.role">
+                <select class="form-select" v-model="editForm.role" :disabled="!canEditInfo">
                   <option value="customer">Khách hàng</option>
                   <option value="staff">Nhân viên</option>
                   <option value="admin">Quản trị viên</option>
@@ -777,7 +843,7 @@
                 <label class="form-label">
                   <i class="bi bi-check-circle me-1"></i>Trạng thái
                 </label>
-                <select class="form-select" v-model="editForm.status">
+                <select class="form-select" v-model="editForm.status" :disabled="!canEditStatus">
                   <option value="active">Hoạt động</option>
                   <option value="inactive">Ngừng hoạt động</option>
                   <option value="banned">Bị cấm</option>
@@ -803,7 +869,8 @@
             type="button"
             class="btn btn-primary"
             @click="saveUserEdit"
-            :disabled="editLoading"
+            :disabled="editLoading || !canSave"
+            v-if="canSave"
           >
             <span v-if="editLoading" class="spinner-border spinner-border-sm me-1"></span>
             <i v-else class="bi bi-check-circle me-1"></i>
@@ -816,7 +883,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+defineOptions({
+  name: 'AdminUsersPage',
+})
+import { ref, computed, onMounted, nextTick } from 'vue'
 import api from '@/services/api'
 import { useUserStore } from '@/stores/user'
 import { useToast } from '@/composables/useToast'
@@ -853,6 +923,14 @@ const editForm = ref({
   note: '',
 })
 
+// Orders state
+const userOrders = ref([])
+const ordersLoading = ref(false)
+const ordersCurrentPage = ref(1)
+const ordersPageSize = ref(10)
+const ordersTotalItems = ref(0)
+const ordersTotalPages = ref(0)
+
 // User types for filtering
 const userTypes = ref([
   { value: 'vip', label: 'VIP', icon: 'bi bi-crown' },
@@ -861,195 +939,57 @@ const userTypes = ref([
   { value: 'high-value', label: 'Chi tiêu cao', icon: 'bi bi-currency-dollar' },
 ])
 
-// Mock data (sẽ được thay thế bằng dữ liệu từ API nếu có)
-const users = ref([
-  {
-    id: 1,
-    name: 'Nguyễn Văn A',
-    email: 'nguyenvana@email.com',
-    phone: '0123456789',
-    address: '123 Đường ABC, Quận 1, TP.HCM',
-    birthday: new Date('1990-05-15'),
-    gender: 'Nam',
-    role: 'customer',
-    status: 'active',
-    avatar: null,
-    orderCount: 5,
-    totalSpent: 2500000,
-    avgOrderValue: 500000,
-    createdAt: new Date('2024-01-10'),
-    lastLogin: new Date('2024-01-20'),
-    isVip: true,
-    isNew: false,
-    isHighValue: true,
-    orders: [
-      {
-        id: 1,
-        orderNumber: 'ORD-001',
-        total: 450000,
-        status: 'delivered',
-        createdAt: new Date('2024-01-15'),
-      },
-      {
-        id: 2,
-        orderNumber: 'ORD-002',
-        total: 650000,
-        status: 'shipped',
-        createdAt: new Date('2024-01-18'),
-      },
-    ],
-    activities: [
-      {
-        id: 1,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-20'),
-      },
-      {
-        id: 2,
-        type: 'order',
-        description: 'Đặt đơn hàng #ORD-002',
-        createdAt: new Date('2024-01-18'),
-      },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Trần Thị B',
-    email: 'tranthib@email.com',
-    phone: '0987654321',
-    address: '456 Đường XYZ, Quận 2, TP.HCM',
-    birthday: new Date('1985-08-22'),
-    gender: 'Nữ',
-    role: 'customer',
-    status: 'active',
-    avatar: null,
-    orderCount: 3,
-    totalSpent: 1200000,
-    avgOrderValue: 400000,
-    createdAt: new Date('2024-01-12'),
-    lastLogin: new Date('2024-01-19'),
-    isVip: false,
-    isNew: false,
-    isHighValue: false,
-    orders: [
-      {
-        id: 3,
-        orderNumber: 'ORD-003',
-        total: 350000,
-        status: 'delivered',
-        createdAt: new Date('2024-01-16'),
-      },
-    ],
-    activities: [
-      {
-        id: 3,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-19'),
-      },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Lê Văn C',
-    email: 'levanc@email.com',
-    phone: '0369852147',
-    address: '789 Đường DEF, Quận 3, TP.HCM',
-    birthday: new Date('1992-12-10'),
-    gender: 'Nam',
-    role: 'staff',
-    status: 'active',
-    avatar: null,
-    orderCount: 0,
-    totalSpent: 0,
-    avgOrderValue: 0,
-    createdAt: new Date('2024-01-05'),
-    lastLogin: new Date('2024-01-21'),
-    isVip: false,
-    isNew: false,
-    isHighValue: false,
-    orders: [],
-    activities: [
-      {
-        id: 4,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-21'),
-      },
-    ],
-  },
-  {
-    id: 4,
-    name: 'Phạm Thị D',
-    email: 'phamthid@email.com',
-    phone: '0741852963',
-    address: '321 Đường GHI, Quận 4, TP.HCM',
-    birthday: new Date('1988-03-25'),
-    gender: 'Nữ',
-    role: 'admin',
-    status: 'active',
-    avatar: null,
-    orderCount: 0,
-    totalSpent: 0,
-    avgOrderValue: 0,
-    createdAt: new Date('2024-01-01'),
-    lastLogin: new Date('2024-01-21'),
-    orders: [],
-    activities: [
-      {
-        id: 5,
-        type: 'login',
-        description: 'Đăng nhập vào hệ thống',
-        createdAt: new Date('2024-01-21'),
-      },
-    ],
-  },
-])
+// Dữ liệu người dùng lấy từ API
+const users = ref([])
 
-// Fetch from backend admin API if available
+const { success: toastSuccess, error: toastError } = useToast()
+
+// Fetch from backend admin API
 const fetchUsers = async () => {
   try {
     const res = await api.adminUsers.getAll({ page: 0, size: 50 })
     const content = res?.content || res?.data || []
-    if (Array.isArray(content) && content.length) {
-      users.value = content.map((u) => {
-        const email = u.email || ''
-        const baseName = email ? email.split('@')[0] || 'Người dùng' : u.soDienThoai || 'Người dùng'
-        const roleMap = { ADM: 'admin', STF: 'staff', CUS: 'customer', GST: 'customer' }
+    users.value = Array.isArray(content)
+      ? content.map((u) => {
+          const email = u.email || ''
+          const baseName = email
+            ? email.split('@')[0] || 'Người dùng'
+            : u.soDienThoai || 'Người dùng'
+          const roleMap = { ADM: 'admin', STF: 'staff', CUS: 'customer', GST: 'customer' }
 
-        // Lấy orderCount và totalSpent từ backend
-        const orderCount = u.orderCount || 0
-        const totalSpent = u.totalSpent || 0
-        const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0
+          // Lấy orderCount và totalSpent từ backend
+          const orderCount = u.orderCount || 0
+          const totalSpent = u.totalSpent || 0
+          const avgOrderValue = orderCount > 0 ? totalSpent / orderCount : 0
 
-        return {
-          id: u.id,
-          name: baseName,
-          email: u.email || 'N/A',
-          phone: u.soDienThoai || 'Chưa cập nhật',
-          address: '—',
-          birthday: null,
-          gender: null,
-          role: roleMap[u.vaiTroMa] || 'customer',
-          status: u.trangThai ? 'active' : 'inactive',
-          avatar: null,
-          orderCount: orderCount,
-          totalSpent: totalSpent,
-          avgOrderValue: avgOrderValue,
-          createdAt: u.taoLuc ? new Date(u.taoLuc) : new Date(),
-          lastLogin: null,
-          isVip: totalSpent > 10000000, // VIP nếu chi tiêu > 10 triệu
-          isNew: false,
-          isHighValue: totalSpent > 5000000, // High value nếu chi tiêu > 5 triệu
-          orders: [],
-          activities: [],
-        }
-      })
-    }
+          return {
+            id: u.id,
+            name: baseName,
+            email: u.email || 'N/A',
+            phone: u.soDienThoai || 'Chưa cập nhật',
+            address: '—',
+            birthday: null,
+            gender: null,
+            role: roleMap[u.vaiTroMa] || 'customer',
+            status: u.trangThai ? 'active' : 'inactive',
+            avatar: null,
+            orderCount,
+            totalSpent,
+            avgOrderValue,
+            createdAt: u.taoLuc ? new Date(u.taoLuc) : new Date(),
+            lastLogin: null,
+            isVip: totalSpent > 10000000, // VIP nếu chi tiêu > 10 triệu
+            isNew: false,
+            isHighValue: totalSpent > 5000000, // High value nếu chi tiêu > 5 triệu
+            orders: [],
+            activities: [],
+          }
+        })
+      : []
   } catch (e) {
-    // keep mock data as fallback
-    console.warn('Không thể tải danh sách người dùng từ API, dùng mock tạm thời.', e)
+    console.error('Không thể tải danh sách người dùng từ API.', e)
+    users.value = []
+    toastError('Không thể tải danh sách người dùng từ server')
   }
 }
 
@@ -1183,24 +1123,45 @@ const formatCurrency = (amount) => {
 }
 
 const formatDate = (date) => {
-  return new Intl.DateTimeFormat('vi-VN').format(date)
+  if (!date) return 'Chưa cập nhật'
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date)
+    if (isNaN(dateObj.getTime())) return 'Chưa cập nhật'
+    return new Intl.DateTimeFormat('vi-VN').format(dateObj)
+  } catch (e) {
+    return 'Chưa cập nhật'
+  }
 }
 
 const formatTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  if (!date) return ''
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date)
+    if (isNaN(dateObj.getTime())) return ''
+    return new Intl.DateTimeFormat('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(dateObj)
+  } catch (e) {
+    return ''
+  }
 }
 
 const formatDateTime = (date) => {
-  return new Intl.DateTimeFormat('vi-VN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  if (!date) return 'Chưa cập nhật'
+  try {
+    const dateObj = date instanceof Date ? date : new Date(date)
+    if (isNaN(dateObj.getTime())) return 'Chưa cập nhật'
+    return new Intl.DateTimeFormat('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(dateObj)
+  } catch (e) {
+    return 'Chưa cập nhật'
+  }
 }
 
 const getRoleText = (role) => {
@@ -1237,6 +1198,60 @@ const getStatusClass = (status) => {
     banned: 'bg-danger',
   }
   return classes[status] || 'bg-secondary'
+}
+
+// Order status mapping
+const getOrderStatusText = (status) => {
+  if (!status) return 'Không xác định'
+  
+  const statusStr = String(status).toUpperCase()
+  const statusMap = {
+    // English statuses
+    'PENDING': 'Chờ xác nhận',
+    'CHO_XAC_NHAN': 'Chờ xác nhận',
+    'SHIPPING': 'Đang giao',
+    'DANG_GIAO': 'Đang giao',
+    'DELIVERING': 'Đang giao',
+    'COMPLETED': 'Hoàn tất',
+    'HOAN_TAT': 'Hoàn tất',
+    'FINISHED': 'Hoàn tất',
+    'CANCELLED': 'Đã hủy',
+    'DA_HUY': 'Đã hủy',
+    'CANCELED': 'Đã hủy',
+    // Vietnamese statuses (keep as is)
+    'Chờ xác nhận': 'Chờ xác nhận',
+    'Đang giao': 'Đang giao',
+    'Hoàn tất': 'Hoàn tất',
+    'Đã hủy': 'Đã hủy',
+  }
+  
+  return statusMap[statusStr] || statusMap[status] || status
+}
+
+const getOrderStatusClass = (status) => {
+  if (!status) return 'bg-secondary'
+  
+  const statusStr = String(status).toUpperCase()
+  const classMap = {
+    'PENDING': 'bg-warning',
+    'CHO_XAC_NHAN': 'bg-warning',
+    'SHIPPING': 'bg-info',
+    'DANG_GIAO': 'bg-info',
+    'DELIVERING': 'bg-info',
+    'COMPLETED': 'bg-success',
+    'HOAN_TAT': 'bg-success',
+    'FINISHED': 'bg-success',
+    'CANCELLED': 'bg-danger',
+    'DA_HUY': 'bg-danger',
+    'CANCELED': 'bg-danger',
+    // Vietnamese
+    'Chờ xác nhận': 'bg-warning',
+    'Đang giao': 'bg-info',
+    'Hoàn tất': 'bg-success',
+    'Đã hủy': 'bg-danger',
+  }
+  
+  return classMap[statusStr] || classMap[status] || 'bg-secondary'
 }
 
 const getActivityIcon = (type) => {
@@ -1321,12 +1336,107 @@ const changePage = (page) => {
 const viewUser = (user) => {
   selectedUser.value = user
   showUserModal.value = true
+  // Reset orders state when opening modal
+  userOrders.value = []
+  ordersCurrentPage.value = 1
+  ordersTotalItems.value = 0
+  ordersTotalPages.value = 0
+
+  // Setup Bootstrap tab event listener after modal is shown
+  nextTick(() => {
+    const ordersTab = document.getElementById('orders-tab')
+    if (ordersTab) {
+      // Remove existing listener if any
+      ordersTab.removeEventListener('shown.bs.tab', handleOrdersTabShown)
+      // Add new listener
+      ordersTab.addEventListener('shown.bs.tab', handleOrdersTabShown)
+    }
+  })
+}
+
+// Handle orders tab shown event
+const handleOrdersTabShown = () => {
+  if (selectedUser.value && selectedUser.value.id) {
+    fetchUserOrders()
+  }
 }
 
 const closeUserModal = () => {
   showUserModal.value = false
   selectedUser.value = null
+  // Reset orders state when closing modal
+  userOrders.value = []
+  ordersCurrentPage.value = 1
+  ordersTotalItems.value = 0
+  ordersTotalPages.value = 0
 }
+
+// Fetch orders for selected user
+const fetchUserOrders = async () => {
+  if (!selectedUser.value || !selectedUser.value.id) return
+
+  try {
+    ordersLoading.value = true
+    const response = await api.adminUsers.getOrdersByUserId(selectedUser.value.id, {
+      page: ordersCurrentPage.value - 1,
+      size: ordersPageSize.value,
+    })
+
+    const data = response || {}
+    userOrders.value = data.content || []
+    ordersTotalItems.value = data.totalItems || 0
+    ordersTotalPages.value = data.totalPages || 0
+
+    // Update current page if needed
+    if (data.currentPage !== undefined) {
+      ordersCurrentPage.value = data.currentPage + 1
+    }
+  } catch (error) {
+    console.error('Error fetching user orders:', error)
+    toastError('Không thể tải danh sách đơn hàng')
+    userOrders.value = []
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
+// Pagination for orders
+const visibleOrdersPages = computed(() => {
+  const pages = []
+  const start = Math.max(1, ordersCurrentPage.value - 2)
+  const end = Math.min(ordersTotalPages.value, start + 4)
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+
+  return pages
+})
+
+const changeOrdersPage = (page) => {
+  if (page >= 1 && page <= ordersTotalPages.value) {
+    ordersCurrentPage.value = page
+    fetchUserOrders()
+  }
+}
+
+// View order detail
+const viewOrderDetail = (orderId) => {
+  // Navigate to order detail page
+  window.open(`/admin/orders?orderId=${orderId}`, '_blank')
+}
+
+// Handle orders tab click
+const onOrdersTabClick = () => {
+  // Use nextTick to ensure tab is shown before fetching
+  nextTick(() => {
+    // Fetch orders when tab is clicked
+    if (selectedUser.value && selectedUser.value.id) {
+      fetchUserOrders()
+    }
+  })
+}
+
 
 const userStore = useUserStore()
 const isAdmin = computed(() => {
@@ -1334,6 +1444,21 @@ const isAdmin = computed(() => {
   console.log('Current user role:', role)
   return role === 'admin' || role === 'ADM'
 })
+
+const isStaff = computed(() => {
+  const role = userStore.userRole
+  return role === 'staff' || role === 'STF'
+})
+
+const canEditInfo = computed(() => isAdmin.value)
+const canEditStatus = computed(() => {
+  if (isAdmin.value) return true
+  if (isStaff.value) {
+    return editForm.value.role === 'customer'
+  }
+  return false
+})
+const canSave = computed(() => canEditInfo.value || canEditStatus.value)
 
 // Confirm modal state
 const showConfirm = ref(false)
@@ -1362,12 +1487,10 @@ const onConfirm = async () => {
   }
 }
 
-const { success: toastSuccess, error: toastError } = useToast()
-
 const editUser = (user) => {
-  if (!isAdmin.value) return
+  // Cho phép ADMIN và STAFF mở modal (STAFF chỉ được đổi status cho customer, form sẽ readonly)
+  if (!isAdmin.value && !isStaff.value) return
 
-  // Populate edit form
   editForm.value = {
     id: user.id,
     email: user.email || '',
@@ -1393,23 +1516,34 @@ const closeEditModal = () => {
 }
 
 const saveUserEdit = async () => {
-  if (!isAdmin.value) return
+  if (!canSave.value) return
 
   try {
     editLoading.value = true
 
-    // Map role to backend format
     const roleMap = {
       customer: 'CUS',
       staff: 'STF',
       admin: 'ADM',
     }
 
-    const payload = {
-      email: editForm.value.email,
-      soDienThoai: editForm.value.phone,
-      vaiTroMa: roleMap[editForm.value.role] || 'CUS',
-      trangThai: editForm.value.status === 'active',
+    let payload = {}
+
+    if (canEditInfo.value) {
+      payload = {
+        email: editForm.value.email,
+        soDienThoai: editForm.value.phone,
+        vaiTroMa: roleMap[editForm.value.role] || 'CUS',
+        trangThai: editForm.value.status === 'active',
+      }
+    } else if (canEditStatus.value && isStaff.value) {
+      // STAFF chỉ được đổi trạng thái cho customer – UI đã chặn, backend kiểm lại
+      payload = {
+        trangThai: editForm.value.status === 'active',
+      }
+    } else {
+      toastError('Bạn không có quyền cập nhật thông tin này')
+      return
     }
 
     await api.adminUsers.update(editForm.value.id, payload)
@@ -1417,9 +1551,11 @@ const saveUserEdit = async () => {
     // Update user in list
     const userIndex = users.value.findIndex((u) => u.id === editForm.value.id)
     if (userIndex !== -1) {
-      users.value[userIndex].email = editForm.value.email
-      users.value[userIndex].phone = editForm.value.phone
-      users.value[userIndex].role = editForm.value.role
+      if (canEditInfo.value) {
+        users.value[userIndex].email = editForm.value.email
+        users.value[userIndex].phone = editForm.value.phone
+        users.value[userIndex].role = editForm.value.role
+      }
       users.value[userIndex].status = editForm.value.status
       users.value[userIndex].note = editForm.value.note
     }
@@ -1455,18 +1591,50 @@ const softDeleteUser = async (user) => {
   )
 }
 
-const bulkUpdateStatus = (status) => {
+const bulkUpdateStatus = async (status) => {
+  if (selectedUsers.value.length === 0) return
+
+  // Map status string -> Boolean trangThai
+  const enabled = status === 'active'
+
+  // RBAC FE: STAFF chỉ được bulk trên customer
+  if (isStaff.value) {
+    const invalidTargets = selectedUsers.value
+      .map((id) => users.value.find((u) => u.id === id))
+      .filter((u) => u && u.role !== 'customer')
+
+    if (invalidTargets.length > 0) {
+      toastError('Nhân viên chỉ được phép đổi trạng thái tài khoản khách hàng')
+      return
+    }
+  }
+
   if (
-    confirm(
+    !confirm(
       `Bạn có chắc chắn muốn cập nhật trạng thái cho ${selectedUsers.value.length} người dùng?`,
     )
   ) {
+    return
+  }
+
+  try {
+    await api.adminUsers.bulkStatus({
+      ids: selectedUsers.value,
+      trangThai: enabled,
+    })
+
     selectedUsers.value.forEach((userId) => {
       const user = users.value.find((u) => u.id === userId)
       if (user) {
         user.status = status
       }
     })
+
+    toastSuccess('Cập nhật trạng thái hàng loạt thành công')
+  } catch (e) {
+    console.error('Bulk update status failed', e)
+    toastError('Không thể cập nhật trạng thái hàng loạt: ' + (e.message || 'Lỗi không xác định'))
+  } finally {
     selectedUsers.value = []
     selectAll.value = false
   }
@@ -1488,10 +1656,22 @@ onMounted(() => {
 }
 
 .page-header {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.header-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 2rem;
+}
+
+.header-left {
+  flex: 1;
 }
 
 .page-title {
@@ -1504,29 +1684,79 @@ onMounted(() => {
 .page-subtitle {
   color: #6c757d;
   margin: 0;
+  font-size: 1rem;
 }
 
-.header-stats {
+.header-actions {
   display: flex;
-  gap: 2rem;
+  gap: 1rem;
 }
 
-.stat-item {
-  text-align: center;
+.btn-add-staff {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.btn-add-staff:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
+}
+
+.header-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  font-size: 1.5rem;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .stat-label {
-  display: block;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: #6c757d;
-  margin-bottom: 0.25rem;
+  font-weight: 500;
 }
 
 .stat-value {
-  display: block;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #2c3e50;
+  line-height: 1;
 }
 
 .filters-section {
@@ -2293,16 +2523,30 @@ onMounted(() => {
 }
 
 /* Responsive */
+@media (max-width: 992px) {
+  .header-stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  .page-header {
+  .header-content {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
 
-  .header-stats {
+  .header-actions {
     width: 100%;
-    justify-content: space-around;
+  }
+
+  .btn-add-staff {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-stats-row {
+    grid-template-columns: 1fr;
   }
 
   .users-table {

@@ -398,57 +398,15 @@
               <div class="col-md-6">
                 <label class="form-label">Đơn hàng tối thiểu</label>
                 <div class="input-group">
-                  <input type="number" class="form-control" v-model.number="promotionForm.minOrderValue" min="0" placeholder="0">
+                  <input
+                    type="number"
+                    class="form-control"
+                    v-model.number="promotionForm.minOrderValue"
+                    min="0"
+                    placeholder="0"
+                  >
                   <span class="input-group-text">₫</span>
                 </div>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Áp dụng cho</label>
-                <select class="form-select" v-model="promotionForm.applyTo">
-                  <option value="all">Tất cả sản phẩm</option>
-                  <option value="category">Danh mục cụ thể</option>
-                  <option value="products">Sản phẩm cụ thể</option>
-                </select>
-              </div>
-
-              <div v-if="promotionForm.applyTo === 'category'" class="col-12">
-                <label class="form-label">Chọn danh mục</label>
-                <div class="category-checkboxes">
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="ao" v-model="promotionForm.categories" id="catAo">
-                    <label class="form-check-label" for="catAo">Áo</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="ao-so-mi" v-model="promotionForm.categories" id="catAoSoMi">
-                    <label class="form-check-label" for="catAoSoMi">Áo sơ mi</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="ao-thun" v-model="promotionForm.categories" id="catAoThun">
-                    <label class="form-check-label" for="catAoThun">Áo thun</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="quan" v-model="promotionForm.categories" id="catQuan">
-                    <label class="form-check-label" for="catQuan">Quần</label>
-                  </div>
-                  <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="quan-jean" v-model="promotionForm.categories" id="catQuanJean">
-                    <label class="form-check-label" for="catQuanJean">Quần jean</label>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Size & Color Filters -->
-              <div class="col-md-6">
-                <label class="form-label">Áp dụng cho size (để trống = tất cả)</label>
-                <input type="text" class="form-control" v-model="promotionForm.sizesFilter" placeholder="VD: M,L,XL hoặc 30,32,34">
-                <small class="text-muted">Nhập size cách nhau bằng dấu phẩy</small>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label">Áp dụng cho màu (để trống = tất cả)</label>
-                <input type="text" class="form-control" v-model="promotionForm.colorsFilter" placeholder="VD: Đen,Trắng,Xanh">
-                <small class="text-muted">Nhập màu cách nhau bằng dấu phẩy</small>
               </div>
             </div>
           </form>
@@ -564,11 +522,7 @@ const promotionForm = ref({
   code: '',
   startDate: '',
   endDate: '',
-  minOrderValue: 0,
-  applyTo: 'all',
-  categories: [],
-  sizesFilter: '',
-  colorsFilter: ''
+  minOrderValue: 0
 })
 
 // Voucher data từ API
@@ -956,11 +910,7 @@ const editPromotion = (promotion) => {
     code: promotion.ma,
     startDate: promotion.batDauLuc,
     endDate: promotion.ketThucLuc,
-    minOrderValue: promotion.donToiThieu || 0,
-    applyTo: 'all',
-    categories: [],
-    sizesFilter: '',
-    colorsFilter: ''
+    minOrderValue: promotion.donToiThieu || 0
   }
   setEndDateFormState(promotion.ketThucLuc)
   showCreateModal.value = true
@@ -980,11 +930,7 @@ const closeCreateModal = () => {
     code: '',
     startDate: '',
     endDate: '',
-    minOrderValue: 0,
-    applyTo: 'all',
-    categories: [],
-    sizesFilter: '',
-    colorsFilter: ''
+    minOrderValue: 0
   }
 }
 
@@ -1166,11 +1112,7 @@ const reactivateVoucher = (promotion) => {
     code: promotion.ma,
     startDate: defaultStart,
     endDate: defaultEnd,
-    minOrderValue: promotion.donToiThieu || 0,
-    applyTo: 'all',
-    categories: [],
-    sizesFilter: '',
-    colorsFilter: ''
+    minOrderValue: promotion.donToiThieu || 0
   }
 
   setEndDateFormState(promotion.ketThucLuc || defaultEnd)

@@ -31,6 +31,4 @@ public class VoucherUpdateRequest {
     private LocalDateTime ketThucLuc;
 
     private Integer gioiHanSuDung;
-
-    private String dieuKienJson;
 }
