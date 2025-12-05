@@ -87,7 +87,7 @@
     <!-- Order Statistics -->
     <div class="order-stats-section">
       <div class="row g-3">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card pending">
             <div class="stat-icon">
               <i class="bi bi-clock"></i>
@@ -98,7 +98,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card shipping">
             <div class="stat-icon">
               <i class="bi bi-bicycle"></i>
@@ -109,7 +109,7 @@
             </div>
           </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
           <div class="stat-card shipped">
             <div class="stat-icon">
               <i class="bi bi-truck"></i>
@@ -120,38 +120,36 @@
             </div>
           </div>
         </div>
-        <div class="row g-3 mt-2">
-          <div class="col-md-4">
-            <div class="stat-card delivered">
-              <div class="stat-icon">
-                <i class="bi bi-check-circle"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ orderStats.completed }}</div>
-                <div class="stat-label">Hoàn thành</div>
-              </div>
+        <div class="col-md-2">
+          <div class="stat-card delivered">
+            <div class="stat-icon">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ orderStats.completed }}</div>
+              <div class="stat-label">Hoàn thành</div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="stat-card payment-pending">
-              <div class="stat-icon">
-                <i class="bi bi-credit-card"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ paymentStats.pending }}</div>
-                <div class="stat-label">Chờ thanh toán</div>
-              </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-card payment-pending">
+            <div class="stat-icon">
+              <i class="bi bi-credit-card"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ paymentStats.pending }}</div>
+              <div class="stat-label">Chờ thanh toán</div>
             </div>
           </div>
-          <div class="col-md-4">
-            <div class="stat-card payment-paid">
-              <div class="stat-icon">
-                <i class="bi bi-check-circle"></i>
-              </div>
-              <div class="stat-content">
-                <div class="stat-value">{{ paymentStats.paid }}</div>
-                <div class="stat-label">Đã thanh toán</div>
-              </div>
+        </div>
+        <div class="col-md-2">
+          <div class="stat-card payment-paid">
+            <div class="stat-icon">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">{{ paymentStats.paid }}</div>
+              <div class="stat-label">Đã thanh toán</div>
             </div>
           </div>
         </div>
@@ -1815,6 +1813,10 @@ onMounted(() => {
 
 .stat-card.payment-pending {
   border-left: 4px solid #ffc107;
+}
+
+.stat-card.payment-paid .stat-icon {
+  background: #28a745;
 }
 
 .stat-card.payment-paid {
