@@ -363,9 +363,7 @@ const customersGrowth = computed(() => {
 const loadRecentOrders = async () => {
   try {
     isLoadingRecentOrders.value = true
-    console.log('📋 Loading recent orders...')
     const response = await thongKeService.getRecentOrders({ limit: 4 })
-    console.log('📋 Recent orders response:', response)
     const data = response?.data ?? response
     recentOrders.value = (data || []).map((order) => ({
       id: order.orderCode || order.id,
@@ -382,10 +380,8 @@ const loadRecentOrders = async () => {
       paymentIcon: getPaymentIcon(order.paymentMethod),
       shippingCity: order.shippingCity || '',
     }))
-    console.log('✅ Recent orders loaded:', recentOrders.value)
   } catch (error) {
-    console.error('❌ Error loading recent orders:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
+    console.error('Error loading recent orders:', error)
     recentOrders.value = []
   } finally {
     isLoadingRecentOrders.value = false
@@ -396,14 +392,10 @@ const loadRecentOrders = async () => {
 const loadOrderStatusCounts = async () => {
   try {
     isLoadingOrderStatusCounts.value = true
-    console.log('📊 Loading order status counts...')
     const response = await thongKeService.getOrderStatusCounts()
-    console.log('📊 Order status counts response:', response)
     orderStatusCounts.value = response?.data ?? response
-    console.log('✅ Order status counts loaded:', orderStatusCounts.value)
   } catch (error) {
-    console.error('❌ Error loading order status counts:', error)
-    console.error('❌ Error details:', error.response?.data || error.message)
+    console.error('Error loading order status counts:', error)
     orderStatusCounts.value = null
   } finally {
     isLoadingOrderStatusCounts.value = false
@@ -943,100 +935,6 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-}
-
-.insight-icon.revenue {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.insight-icon.orders {
-  background: #dcfce7;
-  color: #16a34a;
-}
-
-.insight-icon.profit {
-  background: #fef3c7;
-  color: #d97706;
-}
-
-.insight-content {
-  flex: 1;
-}
-
-.insight-title {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
-}
-
-.insight-value {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin-bottom: 0.25rem;
-}
-
-.insight-value.positive {
-  color: #16a34a;
-}
-
-.insight-value.negative {
-  color: #dc2626;
-}
-
-.insight-subtitle {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.chart-content {
-  position: relative;
-  min-height: 350px;
-}
-
-.chart-loading,
-.chart-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 350px;
-  padding: 2rem;
-}
-
-.chart-loading .spinner-border {
-  width: 3rem;
-  height: 3rem;
-}
-
-.chart-empty i {
-  opacity: 0.5;
-}
-
-.top-products-card {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
-}
-
-.top-products-card .card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.view-all-btn {
-  background: none;
-  border: none;
-  color: #6366f1;
-  font-size: 0.875rem;
-  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;

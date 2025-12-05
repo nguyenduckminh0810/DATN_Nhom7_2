@@ -48,18 +48,7 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
 
     long countByTrangThai(String trangThai);
 
-    @Query(value = """
-            SELECT COALESCE(SUM(dh.tong_thanh_toan), 0)
-            FROM don_hang dh
-            WHERE (dh.trang_thai = :trangThai 
-                   OR dh.trang_thai = N'Hoàn tất' 
-                   OR dh.trang_thai = N'Đã giao'
-                   OR dh.trang_thai = 'COMPLETED'
-                   OR dh.trang_thai = 'DELIVERED'
-                   OR dh.trang_thai = 'HOAN_TAT'
-                   OR dh.trang_thai = 'HOAN_THANH')
-              AND dh.dat_luc BETWEEN :from AND :to
-            """, nativeQuery = true)
+    @Query("SELECT COALESCE(SUM(dh.tongThanhToan), 0) FROM DonHang dh WHERE dh.trangThai = :trangThai AND dh.datLuc BETWEEN :from AND :to")
     BigDecimal sumRevenueByDatLucBetweenAndTrangThai(@Param("trangThai") String trangThai,
             @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
@@ -100,17 +89,6 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
     List<Object[]> countOrdersByDateBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query(value = """
-            SELECT CAST(dh.dat_luc AS date) AS ngay,
-                   COUNT(DISTINCT dh.id_khach_hang) AS so_khach
-            FROM don_hang dh
-            WHERE dh.dat_luc BETWEEN :from AND :to
-              AND dh.id_khach_hang IS NOT NULL
-            GROUP BY CAST(dh.dat_luc AS date)
-            ORDER BY ngay
-            """, nativeQuery = true)
-    List<Object[]> countCustomersByDateBetween(@Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
-
-    @Query(value = """
             SELECT COUNT(DISTINCT dh.id_khach_hang)
             FROM don_hang dh
             WHERE dh.trang_thai = :trangThai
@@ -134,21 +112,7 @@ public interface DonHangRepository extends JpaRepository<DonHang, Long> {
     // Analytics methods
     long countByDatLucBetween(LocalDateTime from, LocalDateTime to);
 
-    @Query(value = """
-            SELECT COUNT(*)
-            FROM don_hang dh
-            WHERE (dh.trang_thai = :trangThai 
-                   OR (dh.trang_thai = N'Hoàn tất' AND :trangThai = 'COMPLETED')
-                   OR (dh.trang_thai = N'Đã giao' AND :trangThai = 'COMPLETED')
-                   OR (dh.trang_thai = 'DELIVERED' AND :trangThai = 'COMPLETED')
-                   OR (dh.trang_thai = 'HOAN_TAT' AND :trangThai = 'COMPLETED')
-                   OR (dh.trang_thai = 'HOAN_THANH' AND :trangThai = 'COMPLETED')
-                   OR (dh.trang_thai = N'Đã hủy' AND :trangThai = 'CANCELLED')
-                   OR (dh.trang_thai = 'DA_HUY' AND :trangThai = 'CANCELLED'))
-              AND dh.dat_luc BETWEEN :from AND :to
-            """, nativeQuery = true)
-    long countByTrangThaiAndDatLucBetween(@Param("trangThai") String trangThai, 
-            @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+    long countByTrangThaiAndDatLucBetween(String trangThai, LocalDateTime from, LocalDateTime to);
 
     @Query(value = """
             SELECT COUNT(DISTINCT dh.id_khach_hang)

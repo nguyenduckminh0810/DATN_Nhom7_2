@@ -1,7 +1,6 @@
 package com.auro.auro.controller;
 
 import com.auro.auro.dto.request.VariantUpsertRequest;
-import com.auro.auro.dto.response.InventoryItemResponse;
 import com.auro.auro.dto.response.VariantResponse;
 import com.auro.auro.service.BienTheService;
 import lombok.RequiredArgsConstructor;
@@ -74,14 +73,5 @@ public class BienTheController {
     public ResponseEntity<VariantResponse> getVariantById(@PathVariable Long id) {
         VariantResponse variant = bienTheService.getVariantById(id);
         return ResponseEntity.ok(variant);
-    }
-
-    /**
-     * Lấy tất cả biến thể với thông tin sản phẩm (cho trang inventory)
-     */
-    @GetMapping("/inventory/all")
-    public ResponseEntity<List<InventoryItemResponse>> getAllInventoryItems() {
-        List<InventoryItemResponse> items = bienTheService.getAllInventoryItems();
-        return ResponseEntity.ok(items);
     }
 }

@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useUserStore } from '../stores/user'
 
 // Lazy load views for better performance with code splitting
 const Home = () => import(/* webpackChunkName: "home" */ '../views/Home.vue')
@@ -243,43 +242,31 @@ router.beforeEach((to, from, next) => {
     }
   }
   if (to.meta.requiresAdmin) {
-    // Use userStore to check admin status
-    const userStore = useUserStore()
-    
-    // Ensure user is loaded from storage
-    if (!userStore.user) {
-      userStore.loadUserFromStorage()
-    }
-    
-    // Check if user is admin or staff using store's computed properties
-    const isAdmin = userStore.isAdmin
-    const isStaff = userStore.userRole === 'staff'
-    const userRole = userStore.userRole
-    
-    console.log('Router check - User:', userStore.user)
-    console.log('Router check - User role:', userRole)
-    console.log('Router check - Is admin:', isAdmin)
-    console.log('Router check - Is staff:', isStaff)
+    const user = JSON.parse(localStorage.getItem('auro_user') || '{}')
+    console.log('Router check - User from localStorage:', user)
 
-    // Analytics page chỉ dành cho admin
+    // Kiểm tra cả vaiTro, vaiTroMa và role
+    const userRole = user.vaiTroMa || user.vaiTro || user.role
+    console.log('Router check - User role:', userRole)
+
     if (to.name === 'admin-analytics' || to.path.startsWith('/admin/analytics')) {
-      if (!isAdmin) {
+      if (!userRole || !['ADM', 'admin'].includes(userRole)) {
         console.log('Access denied - Analytics reserved for admin only')
         next({ name: 'admin-products' })
         return
       }
     }
 
-    // Nếu route yêu cầu chỉ admin (requiresOnlyAdmin), chỉ cho phép admin
+    // Nếu route yêu cầu chỉ admin (requiresOnlyAdmin), chỉ cho phép ADM
     if (to.meta.requiresOnlyAdmin) {
-      if (!isAdmin) {
+      if (!userRole || !['ADM', 'admin'].includes(userRole)) {
         console.log('Access denied - Only admin can access this page')
         next('/')
         return
       }
     } else {
       // Các route khác cho phép cả admin và staff
-      if (!isAdmin && !isStaff) {
+      if (!userRole || !['ADM', 'STF', 'admin', 'staff'].includes(userRole)) {
         // Redirect to home if not admin/staff
         console.log('Access denied - redirecting to home')
         next('/')

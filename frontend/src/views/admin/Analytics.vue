@@ -1158,21 +1158,6 @@ const getRankClass = (index) => {
   return ''
 }
 
-const getDateRangeLabel = () => {
-  const labels = {
-    'today': 'Hôm nay',
-    'yesterday': 'Hôm qua',
-    '7days': '7 ngày qua',
-    '30days': '30 ngày qua',
-    '90days': '90 ngày qua',
-    'thisMonth': 'Tháng này',
-    'lastMonth': 'Tháng trước',
-    'thisYear': 'Năm nay',
-    'custom': 'Khoảng tùy chỉnh'
-  }
-  return labels[selectedDateRange.value] || '30 ngày qua'
-}
-
 const formatMetricValue = (value, metric) => {
   switch (metric) {
     case 'revenue':
@@ -1523,18 +1508,10 @@ defineExpose({
 .kpi-label {
   font-size: 0.875rem;
   color: #64748b;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.75rem;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
-}
-
-.kpi-subtitle {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  font-weight: 400;
-  margin-bottom: 0.5rem;
-  font-style: italic;
 }
 
 .kpi-change {

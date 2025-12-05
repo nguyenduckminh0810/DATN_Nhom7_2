@@ -435,11 +435,6 @@ body {
   max-width: 280px;
 }
 
-/* Điều chỉnh width cho categories items */
-.categories-grid .section-item {
-  width: calc(20% - 16px); /* Điều chỉnh theo gap 20px (20px * 4 gaps / 5 items ≈ 16px) */
-}
-
 /* Tránh ảnh hưởng đến product-card trong best-sellers */
 .best-sellers-section .section-item {
   width: auto !important;

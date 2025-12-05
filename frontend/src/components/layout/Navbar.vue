@@ -278,7 +278,7 @@ function childrenFor(parentSlug) {
 // Check if user is admin or staff
 const isAdmin = computed(() => {
   const role = userStore.userRole
-  return role === 'admin' || role === 'staff'
+  return role === 'admin' || role === 'ADM' || role === 'STF' || role === 'staff'
 })
 
 // Login popup methods
