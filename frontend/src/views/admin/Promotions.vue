@@ -294,7 +294,6 @@
               <div class="col-md-4">
                 <label class="form-label">Loại khuyến mãi *</label>
                 <select class="form-select" v-model="promotionForm.type" required>
-                  <option value="percentage">Giảm giá %</option>
                   <option value="fixed">Giảm giá cố định</option>
                   <option value="freeship">Miễn phí ship</option>
                 </select>
@@ -308,22 +307,6 @@
               <!-- Discount Value -->
               <div class="col-12">
                 <h6 class="form-section-title">Giá trị giảm giá</h6>
-              </div>
-
-              <div v-if="promotionForm.type === 'percentage'" class="col-md-6">
-                <label class="form-label">Phần trăm giảm (%)</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" v-model.number="promotionForm.percentValue" min="1" max="100">
-                  <span class="input-group-text">%</span>
-                </div>
-              </div>
-
-              <div v-if="promotionForm.type === 'percentage'" class="col-md-6">
-                <label class="form-label">Giảm tối đa</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" v-model.number="promotionForm.maxDiscount" min="0">
-                  <span class="input-group-text">₫</span>
-                </div>
               </div>
 
               <div v-if="promotionForm.type === 'fixed'" class="col-md-6">
@@ -374,6 +357,7 @@
                   type="datetime-local"
                   class="form-control"
                   v-model="promotionForm.endDate"
+                  :min="promotionForm.startDate"
                   :required="!noEndDate"
                   :disabled="noEndDate"
                 >
@@ -515,7 +499,7 @@ const selectedPromotion = ref(null)
 const promotionForm = ref({
   name: '',
   description: '',
-  type: 'percentage',
+  type: 'fixed',
   percentValue: 10,
   maxDiscount: null,
   fixedValue: null,
@@ -1213,6 +1197,23 @@ watch(
       promotionForm.value.endDate = ''
     }
   }
+)
+
+// Validate end date is not before start date
+watch(
+  [() => promotionForm.value.startDate, () => promotionForm.value.endDate],
+  ([startDate, endDate]) => {
+    if (startDate && endDate && !noEndDate.value) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      
+      if (end < start) {
+        alert('❌ Ngày kết thúc không thể trước ngày bắt đầu!')
+        promotionForm.value.endDate = ''
+      }
+    }
+  },
+  { deep: true }
 )
 
 // const formatDateForAPI = (date) => {
