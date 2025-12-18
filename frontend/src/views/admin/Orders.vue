@@ -69,7 +69,7 @@
           </div>
           <div class="col-md-2">
             <label class="form-label">Đến ngày</label>
-            <input type="date" class="form-control" v-model="dateTo" />
+            <input type="date" class="form-control" v-model="dateTo" :min="dateFrom" />
           </div>
           <div class="col-md-2">
             <label class="form-label">Sắp xếp</label>
@@ -279,11 +279,13 @@
               </td>
               <td>
                 <div class="order-amount">
-                  <div class="total-amount">
-                    {{ formatCurrency(order.tongThanhToan || order.tamTinh) }}
-                  </div>
                   <div class="subtotal-amount text-muted">
-                    Tạm tính: {{ formatCurrency(order.tamTinh) }}
+                    <small>
+                      Tạm tính: {{ formatCurrency(order.tamTinh) }}
+                      <span v-if="getOrderShipping(order) > 0">
+                        + Ship: {{ formatCurrency(getOrderShipping(order)) }}
+                      </span>
+                    </small>
                   </div>
                 </div>
               </td>
@@ -342,8 +344,7 @@
                   </button>
                   <button
                     v-if="order.statusCode === STATUS_CODES.PENDING || 
-                          order.statusCode === STATUS_CODES.SHIPPING || 
-                          order.statusCode === STATUS_CODES.DELIVERED"
+                          order.statusCode === STATUS_CODES.SHIPPING"
                     class="btn btn-sm btn-outline-danger"
                     @click="openCancelModal(order)"
                     title="Hủy đơn hàng"
@@ -416,7 +417,7 @@
                     </div>
                   </div>
                   <div class="order-amount">
-                    {{ formatCurrency(order.tongThanhToan || order.tamTinh) }}
+                    {{ formatCurrency(getOrderTotal(order)) }}
                   </div>
                 </div>
                 <div class="card-footer">
@@ -649,12 +650,14 @@
                     <td>Tạm tính:</td>
                     <td>{{ formatCurrency(selectedOrder.tamTinh) }}</td>
                   </tr>
+                  <tr v-if="getOrderShipping(selectedOrder) > 0">
+                    <td>Phí giao hàng:</td>
+                    <td>{{ formatCurrency(getOrderShipping(selectedOrder)) }}</td>
+                  </tr>
                   <tr class="table-active">
                     <td><strong>Tổng cộng:</strong></td>
                     <td>
-                      <strong>{{
-                        formatCurrency(selectedOrder.tongThanhToan || selectedOrder.tamTinh)
-                      }}</strong>
+                      <strong>{{ formatCurrency(getOrderTotal(selectedOrder)) }}</strong>
                     </td>
                   </tr>
                 </tbody>
@@ -897,6 +900,23 @@ const formatDateTime = (date) => {
     : ''
 }
 
+// Returns known shipping fee fields from order (tries multiple possible names)
+const getOrderShipping = (order) => {
+  if (!order) return 0
+  // try common field names that backend might use
+  return (
+    Number(order.phiShip ?? order.shippingFee ?? order.shipFee ?? order.phiVanChuyen ?? order.phiGiao ?? order.phiGiaoHang ?? order.shipping_cost ?? order.phi ?? 0) || 0
+  )
+}
+
+// Compute total to display: always calculate as tamTinh + shipping
+const getOrderTotal = (order) => {
+  if (!order) return 0
+  const subtotal = Number(order.tamTinh ?? 0) || 0
+  const shipping = getOrderShipping(order) || 0
+  return subtotal + shipping
+}
+
 // ======= API CALL =======
 const fetchOrders = async () => {
   loading.value = true
@@ -1105,7 +1125,7 @@ const filteredOrders = computed(() => {
 
   if (amountRange.value.min !== null || amountRange.value.max !== null) {
     filtered = filtered.filter((o) => {
-      const amount = o.tongThanhToan ?? o.tamTinh ?? 0
+      const amount = getOrderTotal(o)
       const min = amountRange.value.min ?? 0
       const max = amountRange.value.max ?? Infinity
       return amount >= min && amount <= max
@@ -1117,9 +1137,9 @@ const filteredOrders = computed(() => {
       case 'oldest':
         return new Date(a.taoLuc) - new Date(b.taoLuc)
       case 'amount-high':
-        return (b.tongThanhToan ?? b.tamTinh ?? 0) - (a.tongThanhToan ?? a.tamTinh ?? 0)
+        return getOrderTotal(b) - getOrderTotal(a)
       case 'amount-low':
-        return (a.tongThanhToan ?? a.tamTinh ?? 0) - (b.tongThanhToan ?? b.tamTinh ?? 0)
+        return getOrderTotal(a) - getOrderTotal(b)
       case 'newest':
       default:
         return new Date(b.taoLuc) - new Date(a.taoLuc)
@@ -1541,6 +1561,20 @@ const confirmCancelOrder = async () => {
 }
 
 // ======= WATCHERS =======
+// Validate date range - alert if dateTo is before dateFrom
+watch([dateFrom, dateTo], () => {
+  if (dateFrom.value && dateTo.value) {
+    const fromDate = new Date(dateFrom.value)
+    const toDate = new Date(dateTo.value)
+    
+    if (toDate < fromDate) {
+      alert('❌ Bạn không thể lọc ngày quá khứ! Ngày kết thúc phải sau ngày bắt đầu.')
+      dateTo.value = '' // Clear the invalid date
+      return
+    }
+  }
+}, { deep: true })
+
 // Watch for filter changes and refetch orders
 watch([selectedStatus, selectedPayment, dateFrom, dateTo, amountRange], () => {
   fetchOrders()

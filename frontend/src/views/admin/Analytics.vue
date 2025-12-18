@@ -40,6 +40,7 @@
                   type="date"
                   v-model="customEndDate"
                   @change="applyDateRange"
+                  :min="customStartDate"
                   class="form-control form-control-sm"
                 />
               </div>
