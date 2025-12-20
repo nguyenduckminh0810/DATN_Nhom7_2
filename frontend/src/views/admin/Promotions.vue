@@ -312,9 +312,23 @@
               <div v-if="promotionForm.type === 'fixed'" class="col-md-6">
                 <label class="form-label">Số tiền giảm</label>
                 <div class="input-group">
-                  <input type="number" class="form-control" v-model.number="promotionForm.fixedValue" min="0">
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    v-model.number="promotionForm.fixedValue" 
+                    min="0"
+                    step="1"
+                    pattern="[0-9]*"
+                    inputmode="numeric"
+                    @input="validateFixedValue"
+                    @blur="validateFixedValue"
+                    @keypress="preventDecimal"
+                  >
                   <span class="input-group-text">₫</span>
                 </div>
+                <small v-if="promotionForm.fixedValue < 0" class="text-danger">
+                  Số tiền giảm không được âm
+                </small>
               </div>
 
               <div v-if="promotionForm.type === 'freeship'" class="col-12">
@@ -387,10 +401,19 @@
                     class="form-control"
                     v-model.number="promotionForm.minOrderValue"
                     min="0"
+                    step="1"
+                    pattern="[0-9]*"
+                    inputmode="numeric"
                     placeholder="0"
+                    @input="validateMinOrderValue"
+                    @blur="validateMinOrderValue"
+                    @keypress="preventDecimal"
                   >
                   <span class="input-group-text">₫</span>
                 </div>
+                <small v-if="promotionForm.minOrderValue < 0" class="text-danger">
+                  Đơn hàng tối thiểu không được âm
+                </small>
               </div>
             </div>
           </form>
@@ -965,6 +988,46 @@ const loadVouchers = async () => {
   }
 }
 
+// Ngăn chặn nhập số thập phân (chỉ cho phép số nguyên)
+const preventDecimal = (event) => {
+  // Chặn dấu chấm, dấu phẩy, dấu cộng, dấu trừ (trừ khi là số đầu tiên)
+  if (event.key === '.' || event.key === ',' || event.key === '+' || 
+      (event.key === '-' && event.target.value.length > 0) ||
+      event.key === 'e' || event.key === 'E') {
+    event.preventDefault()
+  }
+}
+
+// Validation: Kiểm tra số tiền giảm không được âm và chỉ cho phép số nguyên
+const validateFixedValue = () => {
+  if (promotionForm.value.fixedValue == null) {
+    return
+  }
+  // Làm tròn về số nguyên
+  if (promotionForm.value.fixedValue % 1 !== 0) {
+    promotionForm.value.fixedValue = Math.round(promotionForm.value.fixedValue)
+  }
+  // Không cho phép số âm
+  if (promotionForm.value.fixedValue < 0) {
+    promotionForm.value.fixedValue = 0
+  }
+}
+
+// Validation: Kiểm tra đơn hàng tối thiểu không được âm và chỉ cho phép số nguyên
+const validateMinOrderValue = () => {
+  if (promotionForm.value.minOrderValue == null) {
+    return
+  }
+  // Làm tròn về số nguyên
+  if (promotionForm.value.minOrderValue % 1 !== 0) {
+    promotionForm.value.minOrderValue = Math.round(promotionForm.value.minOrderValue)
+  }
+  // Không cho phép số âm
+  if (promotionForm.value.minOrderValue < 0) {
+    promotionForm.value.minOrderValue = 0
+  }
+}
+
 // Tạo voucher mới
 const createVoucher = async () => {
   try {
@@ -976,6 +1039,16 @@ const createVoucher = async () => {
       giaTri = promotionForm.value.percentValue
     } else if (promotionForm.value.type === 'fixed') {
       giaTri = promotionForm.value.fixedValue
+      // Làm tròn về số nguyên
+      if (giaTri != null) {
+        giaTri = Math.round(giaTri)
+      }
+      // Validation: Số tiền giảm không được âm
+      if (giaTri == null || giaTri < 0) {
+        error.value = 'Số tiền giảm không được để trống hoặc âm'
+        loading.value = false
+        return
+      }
     } else if (promotionForm.value.type === 'freeship') {
       giaTri = 0 // Freeship có giá trị 0
     }
@@ -995,13 +1068,24 @@ const createVoucher = async () => {
       return
     }
     
+    // Validation: Kiểm tra đơn hàng tối thiểu không được âm và làm tròn về số nguyên
+    let minOrderValue = promotionForm.value.minOrderValue
+    if (minOrderValue != null) {
+      minOrderValue = Math.round(minOrderValue)
+      if (minOrderValue < 0) {
+        error.value = 'Đơn hàng tối thiểu không được âm'
+        loading.value = false
+        return
+      }
+    }
+    
     const voucherData = {
       ma: promotionForm.value.code,
       loai: promotionForm.value.type === 'percentage' ? 'percent' : 
             promotionForm.value.type === 'freeship' ? 'freeship' : 'fixed',
       giaTri: giaTri,
-      giamToiDa: promotionForm.value.maxDiscount || 0,
-      donToiThieu: promotionForm.value.minOrderValue || 0,
+      giamToiDa: promotionForm.value.maxDiscount ? Math.round(promotionForm.value.maxDiscount) : 0,
+      donToiThieu: minOrderValue || 0,
       batDauLuc: promotionForm.value.startDate,
       ketThucLuc: getEndDatePayload()
     }
@@ -1138,10 +1222,25 @@ const savePromotion = async () => {
     let giaTri
     if (promotionForm.value.type === 'percentage') {
       giaTri = promotionForm.value.percentValue
+      // Làm tròn về số nguyên nếu là phần trăm
+      if (giaTri != null) {
+        giaTri = Math.round(giaTri)
+      }
     } else if (promotionForm.value.type === 'fixed') {
       giaTri = promotionForm.value.fixedValue
+      // Làm tròn về số nguyên
+      if (giaTri != null) {
+        giaTri = Math.round(giaTri)
+      }
     } else if (promotionForm.value.type === 'freeship') {
       giaTri = 0
+    }
+    
+    // Validation: Kiểm tra số tiền giảm không được âm
+    if (promotionForm.value.type === 'fixed' && (giaTri == null || giaTri < 0)) {
+      error.value = 'Số tiền giảm không được để trống hoặc âm'
+      loading.value = false
+      return
     }
     
     if (!promotionForm.value.type.includes('freeship') && (!giaTri || giaTri <= 0)) {
@@ -1150,13 +1249,24 @@ const savePromotion = async () => {
       return
     }
     
+    // Validation: Kiểm tra đơn hàng tối thiểu không được âm và làm tròn về số nguyên
+    let minOrderValue = promotionForm.value.minOrderValue
+    if (minOrderValue != null) {
+      minOrderValue = Math.round(minOrderValue)
+      if (minOrderValue < 0) {
+        error.value = 'Đơn hàng tối thiểu không được âm'
+        loading.value = false
+        return
+      }
+    }
+    
     const voucherData = {
       ma: promotionForm.value.code,
       loai: promotionForm.value.type === 'percentage' ? 'percent' : 
             promotionForm.value.type === 'freeship' ? 'freeship' : 'fixed',
       giaTri: giaTri,
-      giamToiDa: promotionForm.value.maxDiscount || 0,
-      donToiThieu: promotionForm.value.minOrderValue || 0,
+      giamToiDa: promotionForm.value.maxDiscount ? Math.round(promotionForm.value.maxDiscount) : 0,
+      donToiThieu: minOrderValue || 0,
       batDauLuc: promotionForm.value.startDate,
       ketThucLuc: getEndDatePayload()
     }
