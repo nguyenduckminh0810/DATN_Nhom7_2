@@ -249,6 +249,16 @@ public class VoucherService {
             throw new IllegalArgumentException("Mã voucher đã tồn tại: " + request.getMa());
         }
 
+        // Validation: Kiểm tra giá trị voucher không được âm
+        if (request.getGiaTri() != null && request.getGiaTri().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Số tiền giảm không được âm");
+        }
+
+        // Validation: Kiểm tra đơn hàng tối thiểu không được âm
+        if (request.getDonToiThieu() != null && request.getDonToiThieu().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Đơn hàng tối thiểu không được âm");
+        }
+
         Voucher voucher = new Voucher();
         voucher.setMa(request.getMa());
         // Normalize loại voucher thành uppercase để đảm bảo consistency
@@ -275,6 +285,16 @@ public class VoucherService {
 
         if(!voucher.getMa().equals(request.getMa()) && voucherRepository.existsByMa(request.getMa())) {
             throw new IllegalArgumentException("Mã voucher đã tồn tại: " + request.getMa());
+        }
+
+        // Validation: Kiểm tra giá trị voucher không được âm
+        if (request.getGiaTri() != null && request.getGiaTri().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Số tiền giảm không được âm");
+        }
+
+        // Validation: Kiểm tra đơn hàng tối thiểu không được âm
+        if (request.getDonToiThieu() != null && request.getDonToiThieu().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Đơn hàng tối thiểu không được âm");
         }
 
         voucher.setMa(request.getMa());

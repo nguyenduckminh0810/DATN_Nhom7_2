@@ -20,6 +20,8 @@ public class VoucherCreateRequest {
     private BigDecimal giaTri;
 
     private BigDecimal giamToiDa;
+    
+    @DecimalMin(value = "0.00", message = "Đơn hàng tối thiểu không được âm")
     private BigDecimal donToiThieu;
 
     @NotNull(message = "Ngày bắt đầu không được để trống")
