@@ -217,7 +217,7 @@ const finalTotal = computed(() => {
 
 // Validate form data trước khi đặt hàng
 const validateCheckoutData = () => {
-  console.log('🔍 Validating checkout data...')
+  console.log(' Validating checkout data...')
   console.log('shippingFormData:', shippingFormData)
   console.log('selectedPaymentMethod:', selectedPaymentMethod)
   
@@ -266,20 +266,20 @@ const validateCheckoutData = () => {
     return false
   }
 
-  console.log('✅ Validation passed')
+  console.log(' Validation passed')
   return true
 }
 
 // Xử lý đặt hàng - ĐƠN GIẢN HÓA
 const handleCheckout = async () => {
-  console.log('🛒 Starting checkout...')
+  console.log(' Starting checkout...')
   
   const token = localStorage.getItem('auro_token')
-  console.log('🔑 Token exists:', !!token)
-  console.log('� isAuthenticated:', isAuthenticated.value)
+  console.log(' Token exists:', !!token)
+  console.log(' isAuthenticated:', isAuthenticated.value)
   
   if (isProcessing.value) {
-    console.log('⚠️ Already processing')
+    console.log(' Already processing')
     return
   }
   // Mark processing immediately to prevent multiple handlers passing validation
@@ -287,7 +287,7 @@ const handleCheckout = async () => {
 
   // Validate dữ liệu
   if (!validateCheckoutData()) {
-    console.log('❌ Validation failed')
+    console.log(' Validation failed')
     isProcessing.value = false
     return
   }
@@ -308,26 +308,26 @@ const handleCheckout = async () => {
     }
 
     // **QUAN TRỌNG**: Đồng bộ giỏ hàng với backend trước khi checkout
-    console.log('🔄 Syncing cart with backend before checkout...')
+    console.log(' Syncing cart with backend before checkout...')
     
     // Nếu là guest (không có token), không cần sync cart với backend
     if (!token) {
-      console.log('� Guest user - skipping backend cart sync')
+      console.log(' Guest user - skipping backend cart sync')
     } else {
       // Xóa các sản phẩm không được chọn khỏi backend cart
       const unselectedItems = items.value.filter(item => item.selected === false)
       
       if (unselectedItems.length > 0) {
-        console.log('🗑️ Removing unselected items from backend cart:', unselectedItems)
+        console.log(' Removing unselected items from backend cart:', unselectedItems)
         
         // Xóa từng item không được chọn khỏi backend cart
         for (const item of unselectedItems) {
           if (item.id) {
             try {
               await cartService.removeFromCart(item.id)
-              console.log('✅ Removed item from backend:', item.id)
+              console.log(' Removed item from backend:', item.id)
             } catch (err) {
-              console.warn('⚠️ Failed to remove item from backend (may not exist):', item.id, err.message)
+              console.warn(' Failed to remove item from backend (may not exist):', item.id, err.message)
               // Không throw error, tiếp tục xử lý
             }
           }
@@ -335,7 +335,7 @@ const handleCheckout = async () => {
       }
       
       // Đảm bảo các sản phẩm được chọn có trong backend cart
-      console.log('✅ Ensuring selected items are in backend cart...')
+      console.log('Ensuring selected items are in backend cart...')
       for (const item of selectedItems) {
         // Nếu item chưa có ID từ backend (local item), thêm vào backend
         if (!item.id && (item.bienTheId || item.variantId)) {
@@ -344,15 +344,15 @@ const handleCheckout = async () => {
               bienTheId: item.bienTheId || item.variantId,
               soLuong: item.quantity
             })
-            console.log('✅ Added item to backend cart:', item.bienTheId, addResponse)
+            console.log(' Added item to backend cart:', item.bienTheId, addResponse)
           } catch (err) {
-            console.warn('⚠️ Failed to add item to backend (may already exist):', item.bienTheId, err.message)
+            console.warn(' Failed to add item to backend (may already exist):', item.bienTheId, err.message)
             // Không throw error, có thể item đã có trong backend
           }
         } else {
-          console.log('ℹ️ Item already in backend:', item.id || item.bienTheId)
+          console.log(' Item already in backend:', item.id || item.bienTheId)
         }
       }
     }
 
-    console.log('✅ Cart synced with backend')
+    console.log(' Cart synced with backend')

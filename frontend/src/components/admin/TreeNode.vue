@@ -69,10 +69,6 @@ const onDrop = (e) => emit('drop', e)
             </span>
           </div>
           <div class="node-meta">
-            <!-- <i class="bi bi-diagram-3"></i> -->
-            <!-- <span>Id: {{ node.id }}</span> -->
-            <!-- <span v-if="node.parentId" class="dot">•</span> -->
-            <!-- <span v-if="node.parentId">Con của #{{ node.parentId }}</span> -->
           </div>
         </div>
       </div>

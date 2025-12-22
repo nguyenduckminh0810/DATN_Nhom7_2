@@ -119,8 +119,6 @@
             <span>Hoặc</span>
             <div class="divider-line"></div>
           </div>
-
-          <!-- Form - Dùng div thay vì form để tránh reload trang -->
           <div class="login-form-wrapper">
             <!-- Error Message -->
             <div v-if="loginError" class="login-error-message">
@@ -332,7 +330,6 @@ const handleForgotPasswordSubmit = async (e) => {
 }
 
 const handleSocialLogin = (provider) => {
-  // TODO: Implement social login
   alert(`Đăng nhập với ${provider} sẽ được triển khai`)
 }
 

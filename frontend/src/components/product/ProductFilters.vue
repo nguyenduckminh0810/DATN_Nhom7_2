@@ -193,11 +193,11 @@ const searchStore = useSearchStore()
 
 // Load sizes when component mounts
 onMounted(async () => {
-  console.log('🔄 ProductFilters mounted, loading sizes and colors...')
+  console.log('ProductFilters mounted, loading sizes and colors...')
   await searchStore.loadAvailableColors()
   await searchStore.loadAvailableSizes()
-  console.log('✅ Loaded colors:', searchStore.availableColors)
-  console.log('✅ Loaded sizes:', searchStore.availableSizes)
+  console.log('Loaded colors:', searchStore.availableColors)
+  console.log('Loaded sizes:', searchStore.availableSizes)
 })
 
 // Local state
@@ -208,11 +208,11 @@ const activeFilters = computed(() => searchStore.activeFilters)
 const hasActiveFilters = computed(() => searchStore.hasActiveFilters)
 const activeFiltersCount = computed(() => searchStore.activeFiltersCount)
 const availableSizes = computed(() => {
-  console.log('📊 availableSizes computed:', searchStore.availableSizes)
+  console.log('availableSizes computed:', searchStore.availableSizes)
   return searchStore.availableSizes
 })
 const availableColors = computed(() => {
-  console.log('🎨 availableColors computed:', searchStore.availableColors)
+  console.log('availableColors computed:', searchStore.availableColors)
   return searchStore.availableColors
 })
 const priceRanges = computed(() => searchStore.priceRanges)

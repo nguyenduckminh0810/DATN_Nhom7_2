@@ -95,8 +95,8 @@ const fetchBestSellers = async () => {
     await productStore.fetchBestSellers()
     products.value = productStore.bestSellers || []
 
-    console.log('✅ Best sellers loaded:', products.value.length)
-    console.log('📦 Best sellers data:', products.value)
+    console.log(' Best sellers loaded:', products.value.length)
+    console.log(' Best sellers data:', products.value)
   } catch (err) {
     console.error('Error fetching best sellers:', err)
     error.value = 'Đã có lỗi xảy ra khi tải dữ liệu'

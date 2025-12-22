@@ -90,16 +90,10 @@ public class DonHangController {
             @PathVariable Long id,
             @RequestBody Map<String, Object> request) {
 
-        System.out.println("=== UPDATE DON HANG ===");
-        System.out.println("ID: " + id);
-        System.out.println("Request body: " + request);
-
         try {
             DonHangResponse updated = donHangService.updateDonHang(id, request);
-            System.out.println("Updated successfully: " + updated);
             return ResponseEntity.ok(updated);
         } catch (Exception e) {
-            System.err.println("Error updating: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
@@ -115,11 +109,7 @@ public class DonHangController {
         Map<String, String> response = new HashMap<>();
 
         try {
-            System.out.println("=== XÓA MỀM ĐƠN HÀNG (ADMIN) ===");
-            System.out.println("Order ID: " + id);
-            System.out.println("Authentication: " + (auth != null ? "Có" : "NULL"));
-            System.out.println("Principal: " + (auth != null && auth.getPrincipal() != null ? auth.getPrincipal().getClass().getSimpleName() : "NULL"));
-            
+
             String lyDoHuy = request != null ? request.get("lyDoHuy") : null;
             if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
                 response.put("error", "Vui lòng nhập lý do hủy đơn hàng");
@@ -128,20 +118,16 @@ public class DonHangController {
 
             // Lấy email từ Authentication
             String emailNguoiHuy = layEmailTuAuth(auth);
-            System.out.println("Email người hủy: " + (emailNguoiHuy != null ? emailNguoiHuy : "NULL"));
-
             donHangService.softDeleteDonHang(id, lyDoHuy, emailNguoiHuy);
 
             response.put("message", "Đã hủy đơn hàng thành công");
             return ResponseEntity.ok(response);
 
         } catch (RuntimeException e) {
-            System.err.println("RuntimeException: " + e.getMessage());
             response.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 
         } catch (Exception e) {
-            System.err.println("Exception: " + e.getMessage());
             e.printStackTrace();
             response.put("error", "Lỗi hệ thống: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
@@ -150,36 +136,30 @@ public class DonHangController {
 
     private String layEmailTuAuth(Authentication auth) {
         if (auth == null) {
-            System.err.println("❌ Authentication is NULL");
             return null;
         }
-        
+
         if (auth.getPrincipal() == null) {
-            System.err.println("❌ Authentication.getPrincipal() is NULL");
             return null;
         }
-        
+
         try {
             System.out.println("Principal type: " + auth.getPrincipal().getClass().getName());
-            
+
             if (!(auth.getPrincipal() instanceof CustomUserDetails)) {
-                System.err.println("❌ Principal is not CustomUserDetails, it's: " + auth.getPrincipal().getClass().getName());
                 return null;
             }
-            
+
             CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
             TaiKhoan taiKhoan = userDetails.getTaiKhoan();
-            
+
             if (taiKhoan == null) {
-                System.err.println("❌ TaiKhoan is NULL");
                 return null;
             }
-            
+
             String email = taiKhoan.getEmail();
-            System.out.println("✅ Successfully extracted email: " + email);
             return email;
         } catch (Exception e) {
-            System.err.println("❌ Error in layEmailTuAuth: " + e.getMessage());
             e.printStackTrace();
             return null;
         }
@@ -209,7 +189,6 @@ public class DonHangController {
 
     /**
      * Fix các đơn hàng cũ có tongThanhToan = null
-     * Endpoint: POST /api/don-hang/fix-null-total
      */
     @PostMapping("/fix-null-total")
     public ResponseEntity<Map<String, Object>> fixNullTongThanhToan() {
@@ -230,7 +209,6 @@ public class DonHangController {
 
     /**
      * Lấy đơn hàng theo user ID (admin endpoint)
-     * Endpoint: GET /api/don-hang/nguoi-dung/{userId}
      */
     @PreAuthorize("hasAnyRole('STF', 'ADM')")
     @GetMapping("/nguoi-dung/{userId}")

@@ -188,39 +188,41 @@ public class DonHangService {
             String newTrangThai = (String) updates.get("trangThai");
             donHang.setTrangThai(newTrangThai);
 
-            // ✅ TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI THANH TOÁN KHI ĐƠN HÀNG HOÀN TẤT
+            // TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI THANH TOÁN KHI ĐƠN HÀNG HOÀN TẤT
             // Nếu đơn hàng chuyển sang "Hoàn tất" và phương thức thanh toán là COD
             // → Tự động đánh dấu đã thanh toán
             String normalizedStatus = normalizeTrangThaiKey(newTrangThai);
-            String currentPaymentStatus = donHang.getPaymentStatus() != null ? 
-                    donHang.getPaymentStatus().trim().toUpperCase() : "";
-            String currentPaymentMethod = donHang.getPaymentMethod() != null ? 
-                    donHang.getPaymentMethod().trim().toUpperCase() : "";
-            
+            String currentPaymentStatus = donHang.getPaymentStatus() != null
+                    ? donHang.getPaymentStatus().trim().toUpperCase()
+                    : "";
+            String currentPaymentMethod = donHang.getPaymentMethod() != null
+                    ? donHang.getPaymentMethod().trim().toUpperCase()
+                    : "";
+
             log.info("Payment auto-update check - Status: {}, Normalized: {}, PaymentMethod: {}, PaymentStatus: {}",
                     newTrangThai, normalizedStatus, currentPaymentMethod, currentPaymentStatus);
 
             // Check các trạng thái hoàn tất: HOAN_TAT, HOAN_THANH, COMPLETED
-            boolean isCompleted = "HOAN_TAT".equals(normalizedStatus) || 
-                                  "HOAN_THANH".equals(normalizedStatus) ||
-                                  "COMPLETED".equals(normalizedStatus) ||
-                                  "HOANTAT".equals(normalizedStatus) ||
-                                  "HOANTHANH".equals(normalizedStatus);
-            
+            boolean isCompleted = "HOAN_TAT".equals(normalizedStatus) ||
+                    "HOAN_THANH".equals(normalizedStatus) ||
+                    "COMPLETED".equals(normalizedStatus) ||
+                    "HOANTAT".equals(normalizedStatus) ||
+                    "HOANTHANH".equals(normalizedStatus);
+
             if (isCompleted) {
                 // Kiểm tra nếu là COD và chưa thanh toán
                 // Payment method có thể là: COD, cod, COD_CASH, v.v.
                 boolean isCOD = "COD".equals(currentPaymentMethod) ||
-                               currentPaymentMethod.startsWith("COD") ||
-                               currentPaymentMethod.contains("COD");
-                
+                        currentPaymentMethod.startsWith("COD") ||
+                        currentPaymentMethod.contains("COD");
+
                 // Payment status có thể là: pending, PENDING, CHO_THANH_TOAN, cho_thanh_toan
                 boolean isNotPaid = "PENDING".equals(currentPaymentStatus) ||
-                                   "CHO_THANH_TOAN".equals(currentPaymentStatus) ||
-                                   currentPaymentStatus.isEmpty() ||
-                                   (!"PAID".equals(currentPaymentStatus) && 
-                                    !"DA_THANH_TOAN".equals(currentPaymentStatus));
-                
+                        "CHO_THANH_TOAN".equals(currentPaymentStatus) ||
+                        currentPaymentStatus.isEmpty() ||
+                        (!"PAID".equals(currentPaymentStatus) &&
+                                !"DA_THANH_TOAN".equals(currentPaymentStatus));
+
                 if (isCOD && isNotPaid) {
                     donHang.setPaymentStatus("PAID");
                     log.info("Auto-updated payment status to PAID for completed COD order #{}", donHang.getSoDonHang());
@@ -231,113 +233,118 @@ public class DonHangService {
         if (updates.containsKey("paymentMethod")) {
             donHang.setPaymentMethod((String) updates.get("paymentMethod"));
         }
-        
+
         // Nếu payment status được set thủ công trong updates, cập nhật trước
         if (updates.containsKey("paymentStatus")) {
             donHang.setPaymentStatus((String) updates.get("paymentStatus"));
         }
-        
-        // ✅ XỬ LÝ PAYMENT STATUS SAU KHI ĐÃ CẬP NHẬT TẤT CẢ
+
+        // XỬ LÝ PAYMENT STATUS SAU KHI ĐÃ CẬP NHẬT TẤT CẢ
         // Nếu đơn hàng đã hoàn tất và là COD, tự động set payment status = PAID
         // (chạy sau khi tất cả updates đã được xử lý để đảm bảo logic đúng)
         String finalTrangThai = donHang.getTrangThai();
         String finalNormalizedStatus = normalizeTrangThaiKey(finalTrangThai);
-        String finalPaymentMethod = donHang.getPaymentMethod() != null ? 
-                donHang.getPaymentMethod().trim().toUpperCase() : "";
-        String finalPaymentStatus = donHang.getPaymentStatus() != null ? 
-                donHang.getPaymentStatus().trim().toUpperCase() : "";
-        
-        boolean isCompletedFinal = "HOAN_TAT".equals(finalNormalizedStatus) || 
-                                   "HOAN_THANH".equals(finalNormalizedStatus) ||
-                                   "COMPLETED".equals(finalNormalizedStatus) ||
-                                   "HOANTAT".equals(finalNormalizedStatus) ||
-                                   "HOANTHANH".equals(finalNormalizedStatus);
-        
+        String finalPaymentMethod = donHang.getPaymentMethod() != null ? donHang.getPaymentMethod().trim().toUpperCase()
+                : "";
+        String finalPaymentStatus = donHang.getPaymentStatus() != null ? donHang.getPaymentStatus().trim().toUpperCase()
+                : "";
+
+        boolean isCompletedFinal = "HOAN_TAT".equals(finalNormalizedStatus) ||
+                "HOAN_THANH".equals(finalNormalizedStatus) ||
+                "COMPLETED".equals(finalNormalizedStatus) ||
+                "HOANTAT".equals(finalNormalizedStatus) ||
+                "HOANTHANH".equals(finalNormalizedStatus);
+
         if (isCompletedFinal) {
             boolean isCODFinal = "COD".equals(finalPaymentMethod) ||
-                               finalPaymentMethod.startsWith("COD") ||
-                               finalPaymentMethod.contains("COD");
-            
+                    finalPaymentMethod.startsWith("COD") ||
+                    finalPaymentMethod.contains("COD");
+
             boolean isNotPaidFinal = "PENDING".equals(finalPaymentStatus) ||
-                                   "CHO_THANH_TOAN".equals(finalPaymentStatus) ||
-                                   finalPaymentStatus.isEmpty() ||
-                                   (!"PAID".equals(finalPaymentStatus) && 
-                                    !"DA_THANH_TOAN".equals(finalPaymentStatus));
-            
-            // ✅ Nếu là COD và chưa thanh toán, tự động set thành PAID
+                    "CHO_THANH_TOAN".equals(finalPaymentStatus) ||
+                    finalPaymentStatus.isEmpty() ||
+                    (!"PAID".equals(finalPaymentStatus) &&
+                            !"DA_THANH_TOAN".equals(finalPaymentStatus));
+
+            // Nếu là COD và chưa thanh toán, tự động set thành PAID
             // Override payment status nếu nó vẫn là pending (kể cả khi admin set thủ công)
             if (isCODFinal && isNotPaidFinal) {
                 donHang.setPaymentStatus("PAID");
-                log.info("Auto-updated payment status to PAID for completed COD order #{} (overriding pending status)", donHang.getSoDonHang());
+                log.info("Auto-updated payment status to PAID for completed COD order #{} (overriding pending status)",
+                        donHang.getSoDonHang());
             }
         }
 
-        // ✅ QUAN TRỌNG: TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO", "ĐÃ GIAO", HOẶC "HOÀN TẤT"
+        // TRỪ TỒN KHO KHI CHUYỂN SANG TRẠNG THÁI "ĐANG GIAO", "ĐÃ GIAO", HOẶC "HOÀN
+        // TẤT"
         // Logic hoạt động:
-        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng không)
-        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác nhận")
-        // 3. Khi admin chuyển trạng thái sang "Đang giao", "Đã giao", hoặc "Hoàn tất" → TRỪ TỒN KHO
-        //    - Nếu từ PENDING → SHIPPING/DELIVERED/COMPLETED: TRỪ TỒN KHO
-        //    - Nếu đã ở SHIPPING/DELIVERED/COMPLETED: KHÔNG trừ lại (đã trừ rồi)
+        // 1. Khi khách thêm vào giỏ hàng → KHÔNG trừ tồn kho (chỉ kiểm tra có đủ hàng
+        // không)
+        // 2. Khi khách tạo đơn hàng → KHÔNG trừ tồn kho (đơn ở trạng thái "Chờ xác
+        // nhận")
+        // 3. Khi admin chuyển trạng thái sang "Đang giao", "Đã giao", hoặc "Hoàn tất" →
+        // TRỪ TỒN KHO
+        // - Nếu từ PENDING → SHIPPING/DELIVERED/COMPLETED: TRỪ TỒN KHO
+        // - Nếu đã ở SHIPPING/DELIVERED/COMPLETED: KHÔNG trừ lại (đã trừ rồi)
         // Lý do: Tránh trường hợp khách thêm vào giỏ nhưng không mua, hoặc đơn bị hủy
         String trangThaiMoi = donHang.getTrangThai();
         String trangThaiMoiNormalized = normalizeTrangThaiKey(trangThaiMoi);
 
         // Kiểm tra trạng thái cũ và mới
-        boolean wasPending = "CHO_XAC_NHAN".equals(trangThaiCuNormalized) || 
-                            "PENDING".equals(trangThaiCuNormalized);
+        boolean wasPending = "CHO_XAC_NHAN".equals(trangThaiCuNormalized) ||
+                "PENDING".equals(trangThaiCuNormalized);
         boolean wasDangGiao = "DANG_GIAO".equals(trangThaiCuNormalized) ||
-                             "SHIPPING".equals(trangThaiCuNormalized);
+                "SHIPPING".equals(trangThaiCuNormalized);
         boolean wasDaGiaoOrCompleted = "DA_GIAO".equals(trangThaiCuNormalized) ||
-                                      "DA_GIAO_HANG".equals(trangThaiCuNormalized) ||
-                                      "DELIVERED".equals(trangThaiCuNormalized) ||
-                                      "HOAN_TAT".equals(trangThaiCuNormalized) ||
-                                      "HOAN_THANH".equals(trangThaiCuNormalized) ||
-                                      "COMPLETED".equals(trangThaiCuNormalized) ||
-                                      "HOANTAT".equals(trangThaiCuNormalized) ||
-                                      "HOANTHANH".equals(trangThaiCuNormalized);
-        
+                "DA_GIAO_HANG".equals(trangThaiCuNormalized) ||
+                "DELIVERED".equals(trangThaiCuNormalized) ||
+                "HOAN_TAT".equals(trangThaiCuNormalized) ||
+                "HOAN_THANH".equals(trangThaiCuNormalized) ||
+                "COMPLETED".equals(trangThaiCuNormalized) ||
+                "HOANTAT".equals(trangThaiCuNormalized) ||
+                "HOANTHANH".equals(trangThaiCuNormalized);
+
         // Trạng thái cũ chưa từng được xử lý (chưa trừ tồn kho)
-        boolean wasNotProcessed = wasPending || 
-                                  (!wasDangGiao && !wasDaGiaoOrCompleted);
-        
-        // ✅ TRẠNG THÁI "ĐÃ HỦY" - KHÔNG BAO GIỜ TRỪ TỒN KHO
+        boolean wasNotProcessed = wasPending ||
+                (!wasDangGiao && !wasDaGiaoOrCompleted);
+
+        // TRẠNG THÁI "ĐÃ HỦY" - KHÔNG BAO GIỜ TRỪ TỒN KHO
         boolean isDaHuy = "DA_HUY".equals(trangThaiMoiNormalized) ||
-                          "CANCELLED".equals(trangThaiMoiNormalized);
-        
+                "CANCELLED".equals(trangThaiMoiNormalized);
+
         // Trạng thái mới cần trừ tồn kho (chỉ khi KHÔNG phải "Đã hủy")
         boolean isDangGiao = "DANG_GIAO".equals(trangThaiMoiNormalized) ||
-                            "SHIPPING".equals(trangThaiMoiNormalized);
+                "SHIPPING".equals(trangThaiMoiNormalized);
         boolean isDaGiao = "DA_GIAO".equals(trangThaiMoiNormalized) ||
-                          "DA_GIAO_HANG".equals(trangThaiMoiNormalized) ||
-                          "DELIVERED".equals(trangThaiMoiNormalized);
+                "DA_GIAO_HANG".equals(trangThaiMoiNormalized) ||
+                "DELIVERED".equals(trangThaiMoiNormalized);
         boolean isCompleted = "HOAN_TAT".equals(trangThaiMoiNormalized) ||
-                             "HOAN_THANH".equals(trangThaiMoiNormalized) ||
-                             "COMPLETED".equals(trangThaiMoiNormalized) ||
-                             "HOANTAT".equals(trangThaiMoiNormalized) ||
-                             "HOANTHANH".equals(trangThaiMoiNormalized);
-        
-        // ✅ CHỈ TRỪ TỒN KHO KHI: (1) Đơn chưa được xử lý, (2) Chuyển sang Đang giao/Đã giao/Hoàn tất, (3) KHÔNG PHẢI Đã hủy
+                "HOAN_THANH".equals(trangThaiMoiNormalized) ||
+                "COMPLETED".equals(trangThaiMoiNormalized) ||
+                "HOANTAT".equals(trangThaiMoiNormalized) ||
+                "HOANTHANH".equals(trangThaiMoiNormalized);
+
+        // CHỈ TRỪ TỒN KHO KHI: (1) Đơn chưa được xử lý, (2) Chuyển sang Đang giao/Đã
+        // giao/Hoàn tất, (3) KHÔNG PHẢI Đã hủy
         boolean needsStockReduction = !isDaHuy && wasNotProcessed && (isDangGiao || isDaGiao || isCompleted);
 
-        log.info("=== UPDATE ORDER STATUS ===");
         log.info("Order ID: {}", id);
         log.info("Old status: {} (normalized: {})", trangThaiCu, trangThaiCuNormalized);
         log.info("New status: {} (normalized: {})", trangThaiMoi, trangThaiMoiNormalized);
-        log.info("wasPending: {}, wasDangGiao: {}, wasDaGiaoOrCompleted: {}, wasNotProcessed: {}", 
+        log.info("wasPending: {}, wasDangGiao: {}, wasDaGiaoOrCompleted: {}, wasNotProcessed: {}",
                 wasPending, wasDangGiao, wasDaGiaoOrCompleted, wasNotProcessed);
-        log.info("isDangGiao: {}, isDaGiao: {}, isCompleted: {}, needsStockReduction: {}", 
+        log.info("isDangGiao: {}, isDaGiao: {}, isCompleted: {}, needsStockReduction: {}",
                 isDangGiao, isDaGiao, isCompleted, needsStockReduction);
 
         if (needsStockReduction) {
             // Xác định tên trạng thái để log
-            String targetStatusName = isDangGiao ? "SHIPPING (Đang giao)" : 
-                                    (isDaGiao ? "DELIVERED (Đã giao)" : "COMPLETED (Hoàn tất)");
+            String targetStatusName = isDangGiao ? "SHIPPING (Đang giao)"
+                    : (isDaGiao ? "DELIVERED (Đã giao)" : "COMPLETED (Hoàn tất)");
             log.info(">>> TRIGGERING STOCK REDUCTION (Order status changed to {}) <<<", targetStatusName);
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
             log.info("Found {} order items to process", chiTietList.size());
 
-            // ✅ BƯỚC 1: KIỂM TRA TẤT CẢ SẢN PHẨM TRƯỚC KHI TRỪ TỒN KHO
+            // KIỂM TRA TẤT CẢ SẢN PHẨM TRƯỚC KHI TRỪ TỒN KHO
             List<String> outOfStockItems = new ArrayList<>();
 
             for (DonHangChiTiet chiTiet : chiTietList) {
@@ -370,7 +377,7 @@ public class DonHangService {
             // Nếu có sản phẩm thiếu hàng, throw exception với danh sách đầy đủ
             if (!outOfStockItems.isEmpty()) {
                 StringBuilder errorMessage = new StringBuilder();
-                errorMessage.append("⚠️ HẾT HÀNG - CẦN NHẬP THÊM!\n\n");
+                errorMessage.append(" HẾT HÀNG - CẦN NHẬP THÊM!\n\n");
                 errorMessage.append(String.format("Đơn hàng có %d sản phẩm thiếu hàng:\n\n", outOfStockItems.size()));
 
                 for (String item : outOfStockItems) {
@@ -378,14 +385,14 @@ public class DonHangService {
                 }
 
                 // Xác định tên trạng thái để hiển thị trong thông báo lỗi
-                String statusName = isDangGiao ? "\"Đang giao\"" : 
-                                   (isDaGiao ? "\"Đã giao\"" : "\"Hoàn tất\"");
-                errorMessage.append("\n→ Vui lòng nhập thêm hàng trước khi chuyển đơn sang trạng thái ").append(statusName).append(".");
+                String statusName = isDangGiao ? "\"Đang giao\"" : (isDaGiao ? "\"Đã giao\"" : "\"Hoàn tất\"");
+                errorMessage.append("\n→ Vui lòng nhập thêm hàng trước khi chuyển đơn sang trạng thái ")
+                        .append(statusName).append(".");
 
                 throw new RuntimeException(errorMessage.toString());
             }
 
-            // ✅ BƯỚC 2: NẾU ĐỦ HÀNG, TRỪ TỒN KHO CHO TẤT CẢ SẢN PHẨM
+            // NẾU ĐỦ HÀNG, TRỪ TỒN KHO CHO TẤT CẢ SẢN PHẨM
             for (DonHangChiTiet chiTiet : chiTietList) {
                 BienTheSanPham bienThe = chiTiet.getBienThe();
                 int soLuongDat = chiTiet.getSoLuong();
@@ -403,7 +410,8 @@ public class DonHangService {
             log.info(">>> STOCK REDUCTION COMPLETED - All {} items processed <<<", chiTietList.size());
         } else {
             if (wasDangGiao || wasDaGiaoOrCompleted) {
-                log.info("Stock reduction NOT triggered (order already processed - was in SHIPPING/DELIVERED/COMPLETED status)");
+                log.info(
+                        "Stock reduction NOT triggered (order already processed - was in SHIPPING/DELIVERED/COMPLETED status)");
             } else {
                 log.info("Stock reduction NOT triggered (status change not to SHIPPING/DELIVERED/COMPLETED)");
             }
@@ -436,7 +444,7 @@ public class DonHangService {
         donHangRepository.deleteById(id);
     }
 
-        // ✅ XÓA MỀM ĐƠN HÀNG (chuyển trạng thái sang Đã hủy)
+    // XÓA MỀM ĐƠN HÀNG (chuyển trạng thái sang Đã hủy)
     // - Cho phép hủy đơn ở trạng thái: PENDING, SHIPPING, DELIVERED
     // - Không cho phép hủy đơn đã HOAN_TAT
     // - Hoàn lại số lượng khi hủy đơn ở trạng thái SHIPPING hoặc DELIVERED
@@ -448,37 +456,37 @@ public class DonHangService {
 
         String currentStatus = donHang.getTrangThai();
         String normalizedStatus = normalizeTrangThaiKey(currentStatus);
-        
-        log.info("=== HỦY ĐƠN HÀNG (ADMIN) ===");
+
         log.info("Order ID: {}, Email người hủy: {}", id, emailNguoiHuy);
-        log.info("Order #{} current status: {} (normalized: {})", donHang.getSoDonHang(), currentStatus, normalizedStatus);
+        log.info("Order #{} current status: {} (normalized: {})", donHang.getSoDonHang(), currentStatus,
+                normalizedStatus);
 
         // Kiểm tra trạng thái có được phép hủy không
-        if (OrderStatus.HOAN_TAT.equals(donHang.getTrangThai()) || 
-            "HOAN_TAT".equals(normalizedStatus) ||
-            "HOAN_THANH".equals(normalizedStatus) ||
-            "COMPLETED".equals(normalizedStatus)) {
+        if (OrderStatus.HOAN_TAT.equals(donHang.getTrangThai()) ||
+                "HOAN_TAT".equals(normalizedStatus) ||
+                "HOAN_THANH".equals(normalizedStatus) ||
+                "COMPLETED".equals(normalizedStatus)) {
             throw new RuntimeException("Không thể hủy đơn hàng đã hoàn thành");
         }
 
-        if (OrderStatus.DA_HUY.equals(donHang.getTrangThai()) || 
-            "DA_HUY".equals(normalizedStatus) ||
-            "CANCELLED".equals(normalizedStatus)) {
+        if (OrderStatus.DA_HUY.equals(donHang.getTrangThai()) ||
+                "DA_HUY".equals(normalizedStatus) ||
+                "CANCELLED".equals(normalizedStatus)) {
             throw new RuntimeException("Đơn hàng đã bị hủy từ trước");
         }
 
         // Kiểm tra xem đơn hàng có đang ở trạng thái "đang giao" hoặc "đã giao" không
         boolean isDangGiao = "DANG_GIAO".equals(normalizedStatus) ||
-                             "SHIPPING".equals(normalizedStatus);
+                "SHIPPING".equals(normalizedStatus);
         boolean isDaGiao = "DA_GIAO".equals(normalizedStatus) ||
-                          "DA_GIAO_HANG".equals(normalizedStatus) ||
-                          "DELIVERED".equals(normalizedStatus);
-        
+                "DA_GIAO_HANG".equals(normalizedStatus) ||
+                "DELIVERED".equals(normalizedStatus);
+
         boolean needsStockRestore = isDangGiao || isDaGiao;
-        
+
         log.info("isDangGiao: {}, isDaGiao: {}, needsStockRestore: {}", isDangGiao, isDaGiao, needsStockRestore);
 
-        // ✅ HOÀN LẠI SỐ LƯỢNG KHI HỦY ĐƠN Ở TRẠNG THÁI "ĐANG GIAO" HOẶC "ĐÃ GIAO"
+        // HOÀN LẠI SỐ LƯỢNG KHI HỦY ĐƠN Ở TRẠNG THÁI "ĐANG GIAO" HOẶC "ĐÃ GIAO"
         if (needsStockRestore) {
             log.info(">>> TRIGGERING STOCK RESTORATION (Order being cancelled from SHIPPING/DELIVERED status) <<<");
             List<DonHangChiTiet> chiTietList = donHangChiTietRepository.findByDonHang_Id(id);
@@ -508,7 +516,7 @@ public class DonHangService {
             log.info("Stock restoration NOT triggered (order status: {} - not SHIPPING or DELIVERED)", currentStatus);
         }
 
-        // ✅ KẾT HỢP EMAIL VÀO LÝ DO HỦY
+        // KẾT HỢP EMAIL VÀO LÝ DO HỦY
         String lyDoHuyDayDu = lyDoHuy != null ? lyDoHuy.trim() : "";
         if (emailNguoiHuy != null && !emailNguoiHuy.trim().isEmpty()) {
             if (!lyDoHuyDayDu.isEmpty()) {
@@ -518,18 +526,20 @@ public class DonHangService {
             }
         }
 
-        // ✅ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY
+        // CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY
         donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setLyDoHuy(lyDoHuyDayDu);
         donHang.setEmailNguoiHuy(emailNguoiHuy != null ? emailNguoiHuy.trim() : null);
         donHang.setCapNhatLuc(LocalDateTime.now());
         donHangRepository.save(donHang);
-        
+
         if (needsStockRestore) {
-            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (Stock restored). Reason: {}", 
+            log.info(
+                    " Order #{} cancelled successfully - Status changed from {} to DA_HUY (Stock restored). Reason: {}",
                     donHang.getSoDonHang(), currentStatus, lyDoHuyDayDu);
         } else {
-            log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock restoration needed). Reason: {}", 
+            log.info(
+                    " Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock restoration needed). Reason: {}",
                     donHang.getSoDonHang(), currentStatus, lyDoHuyDayDu);
         }
     }
@@ -570,7 +580,6 @@ public class DonHangService {
 
         dto.setTrangThai(dh.getTrangThai());
 
-        
         String diaChiSnapshot = buildDiaChiSnapshot(dh);
         dto.setDiaChiGiaoSnapshot(diaChiSnapshot);
         dto.setGhiChu(dh.getGhiChu());
@@ -675,14 +684,20 @@ public class DonHangService {
         String tinhThanh = safeTrim(donHang.getTinhThanh());
 
         List<String> headParts = new ArrayList<>();
-        if (!ten.isEmpty()) headParts.add(ten);
-        if (!sdt.isEmpty()) headParts.add(sdt);
-        if (!diaChi.isEmpty()) headParts.add(diaChi);
+        if (!ten.isEmpty())
+            headParts.add(ten);
+        if (!sdt.isEmpty())
+            headParts.add(sdt);
+        if (!diaChi.isEmpty())
+            headParts.add(diaChi);
 
         List<String> tailParts = new ArrayList<>();
-        if (!phuongXa.isEmpty()) tailParts.add(phuongXa);
-        if (!quanHuyen.isEmpty()) tailParts.add(quanHuyen);
-        if (!tinhThanh.isEmpty()) tailParts.add(tinhThanh);
+        if (!phuongXa.isEmpty())
+            tailParts.add(phuongXa);
+        if (!quanHuyen.isEmpty())
+            tailParts.add(quanHuyen);
+        if (!tinhThanh.isEmpty())
+            tailParts.add(tinhThanh);
 
         String head = String.join(" - ", headParts);
         String tail = String.join(", ", tailParts);
@@ -736,7 +751,8 @@ public class DonHangService {
         ctDTO.setSoLuong(ct.getSoLuong());
         ctDTO.setThanhTien(ct.getThanhTien());
 
-        // Thuộc tính hiển thị cho FE (snapshot từ màu/size, fallback về chuỗi cũ nếu cần)
+        // Thuộc tính hiển thị cho FE (snapshot từ màu/size, fallback về chuỗi cũ nếu
+        // cần)
         String thuocTinhSnapshot = buildThuocTinhSnapshot(ct);
         ctDTO.setThuocTinh(thuocTinhSnapshot);
 
@@ -880,7 +896,7 @@ public class DonHangService {
                         } else {
                             giamGiaTong = result.getGiamGia();
                             voucherGiamGia = result.getVoucher();
-                            log.info("✅ Voucher applied successfully - maVoucher: {}, giamGiaTong: {}, tamTinh: {}",
+                            log.info(" Voucher applied successfully - maVoucher: {}, giamGiaTong: {}, tamTinh: {}",
                                     voucherGiamGia.getMa(), giamGiaTong, tamTinh);
                         }
                     }
@@ -914,7 +930,8 @@ public class DonHangService {
                                 voucherFreeShip.getId(), voucherFreeShip.getMa(), voucherFreeShip.getLoai());
                         voucherFreeShip = null;
                     } else {
-                        log.info("Voucher freeship hợp lệ - id={}, ma={}", voucherFreeShip.getId(), voucherFreeShip.getMa());
+                        log.info("Voucher freeship hợp lệ - id={}, ma={}", voucherFreeShip.getId(),
+                                voucherFreeShip.getMa());
                     }
                 }
             } catch (Exception e) {
@@ -1026,13 +1043,13 @@ public class DonHangService {
 
             donHangChiTietRepository.save(chiTiet);
 
-            // ❌ KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
+            // KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
             // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
             // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
             // bienTheSanPhamRepository.save(bienThe);
         }
 
-        // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
+        // CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
         // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
         gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
 
@@ -1095,12 +1112,12 @@ public class DonHangService {
                 .build();
     } // Hủy đơn hàng
 
-    // ✅ HỦY ĐƠN HÀNG - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
+    // HỦY ĐƠN HÀNG - CHỈ CHUYỂN TRẠNG THÁI, KHÔNG TRỪ TỒN KHO
     @Transactional
     public DonHangResponse huyDonHang(Long donHangId, Long khachHangId, String lyDoHuy, String emailNguoiHuy) {
         log.info("=== HỦY ĐƠN HÀNG ===");
         log.info("Order ID: {}, Customer ID: {}, Email người hủy: {}", donHangId, khachHangId, emailNguoiHuy);
-        
+
         DonHang donHang = donHangRepository.findByIdAndKhachHang_Id(donHangId, khachHangId)
                 .orElseThrow(() -> {
                     log.error("Không tìm thấy đơn hàng ID: {} của khách hàng ID: {}", donHangId, khachHangId);
@@ -1109,29 +1126,32 @@ public class DonHangService {
 
         String currentStatus = donHang.getTrangThai();
         log.info("Order #{} current status: {}", donHang.getSoDonHang(), currentStatus);
-        
-        // ✅ Normalize trạng thái để so sánh (hỗ trợ cả tiếng Việt và tiếng Anh)
+
+        // Normalize trạng thái để so sánh (hỗ trợ cả tiếng Việt và tiếng Anh)
         String normalizedStatus = normalizeTrangThaiKey(currentStatus);
         log.info("Order #{} normalized status: {}", donHang.getSoDonHang(), normalizedStatus);
-        
-        // ✅ Kiểm tra trạng thái - cho phép hủy nếu là "PENDING" (tiếng Anh) hoặc "Chờ xác nhận" (tiếng Việt)
+
+        // Kiểm tra trạng thái - cho phép hủy nếu là "PENDING" (tiếng Anh) hoặc "Chờ xác
+        // nhận" (tiếng Việt)
         // Sử dụng normalize để hỗ trợ cả hai format
-        boolean canCancel = "CHO_XAC_NHAN".equals(normalizedStatus) || 
-                           "PENDING".equals(normalizedStatus) ||
-                           "CHO_XAC_NHAN".equals(currentStatus) ||
-                           "PENDING".equals(currentStatus) ||
-                           "Chờ xác nhận".equals(currentStatus) ||
-                           (currentStatus != null && currentStatus.trim().equalsIgnoreCase("Chờ xác nhận")) ||
-                           (currentStatus != null && currentStatus.trim().equalsIgnoreCase("PENDING"));
-        
+        boolean canCancel = "CHO_XAC_NHAN".equals(normalizedStatus) ||
+                "PENDING".equals(normalizedStatus) ||
+                "CHO_XAC_NHAN".equals(currentStatus) ||
+                "PENDING".equals(currentStatus) ||
+                "Chờ xác nhận".equals(currentStatus) ||
+                (currentStatus != null && currentStatus.trim().equalsIgnoreCase("Chờ xác nhận")) ||
+                (currentStatus != null && currentStatus.trim().equalsIgnoreCase("PENDING"));
+
         if (!canCancel) {
-            String errorMsg = String.format("Không thể hủy đơn hàng. Trạng thái hiện tại: %s. Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' (PENDING)", 
+            String errorMsg = String.format(
+                    "Không thể hủy đơn hàng. Trạng thái hiện tại: %s. Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận' (PENDING)",
                     currentStatus != null ? currentStatus : "null");
-            log.error("Cannot cancel order #{}: {} (normalized: {})", donHang.getSoDonHang(), errorMsg, normalizedStatus);
+            log.error("Cannot cancel order #{}: {} (normalized: {})", donHang.getSoDonHang(), errorMsg,
+                    normalizedStatus);
             throw new RuntimeException(errorMsg);
         }
 
-        // ✅ KẾT HỢP EMAIL VÀO LÝ DO HỦY
+        // KẾT HỢP EMAIL VÀO LÝ DO HỦY
         String lyDoHuyDayDu = lyDoHuy != null ? lyDoHuy.trim() : "";
         if (emailNguoiHuy != null && !emailNguoiHuy.trim().isEmpty()) {
             if (!lyDoHuyDayDu.isEmpty()) {
@@ -1141,16 +1161,18 @@ public class DonHangService {
             }
         }
 
-        // ✅ CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY - KHÔNG TRỪ TỒN KHO, KHÔNG LÀM GÌ KHÁC
+        // CHỈ CHUYỂN TRẠNG THÁI SANG "ĐÃ HỦY" VÀ LƯU LÝ DO HỦY - KHÔNG TRỪ TỒN KHO,
+        // KHÔNG LÀM GÌ KHÁC
         donHang.setTrangThai(OrderStatus.DA_HUY);
         donHang.setLyDoHuy(lyDoHuyDayDu);
         donHang.setEmailNguoiHuy(emailNguoiHuy != null ? emailNguoiHuy.trim() : null);
         donHang.setCapNhatLuc(LocalDateTime.now());
         DonHang savedDonHang = donHangRepository.save(donHang);
 
-        log.info("✅ Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock deduction). Reason: {}", 
+        log.info(
+                " Order #{} cancelled successfully - Status changed from {} to DA_HUY (NO stock deduction). Reason: {}",
                 savedDonHang.getSoDonHang(), currentStatus, lyDoHuyDayDu);
-        
+
         return convertToDTO(savedDonHang);
     }
 
@@ -1312,260 +1334,260 @@ public class DonHangService {
         KhachHang khachHang;
         GioHang gioHang;
 
-            // Nếu user đã login, dùng KhachHang của họ và lấy giỏ hàng theo khachHangId
-            if (authenticatedKhachHangId != null) {
-                khachHang = khachHangRepository.findById(authenticatedKhachHangId)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+        // Nếu user đã login, dùng KhachHang của họ và lấy giỏ hàng theo khachHangId
+        if (authenticatedKhachHangId != null) {
+            khachHang = khachHangRepository.findById(authenticatedKhachHangId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
 
-                // Lấy giỏ hàng theo khachHangId cho user đã đăng nhập
-                gioHang = gioHangService.layGioHangCuaKhach(authenticatedKhachHangId);
-            } else {
-                // Tạo KhachHang GUEST mới và lấy giỏ hàng theo sessionId
-                khachHang = new KhachHang();
-                khachHang.setTaiKhoan(null);
-                khachHang.setHoTen(request.getHoTen());
-                khachHang.setEmail(request.getEmail());
-                khachHang.setSoDienThoai(request.getSoDienThoai());
-                khachHang.setKieu("GUEST");
-                khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
-                khachHang = khachHangRepository.save(khachHang);
+            // Lấy giỏ hàng theo khachHangId cho user đã đăng nhập
+            gioHang = gioHangService.layGioHangCuaKhach(authenticatedKhachHangId);
+        } else {
+            // Tạo KhachHang GUEST mới và lấy giỏ hàng theo sessionId
+            khachHang = new KhachHang();
+            khachHang.setTaiKhoan(null);
+            khachHang.setHoTen(request.getHoTen());
+            khachHang.setEmail(request.getEmail());
+            khachHang.setSoDienThoai(request.getSoDienThoai());
+            khachHang.setKieu("GUEST");
+            khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
+            khachHang = khachHangRepository.save(khachHang);
 
-                // Lấy giỏ hàng theo sessionId cho guest
-                gioHang = gioHangService.layGioHangTheoSession(sessionId);
+            // Lấy giỏ hàng theo sessionId cho guest
+            gioHang = gioHangService.layGioHangTheoSession(sessionId);
+        }
+
+        // Lấy CHỈ các chi tiết giỏ hàng đã được chọn (nếu có danh sách ID)
+        // Nếu không có danh sách ID, lấy toàn bộ giỏ hàng (tương thích ngược)
+        List<GioHangChiTiet> allItems = gioHangService.layChiTietGioHang(gioHang.getId());
+        List<GioHangChiTiet> gioHangItems;
+
+        if (request.getSelectedCartItemIds() != null && !request.getSelectedCartItemIds().isEmpty()) {
+            // Chỉ lấy các chi tiết giỏ hàng đã được chọn
+            gioHangItems = allItems.stream()
+                    .filter(item -> request.getSelectedCartItemIds().contains(item.getId()))
+                    .collect(java.util.stream.Collectors.toList());
+        } else {
+            // lấy toàn bộ giỏ hàng (tương thích ngược)
+            gioHangItems = allItems;
+        }
+
+        if (gioHangItems == null || gioHangItems.isEmpty()) {
+            throw new RuntimeException("Giỏ hàng trống hoặc không có sản phẩm được chọn");
+        }
+
+        BigDecimal tamTinh = BigDecimal.ZERO;
+        for (GioHangChiTiet item : gioHangItems) {
+            BienTheSanPham bienThe = item.getBienThe();
+            if (bienThe.getSoLuongTon() < item.getSoLuong()) {
+                String tenSP = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
+                throw new RuntimeException(String.format(
+                        "Sản phẩm '%s' chỉ còn %d sản phẩm trong kho, không đủ số lượng yêu cầu (%d)",
+                        tenSP, bienThe.getSoLuongTon(), item.getSoLuong()));
             }
-
-            // ✅ Lấy CHỈ các chi tiết giỏ hàng đã được chọn (nếu có danh sách ID)
-            // Nếu không có danh sách ID, lấy toàn bộ giỏ hàng (tương thích ngược)
-            List<GioHangChiTiet> allItems = gioHangService.layChiTietGioHang(gioHang.getId());
-            List<GioHangChiTiet> gioHangItems;
-
-            if (request.getSelectedCartItemIds() != null && !request.getSelectedCartItemIds().isEmpty()) {
-                // Chỉ lấy các chi tiết giỏ hàng đã được chọn
-                gioHangItems = allItems.stream()
-                        .filter(item -> request.getSelectedCartItemIds().contains(item.getId()))
-                        .collect(java.util.stream.Collectors.toList());
-            } else {
-                // Fallback: lấy toàn bộ giỏ hàng (tương thích ngược)
-                gioHangItems = allItems;
-            }
-
-            if (gioHangItems == null || gioHangItems.isEmpty()) {
-                throw new RuntimeException("Giỏ hàng trống hoặc không có sản phẩm được chọn");
-            }
-
-            BigDecimal tamTinh = BigDecimal.ZERO;
-            for (GioHangChiTiet item : gioHangItems) {
-                BienTheSanPham bienThe = item.getBienThe();
-                if (bienThe.getSoLuongTon() < item.getSoLuong()) {
-                    String tenSP = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
-                    throw new RuntimeException(String.format(
-                            "Sản phẩm '%s' chỉ còn %d sản phẩm trong kho, không đủ số lượng yêu cầu (%d)",
-                            tenSP, bienThe.getSoLuongTon(), item.getSoLuong()));
+            BigDecimal gia = item.getGiaTaiThoiDiem();
+            if (gia == null) {
+                gia = bienThe.getGia();
+                if (gia == null && bienThe.getSanPham() != null) {
+                    gia = bienThe.getSanPham().getGia();
                 }
-                BigDecimal gia = item.getGiaTaiThoiDiem();
-                if (gia == null) {
-                    gia = bienThe.getGia();
-                    if (gia == null && bienThe.getSanPham() != null) {
-                        gia = bienThe.getSanPham().getGia();
-                    }
-                }
-                if (gia == null) {
-                    throw new RuntimeException("Không tìm thấy giá cho sản phẩm");
-                }
-                tamTinh = tamTinh.add(gia.multiply(BigDecimal.valueOf(item.getSoLuong())));
             }
+            if (gia == null) {
+                throw new RuntimeException("Không tìm thấy giá cho sản phẩm");
+            }
+            tamTinh = tamTinh.add(gia.multiply(BigDecimal.valueOf(item.getSoLuong())));
+        }
 
-            // Tính phí vận chuyển từ GHN API
-            BigDecimal phiVanChuyen;
-            try {
-                if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
-                    log.info("🚚 Calculating shipping fee from GHN API...");
-                    log.info("📍 To: districtId={}, wardCode={}, serviceId={}",
-                            request.getDistrictId(), request.getWardCode(), request.getServiceId());
+        // Tính phí vận chuyển từ GHN API
+        BigDecimal phiVanChuyen;
+        try {
+            if (request.getDistrictId() != null && request.getWardCode() != null && request.getServiceId() != null) {
+                log.info("Calculating shipping fee from GHN API...");
+                log.info("To: districtId={}, wardCode={}, serviceId={}",
+                        request.getDistrictId(), request.getWardCode(), request.getServiceId());
 
-                    // Tạo request để gọi GHN API
-                    GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
-                    ghnRequest.setToDistrictId(request.getDistrictId());
-                    ghnRequest.setToWardCode(request.getWardCode());
-                    ghnRequest.setServiceId(request.getServiceId());
+                // Tạo request để gọi GHN API
+                GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
+                ghnRequest.setToDistrictId(request.getDistrictId());
+                ghnRequest.setToWardCode(request.getWardCode());
+                ghnRequest.setServiceId(request.getServiceId());
 
-                    // Tính tổng khối lượng và số lượng sản phẩm
-                    int totalWeight = 0;
-                    for (GioHangChiTiet item : gioHangItems) {
-                        totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
-                    }
-                    ghnRequest.setWeight(totalWeight);
-                    ghnRequest.setInsuranceValue(tamTinh.intValue());
+                // Tính tổng khối lượng và số lượng sản phẩm
+                int totalWeight = 0;
+                for (GioHangChiTiet item : gioHangItems) {
+                    totalWeight += item.getSoLuong() * 200; // Giả sử mỗi sản phẩm 200g
+                }
+                ghnRequest.setWeight(totalWeight);
+                ghnRequest.setInsuranceValue(tamTinh.intValue());
 
-                    // Gọi GHN API
-                    GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
+                // Gọi GHN API
+                GHNShippingFeeResponse ghnResponse = ghnShippingService.calculateShippingFee(ghnRequest);
 
-                    if (ghnResponse != null && ghnResponse.getData() != null) {
-                        Integer totalFee = ghnResponse.getData().getTotal();
-                        phiVanChuyen = BigDecimal.valueOf(totalFee);
-                    } else {
-                        phiVanChuyen = BigDecimal.valueOf(30000);
-                    }
+                if (ghnResponse != null && ghnResponse.getData() != null) {
+                    Integer totalFee = ghnResponse.getData().getTotal();
+                    phiVanChuyen = BigDecimal.valueOf(totalFee);
                 } else {
                     phiVanChuyen = BigDecimal.valueOf(30000);
                 }
-            } catch (Exception e) {
-                log.warn("Error calculating shipping fee from GHN, using default: {}", e.getMessage());
+            } else {
                 phiVanChuyen = BigDecimal.valueOf(30000);
             }
+        } catch (Exception e) {
+            log.warn("Error calculating shipping fee from GHN, using default: {}", e.getMessage());
+            phiVanChuyen = BigDecimal.valueOf(30000);
+        }
 
-            // Áp dụng voucher nếu có
-            Voucher appliedVoucher = null;
-            BigDecimal giamGiaTong = BigDecimal.ZERO;
+        // Áp dụng voucher nếu có
+        Voucher appliedVoucher = null;
+        BigDecimal giamGiaTong = BigDecimal.ZERO;
 
-            // Kiểm tra maVoucher có giá trị không
-            String maVoucher = request.getMaVoucher();
-            if (maVoucher != null) {
-                maVoucher = maVoucher.trim();
-            }
+        // Kiểm tra maVoucher có giá trị không
+        String maVoucher = request.getMaVoucher();
+        if (maVoucher != null) {
+            maVoucher = maVoucher.trim();
+        }
 
-            if (maVoucher != null && !maVoucher.isEmpty()) {
-                String code = maVoucher;
-                try {
-                    // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
-                    Optional<Voucher> voucherOpt = voucherRepository.findByMa(code);
-                    if (voucherOpt.isEmpty()) {
-                        voucherOpt = voucherRepository.findByMa(code.toUpperCase());
-                    }
-                    if (voucherOpt.isEmpty()) {
-                        voucherOpt = voucherRepository.findByMa(code.toLowerCase());
-                    }
-                    Voucher voucher = voucherOpt.orElse(null);
-                    if (voucher != null) {
-                        // Lấy mã voucher từ DB (đảm bảo đúng case)
-                        String voucherMaFromDB = voucher.getMa();
-                        // Normalize loại voucher thành uppercase để đảm bảo consistency
-                        String loai = voucher.getLoai() != null ? voucher.getLoai().trim().toUpperCase() : "";
-                        if ("FREESHIP".equalsIgnoreCase(loai)) {
-                            // Freeship: miễn phí ship
-                            phiVanChuyen = BigDecimal.ZERO;
-                            appliedVoucher = voucher;
+        if (maVoucher != null && !maVoucher.isEmpty()) {
+            String code = maVoucher;
+            try {
+                // Tìm voucher theo mã, thử không phân biệt hoa/thường nếu không tìm thấy
+                Optional<Voucher> voucherOpt = voucherRepository.findByMa(code);
+                if (voucherOpt.isEmpty()) {
+                    voucherOpt = voucherRepository.findByMa(code.toUpperCase());
+                }
+                if (voucherOpt.isEmpty()) {
+                    voucherOpt = voucherRepository.findByMa(code.toLowerCase());
+                }
+                Voucher voucher = voucherOpt.orElse(null);
+                if (voucher != null) {
+                    // Lấy mã voucher từ DB (đảm bảo đúng case)
+                    String voucherMaFromDB = voucher.getMa();
+                    // Normalize loại voucher thành uppercase để đảm bảo consistency
+                    String loai = voucher.getLoai() != null ? voucher.getLoai().trim().toUpperCase() : "";
+                    if ("FREESHIP".equalsIgnoreCase(loai)) {
+                        // Freeship: miễn phí ship
+                        phiVanChuyen = BigDecimal.ZERO;
+                        appliedVoucher = voucher;
+                    } else {
+                        // Giảm giá sử dụng service để tính đúng giamGiaTong
+                        // Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request
+                        // để đảm bảo tìm được voucher trong validateVoucher()
+                        VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB,
+                                authenticatedKhachHangId, tamTinh, phiVanChuyen);
+                        if (!result.isSuccess()) {
+                            log.warn("Voucher apply failed: {}", result.getMessage());
+                            // Không throw exception trong transaction, chỉ log và set giamGiaTong = 0
+                            // Voucher không hợp lệ → không áp dụng giảm giá, nhưng vẫn cho phép đặt hàng
+                            giamGiaTong = BigDecimal.ZERO;
+                            appliedVoucher = null;
                         } else {
-                            // Giảm giá: sử dụng service để tính đúng giamGiaTong
-                            // QUAN TRỌNG: Truyền mã voucher từ DB (voucherMaFromDB) thay vì mã từ request
-                            // để đảm bảo tìm được voucher trong validateVoucher()
-                            VoucherApplicationResult result = voucherService.applyVoucher(voucherMaFromDB,
-                                    authenticatedKhachHangId, tamTinh, phiVanChuyen);
-                            if (!result.isSuccess()) {
-                                log.warn("Voucher apply failed: {}", result.getMessage());
-                                // Không throw exception trong transaction, chỉ log và set giamGiaTong = 0
-                                // Voucher không hợp lệ → không áp dụng giảm giá, nhưng vẫn cho phép đặt hàng
-                                giamGiaTong = BigDecimal.ZERO;
-                                appliedVoucher = null;
-                            } else {
-                                // Đảm bảo giamGia không null
-                                BigDecimal calculatedGiamGia = result.getGiamGia();
-                                if (calculatedGiamGia == null) {
-                                    log.warn("⚠️ Voucher apply success but giamGia is null, setting to ZERO");
-                                    calculatedGiamGia = BigDecimal.ZERO;
-                                }
-                                giamGiaTong = calculatedGiamGia;
-                                appliedVoucher = result.getVoucher();
+                            // Đảm bảo giamGia không null
+                            BigDecimal calculatedGiamGia = result.getGiamGia();
+                            if (calculatedGiamGia == null) {
+                                log.warn(" Voucher apply success but giamGia is null, setting to ZERO");
+                                calculatedGiamGia = BigDecimal.ZERO;
                             }
+                            giamGiaTong = calculatedGiamGia;
+                            appliedVoucher = result.getVoucher();
                         }
                     }
-                } catch (Exception e) {
-                    // Các exception khác (database error, etc.) → log và bỏ qua
-                    // Không throw để không làm rollback transaction
-                    log.error("Error applying voucher: {}", e.getMessage(), e);
-                    // giamGiaTong đã được set = 0 ở đầu, không cần làm gì thêm
-                    // Cho phép đặt hàng tiếp tục dù voucher fail
                 }
-            }
-
-            // tạo đơn hàng guest
-            DonHang donHang = new DonHang();
-            donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
-            donHang.setKhachHang(khachHang);
-            donHang.setTrangThai("Chờ xác nhận");
-            donHang.setTamTinh(tamTinh);
-            donHang.setGiamGiaTong(giamGiaTong);
-            donHang.setPhiVanChuyen(phiVanChuyen);
-            donHang.setVoucher(appliedVoucher);
-
-            donHang.setTenNguoiNhan(request.getHoTen());
-            donHang.setSdtNguoiNhan(request.getSoDienThoai());
-            donHang.setEmailNguoiNhan(request.getEmail());
-            donHang.setDiaChiChiTiet(request.getDiaChi());
-            donHang.setPhuongXa(request.getPhuongXa());
-            donHang.setQuanHuyen(request.getQuanHuyen());
-            donHang.setTinhThanh(request.getTinhThanh());
-            donHang.setGhiChu(request.getGhiChu());
-            donHang.setPaymentMethod(request.getPhuongThucThanhToan());
-            donHang.setPaymentStatus("pending");
-            donHang.setTaoLuc(LocalDateTime.now());
-            donHang.setCapNhatLuc(LocalDateTime.now());
-            donHang.setDatLuc(LocalDateTime.now());
-            donHang.setTongThanhToan(
-                    donHang.getTamTinh()
-                            .subtract(donHang.getGiamGiaTong() != null ? donHang.getGiamGiaTong() : BigDecimal.ZERO)
-                            .add(donHang.getPhiVanChuyen() != null ? donHang.getPhiVanChuyen() : BigDecimal.ZERO));
-
-            DonHang savedDonHang = donHangRepository.save(donHang);
-
-            for (GioHangChiTiet item : gioHangItems) {
-                BienTheSanPham bienThe = item.getBienThe();
-
-                BigDecimal donGia = item.getGiaTaiThoiDiem();
-                if (donGia == null) {
-                    donGia = bienThe.getGia();
-                    if (donGia == null && bienThe.getSanPham() != null) {
-                        donGia = bienThe.getSanPham().getGia();
-                    }
-                }
-                String tenHienThi = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
-                if (donGia == null) {
-                    throw new RuntimeException("Không tìm thấy giá cho sản phẩm: " + tenHienThi);
-                }
-
-                DonHangChiTiet ct = new DonHangChiTiet();
-                ct.setDonHang(savedDonHang);
-                ct.setBienThe(bienThe);
-                ct.setTenHienThi(tenHienThi);
-
-                // --- SNAPSHOT thuộc tính sản phẩm ---
-                if (bienThe.getMauSac() != null) {
-                    ct.setMauSac(bienThe.getMauSac().getTen());
-                }
-                if (bienThe.getKichCo() != null) {
-                    ct.setKichCo(bienThe.getKichCo().getTen());
-                }
-                if (bienThe.getChatLieu() != null) {
-                    ct.setChatLieu(bienThe.getChatLieu().getTen());
-                }
-                ct.setSoLuong(item.getSoLuong());
-                ct.setDonGia(donGia);
-                ct.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));
-                donHangChiTietRepository.save(ct);
-
-                // ❌ KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
-                // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
-                // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
-                // bienTheSanPhamRepository.save(bienThe);
-            }
-
-            // ✅ CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
-            // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
-            gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
-
-            // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
-            try {
-                donHangRepository.flush();
             } catch (Exception e) {
-                log.error("Flush failed in taoDonHangGuest: {}", e.getMessage(), e);
-                throw e;
+                // Các exception khác (database error, etc.) → log và bỏ qua
+                // Không throw để không làm rollback transaction
+                log.error("Error applying voucher: {}", e.getMessage(), e);
+                // giamGiaTong đã được set = 0 ở đầu, không cần làm gì thêm
+                // Cho phép đặt hàng tiếp tục dù voucher fail
+            }
+        }
+
+        // tạo đơn hàng guest
+        DonHang donHang = new DonHang();
+        donHang.setSoDonHang("DH-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+        donHang.setKhachHang(khachHang);
+        donHang.setTrangThai("Chờ xác nhận");
+        donHang.setTamTinh(tamTinh);
+        donHang.setGiamGiaTong(giamGiaTong);
+        donHang.setPhiVanChuyen(phiVanChuyen);
+        donHang.setVoucher(appliedVoucher);
+
+        donHang.setTenNguoiNhan(request.getHoTen());
+        donHang.setSdtNguoiNhan(request.getSoDienThoai());
+        donHang.setEmailNguoiNhan(request.getEmail());
+        donHang.setDiaChiChiTiet(request.getDiaChi());
+        donHang.setPhuongXa(request.getPhuongXa());
+        donHang.setQuanHuyen(request.getQuanHuyen());
+        donHang.setTinhThanh(request.getTinhThanh());
+        donHang.setGhiChu(request.getGhiChu());
+        donHang.setPaymentMethod(request.getPhuongThucThanhToan());
+        donHang.setPaymentStatus("pending");
+        donHang.setTaoLuc(LocalDateTime.now());
+        donHang.setCapNhatLuc(LocalDateTime.now());
+        donHang.setDatLuc(LocalDateTime.now());
+        donHang.setTongThanhToan(
+                donHang.getTamTinh()
+                        .subtract(donHang.getGiamGiaTong() != null ? donHang.getGiamGiaTong() : BigDecimal.ZERO)
+                        .add(donHang.getPhiVanChuyen() != null ? donHang.getPhiVanChuyen() : BigDecimal.ZERO));
+
+        DonHang savedDonHang = donHangRepository.save(donHang);
+
+        for (GioHangChiTiet item : gioHangItems) {
+            BienTheSanPham bienThe = item.getBienThe();
+
+            BigDecimal donGia = item.getGiaTaiThoiDiem();
+            if (donGia == null) {
+                donGia = bienThe.getGia();
+                if (donGia == null && bienThe.getSanPham() != null) {
+                    donGia = bienThe.getSanPham().getGia();
+                }
+            }
+            String tenHienThi = bienThe.getSanPham() != null ? bienThe.getSanPham().getTen() : "Sản phẩm";
+            if (donGia == null) {
+                throw new RuntimeException("Không tìm thấy giá cho sản phẩm: " + tenHienThi);
             }
 
-            try {
-                emailService.guiEmailXacNhanDonHang(savedDonHang);
-            } catch (Exception e) {
-                log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}", savedDonHang.getSoDonHang(), e.getMessage());
+            DonHangChiTiet ct = new DonHangChiTiet();
+            ct.setDonHang(savedDonHang);
+            ct.setBienThe(bienThe);
+            ct.setTenHienThi(tenHienThi);
+
+            // --- SNAPSHOT thuộc tính sản phẩm ---
+            if (bienThe.getMauSac() != null) {
+                ct.setMauSac(bienThe.getMauSac().getTen());
             }
+            if (bienThe.getKichCo() != null) {
+                ct.setKichCo(bienThe.getKichCo().getTen());
+            }
+            if (bienThe.getChatLieu() != null) {
+                ct.setChatLieu(bienThe.getChatLieu().getTen());
+            }
+            ct.setSoLuong(item.getSoLuong());
+            ct.setDonGia(donGia);
+            ct.setThanhTien(donGia.multiply(BigDecimal.valueOf(item.getSoLuong())));
+            donHangChiTietRepository.save(ct);
+
+            // KHÔNG TRỪ SỐ LƯỢNG KHI TẠO ĐƠN HÀNG
+            // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
+            // bienThe.setSoLuongTon(bienThe.getSoLuongTon() - item.getSoLuong());
+            // bienTheSanPhamRepository.save(bienThe);
+        }
+
+        // CHỈ XÓA các chi tiết giỏ hàng đã được đặt hàng, KHÔNG xóa toàn bộ giỏ hàng
+        // Giữ lại các sản phẩm chưa được chọn để user có thể đặt hàng sau
+        gioHangService.xoaChiTietGioHangDaDat(gioHangItems);
+
+        // Flush để phát hiện lỗi ràng buộc ngay tại đây (thay vì tới lúc commit)
+        try {
+            donHangRepository.flush();
+        } catch (Exception e) {
+            log.error("Flush failed in taoDonHangGuest: {}", e.getMessage(), e);
+            throw e;
+        }
+
+        try {
+            emailService.guiEmailXacNhanDonHang(savedDonHang);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email xác nhận đơn hàng {}: {}", savedDonHang.getSoDonHang(), e.getMessage());
+        }
 
         DonHangResponse response = convertToDTO(savedDonHang);
 
@@ -1603,9 +1625,10 @@ public class DonHangService {
 
     /**
      * Lấy đơn hàng theo user ID (admin endpoint)
+     * 
      * @param userId ID của tài khoản
-     * @param page Số trang (0-based)
-     * @param size Kích thước trang
+     * @param page   Số trang (0-based)
+     * @param size   Kích thước trang
      * @return Map chứa danh sách đơn hàng và thông tin phân trang
      */
     public Map<String, Object> getDonHangByUserId(Long userId, int page, int size) {
@@ -1615,7 +1638,7 @@ public class DonHangService {
 
         // Tìm khách hàng từ tài khoản
         Optional<KhachHang> khachHangOpt = khachHangRepository.findByTaiKhoan(taiKhoan);
-        
+
         if (!khachHangOpt.isPresent()) {
             // Nếu không có khách hàng, trả về danh sách rỗng
             Map<String, Object> emptyResult = new LinkedHashMap<>();
@@ -1627,10 +1650,10 @@ public class DonHangService {
         }
 
         Long khachHangId = khachHangOpt.get().getId();
-        
+
         // Lấy tất cả đơn hàng của khách hàng
         List<DonHang> allOrders = donHangRepository.findByKhachHang_IdWithDetails(khachHangId);
-        
+
         // Tính toán phân trang
         int totalElements = allOrders.size();
         int totalPages = size > 0 ? (int) Math.ceil((double) totalElements / (double) size) : 0;
@@ -1640,24 +1663,24 @@ public class DonHangService {
             start = Math.max(totalElements - size, 0);
         }
         int end = Math.min(start + size, totalElements);
-        
+
         // Lấy danh sách đơn hàng theo trang
-        List<DonHang> paginatedOrders = totalElements > 0 
-            ? allOrders.subList(start, end) 
-            : new ArrayList<>();
-        
+        List<DonHang> paginatedOrders = totalElements > 0
+                ? allOrders.subList(start, end)
+                : new ArrayList<>();
+
         // Chuyển đổi sang DTO
         List<DonHangResponse> responses = paginatedOrders.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
-        
+
         // Tạo response
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("content", responses);
         result.put("currentPage", totalElements == 0 ? 0 : Math.min(safePage, Math.max(totalPages - 1, 0)));
         result.put("totalItems", (long) totalElements);
         result.put("totalPages", totalPages);
-        
+
         return result;
     }
 

@@ -24,36 +24,30 @@ public class VoucherAdminController {
 
     private final VoucherService voucherService;
 
-    //getAllVoucherAdmin
+    // getAllVoucherAdmin
     @GetMapping
     public ResponseEntity<ApiResponse<List<VoucherResponse>>> getAll() {
-        System.out.println("=== GET ALL VOUCHERS DEBUG ===");
-        
+
         try {
             List<Voucher> voucherEntities = voucherService.getAllVouchersForAdmin();
             Map<String, VoucherService.VoucherUsageStats> usageStats = voucherService.getVoucherUsageStatsForAdmin();
-            System.out.println("Found " + voucherEntities.size() + " vouchers in database");
-            
+
             List<VoucherResponse> vouchers = voucherEntities
-            .stream()
-            .map(v -> convertToResponse(v, usageStats.get(v.getMa())))
-            .collect(Collectors.toList());
+                    .stream()
+                    .map(v -> convertToResponse(v, usageStats.get(v.getMa())))
+                    .collect(Collectors.toList());
 
-            System.out.println("Converted to " + vouchers.size() + " responses");
-            System.out.println("Voucher responses: " + vouchers);
+            ApiResponse<List<VoucherResponse>> response = ApiResponse.success(vouchers,
+                    "Lấy danh sách voucher thành công");
 
-            ApiResponse<List<VoucherResponse>> response = ApiResponse.success(vouchers, "Lấy danh sách voucher thành công");
-            System.out.println("Final GET response: " + response);
-            
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.out.println("ERROR in getAll: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
     }
 
-    //Tìm voucher theo id
+    // Tìm voucher theo id
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<VoucherResponse>> getVoucherById(@PathVariable Long id) {
         Voucher voucher = voucherService.getVoucherById(id);
@@ -64,38 +58,29 @@ public class VoucherAdminController {
 
     // tạo voucher
     @PostMapping
-    public ResponseEntity<ApiResponse<VoucherResponse>> createVoucher(@Valid @RequestBody VoucherCreateRequest request) {
-        System.out.println("=== CREATE VOUCHER DEBUG ===");
-        System.out.println("Received request: " + request);
-        
+    public ResponseEntity<ApiResponse<VoucherResponse>> createVoucher(
+            @Valid @RequestBody VoucherCreateRequest request) {
         try {
             Voucher voucher = voucherService.createVoucher(request);
-            System.out.println("Created voucher: " + voucher);
-            
             VoucherResponse response = convertToResponse(voucher);
-            System.out.println("Converted response: " + response);
-            
             ApiResponse<VoucherResponse> apiResponse = ApiResponse.success(response, "Tạo voucher thành công");
-            System.out.println("Final API response: " + apiResponse);
-            
             return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
         } catch (IllegalArgumentException e) {
             // Lỗi nghiệp vụ (mã trùng, dữ liệu không hợp lệ) -> 400
-            System.out.println("BUSINESS ERROR in createVoucher: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
         } catch (Exception e) {
-            System.out.println("ERROR in createVoucher: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Đã xảy ra lỗi hệ thống. Vui lòng thử lại sau."));
         }
     }
 
     // update voucher
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<VoucherResponse>> updateVoucher(@PathVariable Long id, @Valid @RequestBody VoucherUpdateRequest request) {
+    public ResponseEntity<ApiResponse<VoucherResponse>> updateVoucher(@PathVariable Long id,
+            @Valid @RequestBody VoucherUpdateRequest request) {
         Voucher voucher = voucherService.updateVoucher(id, request);
         VoucherResponse response = convertToResponse(voucher);
-
         return ResponseEntity.ok(ApiResponse.success(response, "Cập nhật voucher thành công"));
     }
 
@@ -103,7 +88,7 @@ public class VoucherAdminController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteVoucher(@PathVariable Long id) {
         voucherService.deleteVoucher(id);
-        return ResponseEntity.ok(ApiResponse.success(null,"Xóa voucher thành công"));
+        return ResponseEntity.ok(ApiResponse.success(null, "Xóa voucher thành công"));
     }
 
     // Tái kích hoạt voucher
@@ -129,13 +114,12 @@ public class VoucherAdminController {
         try {
             Voucher voucher = voucherService.deactivateVoucher(id);
             VoucherResponse response = convertToResponse(voucher);
-            return ResponseEntity.ok(ApiResponse.success(response, "Đã chuyển voucher sang trạng thái ngừng hoạt động"));
+            return ResponseEntity
+                    .ok(ApiResponse.success(response, "Đã chuyển voucher sang trạng thái ngừng hoạt động"));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(e.getMessage()));
         }
     }
-
-
 
     private VoucherResponse convertToResponse(Voucher voucher) {
         return convertToResponse(voucher, null);
@@ -143,20 +127,21 @@ public class VoucherAdminController {
 
     private VoucherResponse convertToResponse(Voucher voucher, VoucherService.VoucherUsageStats usageStats) {
         long usedCount = usageStats != null ? usageStats.usedCount() : 0L;
-        java.math.BigDecimal totalDiscount = usageStats != null ? usageStats.totalDiscount() : java.math.BigDecimal.ZERO;
+        java.math.BigDecimal totalDiscount = usageStats != null ? usageStats.totalDiscount()
+                : java.math.BigDecimal.ZERO;
         return VoucherResponse.builder()
-            .id(voucher.getId())
-            .ma(voucher.getMa())
-            .loai(voucher.getLoai())
-            .giaTri(voucher.getGiaTri())
-            .giamToiDa(voucher.getGiamToiDa())
-            .donToiThieu(voucher.getDonToiThieu())
-            .batDauLuc(voucher.getBatDauLuc())
-            .ketThucLuc(voucher.getKetThucLuc())
-            .gioiHanSuDung(voucher.getGioiHanSuDung())
-            .trangThai(voucher.getTrangThai())
-            .usedCount(usedCount)
-            .totalDiscount(totalDiscount)
-            .build();
+                .id(voucher.getId())
+                .ma(voucher.getMa())
+                .loai(voucher.getLoai())
+                .giaTri(voucher.getGiaTri())
+                .giamToiDa(voucher.getGiamToiDa())
+                .donToiThieu(voucher.getDonToiThieu())
+                .batDauLuc(voucher.getBatDauLuc())
+                .ketThucLuc(voucher.getKetThucLuc())
+                .gioiHanSuDung(voucher.getGioiHanSuDung())
+                .trangThai(voucher.getTrangThai())
+                .usedCount(usedCount)
+                .totalDiscount(totalDiscount)
+                .build();
     }
 }

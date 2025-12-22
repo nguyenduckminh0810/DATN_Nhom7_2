@@ -6,7 +6,7 @@ import lombok.Data;
 public class UserUpdateRequest {
     private String email;
     private String soDienThoai;
-    private Boolean trangThai; // optional; admin can change, staff only for customers
+    private Boolean trangThai;
 
     private String vaiTroMa;
 }

@@ -353,7 +353,7 @@ const handleCheckout = async () => {
     // Lấy các sản phẩm đã chọn
     const selectedItems = items.value.filter(item => item.selected !== false)
     
-    // ✅ Lưu danh sách ID các sản phẩm đã chọn để xóa sau khi đặt hàng thành công
+    // Lưu danh sách ID các sản phẩm đã chọn để xóa sau khi đặt hàng thành công
     const selectedItemIds = selectedItems.map(item => item.id).filter(Boolean)
 
 
@@ -370,7 +370,7 @@ const handleCheckout = async () => {
     if (!token) {
       console.log('� Guest user - skipping backend cart sync')
     } else {
-      // ✅ KHÔNG XÓA các sản phẩm không được chọn - giữ lại trong giỏ hàng
+      //  KHÔNG XÓA các sản phẩm không được chọn - giữ lại trong giỏ hàng
       // User có thể đặt hàng các sản phẩm chưa chọn sau
       
       // Đảm bảo các sản phẩm được chọn có trong backend cart
@@ -443,7 +443,7 @@ const handleCheckout = async () => {
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
         maVoucher: maVoucherValue,
-        // ✅ Gửi danh sách ID các chi tiết giỏ hàng đã chọn để backend chỉ xử lý các sản phẩm này
+        //  Gửi danh sách ID các chi tiết giỏ hàng đã chọn để backend chỉ xử lý các sản phẩm này
         selectedCartItemIds: selectedItemIds,
         // Thêm thông tin GHN để tính phí ship (nếu có)
         districtId: shipping?.selectedDistrict?.value || null,
@@ -479,7 +479,7 @@ const handleCheckout = async () => {
         phuongThucThanhToan: selectedPaymentMethod.value,
         ghiChu: shippingFormData.value.notes || '',
         maVoucher: maVoucherValue,
-        // ✅ Gửi danh sách ID các chi tiết giỏ hàng đã chọn để backend chỉ xử lý các sản phẩm này
+        //  Gửi danh sách ID các chi tiết giỏ hàng đã chọn để backend chỉ xử lý các sản phẩm này
         selectedCartItemIds: selectedItemIds,
         // Thêm thông tin GHN để tính phí ship (nếu có)
         districtId: shipping?.selectedDistrict?.value || null,

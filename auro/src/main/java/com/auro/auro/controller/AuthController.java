@@ -31,7 +31,6 @@ import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
 
-//import org.springframework.boot.autoconfigure.couchbase.CouchbaseProperties.Authentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -88,7 +87,7 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserInfoResponse>> getCurrentUser() {
         try {
-            // Lấy thông tin user từ SecurityContext (đã được JwtAuthenticationFilter xử lý)
+            // Lấy thông tin user từ SecurityContext
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -130,41 +129,30 @@ public class AuthController {
             // Lấy thông tin user hiện tại
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
-                System.out.println("ERROR: Not authenticated");
                 throw new UnauthorizedException("Chưa đăng nhập");
             }
 
             String username = authentication.getName();
-            System.out.println("Username: " + username);
 
             TaiKhoan taiKhoan = taiKhoanRepository
                     .findByEmailOrSoDienThoaiAndTrangThaiTrue(username)
                     .orElseThrow(() -> new UnauthorizedException("Không tìm thấy tài khoản"));
 
-            System.out.println("TaiKhoan found: " + taiKhoan.getId());
-
             // Kiểm tra file
             if (file.isEmpty()) {
-                System.out.println("ERROR: File is empty");
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("File không được để trống"));
             }
 
-            System.out.println("File name: " + file.getOriginalFilename());
-            System.out.println("File size: " + file.getSize());
-            System.out.println("Content type: " + file.getContentType());
-
             // Kiểm tra định dạng file
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                System.out.println("ERROR: Invalid content type");
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("File phải là ảnh"));
             }
 
             // Kiểm tra kích thước file (max 5MB)
             if (file.getSize() > 5 * 1024 * 1024) {
-                System.out.println("ERROR: File too large");
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Kích thước file không được vượt quá 5MB"));
             }
@@ -176,65 +164,51 @@ public class AuthController {
                 fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
             }
             String fileName = UUID.randomUUID().toString() + fileExtension;
-            System.out.println("Generated filename: " + fileName);
 
             // Lưu file vào thư mục uploads
             Path uploadPath = Paths.get("uploads/avatars");
             if (!Files.exists(uploadPath)) {
-                System.out.println("Creating directory: " + uploadPath.toAbsolutePath());
                 Files.createDirectories(uploadPath);
             }
 
             Path filePath = uploadPath.resolve(fileName);
-            System.out.println("Saving file to: " + filePath.toAbsolutePath());
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("File saved successfully");
 
             // Cập nhật avatar
             String avatarUrl = "/uploads/avatars/" + fileName;
             String maVaiTro = taiKhoan.getVaiTro().getMa();
             String email = taiKhoan.getEmail();
-            System.out.println("User role: " + maVaiTro + ", Email: " + email);
 
             if ("CUS".equals(maVaiTro) || "GST".equals(maVaiTro)) {
                 // Khách hàng
                 KhachHang khachHang = khachHangRepository.findByTaiKhoan_Email(email)
                         .orElseThrow(
                                 () -> new RuntimeException("Không tìm thấy thông tin khách hàng với email: " + email));
-                System.out.println("KhachHang found: " + khachHang.getId());
 
                 khachHang.setAvatar(avatarUrl);
                 khachHangRepository.save(khachHang);
-                System.out.println("Avatar updated in database: " + avatarUrl);
             } else if ("STF".equals(maVaiTro) || "ADM".equals(maVaiTro)) {
                 // Admin hoặc Staff
                 NhanVien nhanVien = nhanVienRepository.findByTaiKhoan_Email(email)
                         .orElseThrow(
                                 () -> new RuntimeException("Không tìm thấy thông tin nhân viên với email: " + email));
-                System.out.println("NhanVien found: " + nhanVien.getId());
 
                 nhanVien.setAvatar(avatarUrl);
                 nhanVienRepository.save(nhanVien);
-                System.out.println("Avatar updated in database: " + avatarUrl);
             } else {
-                System.out.println("ERROR: Unknown user role");
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Vai trò không hợp lệ"));
             }
 
             Map<String, String> result = new HashMap<>();
             result.put("avatarUrl", avatarUrl);
-
-            System.out.println("=== Upload Avatar Success ===");
             return ResponseEntity.ok(ApiResponse.success(result, "Upload avatar thành công"));
 
         } catch (IOException e) {
-            System.out.println("ERROR: IOException - " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Lỗi khi lưu file: " + e.getMessage()));
         } catch (Exception e) {
-            System.out.println("ERROR: Exception - " + e.getMessage());
             e.printStackTrace();
             throw e;
         }

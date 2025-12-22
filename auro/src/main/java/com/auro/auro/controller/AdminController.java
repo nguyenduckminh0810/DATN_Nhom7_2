@@ -34,11 +34,6 @@ public class AdminController {
     private final NhanVienRepository nhanVienRepository;
     private final PasswordEncoder passwordEncoder;
 
-    /**
-     * Endpoint đăng ký admin đầu tiên - CHỈ hoạt động khi chưa có admin nào trong
-     * hệ thống
-     * Sau khi có admin đầu tiên, endpoint này sẽ trả về lỗi 403
-     */
     @PostMapping("/register-first-admin")
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> registerFirstAdmin(
@@ -51,7 +46,6 @@ public class AdminController {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vai trò Admin"));
 
         long adminCount = taiKhoanRepository.countByVaiTro(adminRole);
-        System.out.println("Current admin count: " + adminCount);
 
         if (adminCount > 0) {
             System.out.println("Admin already exists - registration blocked");
@@ -73,8 +67,6 @@ public class AdminController {
                 throw new DuplicateResourceException("Số điện thoại này đã được đăng ký");
             }
         }
-
-        System.out.println("Creating first admin account...");
 
         // Tạo TaiKhoan với vai trò Admin
         TaiKhoan taiKhoan = new TaiKhoan();
@@ -109,8 +101,6 @@ public class AdminController {
         result.put("vaiTro", "ADM");
         result.put("message", "Tạo tài khoản admin đầu tiên thành công! Bạn có thể đăng nhập ngay bây giờ.");
 
-        System.out.println("=== First Admin Created Successfully ===");
-
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(result, "Tạo tài khoản admin đầu tiên thành công"));
     }
@@ -120,9 +110,6 @@ public class AdminController {
     @Transactional
     public ResponseEntity<ApiResponse<Map<String, Object>>> registerStaff(
             @Valid @RequestBody DangKyRequest request) {
-
-        System.out.println("=== Admin Register Staff Started ===");
-        System.out.println("Request: " + request);
 
         // Validate loại tài khoản - chỉ cho phép STF hoặc ADM
         String loaiTaiKhoan = request.getLoaiTaiKhoan();
@@ -154,8 +141,6 @@ public class AdminController {
         VaiTro vaiTro = vaiTroRepository.findByMa(maVaiTro)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy vai trò: " + maVaiTro));
 
-        System.out.println("Found role: " + vaiTro.getMa());
-
         // Tạo TaiKhoan
         TaiKhoan taiKhoan = new TaiKhoan();
         taiKhoan.setEmail(request.getEmail().trim());
@@ -170,7 +155,6 @@ public class AdminController {
         taiKhoan.setCapNhatLuc(LocalDateTime.now());
 
         TaiKhoan savedTaiKhoan = taiKhoanRepository.save(taiKhoan);
-        System.out.println("TaiKhoan saved with ID: " + savedTaiKhoan.getId());
 
         // Tạo NhanVien
         NhanVien nhanVien = new NhanVien();
@@ -179,7 +163,6 @@ public class AdminController {
         nhanVien.setSoDienThoai(savedTaiKhoan.getSoDienThoai());
 
         NhanVien savedNhanVien = nhanVienRepository.save(nhanVien);
-        System.out.println("NhanVien saved with ID: " + savedNhanVien.getId());
 
         // Tạo response
         Map<String, Object> result = new HashMap<>();
@@ -188,8 +171,6 @@ public class AdminController {
         result.put("hoTen", nhanVien.getHoTen());
         result.put("vaiTro", maVaiTro);
         result.put("message", "Đăng ký " + (maVaiTro.equals("ADM") ? "admin" : "nhân viên") + " thành công");
-
-        System.out.println("=== Admin Register Staff Completed ===");
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(result, "Tạo tài khoản nhân viên thành công"));

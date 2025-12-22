@@ -47,26 +47,9 @@ public class GioHangController {
             Long khachHangId = (auth != null) ? layKhachHangIdTuAuth(auth) : null;
             String sessionId = request.getSession().getId();
 
-            System.out.println("🔍 [GET CART] Session ID: " + sessionId);
-            System.out.println("🔍 [GET CART] Customer ID: " + khachHangId);
-
             GioHang gioHang = gioHangService.layHoacTaoGioHang(sessionId, khachHangId);
-            System.out.println("🔍 [GET CART] Cart ID: " + gioHang.getId());
 
             List<GioHangChiTiet> chiTietEntities = gioHangService.layChiTietGioHang(gioHang.getId());
-            System.out.println("🔍 [GET CART] Found " + chiTietEntities.size() + " items in cart");
-
-            // ✅ Log chi tiết từng item trong giỏ hàng
-            for (GioHangChiTiet item : chiTietEntities) {
-                System.out.println("📦 [CART ITEM] ID: " + item.getId() +
-                        " | BienThe ID: " + (item.getBienThe() != null ? item.getBienThe().getId() : "null") +
-                        " | Product: "
-                        + (item.getBienThe() != null && item.getBienThe().getSanPham() != null
-                                ? item.getBienThe().getSanPham().getTen()
-                                : "null")
-                        +
-                        " | Quantity: " + item.getSoLuong());
-            }
 
             List<GioHangItemResponse> chiTietList = chiTietEntities.stream().map(item -> {
                 GioHangItemResponse dto = new GioHangItemResponse();
@@ -100,12 +83,7 @@ public class GioHangController {
                 if (item.getBienThe() != null) {
                     Integer tonKho = item.getBienThe().getSoLuongTon();
                     dto.setTonKho(tonKho);
-                    System.out.println("📦 [CART ITEM] ID=" + item.getId() + " | BienTheId=" + item.getBienThe().getId()
-                            + " | TonKho=" + tonKho);
-                } else {
-                    System.out.println("⚠️ [CART ITEM] ID=" + item.getId() + " | BienThe is NULL!");
                 }
-
                 // Ước tính trọng lượng sản phẩm (gram) dựa trên danh mục
                 Integer trongLuong = 500; // Mặc định 500g
                 if (item.getBienThe() != null && item.getBienThe().getSanPham() != null
@@ -130,9 +108,6 @@ public class GioHangController {
                     } else if (tenDanhMuc.contains("phụ kiện")) {
                         trongLuong = 100; // Phụ kiện nhỏ: 100g
                     }
-
-                    System.out.println("🎯 [WEIGHT] Product: " + tenSP + " | Category: " + tenDanhMuc
-                            + " | Estimated weight: " + trongLuong + "g");
                 }
                 dto.setTrongLuong(trongLuong);
 
@@ -190,7 +165,7 @@ public class GioHangController {
 
     // Thêm sản phẩm vào giỏ
     @PostMapping("/them")
-    @Transactional // ✅ Đảm bảo transaction được commit
+    @Transactional
     public ResponseEntity<Map<String, Object>> themVaoGioHang(
             @RequestBody ThemVaoGioHangRequest request,
             Authentication auth,
@@ -199,13 +174,7 @@ public class GioHangController {
             Long khachHangId = (auth != null) ? layKhachHangIdTuAuth(auth) : null;
             String sessionId = httpRequest.getSession().getId();
 
-            System.out.println("🔵 [ADD TO CART] Session ID: " + sessionId);
-            System.out.println("🔵 [ADD TO CART] Customer ID: " + khachHangId);
-            System.out.println("🔵 [ADD TO CART] Variant ID: " + request.getBienTheId());
-            System.out.println("🔵 [ADD TO CART] Quantity: " + request.getSoLuong());
-
             GioHang gioHang = gioHangService.layHoacTaoGioHang(sessionId, khachHangId);
-            System.out.println("🔵 [ADD TO CART] Cart ID: " + gioHang.getId());
 
             BienTheSanPham bienThe = bienTheRepo.findById(request.getBienTheId())
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm"));
@@ -219,7 +188,7 @@ public class GioHangController {
 
             List<GioHangChiTiet> chiTietList = gioHangChiTietRepo.findByGioHang_Id(gioHang.getId());
 
-            // ✅ Tìm item dựa trên bienTheId (không phải productId)
+            // Tìm item dựa trên bienTheId (không phải productId)
             // Vì mỗi biến thể (màu + size) phải là item riêng biệt
             GioHangChiTiet existingItem = chiTietList.stream()
                     .filter(ct -> ct.getBienThe() != null &&
@@ -228,7 +197,7 @@ public class GioHangController {
                     .orElse(null);
 
             if (existingItem != null) {
-                // ✅ Cập nhật số lượng nếu đã có CÙNG biến thế
+                // Cập nhật số lượng nếu đã có CÙNG biến thế
                 int soLuongMoi = existingItem.getSoLuong() + request.getSoLuong();
 
                 if (bienThe.getSoLuongTon() < soLuongMoi) {
@@ -242,15 +211,10 @@ public class GioHangController {
                 existingItem.setCapNhatLuc(LocalDateTime.now());
                 GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(existingItem);
 
-                // ❌ KHÔNG TRỪ TỒN KHO KHI THÊM VÀO GIỎ
+                // KHÔNG TRỪ TỒN KHO KHI THÊM VÀO GIỎ
                 // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
-
-                System.out.println("✅ [ADD TO CART] Updated existing item ID: " + saved.getId() +
-                        " | BienThe ID: " + saved.getBienThe().getId() +
-                        " | New Quantity: " + saved.getSoLuong() +
-                        " | Stock NOT reduced (will be reduced when order status changes to SHIPPING)");
             } else {
-                // ✅ Tạo mới nếu chưa có biến thể này
+                // Tạo mới nếu chưa có biến thể này
                 GioHangChiTiet itemMoi = new GioHangChiTiet();
                 itemMoi.setGioHang(gioHang);
                 itemMoi.setBienThe(bienThe);
@@ -267,25 +231,17 @@ public class GioHangController {
 
                 GioHangChiTiet saved = gioHangChiTietRepo.saveAndFlush(itemMoi);
 
-                // ❌ KHÔNG TRỪ TỒN KHO KHI THÊM VÀO GIỎ
+                // KHÔNG TRỪ TỒN KHO KHI THÊM VÀO GIỎ
                 // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
-
-                System.out.println("✅ [ADD TO CART] Created new item ID: " + saved.getId() +
-                        " | BienThe ID: " + saved.getBienThe().getId() +
-                        " | Quantity: " + saved.getSoLuong() +
-                        " | Stock NOT reduced (will be reduced when order status changes to SHIPPING)");
             }
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "Thêm vào giỏ hàng thành công");
 
-            System.out.println("✅ [ADD TO CART] Transaction committed successfully");
-
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            System.err.println("❌ [ADD TO CART ERROR]: " + e.getMessage());
             e.printStackTrace();
 
             Map<String, Object> error = new HashMap<>();
@@ -338,15 +294,12 @@ public class GioHangController {
                 return ResponseEntity.badRequest().body(error);
             }
 
-            // ❌ KHÔNG TRỪ/HOÀN TỒN KHO KHI CẬP NHẬT GIỎ HÀNG
+            // KHÔNG TRỪ/HOÀN TỒN KHO KHI CẬP NHẬT GIỎ HÀNG
             // Số lượng sẽ được trừ khi admin chuyển trạng thái sang "Đang giao"
-            
+
             chiTiet.setSoLuong(soLuong);
             chiTiet.setCapNhatLuc(LocalDateTime.now());
             gioHangChiTietRepo.save(chiTiet);
-            
-            System.out.println("✅ [UPDATE CART] Updated quantity from " + soLuongCu + " to " + soLuong + 
-                    " | Stock NOT changed (will be reduced when order status changes to SHIPPING)");
 
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
@@ -393,11 +346,8 @@ public class GioHangController {
                 }
             }
 
-            // ❌ KHÔNG HOÀN LẠI TỒN KHO KHI XÓA KHỎI GIỎ
+            // KHÔNG HOÀN LẠI TỒN KHO KHI XÓA KHỎI GIỎ
             // Vì khi thêm vào giỏ không trừ tồn kho nên khi xóa cũng không cần hoàn lại
-            
-            System.out.println("✅ [DELETE FROM CART] Deleted item with " + chiTiet.getSoLuong() + 
-                    " quantity | Stock NOT changed (stock was never reduced)");
 
             gioHangChiTietRepo.delete(chiTiet);
 

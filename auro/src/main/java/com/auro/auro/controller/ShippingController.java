@@ -32,12 +32,9 @@ public class ShippingController {
     @GetMapping("/provinces")
     public ResponseEntity<ShippingResponse<List<Map<String, Object>>>> getProvinces() {
         try {
-            log.info("🌐 API /provinces called");
             List<Map<String, Object>> provinces = shippingService.getProvinces();
-            log.info("✅ Returned {} provinces", provinces.size());
             return ResponseEntity.ok(ShippingResponse.success(provinces, "Lấy danh sách tỉnh/thành phố thành công"));
         } catch (Exception e) {
-            log.error("❌ Error in /provinces: {}", e.getMessage(), e);
             return ResponseEntity.ok(ShippingResponse.error("Lỗi khi lấy danh sách tỉnh/thành phố: " + e.getMessage()));
         }
     }
@@ -91,12 +88,6 @@ public class ShippingController {
     public ResponseEntity<ShippingResponse<Map<String, Object>>> calculateShippingFee(
             @RequestBody ShippingCalculateRequest request) {
         try {
-            log.info("📥 Received request: {}", request);
-            log.info("🔍 toDistrictId: {} (type: {})", request.getToDistrictId(),
-                    request.getToDistrictId() != null ? request.getToDistrictId().getClass().getSimpleName() : "null");
-            log.info("🔍 toWardCode: {} (type: {})", request.getToWardCode(),
-                    request.getToWardCode() != null ? request.getToWardCode().getClass().getSimpleName() : "null");
-
             // Tạo GHNShippingFeeRequest từ ShippingCalculateRequest
             GHNShippingFeeRequest ghnRequest = new GHNShippingFeeRequest();
             ghnRequest.setToDistrictId(request.getToDistrictId());

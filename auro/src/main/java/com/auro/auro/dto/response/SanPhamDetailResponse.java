@@ -24,10 +24,9 @@ public class SanPhamDetailResponse {
     private LocalDateTime capNhatLuc;
     private String anhDaiDien;
     private String sku;
-    private Double danhGia; // Rating trung bình
-    private Integer soLuongDanhGia; // Số lượng đánh giá
+    private Double danhGia;
+    private Integer soLuongDanhGia;
 
-    // Extended fields for detail page
     private List<HinhAnhInfo> hinhAnhs;
     private List<BienTheInfo> bienThes;
 

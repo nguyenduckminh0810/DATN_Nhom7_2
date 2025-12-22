@@ -184,7 +184,7 @@
                        class="original-price text-muted small">
                     {{ formatPrice(item.originalPrice * item.quantity) }}
                   </div>
-                  <!-- Demo: Hiển thị giá gốc cho demo (có thể xóa sau) -->
+                  <!-- Demo: Hiển thị giá gốc cho demo -->
                   <div v-if="!item.originalPrice || item.originalPrice <= item.price" 
                        class="original-price text-muted small">
                     {{ formatPrice((item.price * 1.3) * item.quantity) }}
@@ -279,11 +279,9 @@ const isUpdating = ref(false)
 const currentPage = ref(1)
 const itemsPerPage = 3
 
-// 🔍 DEBUG: Log items from cart
-console.log('🛒 [CART ITEMS] Total items:', items.value?.length || 0)
 if (items.value && items.value.length > 0) {
   items.value.forEach((item, index) => {
-    console.log(`📦 [CART ITEM ${index + 1}]:`, {
+    console.log(`[CART ITEM ${index + 1}]:`, {
       id: item.id,
       itemKey: item.itemKey,
       name: item.name,
@@ -328,8 +326,8 @@ watch(items, () => {
 
 // Load product variants for all cart items
 const loadProductVariants = async () => {
-  console.log('🔄 [LOAD VARIANTS] Starting to load variants...')
-  console.log('🔄 [LOAD VARIANTS] Cart items:', items.value)
+  console.log(' Starting to load variants...')
+  console.log(' Cart items:', items.value)
   
   // Extract productId from SKU (format: SP{productId}-{size}-{color}-{random})
   const getProductIdFromSku = (sku) => {
@@ -363,31 +361,31 @@ const loadProductVariants = async () => {
   })
   
   const uniqueProductIds = Array.from(productIds)
-  console.log('🔄 [LOAD VARIANTS] Unique product IDs:', uniqueProductIds)
+  console.log(' Unique product IDs:', uniqueProductIds)
   
   if (uniqueProductIds.length === 0) {
-    console.warn('⚠️ [LOAD VARIANTS] No product IDs found in cart items')
+    console.warn(' No product IDs found in cart items')
     return
   }
   
   for (const productId of uniqueProductIds) {
     try {
-      console.log(`🔄 [LOAD VARIANTS] Loading variants for product ${productId}...`)
+      console.log(`Loading variants for product ${productId}...`)
       const productDetail = await sanPhamService.getDetail(productId)
       
       if (productDetail && productDetail.bienThes) {
-        console.log(`✅ [LOAD VARIANTS] Loaded ${productDetail.bienThes.length} variants for product ${productId}`)
+        console.log(` Loaded ${productDetail.bienThes.length} variants for product ${productId}`)
         productVariantsMap.value.set(productId, productDetail.bienThes)
       } else {
-        console.warn(`⚠️ [LOAD VARIANTS] No variants found for product ${productId}`)
+        console.warn(` No variants found for product ${productId}`)
       }
     } catch (error) {
-      console.error(`❌ [LOAD VARIANTS] Error loading variants for product ${productId}:`, error)
+      console.error(`Error loading variants for product ${productId}:`, error)
     }
   }
   
-  console.log('✅ [LOAD VARIANTS] Finished loading variants')
-  console.log('📦 [LOAD VARIANTS] Product variants map:', productVariantsMap.value)
+  console.log(' Finished loading variants')
+  console.log('Product variants map:', productVariantsMap.value)
 }
 
 // Get variants for a specific product
@@ -467,7 +465,7 @@ const getColorHex = (colorName) => {
 // Change variant (color or size)
 const changeVariant = async (item, type, value) => {
   try {
-    console.log(`🔄 [CHANGE VARIANT] Changing ${type} to ${value} for item:`, item)
+    console.log(`Changing ${type} to ${value} for item:`, item)
     
     const variants = getProductVariants(item.productId)
     if (!variants) {
@@ -493,7 +491,7 @@ const changeVariant = async (item, type, value) => {
       return
     }
     
-    console.log('✅ [CHANGE VARIANT] Found new variant:', newVariant)
+    console.log(' Found new variant:', newVariant)
     
     // Step 1: Remove current item from cart
     await cartService.removeFromCart(item.id)
@@ -517,7 +515,7 @@ const changeVariant = async (item, type, value) => {
     }
     
   } catch (error) {
-    console.error('❌ [CHANGE VARIANT] Error:', error)
+    console.error(' Error:', error)
     if (window.$toast) {
       window.$toast.error('Không thể thay đổi biến thể', 'Lỗi')
     }
@@ -561,7 +559,7 @@ const increaseQuantity = async (itemKey) => {
     
     // Nếu stock là giá trị default (999) hoặc undefined, reload cart để lấy stock mới
     if (!stock || stock >= 999 || !item.stock) {
-      console.log('🔄 [INCREASE QTY] Stock not available or default, reloading cart...')
+      console.log(' Stock not available or default, reloading cart...')
       const { useCartStore } = await import('@/stores/cart')
       const cartStore = useCartStore()
       await cartStore.loadCart()
@@ -570,11 +568,11 @@ const increaseQuantity = async (itemKey) => {
       const refreshedItem = items.value.find(i => i.itemKey === itemKey)
       if (refreshedItem) {
         stock = getVariantStock(refreshedItem)
-        console.log('✅ [INCREASE QTY] Reloaded stock:', stock)
+        console.log(' Reloaded stock:', stock)
       }
     }
     
-    console.log('➕ [INCREASE QTY]:', {
+    console.log('INCREASE QTY:', {
       itemName: item.name,
       color: item.color,
       size: item.size,
@@ -591,7 +589,7 @@ const increaseQuantity = async (itemKey) => {
       if (window.$toast) {
         window.$toast.warning(`Chỉ còn ${displayStock} sản phẩm trong kho`, 'Không thể tăng thêm')
       }
-      console.warn('⚠️ [INCREASE QTY] BLOCKED - Exceeds stock limit')
+      console.warn('[INCREASE QTY] BLOCKED - Exceeds stock limit')
       return
     }
     
@@ -607,7 +605,7 @@ const decreaseQuantity = async (itemKey) => {
   
   const newQuantity = item.quantity - 1
   
-  console.log('➖ [DECREASE QTY]:', {
+  console.log(' DECREASE QTY:', {
     current: item.quantity,
     new: newQuantity
   })
@@ -693,7 +691,7 @@ const toggleSelectAll = async () => {
     item.selected = shouldSelectAll
   })
   
-  // ✅ Lưu state vào localStorage sau khi toggle
+  //  Lưu state vào localStorage sau khi toggle
   cartStore.saveToStorage()
   
   if (window.$toast) {
