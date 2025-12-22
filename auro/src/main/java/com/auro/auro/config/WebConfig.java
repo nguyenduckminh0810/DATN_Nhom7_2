@@ -15,12 +15,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-        // Serve static files from uploads directory
         registry.addResourceHandler("/files/**")
                 .addResourceLocations("file:" + System.getProperty("user.dir") + "/" + uploadDir + "/")
-                .setCachePeriod(3600); // Cache for 1 hour
+                .setCachePeriod(3600);
 
-        // Serve avatar images
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + System.getProperty("user.dir") + "/uploads/")
                 .setCachePeriod(3600);
@@ -28,14 +26,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(@NonNull CorsRegistry registry) {
-        // Allow CORS for static files
         registry.addMapping("/files/**")
                 .allowedOrigins("http://localhost:3000", "http://localhost:5173")
                 .allowedMethods("GET")
                 .allowedHeaders("*")
                 .allowCredentials(false);
 
-        // Allow CORS for uploads
         registry.addMapping("/uploads/**")
                 .allowedOrigins("http://localhost:3000", "http://localhost:5173")
                 .allowedMethods("GET")

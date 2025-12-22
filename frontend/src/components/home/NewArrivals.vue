@@ -130,14 +130,14 @@ const fetchNewArrivals = async () => {
         }
       })
 
-      console.log(`✅ Loaded ${products.value.length} new arrivals from API successfully`)
+      console.log(` Loaded ${products.value.length} new arrivals from API successfully`)
     } else {
-      console.warn('❌ API response unsuccessful or empty:', response)
+      console.warn(' API response unsuccessful or empty:', response)
       products.value = []
     }
   } catch (err) {
     error.value = err.message || 'Lỗi khi tải sản phẩm mới'
-    console.error('❌ Error loading new arrivals from API:', err)
+    console.error(' Error loading new arrivals from API:', err)
 
     // Log chi tiết để debug
     if (err.response) {

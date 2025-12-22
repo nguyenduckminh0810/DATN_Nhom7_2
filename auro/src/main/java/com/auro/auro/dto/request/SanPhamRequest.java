@@ -23,8 +23,6 @@ public class SanPhamRequest {
     @NotNull(message = "Giá là bắt buộc")
     private BigDecimal gia;
 
-    // active / inactive / out-of-stock
     private String trangThai;
-    // Optional: allow client-provided slug, otherwise we will generate
     private String slug;
 }

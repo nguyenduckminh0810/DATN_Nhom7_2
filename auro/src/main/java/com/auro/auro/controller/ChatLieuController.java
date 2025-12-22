@@ -19,18 +19,14 @@ public class ChatLieuController {
     private final ChatLieuRepository chatLieuRepository;
     private final BienTheSanPhamRepository bienTheSanPhamRepository;
 
-    /**
-     * Lấy tất cả chất liệu
-     */
+    // Lấy tất cả chất liệu
     @GetMapping
     public ResponseEntity<List<ChatLieu>> getAllMaterials() {
         List<ChatLieu> materials = chatLieuRepository.findAll();
         return ResponseEntity.ok(materials);
     }
 
-    /**
-     * Lấy chất liệu theo ID
-     */
+    // Lấy chất liệu theo ID
     @GetMapping("/{id}")
     public ResponseEntity<ChatLieu> getMaterialById(@PathVariable Long id) {
         return chatLieuRepository.findById(id)
@@ -38,9 +34,7 @@ public class ChatLieuController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Thêm chất liệu mới
-     */
+    // Thêm chất liệu mới
     @PostMapping
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<?> createMaterial(@RequestBody ChatLieu chatLieu) {
@@ -52,7 +46,8 @@ public class ChatLieuController {
             }
         } else {
             return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("message", "Tên chất liệu không được để trống", "error", "Material name is required"));
+                    .body(java.util.Map.of("message", "Tên chất liệu không được để trống", "error",
+                            "Material name is required"));
         }
 
         // Tạo mới chất liệu
@@ -62,9 +57,8 @@ public class ChatLieuController {
         return ResponseEntity.ok(saved);
     }
 
-    /**
-     * Cập nhật chất liệu
-     */
+    // Cập nhật chất liệu
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<?> updateMaterial(@PathVariable Long id, @RequestBody ChatLieu chatLieu) {
@@ -75,7 +69,8 @@ public class ChatLieuController {
                         if (!existing.getTen().equals(chatLieu.getTen().trim())) {
                             if (chatLieuRepository.existsByTen(chatLieu.getTen().trim())) {
                                 return ResponseEntity.badRequest()
-                                        .body(java.util.Map.of("message", "Chất liệu đã tồn tại", "error", "Material already exists"));
+                                        .body(java.util.Map.of("message", "Chất liệu đã tồn tại", "error",
+                                                "Material already exists"));
                             }
                         }
                         existing.setTen(chatLieu.getTen().trim());
@@ -83,15 +78,15 @@ public class ChatLieuController {
                         return ResponseEntity.ok(updated);
                     } else {
                         return ResponseEntity.badRequest()
-                                .body(java.util.Map.of("message", "Tên chất liệu không được để trống", "error", "Material name is required"));
+                                .body(java.util.Map.of("message", "Tên chất liệu không được để trống", "error",
+                                        "Material name is required"));
                     }
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Xóa chất liệu
-     */
+    // Xóa chất liệu
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADM', 'STF')")
     public ResponseEntity<?> deleteMaterial(@PathVariable Long id) {
@@ -102,23 +97,24 @@ public class ChatLieuController {
                     if (count > 0) {
                         return ResponseEntity.badRequest()
                                 .body(java.util.Map.of(
-                                    "message", 
-                                    String.format("Không thể xóa chất liệu. Đang được sử dụng bởi %d biến thể sản phẩm", count),
-                                    "error", 
-                                    "Material is in use by product variants"
-                                ));
+                                        "message",
+                                        String.format(
+                                                "Không thể xóa chất liệu. Đang được sử dụng bởi %d biến thể sản phẩm",
+                                                count),
+                                        "error",
+                                        "Material is in use by product variants"));
                     }
-                    
+
                     try {
                         chatLieuRepository.deleteById(id);
                         return ResponseEntity.ok(java.util.Map.of("message", "Đã xóa chất liệu thành công"));
                     } catch (Exception e) {
                         // Nếu có lỗi khác, trả về lỗi
                         return ResponseEntity.badRequest()
-                                .body(java.util.Map.of("message", "Không thể xóa chất liệu: " + e.getMessage(), "error", e.getMessage()));
+                                .body(java.util.Map.of("message", "Không thể xóa chất liệu: " + e.getMessage(), "error",
+                                        e.getMessage()));
                     }
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 }
-

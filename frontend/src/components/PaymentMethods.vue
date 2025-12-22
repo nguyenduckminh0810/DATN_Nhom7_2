@@ -68,7 +68,7 @@ if (injectedPaymentMethod && !injectedPaymentMethod.value) {
 
 // Watch để sync với parent nếu cần
 watch(paymentMethod, (newValue) => {
-  console.log('💳 Payment method changed to:', newValue)
+  console.log('Payment method changed to:', newValue)
   if (injectedPaymentMethod && injectedPaymentMethod !== paymentMethod) {
     injectedPaymentMethod.value = newValue
   }

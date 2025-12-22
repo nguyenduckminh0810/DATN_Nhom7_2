@@ -38,8 +38,6 @@ public class NguoiDungService {
         int s = size != null && size > 0 ? size : 10;
         Pageable pageable = PageRequest.of(p, s, Sort.by(Sort.Direction.DESC, "taoLuc"));
 
-        // For v1: basic in-memory filtering on small datasets. Can be replaced with
-        // Specifications later.
         Page<TaiKhoan> tkPage = taiKhoanRepository.findAll(pageable);
         List<TaiKhoan> filtered = tkPage.getContent().stream()
                 .filter(tk -> vaiTroMa == null || vaiTroMa.isBlank()
@@ -83,7 +81,6 @@ public class NguoiDungService {
     }
 
     private UserAdminResponse toResponse(TaiKhoan tk) {
-        // Calculate order count and total spent for customers
         Integer orderCount = 0;
         Double totalSpent = 0.0;
 
@@ -127,7 +124,7 @@ public class NguoiDungService {
 
         // STAFF rules
         if (currentIsStaff) {
-            // 1) Cấm sửa email / sđt
+            // Cấm sửa email / sđt
             if (req.getEmail() != null && !req.getEmail().equals(target.getEmail())) {
                 throw new AccessDeniedException(STAFF_EDIT_INFO_FORBIDDEN);
             }
@@ -135,13 +132,13 @@ public class NguoiDungService {
                 throw new AccessDeniedException(STAFF_EDIT_INFO_FORBIDDEN);
             }
 
-            // 2) Cấm sửa vai trò
+            // Cấm sửa vai trò
             if (req.getVaiTroMa() != null
                     && !req.getVaiTroMa().equalsIgnoreCase(targetRole)) {
                 throw new AccessDeniedException(STAFF_EDIT_INFO_FORBIDDEN);
             }
 
-            // 3) Chỉ được đổi trạng thái cho khách hàng (CUS)
+            // Chỉ được đổi trạng thái cho khách hàng
             if (req.getTrangThai() != null
                     && !req.getTrangThai().equals(target.getTrangThai())
                     && !"CUS".equalsIgnoreCase(targetRole)) {

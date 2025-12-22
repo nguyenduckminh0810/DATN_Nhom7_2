@@ -19,7 +19,6 @@ public class NguoiDungAdminController {
 
     private final NguoiDungService nguoiDungService;
 
-    // GET /api/nguoi-dung?page=0&size=10&vaiTro=ADM&trangThai=true&search=abc
     @GetMapping
     @PreAuthorize("hasAnyRole('STF','ADM')")
     public ResponseEntity<Page<UserAdminResponse>> listUsers(
@@ -32,14 +31,12 @@ public class NguoiDungAdminController {
         return ResponseEntity.ok(result);
     }
 
-    // Get detail - staff and admin can view
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('STF','ADM')")
     public ResponseEntity<UserAdminResponse> getUser(@PathVariable Long id) {
         return ResponseEntity.ok(nguoiDungService.getById(id));
     }
 
-    // Update - admin can update anyone; staff can only update customers (role CUS)
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('STF','ADM')")
     public ResponseEntity<UserAdminResponse> updateUser(

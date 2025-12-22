@@ -139,15 +139,14 @@ const cartStore = useCartStore()
 // Computed
 const items = computed(() => cartStore.items)
 
-// ✅ Watch isOpen để reload cart khi mở mini cart
+// Watch isOpen để reload cart khi mở mini cart
 watch(() => props.isOpen, async (newVal) => {
   if (newVal) {
-    console.log('🔄 [MINI CART] Opening, reloading cart from backend...')
+    console.log(' [MINI CART] Opening, reloading cart from backend...')
     try {
       await cartStore.loadCart()
-      console.log('✅ [MINI CART] Cart reloaded successfully')
     } catch (error) {
-      console.error('❌ [MINI CART] Error reloading cart:', error)
+      console.error(' [MINI CART] Error reloading cart:', error)
     }
   }
 })
@@ -188,7 +187,7 @@ const updateItemQuantity = async (itemKey, newQuantity) => {
     if (window.$toast) {
       window.$toast.warning(`Chỉ còn ${stock} sản phẩm trong kho`, 'Không thể tăng thêm')
     }
-    console.warn('⚠️ [MINI CART] BLOCKED - Exceeds stock limit')
+    console.warn(' [MINI CART] BLOCKED - Exceeds stock limit')
     return
   }
   

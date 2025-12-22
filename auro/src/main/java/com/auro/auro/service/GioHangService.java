@@ -27,11 +27,12 @@ public class GioHangService {
     public GioHang layGioHangCuaKhach(Long khachHangId) {
         Optional<GioHang> gioHangOpt = gioHangRepo.findFirstByKhachHang_Id(khachHangId);
 
-        if(gioHangOpt.isPresent()) {
+        if (gioHangOpt.isPresent()) {
             return gioHangOpt.get();
         }
 
-        KhachHang kh = khRepo.findById(khachHangId).orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
+        KhachHang kh = khRepo.findById(khachHangId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy khách hàng"));
 
         GioHang newGioHang = new GioHang();
         newGioHang.setKhachHang(kh);
@@ -56,15 +57,15 @@ public class GioHangService {
 
         return chiTietList.stream().map(item -> {
             BigDecimal gia = item.getGiaTaiThoiDiem();
-            if(gia == null && item.getBienThe() != null) {
+            if (gia == null && item.getBienThe() != null) {
                 gia = item.getBienThe().getGia();
-                if(gia == null && item.getBienThe().getSanPham() != null) {
+                if (gia == null && item.getBienThe().getSanPham() != null) {
                     gia = item.getBienThe().getSanPham().getGia();
                 }
             }
             return gia != null ? gia.multiply(BigDecimal.valueOf(item.getSoLuong())) : BigDecimal.ZERO;
         })
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // Xóa all giỏ hàng
@@ -93,41 +94,41 @@ public class GioHangService {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             throw new RuntimeException("Session ID không hợp lệ");
         }
-        
+
         Optional<GioHang> gioHangOpt = gioHangRepo.findFirstByIdPhien(sessionId);
-        
+
         if (gioHangOpt.isPresent()) {
             return gioHangOpt.get();
         }
-        
+
         // Nếu chưa có giỏ hàng thì tạo mới
         GioHang gioHangMoi = new GioHang();
         gioHangMoi.setIdPhien(sessionId);
         gioHangMoi.setKhachHang(null);
         gioHangMoi.setTaoLuc(java.time.LocalDateTime.now());
         gioHangMoi.setCapNhatLuc(java.time.LocalDateTime.now());
-        
+
         return gioHangRepo.save(gioHangMoi);
     }
 
-    //lấy/tạo giỏ hàng cho cus và gst
+    // lấy/tạo giỏ hàng cho cus và gst
     @Transactional
     public GioHang layHoacTaoGioHang(String sessionId, Long khachHangId) {
         if (khachHangId != null) {
             return layGioHangCuaKhach(khachHangId);
         }
-        
+
         if (sessionId != null && !sessionId.trim().isEmpty()) {
             return layGioHangTheoSession(sessionId);
         }
-        
+
         throw new RuntimeException("Không thể xác định giỏ hàng - thiếu sessionId hoặc khachHangId");
     }
 
     // tính tình theo id giỏ hàng
     public BigDecimal tinhTongTienTheoGioHang(Long gioHangId) {
         List<GioHangChiTiet> chiTietList = layChiTietGioHang(gioHangId);
-        
+
         return chiTietList.stream().map(item -> {
             BigDecimal gia = item.getGiaTaiThoiDiem();
             if (gia == null && item.getBienThe() != null) {
@@ -138,7 +139,7 @@ public class GioHangService {
             }
             return gia != null ? gia.multiply(BigDecimal.valueOf(item.getSoLuong())) : BigDecimal.ZERO;
         })
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // xóa giỏ hàng gst theo idPhien
@@ -147,27 +148,27 @@ public class GioHangService {
         if (sessionId == null || sessionId.trim().isEmpty()) {
             return;
         }
-        
+
         Optional<GioHang> gioHangOpt = gioHangRepo.findFirstByIdPhien(sessionId);
-        
+
         if (gioHangOpt.isPresent()) {
             Long gioHangId = gioHangOpt.get().getId();
-            
+
             // Xóa chi tiết trước
             gioHangChiTietRepo.deleteByGioHang_Id(gioHangId);
-            
+
             // Xóa giỏ hàng
             gioHangRepo.delete(gioHangOpt.get());
         }
     }
 
-    // ✅ Xóa chỉ các chi tiết giỏ hàng đã được đặt hàng (không xóa toàn bộ giỏ hàng)
+    // Xóa chỉ các chi tiết giỏ hàng đã được đặt hàng (không xóa toàn bộ giỏ hàng)
     @Transactional
     public void xoaChiTietGioHangDaDat(List<GioHangChiTiet> chiTietDaDat) {
         if (chiTietDaDat == null || chiTietDaDat.isEmpty()) {
             return;
         }
-        
+
         // Xóa từng chi tiết đã được đặt hàng
         for (GioHangChiTiet chiTiet : chiTietDaDat) {
             if (chiTiet.getId() != null) {

@@ -220,7 +220,7 @@ const finalTotal = computed(() => {
 
 // Validate form data trước khi đặt hàng
 const validateCheckoutData = () => {
-  console.log('🔍 Validating checkout data...')
+  console.log(' Validating checkout data...')
   console.log('shippingFormData:', shippingFormData)
   console.log('selectedPaymentMethod:', selectedPaymentMethod)
   
@@ -269,23 +269,23 @@ const validateCheckoutData = () => {
     return false
   }
 
-  console.log('✅ Validation passed')
+  console.log(' Validation passed')
   return true
 }
 
 // Xử lý đặt hàng
 const handleCheckout = async () => {
-  console.log('🛒 Starting checkout...')
-  console.log('🔐 userStore.isAuthenticated:', userStore.isAuthenticated)
-  console.log('🔐 userStore.user:', userStore.user)
-  console.log('🔐 isAuthenticated computed:', isAuthenticated.value)
+  console.log(' Starting checkout...')
+  console.log(' userStore.isAuthenticated:', userStore.isAuthenticated)
+  console.log('userStore.user:', userStore.user)
+  console.log(' isAuthenticated computed:', isAuthenticated.value)
   
   const token = localStorage.getItem('auro_token')
-  console.log('🔑 Token exists:', !!token)
-  console.log('🔑 Token value:', token ? token.substring(0, 20) + '...' : 'null')
+  console.log(' Token exists:', !!token)
+  console.log(' Token value:', token ? token.substring(0, 20) + '...' : 'null')
   
   if (isProcessing.value) {
-    console.log('⚠️ Already processing')
+    console.log(' Already processing')
     return
   }
   // Mark processing immediately to prevent multiple handlers passing validation
@@ -293,7 +293,7 @@ const handleCheckout = async () => {
 
   // Validate dữ liệu
   if (!validateCheckoutData()) {
-    console.log('❌ Validation failed')
+    console.log(' Validation failed')
     isProcessing.value = false
     return
   }
@@ -301,9 +301,6 @@ const handleCheckout = async () => {
   try {
     // Lấy các sản phẩm đã chọn
     const selectedItems = items.value.filter(item => item.selected !== false)
-
-    console.log('📦 Selected items:', selectedItems)
-    console.log('📦 All items:', items.value)
 
     if (selectedItems.length === 0) {
       if (window.$toast) {
@@ -314,11 +311,11 @@ const handleCheckout = async () => {
     }
 
     // **QUAN TRỌNG**: Đồng bộ giỏ hàng với backend trước khi checkout
-    console.log('🔄 Syncing cart with backend before checkout...')
+    console.log(' Syncing cart with backend before checkout...')
     
     // Nếu là guest (không có token), không cần sync cart với backend
     if (!token) {
-      console.log('� Guest user - skipping backend cart sync')
+      console.log('Guest user - skipping backend cart sync')
     } else {
       // Xóa các sản phẩm không được chọn khỏi backend cart
       const unselectedItems = items.value.filter(item => item.selected === false)
@@ -331,9 +328,9 @@ const handleCheckout = async () => {
           if (item.id) {
             try {
               await cartService.removeFromCart(item.id)
-              console.log('✅ Removed item from backend:', item.id)
+              console.log(' Removed item from backend:', item.id)
             } catch (err) {
-              console.warn('⚠️ Failed to remove item from backend (may not exist):', item.id, err.message)
+              console.warn(' Failed to remove item from backend (may not exist):', item.id, err.message)
               // Không throw error, tiếp tục xử lý
             }
           }
@@ -341,7 +338,7 @@ const handleCheckout = async () => {
       }
       
       // Đảm bảo các sản phẩm được chọn có trong backend cart
-      console.log('✅ Ensuring selected items are in backend cart...')
+      console.log(' Ensuring selected items are in backend cart...')
       for (const item of selectedItems) {
         // Nếu item chưa có ID từ backend (local item), thêm vào backend
         if (!item.id && (item.bienTheId || item.variantId)) {
@@ -350,24 +347,21 @@ const handleCheckout = async () => {
               bienTheId: item.bienTheId || item.variantId,
               soLuong: item.quantity
             })
-            console.log('✅ Added item to backend cart:', item.bienTheId, addResponse)
+            console.log(' Added item to backend cart:', item.bienTheId, addResponse)
           } catch (err) {
-            console.warn('⚠️ Failed to add item to backend (may already exist):', item.bienTheId, err.message)
+            console.warn(' Failed to add item to backend (may already exist):', item.bienTheId, err.message)
             // Không throw error, có thể item đã có trong backend
           }
         } else {
-          console.log('ℹ️ Item already in backend:', item.id || item.bienTheId)
+          console.log(' Item already in backend:', item.id || item.bienTheId)
         }
       }
     }
-
-    console.log('✅ Cart synced with backend')
 
     let response
 
     // Xác định đã đăng nhập hay chưa dựa vào token
     if (token && isAuthenticated.value) {
-      console.log('👤 User is authenticated - using guest checkout endpoint with token')
       
       // Sử dụng guest checkout format cho cả user đã đăng nhập
       // Backend sẽ tự động map user từ token (auth parameter trong controller)
@@ -388,8 +382,8 @@ const handleCheckout = async () => {
         serviceId: shipping?.selectedService?.value || null
       }
       
-      console.log('📤 Sending order as authenticated user (with token):', orderData)
-      console.log('🚚 GHN shipping info:', {
+      console.log(' Sending order as authenticated user (with token):', orderData)
+      console.log(' GHN shipping info:', {
         districtId: orderData.districtId,
         wardCode: orderData.wardCode,
         serviceId: orderData.serviceId
@@ -397,18 +391,18 @@ const handleCheckout = async () => {
       
       try {
         response = await orderService.guestCheckout(orderData)
-        console.log('✅ Order created:', response)
+        console.log(' Order created:', response)
         
         if (window.$toast) {
           window.$toast.success('Đặt hàng thành công!', 'Cảm ơn bạn đã mua hàng')
         }
       } catch (error) {
-        console.error('❌ Order creation failed:', error)
+        console.error(' Order creation failed:', error)
         throw error
       }
     } else {
       // Guest checkout (không có token)
-      console.log('👻 Guest checkout (no authentication)')
+      console.log(' Guest checkout (no authentication)')
       
       const guestOrderData = {
         hoTen: shippingFormData.value.fullName,
@@ -427,8 +421,8 @@ const handleCheckout = async () => {
         serviceId: shipping?.selectedService?.value || null
       }
       
-      console.log('📤 Sending guest order:', guestOrderData)
-      console.log('🚚 GHN shipping info:', {
+      console.log(' Sending guest order:', guestOrderData)
+      console.log(' GHN shipping info:', {
         districtId: guestOrderData.districtId,
         wardCode: guestOrderData.wardCode,
         serviceId: guestOrderData.serviceId
@@ -441,7 +435,7 @@ const handleCheckout = async () => {
       }
     }
 
-    console.log('✅ Order created:', response)
+    console.log(' Order created:', response)
 
     // Xóa giỏ hàng sau khi đặt hàng thành công
     await clearCart()
@@ -472,7 +466,7 @@ const handleCheckout = async () => {
     }
 
   } catch (error) {
-    console.error('❌ Checkout error:', error)
+    console.error('Checkout error:', error)
     console.error('Error details:', {
       message: error.message,
       status: error.status,

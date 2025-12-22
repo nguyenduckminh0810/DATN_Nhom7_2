@@ -52,11 +52,10 @@ public class SanPhamService {
     // thu thập id cha + các con
     List<Long> ids = new ArrayList<>();
     ids.add(root.getId());
-    collectDescendantIds(root.getId(), ids); // viết ở dưới
+    collectDescendantIds(root.getId(), ids);
 
     Page<SanPham> page;
     if (StringUtils.hasText(search)) {
-      // nếu muốn search FE/BE có thể thêm method _IdInAndTenContaining..., tạm thời
       // search toàn cục:
       page = sanPhamRepository.findByTenContainingIgnoreCaseOrMoTaContainingIgnoreCase(search, search, pageable);
     } else {
@@ -112,7 +111,6 @@ public class SanPhamService {
 
   public Page<SanPhamResponse> getPage(String search, Long danhMucId, String sortBy, String sortOrder, String status,
       Boolean inStock, Pageable pageable) {
-    // Create new pageable with sorting if specified
     if (sortBy != null && !sortBy.trim().isEmpty()) {
       org.springframework.data.domain.Sort.Direction direction = "asc".equalsIgnoreCase(sortOrder)
           ? org.springframework.data.domain.Sort.Direction.ASC
@@ -125,7 +123,6 @@ public class SanPhamService {
 
     Page<SanPham> page;
 
-    // Build query conditions
     if (search != null && !search.trim().isEmpty() && danhMucId != null) {
       if ("active".equals(status)) {
         page = sanPhamRepository.findByDanhMuc_IdAndTenContainingIgnoreCaseAndTrangThai(
@@ -187,7 +184,6 @@ public class SanPhamService {
     sp.setMoTa(req.getMoTa());
     sp.setDanhMuc(dm);
     sp.setGia(req.getGia());
-    // generate slug from provided slug or name
     sp.setSlug(generateUniqueSlug(StringUtils.hasText(req.getSlug()) ? req.getSlug() : req.getTen(), null));
     sp.setTrangThai(req.getTrangThai() != null ? req.getTrangThai() : "active");
     sp.setTaoLuc(LocalDateTime.now());
@@ -215,7 +211,6 @@ public class SanPhamService {
     if (req.getTrangThai() != null)
       sp.setTrangThai(req.getTrangThai());
 
-    // slug: if provided use it, else regenerate from current name
     if (StringUtils.hasText(req.getSlug())) {
       sp.setSlug(generateUniqueSlug(req.getSlug(), id));
     } else {
@@ -233,9 +228,8 @@ public class SanPhamService {
       throw new ResourceNotFoundException("Sản phẩm không tồn tại: " + id);
     }
 
-    // 1. Kiểm tra xem có biến thể nào trong giỏ hàng hoặc đơn hàng không
-    // Lấy danh sách ID biến thể (không load full entity để tránh
-    // TransientObjectException)
+    // Kiểm tra xem có biến thể nào trong giỏ hàng hoặc đơn hàng không
+    // Lấy danh sách ID biến thể
     List<Long> variantIds = bienTheSanPhamRepository.findBySanPham_Id(id)
         .stream()
         .map(com.auro.auro.model.BienTheSanPham::getId)
@@ -257,18 +251,18 @@ public class SanPhamService {
       }
     }
 
-    // 2. Xóa hình ảnh của từng biến thể (dùng native delete, không load entity)
+    // Xóa hình ảnh của từng biến thể (dùng native delete, không load entity)
     for (Long variantId : variantIds) {
       hinhAnhRepository.deleteByBienThe_Id(variantId);
     }
 
-    // 3. Xóa tất cả biến thể của sản phẩm
+    // Xóa tất cả biến thể của sản phẩm
     bienTheSanPhamRepository.deleteBySanPham_Id(id);
 
-    // 4. Xóa hình ảnh của sản phẩm
+    // Xóa hình ảnh của sản phẩm
     hinhAnhRepository.deleteBySanPham_Id(id);
 
-    // 5. Cuối cùng xóa sản phẩm (dùng JPQL DELETE để tránh load entity)
+    // Cuối cùng xóa sản phẩm
     sanPhamRepository.deleteProductById(id);
   }
 
@@ -464,7 +458,7 @@ public class SanPhamService {
             .mapToInt(DanhGiaSanPham::getSoSao)
             .sum();
         double danhGiaTrungBinh = soLuongDanhGia > 0 ? tongSao / soLuongDanhGia : 0.0;
-        
+
         res.setSoLuongDanhGia(soLuongDanhGia);
         res.setDanhGia(Math.round(danhGiaTrungBinh * 10.0) / 10.0); // Làm tròn 1 chữ số thập phân
       } else {
@@ -483,14 +477,13 @@ public class SanPhamService {
    * Sinh slug unique với UUID ngắn để tránh trùng lặp hoàn toàn
    */
   private String generateUniqueSlug(String base, Long currentId) {
-    // Generate random part (10 ký tự từ UUID)
+    // Generate random part
     String randomPart = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
 
-    // Slug format: slug-{random}
     // VD: ao-thun-a1b2c3d4e5
     String slug = "slug-" + randomPart;
 
-    // Đảm bảo unique (tuy UUID gần như không trùng, nhưng vẫn check)
+    // Đảm bảo unique
     boolean exists = currentId == null
         ? sanPhamRepository.existsBySlug(slug)
         : sanPhamRepository.existsBySlugAndIdNot(slug, currentId);
@@ -518,7 +511,7 @@ public class SanPhamService {
       System.err.println("Error fetching best sellers: " + e.getMessage());
       e.printStackTrace();
 
-      // Fallback: trả về sản phẩm active thông thường
+      // trả về sản phẩm active thông thường
       Page<SanPham> fallbackPage = sanPhamRepository.findAll(
           PageRequest.of(pageable.getPageNumber(), pageable.getPageSize()));
       return fallbackPage.map(this::mapToResponse);
@@ -561,23 +554,23 @@ public class SanPhamService {
   private DanhGiaSanPhamResponse mapToReviewResponse(DanhGiaSanPham danhGia) {
     DanhGiaSanPhamResponse response = new DanhGiaSanPhamResponse();
     response.setId(danhGia.getId());
-    
+
     if (danhGia.getSanPham() != null) {
       response.setSanPhamId(danhGia.getSanPham().getId());
       response.setSanPhamTen(danhGia.getSanPham().getTen());
     }
-    
+
     if (danhGia.getKhachHang() != null) {
       response.setKhachHangId(danhGia.getKhachHang().getId());
       response.setKhachHangTen(danhGia.getKhachHang().getHoTen());
       response.setKhachHangAvatar(danhGia.getKhachHang().getAvatar());
     }
-    
+
     response.setSoSao(danhGia.getSoSao());
     response.setNoiDung(danhGia.getNoiDung());
     response.setTaoLuc(danhGia.getTaoLuc());
     response.setCapNhatLuc(danhGia.getCapNhatLuc());
-    
+
     return response;
   }
 }

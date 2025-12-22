@@ -181,8 +181,6 @@ public class DanhMucController {
         return ResponseEntity.ok(out);
     }
 
-    // Delete category (soft/hard logic). If force=true, will delete related
-    // products and descendant categories.
     @PreAuthorize("hasRole('ADM')")
     @DeleteMapping("/{id}")
     @Transactional
@@ -220,23 +218,23 @@ public class DanhMucController {
                 // Lấy danh sách ID biến thể (chỉ ID, không load entity)
                 List<Long> bienTheIds = bienTheSanPhamRepository.findIdsBySanPham_IdIn(sanPhamIds);
 
-                // Bước 1: Xóa hình ảnh của biến thể
+                // Xóa hình ảnh của biến thể
                 if (!bienTheIds.isEmpty()) {
                     hinhAnhRepository.deleteByBienThe_IdIn(bienTheIds);
                 }
 
-                // Bước 2: Xóa hình ảnh của sản phẩm
+                // Xóa hình ảnh của sản phẩm
                 hinhAnhRepository.deleteBySanPham_IdIn(sanPhamIds);
 
-                // Bước 3: Xóa biến thể
+                // Xóa biến thể
                 bienTheSanPhamRepository.deleteBySanPham_IdIn(sanPhamIds);
             }
 
-            // Bước 4: Xóa sản phẩm
+            // Xóa sản phẩm
             sanPhamRepository.deleteByDanhMuc_IdIn(toDeleteIds);
         }
 
-        // Bước 5: Xóa danh mục từ lá lên gốc
+        // Xóa danh mục từ lá lên gốc
         for (int i = toDeleteIds.size() - 1; i >= 0; i--) {
             danhMucRepository.deleteById(toDeleteIds.get(i));
         }

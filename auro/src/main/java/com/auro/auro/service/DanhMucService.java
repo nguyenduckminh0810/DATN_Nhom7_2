@@ -39,7 +39,7 @@ public class DanhMucService {
             collectDescendantIds(dmOpt.get().getId(), ids); // thu thập id các danh mục con
             return sanPhamRepository.findByDanhMuc_IdIn(ids, pageable);
         }
-        // fallback: tìm theo slug nếu không có danh mục
+        // tìm theo slug nếu không có danh mục
         return sanPhamRepository.findByDanhMuc_Slug(slug, pageable);
     }
 

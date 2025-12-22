@@ -49,38 +49,32 @@ public class JwtService {
 
     public String generateToken(
             Map<String, Object> extraClaims,
-            UserDetails userDetails
-    ) {
+            UserDetails userDetails) {
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 
     public String generateRefreshToken(
-            UserDetails userDetails
-    ) {
+            UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails, refreshExpiration);
     }
 
     public Collection<? extends GrantedAuthority> extractAuthorities(String token) {
         Claims claims = extractAllClaims(token);
         Object authoritiesObj = claims.get("authorities");
-        
-        System.out.println("DEBUG - authoritiesObj: " + authoritiesObj);
-        System.out.println("DEBUG - authoritiesObj type: " + (authoritiesObj != null ? authoritiesObj.getClass() : "null"));
-        
+
         if (authoritiesObj == null) {
             return new ArrayList<>();
         }
-        
-        // Thử parse theo format thực tế
+
+        // parse theo format thực tế
         try {
             @SuppressWarnings("unchecked")
             Collection<Map<String, String>> authorities = (Collection<Map<String, String>>) authoritiesObj;
-            
+
             return authorities.stream()
                     .map(auth -> new SimpleGrantedAuthority(auth.get("authority")))
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            System.out.println("DEBUG - Error parsing authorities: " + e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -88,8 +82,7 @@ public class JwtService {
     private String buildToken(
             Map<String, Object> extraClaims,
             UserDetails userDetails,
-            long expiration
-    ) {
+            long expiration) {
         return Jwts
                 .builder()
                 .setClaims(extraClaims)

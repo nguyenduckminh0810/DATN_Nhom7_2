@@ -59,13 +59,6 @@ public class AuthService {
     @Transactional
     public JwtResponse dangKy(DangKyRequest request) {
 
-        // Validate
-        // if ((request.getEmail() == null || request.getEmail().trim().isEmpty()) &&
-        // (request.getSoDienThoai() == null ||
-        // request.getSoDienThoai().trim().isEmpty())) {
-        // throw new BadRequestException("Phải nhập ít nhất email hoặc số điện thoại");
-        // }
-
         // check trùng
         if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
             if (taiKhoanRepository.existsByEmail(request.getEmail())) {
@@ -79,9 +72,7 @@ public class AuthService {
             }
         }
         // Tìm vai trò
-        // Tìm vai trò
         String maVaiTro = request.getLoaiTaiKhoan() != null ? request.getLoaiTaiKhoan().toUpperCase() : "CUS";
-        System.out.println("DEBUG - maVaiTro: " + maVaiTro);
         String role;
         switch (maVaiTro) {
             case "CUS":
@@ -97,10 +88,8 @@ public class AuthService {
                 role = "ADM";
                 break;
             default:
-                System.out.println("DEBUG - No case matched for: " + maVaiTro);
                 throw new BadRequestException("Loại tài khoản không hợp lệ: " + maVaiTro);
         }
-        System.out.println("DEBUG - Final role: " + role);
 
         VaiTro vaiTro = vaiTroRepository.findByMa(role)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -148,13 +137,6 @@ public class AuthService {
 
         String username = savedTaiKhoan.getEmail() != null ? savedTaiKhoan.getEmail() : savedTaiKhoan.getSoDienThoai();
 
-        log.info("=== DEBUG REGISTRATION ===");
-        log.info("Email: {}", savedTaiKhoan.getEmail());
-        log.info("SoDienThoai: {}", savedTaiKhoan.getSoDienThoai());
-        log.info("Username: {}", username);
-        log.info("Username length: {}", username != null ? username.length() : "NULL");
-        log.info("========================");
-
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(
                         savedTaiKhoan.getEmail() != null ? savedTaiKhoan.getEmail() : savedTaiKhoan.getSoDienThoai())
@@ -186,7 +168,8 @@ public class AuthService {
 
         // Check trạng thái tài khoản trước khi verify mật khẩu
         if (!Boolean.TRUE.equals(taiKhoan.getTrangThai())) {
-            throw new UnauthorizedException("Tài khoản đã bị khóa hoặc ngừng hoạt động. Vui lòng liên hệ quản trị viên");
+            throw new UnauthorizedException(
+                    "Tài khoản đã bị khóa hoặc ngừng hoạt động. Vui lòng liên hệ quản trị viên");
         }
 
         // Verify mật khẩu
@@ -203,12 +186,6 @@ public class AuthService {
             throw new UnauthorizedException("Xác thực thất bại: " + e.getMessage());
         }
 
-        System.out.println("=== DEBUG dangNhap ===");
-        System.out.println("TaiKhoan ID: " + taiKhoan.getId());
-        System.out.println("Email: " + taiKhoan.getEmail());
-        System.out.println("VaiTro object: " + taiKhoan.getVaiTro());
-        System.out.println("VaiTro Ma: " + (taiKhoan.getVaiTro() != null ? taiKhoan.getVaiTro().getMa() : "NULL!"));
-
         if (taiKhoan.getVaiTro() == null) {
             throw new RuntimeException("Tài khoản không có vai trò! ID: " + taiKhoan.getId());
         }
@@ -216,15 +193,11 @@ public class AuthService {
         String roleMa = taiKhoan.getVaiTro().getMa();
         String authority = "ROLE_" + roleMa;
 
-        System.out.println("Authority to be added: " + authority);
-
         UserDetails userDetails = org.springframework.security.core.userdetails.User
                 .withUsername(taiKhoan.getEmail() != null ? taiKhoan.getEmail() : taiKhoan.getSoDienThoai())
                 .password(taiKhoan.getMatKhauHash())
                 .authorities(authority)
                 .build();
-
-        System.out.println("UserDetails authorities: " + userDetails.getAuthorities());
 
         String accessToken = jwtService.generateToken(userDetails);
         Long expiresIn = jwtExpiration;
@@ -311,19 +284,14 @@ public class AuthService {
         try {
             // Gửi email
             emailService.guiEmailDatLaiMatKhau(request.getEmail(), resetToken, resetUrl);
-            log.info("Đã gửi email đặt lại mật khẩu đến {}", request.getEmail());
         } catch (Exception e) {
-            log.error("Lỗi khi gửi email đặt lại mật khẩu: {}", e.getMessage());
             // Nếu email chưa được config hoặc có lỗi, vẫn log token ra console cho dev
-            log.warn("Email service chưa được cấu hình hoặc có lỗi. Token reset: {}", resetToken);
             // Trong môi trường dev, log token ra console
-            System.out.println("=== DEV MODE: Reset Password Token ===");
             System.out.println("Email: " + request.getEmail());
             System.out.println("Reset URL: " + resetUrl);
             System.out.println("Token: " + resetToken);
-            System.out.println("Lưu ý: Trong production, token này sẽ được gửi qua email");
-            System.out.println("=====================================");
-            // Không throw exception, vẫn trả về success để user không biết email chưa config
+            // Không throw exception, vẫn trả về success để user không biết email chưa
+            // config
             // Trong production, nên throw exception để admin biết cần config email
         }
     }
@@ -332,9 +300,10 @@ public class AuthService {
     public void datLaiMatKhau(ResetPasswordRequest request) {
         // Tìm token hợp lệ (chưa sử dụng và chưa hết hạn)
         ResetToken resetTokenEntity = resetTokenRepository.findValidToken(
-                request.getToken(), 
+                request.getToken(),
                 LocalDateTime.now())
-                .orElseThrow(() -> new BadRequestException("Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link đặt lại mật khẩu mới."));
+                .orElseThrow(() -> new BadRequestException(
+                        "Token không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link đặt lại mật khẩu mới."));
 
         // Kiểm tra token đã được sử dụng chưa
         if (resetTokenEntity.getDaSuDung()) {
@@ -368,7 +337,5 @@ public class AuthService {
 
         // Vô hiệu hóa tất cả token còn lại của user này (bảo mật)
         resetTokenRepository.invalidateAllTokensForUser(taiKhoan);
-
-        log.info("Đã đặt lại mật khẩu cho tài khoản ID: {}", taiKhoan.getId());
     }
 }

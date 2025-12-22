@@ -21,7 +21,7 @@ public class DiaChiRequest {
     @NotBlank(message = "Phường xã không được để trống")
     private String phuongXa;
 
-    private String quanHuyen; // Không bắt buộc - để N/A
+    private String quanHuyen;
 
     @NotBlank(message = "Tỉnh thành không được để trống")
     private String tinhThanh;

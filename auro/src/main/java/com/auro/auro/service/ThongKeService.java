@@ -31,10 +31,6 @@ public class ThongKeService {
     private final HinhAnhRepository hinhAnhRepository;
     private final DanhGiaSanPhamRepository danhGiaSanPhamRepository;
 
-    /**
-     * Helper method to get list of possible status values in DB
-     * Supports both Vietnamese and English status values
-     */
     private List<String> getStatusValues(String englishStatus) {
         return Arrays.asList(OrderStatus.getDbValues(englishStatus));
     }
@@ -65,12 +61,10 @@ public class ThongKeService {
             }
         }
 
-        // Yesterday stats for comparison
         long ordersYesterday = donHangRepository.countByTaoLucBetween(startOfYesterday, endOfYesterday);
         BigDecimal revenueYesterday = donHangRepository.sumRevenueByDatLucBetweenAndTrangThaiIn(completedStatusValues,
                 startOfYesterday, endOfYesterday);
 
-        // Calculate growth
         double orderGrowth = calculateGrowth(ordersToday, ordersYesterday);
         double revenueGrowth = calculateGrowth(revenueToday, revenueYesterday);
 
@@ -81,13 +75,6 @@ public class ThongKeService {
         long newCustomersToday = khachHangRepository.countNewCustomersBetween(startOfToday, now);
         long newCustomersYesterday = khachHangRepository.countNewCustomersBetween(startOfYesterday, endOfYesterday);
         double customersGrowth = calculateGrowth(newCustomersToday, newCustomersYesterday);
-
-        // Debug logging
-        System.out.println("👥 [CUSTOMER DEBUG] Querying from: khach_hang table");
-        System.out.println("👥 [CUSTOMER DEBUG] Start of Today: " + startOfToday);
-        System.out.println("👥 [CUSTOMER DEBUG] Now: " + now);
-        System.out.println("👥 [CUSTOMER DEBUG] New Customers Today: " + newCustomersToday);
-        System.out.println("👥 [CUSTOMER DEBUG] Total Customers: " + totalCustomers);
 
         // Low stock count - Đếm số SẢN PHẨM (không phải biến thể) có ít nhất 1 biến thể
         // sắp hết hoặc hết hàng
@@ -104,28 +91,13 @@ public class ThongKeService {
             List<Object[]> allVariants = bienTheSanPhamRepository.findAllWithStock();
             List<Long> productIdsWithLowStock = bienTheSanPhamRepository.findProductIdsWithLowStock(lowStockThreshold);
 
-            System.out.println("📦 [LOW STOCK DEBUG] Threshold: " + lowStockThreshold);
-            System.out.println("📦 [LOW STOCK DEBUG] Products with Low Stock (distinct products): " + lowStockCount);
-            System.out.println("📦 [LOW STOCK DEBUG] Product IDs with Low Stock: " + productIdsWithLowStock);
-            System.out.println("📦 [LOW STOCK DEBUG] Low Stock Variants (>0 and <=" + lowStockThreshold + "): "
-                    + lowStockVariants);
-            System.out.println("📦 [LOW STOCK DEBUG] All Low Stock Variants (<= " + lowStockThreshold
-                    + ", including 0): " + allLowStockVariants);
-            System.out.println("📦 [LOW STOCK DEBUG] Total Variants: " + totalVariants);
-
             // Đếm số sản phẩm có biến thể hết hàng (stock = 0)
             long productsOutOfStock = bienTheSanPhamRepository.countProductsWithLowStock(0);
-            System.out.println(
-                    "📦 [LOW STOCK DEBUG] Products with Out of Stock variants (stock = 0): " + productsOutOfStock);
-
-            System.out.println("📦 [LOW STOCK DEBUG] All Variants Stock Details:");
             for (Object[] variant : allVariants) {
                 Long id = (Long) variant[0];
                 Integer stock = (Integer) variant[1];
-                System.out.println("  - Variant ID: " + id + ", Stock: " + (stock != null ? stock : "NULL"));
             }
         } catch (Exception e) {
-            System.out.println("📦 [LOW STOCK DEBUG] Error getting variant details: " + e.getMessage());
             e.printStackTrace();
         }
 
@@ -140,23 +112,12 @@ public class ThongKeService {
         summary.put("lowStockCount", lowStockCount);
         summary.put("totalCustomers", totalCustomers);
 
-        // Debug logging
-        System.out.println("📊 [THONG KE SUMMARY]");
-        System.out.println("  - Revenue Today: " + summary.get("revenueToday"));
-        System.out.println("  - Low Stock Count: " + summary.get("lowStockCount") + " (type: " + lowStockCount + ")");
-        System.out.println("  - New Customers Today: " + summary.get("newCustomersToday"));
-        System.out.println("  - Summary map keys: " + summary.keySet());
-        System.out.println("  - Summary map values: " + summary);
-
         return summary;
     }
 
     public Map<String, Object> getAlerts(Integer lowStockThreshold) {
         if (lowStockThreshold == null)
             lowStockThreshold = 10;
-
-        System.out.println("🚨 [ALERTS DEBUG]");
-        System.out.println("  - Low Stock Threshold: " + lowStockThreshold);
 
         // Low stock count - Đếm số SẢN PHẨM (không phải biến thể) có ít nhất 1 biến thể
         // sắp hết hoặc hết hàng
@@ -286,13 +247,6 @@ public class ThongKeService {
         LocalDateTime startDate = now.minusDays(rangeDays);
         Pageable pageable = PageRequest.of(0, limit);
 
-        System.out.println("📦 [TOP PRODUCTS DEBUG]");
-        System.out.println("  - Limit: " + limit);
-        System.out.println("  - Range Days: " + rangeDays);
-        System.out.println("  - Start Date: " + startDate);
-        System.out.println("  - End Date: " + now);
-        System.out.println("  - OrderStatus.HOAN_TAT: " + OrderStatus.HOAN_TAT);
-
         List<Object[]> topProducts = donHangChiTietRepository.findTopProductsBetween(OrderStatus.HOAN_TAT, startDate,
                 now, pageable);
 
@@ -330,7 +284,7 @@ public class ThongKeService {
                     System.out.println("  - No images found for product " + productId);
                 }
             } catch (Exception e) {
-                System.out.println("⚠️ Error loading image for product " + productId + ": " + e.getMessage());
+                System.out.println(" Error loading image for product " + productId + ": " + e.getMessage());
                 e.printStackTrace();
             }
             product.put("image", imageUrl);
@@ -345,9 +299,6 @@ public class ThongKeService {
     public List<Map<String, Object>> getRecentOrders(Integer limit) {
         if (limit == null)
             limit = 10;
-
-        System.out.println("📋 [RECENT ORDERS DEBUG]");
-        System.out.println("  - Limit: " + limit);
 
         Pageable pageable = PageRequest.of(0, limit);
         var orders = donHangRepository.findRecentOrders(pageable);
@@ -420,16 +371,8 @@ public class ThongKeService {
                 }
             }
         } catch (Exception e) {
-            System.out.println("⚠️ Error calculating average rating: " + e.getMessage());
+            System.out.println(" Error calculating average rating: " + e.getMessage());
         }
-
-        System.out.println("👥 [CUSTOMER SUMMARY DEBUG]");
-        System.out.println("  - Total Customers: " + totalCustomers);
-        System.out.println("  - Customers With Orders: " + customersWithOrders);
-        System.out.println("  - Repeat Customers: " + repeatCustomers);
-        System.out.println("  - New Customers Today: " + newCustomersToday);
-        System.out.println("  - Repeat Rate: " + repeatRate + "%");
-        System.out.println("  - Average Rating: " + averageRating);
 
         Map<String, Object> summary = new HashMap<>();
         summary.put("totalCustomers", totalCustomers);
@@ -453,12 +396,6 @@ public class ThongKeService {
         LocalDateTime previousStart = startDate.minusDays(rangeDays);
         LocalDateTime previousEnd = startDate.minusSeconds(1);
         Pageable pageable = PageRequest.of(0, limit);
-
-        System.out.println("📊 [CATEGORY PERFORMANCE DEBUG]");
-        System.out.println("  - Limit: " + limit);
-        System.out.println("  - Range Days: " + rangeDays);
-        System.out.println("  - Current Period: " + startDate + " to " + now);
-        System.out.println("  - Previous Period: " + previousStart + " to " + previousEnd);
 
         // Current period
         List<Object[]> categoryData = donHangChiTietRepository.findCategoryPerformanceBetween(OrderStatus.HOAN_TAT,
@@ -570,11 +507,8 @@ public class ThongKeService {
         BigDecimal previousRevenue = donHangRepository.sumRevenueByDatLucBetweenAndTrangThaiIn(completedStatusValues,
                 previousStart, previousEnd);
 
-        // Note: For customers and products, we can't track historical count easily
-        // without timestamp fields
-        // So we'll use a simple approximation or return 0 for now
-        long previousCustomers = totalCustomers; // TODO: Need taoLuc field in KhachHang to calculate properly
-        long previousProducts = totalProducts; // TODO: Need taoLuc field in SanPham to calculate properly
+        long previousCustomers = totalCustomers;
+        long previousProducts = totalProducts;
 
         // Calculate growth rates
         double revenueGrowth = calculateGrowth(totalRevenue, previousRevenue);
@@ -636,12 +570,10 @@ public class ThongKeService {
                 ? (double) repeatCustomers / newCustomers * 100
                 : 0.0;
 
-        // Mock data for metrics that need more complex calculation
-        // TODO: Implement real calculation when data is available
-        double refundRate = 0.0; // TODO: Calculate from cancelled orders
-        double profitMargin = 25.0; // TODO: Calculate from cost data
+        double refundRate = 0.0;
+        double profitMargin = 25.0;
         BigDecimal customerLifetimeValue = averageOrderValue.multiply(BigDecimal.valueOf(2)); // Rough estimate
-        int averageRetentionDays = 90; // TODO: Calculate from customer data
+        int averageRetentionDays = 90;
 
         // Get top selling product
         String topSellingProduct = "N/A";
@@ -668,7 +600,6 @@ public class ThongKeService {
                 inventoryTurnover = (double) totalSoldQuantity / totalInventory;
             }
         } catch (Exception e) {
-            // If query fails, keep 0.0
             inventoryTurnover = 0.0;
         }
 
@@ -676,13 +607,10 @@ public class ThongKeService {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
 
-        // Try to get orders by taoLuc first, if no results, fallback to datLuc
         long todayOrders = donHangRepository.countByTaoLucBetween(startOfToday, now);
         BigDecimal todayRevenue = donHangRepository.sumRevenueByTaoLucBetween(startOfToday, now);
         long todayCustomers = donHangRepository.countDistinctCustomersByTaoLucBetween(startOfToday, now);
 
-        // Fallback: If no orders found by taoLuc, try datLuc (for orders that might not
-        // have taoLuc set)
         if (todayOrders == 0 || (todayRevenue != null && todayRevenue.compareTo(BigDecimal.ZERO) == 0)) {
             long ordersByDatLuc = donHangRepository.countByDatLucBetween(startOfToday, now);
             BigDecimal revenueByDatLuc = donHangRepository.sumRevenueByDatLucBetween(startOfToday, now);
@@ -719,16 +647,6 @@ public class ThongKeService {
                 completedStatusValues, startDate, endDate);
         insights.put("productsSold", productsSold);
 
-        // Debug logging
-        System.out.println("📊 [BUSINESS INSIGHTS DEBUG]");
-        System.out.println("📊 Date range: " + startDate + " to " + endDate);
-        System.out.println("📊 Today's Revenue: " + todayRevenue);
-        System.out.println("📊 Today's Orders: " + todayOrders);
-        System.out.println("📊 Today's Customers: " + todayCustomers);
-        System.out.println("📊 Products Sold (period): " + productsSold);
-        System.out.println("📊 Total Orders (period): " + totalOrders);
-        System.out.println("📊 Total Revenue (period): " + totalRevenue);
-
         return insights;
     }
 
@@ -748,7 +666,7 @@ public class ThongKeService {
                 OrderStatus.HOAN_TAT, startOfDay, endOfDay);
 
         // Count unique customers (simplified - just use order count as proxy)
-        long totalCustomers = totalOrders; // TODO: Count distinct customers
+        long totalCustomers = totalOrders;
 
         // Initialize 24 hours with 0 values
         List<Map<String, Object>> hourlySales = new ArrayList<>();
@@ -757,8 +675,6 @@ public class ThongKeService {
             hourData.put("hour", hour);
             hourData.put("time", String.format("%02d:00", hour));
 
-            // For now, distribute evenly across hours (simplified)
-            // TODO: Query actual hourly data from DB
             hourData.put("orders", totalOrders > 0 ? (totalOrders / 24) : 0);
             hourData.put("revenue",
                     totalRevenue != null
@@ -784,42 +700,28 @@ public class ThongKeService {
         BigDecimal totalRevenue = donHangRepository.sumRevenueByDatLucBetweenAndTrangThai(OrderStatus.HOAN_TAT,
                 startDate, endDate);
 
-        // Count carts created in the period
         long totalCarts = gioHangRepository.countByTaoLucBetween(startDate, endDate);
 
-        // Calculate conversion rate: orders / carts * 100
-        // Cap at 100% if orders exceed carts (some orders may be created directly
-        // without cart)
         double conversionRate = totalCarts > 0
                 ? Math.min(100.0, (double) totalOrders / totalCarts * 100)
                 : (totalOrders > 0 ? 100.0 : 0.0);
 
-        // Calculate cart abandonment rate: (carts - orders) / carts * 100
-        // Ensure it's between 0 and 100%
         double cartAbandonmentRate = 0.0;
         if (totalCarts > 0) {
             if (totalOrders <= totalCarts) {
                 cartAbandonmentRate = (double) (totalCarts - totalOrders) / totalCarts * 100;
             } else {
-                // If orders > carts, it means some orders were created directly
-                // In this case, abandonment rate is 0 (all carts converted)
                 cartAbandonmentRate = 0.0;
             }
         } else if (totalOrders > 0) {
-            // No carts but have orders - orders created directly, no abandonment
             cartAbandonmentRate = 0.0;
         }
 
-        // Calculate completion rate
         double completionRate = totalOrders > 0 ? (double) completedOrders / totalOrders * 100 : 0.0;
 
-        // Calculate cancellation rate
         double cancellationRate = totalOrders > 0 ? (double) cancelledOrders / totalOrders * 100 : 0.0;
 
-        // Customer satisfaction: Use completion rate as proxy (completed orders
-        // indicate satisfaction)
-        // In a real system, this would come from reviews/ratings
-        double customerSatisfaction = completionRate; // Simplified: assume satisfied if order completed
+        double customerSatisfaction = completionRate;
 
         Map<String, Object> metrics = new HashMap<>();
         metrics.put("totalOrders", totalOrders);
@@ -861,13 +763,9 @@ public class ThongKeService {
             long activeCustomers = donHangRepository.countCustomersWithCompletedOrders(OrderStatus.HOAN_TAT);
             long repeatCustomers = donHangRepository.countRepeatCustomers(OrderStatus.HOAN_TAT);
 
-            // Calculate new customers (customers who haven't made any orders yet)
             long newCustomers = totalCustomers - activeCustomers;
 
-            // Calculate VIP customers (customers with 3+ completed orders)
-            // For now, use repeat customers as proxy for VIP (customers with multiple
-            // orders)
-            long vipCustomers = repeatCustomers; // TODO: Implement proper VIP calculation based on order value/quantity
+            long vipCustomers = repeatCustomers;
 
             analytics.put("total", totalCustomers);
             analytics.put("active", activeCustomers);

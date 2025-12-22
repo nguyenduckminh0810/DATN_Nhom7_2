@@ -53,12 +53,9 @@ public class TestController {
     @GetMapping("/kich-co")
     public ResponseEntity<?> testKichCo() {
         try {
-            System.out.println("=== TEST: Đang test KichCo ===");
             List<KichCo> kichCos = kichCoRepository.findAll();
-            System.out.println("=== TEST: Tìm thấy " + kichCos.size() + " kích cỡ ===");
             return ResponseEntity.ok(kichCos);
         } catch (Exception e) {
-            System.err.println("=== TEST ERROR: " + e.getMessage() + " ===");
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Lỗi: " + e.getMessage());
         }

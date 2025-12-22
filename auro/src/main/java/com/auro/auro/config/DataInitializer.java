@@ -24,9 +24,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initializeRoles() {
-        // Only seed when table is empty to avoid duplicates
         if (vaiTroRepository.count() == 0) {
-            log.info("=== Initializing default roles (via JPA) ===");
 
             VaiTro customer = new VaiTro(null, "CUS", "Khách hàng");
             VaiTro guest = new VaiTro(null, "GST", "Khách vãng lai");

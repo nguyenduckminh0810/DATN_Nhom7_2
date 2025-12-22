@@ -17,18 +17,15 @@ public class BienTheController {
 
     private final BienTheService bienTheService;
 
-    /**
-     * Lấy danh sách biến thể của sản phẩm
-     */
+    // Lấy danh sách biến thể của sản phẩm
     @GetMapping("/san-pham/{sanPhamId}")
     public ResponseEntity<List<VariantResponse>> getVariantsBySanPham(@PathVariable Long sanPhamId) {
         List<VariantResponse> variants = bienTheService.getVariantsBySanPhamId(sanPhamId);
         return ResponseEntity.ok(variants);
     }
 
-    /**
-     * Tạo hoặc cập nhật nhiều biến thể cho sản phẩm
-     */
+    // Tạo hoặc cập nhật nhiều biến thể cho sản phẩm
+
     @PostMapping("/san-pham/{sanPhamId}")
     public ResponseEntity<List<VariantResponse>> upsertVariants(
             @PathVariable Long sanPhamId,
@@ -37,27 +34,24 @@ public class BienTheController {
         return ResponseEntity.ok(savedVariants);
     }
 
-    /**
-     * Xóa biến thể
-     */
+    // Xóa biến thể
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteVariant(@PathVariable Long id) {
         bienTheService.deleteVariant(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Xóa tất cả biến thể của sản phẩm
-     */
+    // Xóa tất cả biến thể của sản phẩm
+
     @DeleteMapping("/san-pham/{sanPhamId}")
     public ResponseEntity<Void> deleteAllVariantsBySanPham(@PathVariable Long sanPhamId) {
         bienTheService.deleteAllVariantsBySanPham(sanPhamId);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Cập nhật tồn kho của một biến thể
-     */
+    // Cập nhật tồn kho của một biến thể
+
     @PatchMapping("/{id}/stock")
     public ResponseEntity<VariantResponse> updateStock(
             @PathVariable Long id,
@@ -66,9 +60,8 @@ public class BienTheController {
         return ResponseEntity.ok(updated);
     }
 
-    /**
-     * Lấy chi tiết một biến thể
-     */
+    // Lấy chi tiết một biến thể
+
     @GetMapping("/{id}")
     public ResponseEntity<VariantResponse> getVariantById(@PathVariable Long id) {
         VariantResponse variant = bienTheService.getVariantById(id);

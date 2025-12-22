@@ -35,7 +35,6 @@ public class DiaChiController {
 
                 // Nếu chưa có record KhachHang, tự động tạo mới
                 if (khachHang == null) {
-                        System.out.println("Auto-creating KhachHang for user: " + taiKhoan.getEmail());
                         khachHang = new KhachHang();
                         khachHang.setTaiKhoan(taiKhoan);
                         if (taiKhoan.getEmail() != null) {
@@ -44,7 +43,6 @@ public class DiaChiController {
                         khachHang.setKieu("REGISTERED");
                         khachHang.setTaoLuc(java.time.LocalDateTime.now()); // Set thời gian tạo
                         khachHang = khachHangRepository.save(khachHang);
-                        System.out.println("Created KhachHang with ID: " + khachHang.getId());
                 }
 
                 return khachHang;
@@ -58,18 +56,11 @@ public class DiaChiController {
                         @AuthenticationPrincipal CustomUserDetails userDetails) {
                 TaiKhoan taiKhoan = userDetails.getTaiKhoan();
 
-                // Debug log
-                System.out.println("=== GET ALL DIA CHI ===");
-                System.out.println("Tai khoan ID: " + taiKhoan.getId());
-                System.out.println("Tai khoan email: " + taiKhoan.getEmail());
-
                 // Lấy hoặc tạo KhachHang
                 KhachHang khachHang = getOrCreateKhachHang(taiKhoan);
 
                 Long khachHangId = khachHang.getId();
                 List<DiaChiResponse> diaChiList = diaChiService.getDiaChiByKhachHang(khachHangId);
-
-                System.out.println("Found " + diaChiList.size() + " addresses");
 
                 return ResponseEntity.ok(ApiResponse.<List<DiaChiResponse>>builder()
                                 .success(true)

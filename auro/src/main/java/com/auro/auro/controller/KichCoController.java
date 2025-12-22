@@ -18,7 +18,6 @@ public class KichCoController {
 
     /**
      * Test endpoint để kiểm tra controller hoạt động
-     * GET /api/kich-co/test
      */
     @GetMapping("/test")
     public ResponseEntity<?> testEndpoint() {
@@ -27,14 +26,11 @@ public class KichCoController {
 
     /**
      * Lấy tất cả kích cỡ, sắp xếp theo thứ tự
-     * GET /api/kich-co
      */
     @GetMapping
     public ResponseEntity<?> getAllKichCo() {
         try {
-            System.out.println("=== DEBUG: Đang gọi getAllKichCo() ===");
             List<KichCo> kichCos = kichCoRepository.findAll();
-            System.out.println("=== DEBUG: Số lượng kích cỡ tìm được: " + kichCos.size() + " ===");
 
             // Sắp xếp theo thuTu
             List<KichCo> sortedList = kichCos.stream()
@@ -44,11 +40,8 @@ public class KichCoController {
                         return thuTuA.compareTo(thuTuB);
                     })
                     .collect(Collectors.toList());
-
-            System.out.println("=== DEBUG: Đã sắp xếp xong ===");
             return ResponseEntity.ok(sortedList);
         } catch (Exception e) {
-            System.err.println("=== ERROR: " + e.getMessage() + " ===");
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Lỗi khi lấy danh sách kích cỡ: " + e.getMessage());
         }
@@ -56,14 +49,11 @@ public class KichCoController {
 
     /**
      * Lấy chỉ tên kích cỡ (dùng cho filter)
-     * GET /api/kich-co/ten
      */
     @GetMapping("/ten")
     public ResponseEntity<?> getAllKichCoNames() {
         try {
-            System.out.println("=== DEBUG: Đang gọi getAllKichCoNames() ===");
             List<KichCo> kichCos = kichCoRepository.findAll();
-            System.out.println("=== DEBUG: Số lượng kích cỡ tìm được: " + kichCos.size() + " ===");
 
             // Sắp xếp và lấy chỉ tên
             List<String> names = kichCos.stream()
@@ -74,11 +64,8 @@ public class KichCoController {
                     })
                     .map(KichCo::getTen)
                     .collect(Collectors.toList());
-
-            System.out.println("=== DEBUG: Danh sách tên: " + names + " ===");
             return ResponseEntity.ok(names);
         } catch (Exception e) {
-            System.err.println("=== ERROR: " + e.getMessage() + " ===");
             e.printStackTrace();
             return ResponseEntity.badRequest().body("Lỗi khi lấy danh sách tên kích cỡ: " + e.getMessage());
         }
@@ -86,7 +73,6 @@ public class KichCoController {
 
     /**
      * Lấy kích cỡ theo ID
-     * GET /api/kich-co/{id}
      */
     @GetMapping("/{id}")
     public ResponseEntity<?> getKichCoById(@PathVariable Long id) {
@@ -97,7 +83,6 @@ public class KichCoController {
 
     /**
      * Thêm kích cỡ mới
-     * POST /api/kich-co
      */
     @PostMapping
     public ResponseEntity<?> createKichCo(@RequestBody KichCo kichCo) {
@@ -110,7 +95,8 @@ public class KichCoController {
                 }
             } else {
                 return ResponseEntity.badRequest()
-                        .body(java.util.Map.of("message", "Tên kích cỡ không được để trống", "error", "Size name is required"));
+                        .body(java.util.Map.of("message", "Tên kích cỡ không được để trống", "error",
+                                "Size name is required"));
             }
 
             // Tạo mới kích cỡ
@@ -121,13 +107,13 @@ public class KichCoController {
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("message", "Lỗi khi tạo kích cỡ: " + e.getMessage(), "error", e.getMessage()));
+                    .body(java.util.Map.of("message", "Lỗi khi tạo kích cỡ: " + e.getMessage(), "error",
+                            e.getMessage()));
         }
     }
 
     /**
      * Cập nhật kích cỡ
-     * PUT /api/kich-co/{id}
      */
     @PutMapping("/{id}")
     public ResponseEntity<?> updateKichCo(@PathVariable Long id, @RequestBody KichCo kichCo) {
@@ -139,33 +125,35 @@ public class KichCoController {
                             if (!existing.getTen().equals(kichCo.getTen().trim())) {
                                 if (kichCoRepository.existsByTen(kichCo.getTen().trim())) {
                                     return ResponseEntity.badRequest()
-                                            .body(java.util.Map.of("message", "Kích cỡ đã tồn tại", "error", "Size already exists"));
+                                            .body(java.util.Map.of("message", "Kích cỡ đã tồn tại", "error",
+                                                    "Size already exists"));
                                 }
                             }
                             existing.setTen(kichCo.getTen().trim());
                         } else {
                             return ResponseEntity.badRequest()
-                                    .body(java.util.Map.of("message", "Tên kích cỡ không được để trống", "error", "Size name is required"));
+                                    .body(java.util.Map.of("message", "Tên kích cỡ không được để trống", "error",
+                                            "Size name is required"));
                         }
-                        
+
                         // Cập nhật thứ tự
                         if (kichCo.getThuTu() != null) {
                             existing.setThuTu(kichCo.getThuTu());
                         }
-                        
+
                         KichCo updated = kichCoRepository.save(existing);
                         return ResponseEntity.ok(updated);
                     })
                     .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("message", "Lỗi khi cập nhật kích cỡ: " + e.getMessage(), "error", e.getMessage()));
+                    .body(java.util.Map.of("message", "Lỗi khi cập nhật kích cỡ: " + e.getMessage(), "error",
+                            e.getMessage()));
         }
     }
 
     /**
      * Xóa kích cỡ
-     * DELETE /api/kich-co/{id}
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteKichCo(@PathVariable Long id) {
@@ -173,12 +161,13 @@ public class KichCoController {
             if (!kichCoRepository.existsById(id)) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             kichCoRepository.deleteById(id);
             return ResponseEntity.ok(java.util.Map.of("message", "Đã xóa kích cỡ thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(java.util.Map.of("message", "Lỗi khi xóa kích cỡ: " + e.getMessage(), "error", e.getMessage()));
+                    .body(java.util.Map.of("message", "Lỗi khi xóa kích cỡ: " + e.getMessage(), "error",
+                            e.getMessage()));
         }
     }
 }

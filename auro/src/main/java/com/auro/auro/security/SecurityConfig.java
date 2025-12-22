@@ -54,8 +54,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/danh-muc/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/hinh-anh/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/kich-co/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/mau-sac/**").permitAll() // ✅ Add this line
-                        .requestMatchers(HttpMethod.GET, "/api/chat-lieu/**").permitAll() // ✅ Add this line for materials
+                        .requestMatchers(HttpMethod.GET, "/api/mau-sac/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/chat-lieu/**").permitAll()
                         // Static uploaded files
                         .requestMatchers("/files/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
@@ -63,7 +63,7 @@ public class SecurityConfig {
                         // Shipping API - GHN (public access)
                         .requestMatchers("/api/shipping/**").permitAll()
 
-                        // API TEST (DÙNG XONG NHỚ XÓA)
+                        // API TEST
                         .requestMatchers("/api/test/**").permitAll()
 
                         // Guest endpoints - khách vãng lai

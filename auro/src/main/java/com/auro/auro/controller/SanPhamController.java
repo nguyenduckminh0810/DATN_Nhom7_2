@@ -28,9 +28,6 @@ public class SanPhamController {
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "12") int size) {
 
-        // sanPhamService.getPageByCategorySlugIncludingChildren(...) is not defined;
-        // return an empty page as a safe fallback until the service method is
-        // implemented.
         Page<SanPhamResponse> p = sanPhamService
                 .getPageByCategorySlugIncludingChildren(slug, search, PageRequest.of(page, size));
         return ResponseEntity.ok(p);

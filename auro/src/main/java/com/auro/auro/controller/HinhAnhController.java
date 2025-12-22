@@ -56,7 +56,6 @@ public class HinhAnhController {
             SanPham sp = sanPhamRepository.findById(idSanPham)
                     .orElseThrow(() -> new IllegalArgumentException("Sản phẩm không tồn tại: " + idSanPham));
 
-            // Ensure upload directory exists
             Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(dir);
 
@@ -104,7 +103,6 @@ public class HinhAnhController {
             BienTheSanPham bienThe = bienTheSanPhamRepository.findById(idBienThe)
                     .orElseThrow(() -> new IllegalArgumentException("Biến thể không tồn tại: " + idBienThe));
 
-            // Ensure upload directory exists
             Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(dir);
 
@@ -146,7 +144,6 @@ public class HinhAnhController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File rỗng hoặc không hợp lệ");
             }
 
-            // Ensure upload directory exists
             Path dir = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(dir);
 
@@ -161,7 +158,6 @@ public class HinhAnhController {
             Path target = dir.resolve(filename);
             Files.copy(file.getInputStream(), target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-            // Return just the URL - file will be linked to variant when variant is saved
             String url = "/files/" + filename;
             return ResponseEntity.ok(java.util.Collections.singletonMap("url", url));
         } catch (Exception ex) {
@@ -182,12 +178,10 @@ public class HinhAnhController {
 
         HinhAnh ha = opt.get();
 
-        // Update laDaiDien if provided
         if (updates.containsKey("laDaiDien")) {
             ha.setLaDaiDien(Boolean.TRUE.equals(updates.get("laDaiDien")));
         }
 
-        // Update thuTu if provided
         if (updates.containsKey("thuTu")) {
             Object thuTuObj = updates.get("thuTu");
             if (thuTuObj instanceof Number) {
@@ -207,13 +201,11 @@ public class HinhAnhController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         HinhAnh ha = opt.get();
-        // Try to delete file on disk (best-effort)
         try {
             if (ha.getUrl() != null) {
                 String p = ha.getUrl();
                 if (p.startsWith("/"))
                     p = p.substring(1);
-                // Remove 'files/' prefix if present to get actual filename
                 if (p.startsWith("files/"))
                     p = p.substring("files/".length());
                 Path path = Paths.get(uploadDir).resolve(p).toAbsolutePath().normalize();

@@ -42,7 +42,7 @@ public class GuestCheckoutRequest {
     // Mã voucher (giảm giá hoặc freeship) từ FE
     private String maVoucher;
 
-    // ✅ Danh sách ID các chi tiết giỏ hàng đã được chọn để thanh toán
+    // Danh sách ID các chi tiết giỏ hàng đã được chọn để thanh toán
     private List<Long> selectedCartItemIds;
 
     public GuestCheckoutRequest() {

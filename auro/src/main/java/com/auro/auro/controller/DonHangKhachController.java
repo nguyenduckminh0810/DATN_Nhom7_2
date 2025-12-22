@@ -38,7 +38,6 @@ public class DonHangKhachController {
     @Autowired
     private KhachHangRepository khachHangRepository;
 
-    // Track last order timestamp per logged-in customer (across sessions)
     private static final ConcurrentHashMap<Long, Long> lastOrderByKhachHang = new ConcurrentHashMap<>();
 
     // tạo đơn hàng từ giỏ hàng
@@ -55,8 +54,6 @@ public class DonHangKhachController {
                 throw new RuntimeException("Không thể xác định khách hàng");
             }
 
-            // Duplicate protection: prefer per-customer blocking (10s) when logged-in,
-            // otherwise use session-level blocking (10s)
             try {
                 long now = System.currentTimeMillis();
                 if (khachHangId != null) {
@@ -84,13 +81,11 @@ public class DonHangKhachController {
                     httpRequest.getSession().setAttribute("lastOrderTs", now);
                 }
             } catch (Exception ex) {
-                // ignore session/map errors
             }
 
             DonHangResponse dh = donHangService.taoDonTuGioHang(request, khachHangId);
             return ResponseEntity.ok(dh);
         } catch (Exception e) {
-            log.error("Error in taoDonTuGioHang: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().build();
         }
     }
@@ -118,7 +113,7 @@ public class DonHangKhachController {
     @PreAuthorize("hasAnyRole('CUS', 'STF', 'ADM')")
     @PutMapping("/{donHangId}/huy")
     public ResponseEntity<?> huyDonHang(
-            @PathVariable Long donHangId, 
+            @PathVariable Long donHangId,
             @RequestBody(required = false) Map<String, String> request,
             Authentication auth) {
         try {
@@ -130,10 +125,10 @@ public class DonHangKhachController {
                 errorResponse.put("error", "Vui lòng nhập lý do hủy đơn hàng");
                 return ResponseEntity.badRequest().body(errorResponse);
             }
-            
+
             // Lấy email từ Authentication
             String emailNguoiHuy = layEmailTuAuth(auth);
-            
+
             DonHangResponse dh = donHangService.huyDonHang(donHangId, khachHangId, lyDoHuy, emailNguoiHuy);
             return ResponseEntity.ok(dh);
         } catch (RuntimeException e) {
@@ -214,8 +209,6 @@ public class DonHangKhachController {
             String sessionId = httpRequest.getSession().getId();
             Long khachHangId = layKhachHangIdTuAuth(auth);
 
-            // Simple session-level duplicate protection: block orders from same session
-            // within 5 seconds
             try {
                 long now = System.currentTimeMillis();
                 Object lastObj = httpRequest.getSession().getAttribute("lastOrderTs");
@@ -231,7 +224,6 @@ public class DonHangKhachController {
                 }
                 httpRequest.getSession().setAttribute("lastOrderTs", now);
             } catch (Exception ex) {
-                // ignore session errors
             }
 
             // Tạo đơn và nhận lại thông tin để FE có id/tổng tiền cho VNPay

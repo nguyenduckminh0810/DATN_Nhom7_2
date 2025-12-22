@@ -46,7 +46,7 @@ public class ProfileController {
         String roleCode = taiKhoan.getVaiTro() != null ? taiKhoan.getVaiTro().getMa() : null;
         String email = taiKhoan.getEmail();
 
-        // Chỉ cập nhật HỌ TÊN, tuyệt đối không động vào email / số điện thoại
+        // Chỉ cập nhật HỌ TÊN, không động vào email / số điện thoại
         if ("CUS".equals(roleCode) || "GST".equals(roleCode)) {
             KhachHang khachHang = khachHangRepository.findByTaiKhoan_Email(email)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin khách hàng"));
@@ -132,5 +132,3 @@ public class ProfileController {
                 .build();
     }
 }
-
-
