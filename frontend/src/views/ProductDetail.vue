@@ -62,6 +62,7 @@
                   @image-change="handleImageChange"
                   @lightbox-open="handleLightboxOpen"
                   @lightbox-close="handleLightboxClose"
+                  @near-end="handleNearEnd"
                 />
               </div>
             </div>
@@ -106,12 +107,6 @@
                     >{{ formatPrice(product?.originalPrice) }}</span
                   >
                 </div>
-              </div>
-
-              <!-- Product Description -->
-              <div class="product-description-modern mb-4">
-                <h6 class="section-title-modern">Mô tả sản phẩm</h6>
-                <p class="description-text">{{ product?.description || 'Đang tải mô tả...' }}</p>
               </div>
 
               <!-- Product Variants -->
@@ -277,16 +272,10 @@
         <ul class="nav-list">
           <li><a href="#mo-ta" :class="{ active: activeSection === 'mo-ta' }">Mô tả</a></li>
           <li>
-            <a href="#chat-lieu" :class="{ active: activeSection === 'chat-lieu' }">Chất liệu</a>
-          </li>
-          <li>
             <a href="#bang-size" :class="{ active: activeSection === 'bang-size' }">Bảng size</a>
           </li>
           <li>
             <a href="#danh-gia" :class="{ active: activeSection === 'danh-gia' }">Đánh giá</a>
-          </li>
-          <li v-if="viewedProductsStore.getRecentViewedProducts.length > 0">
-            <a href="#da-xem" :class="{ active: activeSection === 'da-xem' }">Sản phẩm đã xem</a>
           </li>
           <li>
             <a href="#lien-quan" :class="{ active: activeSection === 'lien-quan' }"
@@ -303,43 +292,7 @@
         <div class="section-header">
           <h2>Mô tả sản phẩm</h2>
         </div>
-        <div class="section-content">
-          <p>{{ product?.description || 'Đang tải mô tả...' }}</p>
-          <div class="product-details">
-            <h3>Chi tiết sản phẩm</h3>
-            <ul>
-              <li>Chất liệu: {{ product?.material || 'Cotton cao cấp' }}</li>
-              <li>Xuất xứ: {{ product?.origin || 'Việt Nam' }}</li>
-              <li>Phong cách: {{ product?.style || 'Casual, Business' }}</li>
-              <li>Phù hợp: {{ product?.suitable || 'Mọi lứa tuổi' }}</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="chat-lieu" class="content-section alt-bg">
-      <div class="content-wrapper">
-        <div class="section-header">
-          <h2>Chất liệu & Bảo quản</h2>
-        </div>
-        <div class="section-content">
-          <div class="material-info">
-            <h3>Thông tin chất liệu</h3>
-            <p>
-              Chất liệu cotton cao cấp 100%, mềm mại và thoáng khí, phù hợp với khí hậu nhiệt đới.
-            </p>
-          </div>
-          <div class="care-instructions">
-            <h3>Hướng dẫn bảo quản</h3>
-            <ul>
-              <li>Giặt máy ở nhiệt độ thường</li>
-              <li>Không sử dụng chất tẩy</li>
-              <li>Phơi khô tự nhiên</li>
-              <li>Ủi ở nhiệt độ thấp</li>
-            </ul>
-          </div>
-        </div>
+        <p>{{ product?.description || 'Đang tải mô tả...' }}</p>
       </div>
     </section>
 
@@ -472,6 +425,7 @@ const selectedSize = ref('')
 const selectedColor = ref('')
 const quantity = ref(1)
 const currentImageIndex = ref(0)
+const displayedImageCount = ref(5) // Số lượng ảnh hiển thị ban đầu
 
 // New reactive data for Coolmate layout
 const activeSection = ref('mo-ta')
@@ -482,6 +436,7 @@ const anchorNav = ref(null)
 const fetchProductDetail = async (productId) => {
   isLoading.value = true
   error.value = null
+  displayedImageCount.value = 5 // Reset về 5 ảnh ban đầu khi load sản phẩm mới
 
   try {
     // Fetch product detail from API
@@ -746,16 +701,33 @@ const productImages = computed(() => {
   if (!product.value) return []
 
   // Return images in the format ImageGallery expects: { src, alt }
-  const images = product.value.images.map((src, index) => ({
+  const allImages = product.value.images.map((src, index) => ({
     src,
     alt: `${product.value.name} - Hình ${index + 1}`,
   }))
 
-  console.log('Product Images:', images)
-  console.log('Image-Variant Map:', imageVariantMap.value)
-
-  return images
+  // Nếu có nhiều hơn 5 ảnh, hiển thị tất cả để nút navigation enable
+  // Nếu có ít hơn hoặc bằng 5 ảnh, chỉ hiển thị số lượng hiện tại
+  if (allImages.length > 5) {
+    // Hiển thị tất cả ảnh để nút navigation có thể hoạt động
+    return allImages
+  } else {
+    // Nếu có ít hơn hoặc bằng 5 ảnh, chỉ hiển thị số lượng hiện tại
+    return allImages.slice(0, displayedImageCount.value)
+  }
 })
+
+// Hàm để load thêm ảnh khi cần
+const loadMoreImages = () => {
+  if (!product.value) return
+  
+  const totalImages = product.value.images.length
+  if (displayedImageCount.value < totalImages) {
+    // Tăng số lượng ảnh hiển thị thêm 5 ảnh
+    displayedImageCount.value = Math.min(displayedImageCount.value + 5, totalImages)
+    console.log('Loaded more images. Now showing:', displayedImageCount.value, 'of', totalImages)
+  }
+}
 
 // Computed: Active image index based on selected variant
 const activeImageIndex = computed(() => {
@@ -930,6 +902,17 @@ const updateVariantImage = () => {
 
   // Update main image if variant has image
   if (currentVariant.value.imageUrl) {
+    // Kiểm tra xem ảnh variant có trong danh sách hiển thị chưa
+    const variantImageIndex = product.value.images.findIndex(
+      (img) => img === currentVariant.value.imageUrl
+    )
+    
+    // Nếu ảnh variant nằm ngoài danh sách hiển thị hiện tại, load thêm ảnh
+    if (variantImageIndex >= 0 && variantImageIndex >= displayedImageCount.value) {
+      // Đảm bảo ảnh variant được bao gồm trong danh sách hiển thị
+      displayedImageCount.value = Math.min(variantImageIndex + 1, product.value.images.length)
+    }
+    
     // Update current image index to highlight the correct thumbnail
     const newIndex = activeImageIndex.value
     currentImageIndex.value = newIndex
@@ -943,6 +926,7 @@ const updateVariantImage = () => {
       newIndex: newIndex,
       color: currentVariant.value.colorName,
       size: currentVariant.value.size,
+      displayedCount: displayedImageCount.value,
     })
   } else {
     console.log('Current variant has no image URL')
@@ -1431,6 +1415,12 @@ const handleImageChange = (data) => {
   const clickedImage = productImages.value[data.index]
   const imageSrc = clickedImage.src
 
+  // Nếu người dùng đang xem ảnh gần cuối danh sách hiển thị, load thêm ảnh
+  const totalImages = product.value?.images?.length || 0
+  if (data.index >= displayedImageCount.value - 2 && displayedImageCount.value < totalImages) {
+    loadMoreImages()
+  }
+
   // Check if this image has associated variants
   const variants = imageVariantMap.value.get(imageSrc)
 
@@ -1459,6 +1449,11 @@ const handleLightboxOpen = () => {
 
 const handleLightboxClose = () => {
   // Lightbox closed event
+}
+
+const handleNearEnd = () => {
+  // Khi người dùng scroll/navigate đến gần cuối danh sách ảnh hiển thị, load thêm
+  loadMoreImages()
 }
 
 // Watch quantity changes
@@ -1513,6 +1508,7 @@ watch(
       selectedColor.value = ''
       selectedSize.value = ''
       quantity.value = 1
+      displayedImageCount.value = 5 // Reset về 5 ảnh ban đầu
 
       // Fetch new product
       fetchProductDetail(newId)
@@ -3571,12 +3567,87 @@ watch(
   margin-top: 1rem !important;
   padding: 0 1rem !important;
   max-height: 100px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+}
+
+.product-image-section .thumbnails-scroll {
+  display: flex !important;
+  gap: 12px !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding: 8px 0 !important;
+  scroll-behavior: smooth !important;
+  max-width: 100% !important;
+  /* Cho phép scroll nhưng giới hạn viewport */
+  scrollbar-width: thin !important;
+  -ms-overflow-style: -ms-autohiding-scrollbar !important;
+}
+
+.product-image-section .thumbnails-scroll::-webkit-scrollbar {
+  height: 6px !important;
+}
+
+.product-image-section .thumbnails-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 3px !important;
+}
+
+.product-image-section .thumbnails-scroll::-webkit-scrollbar-thumb {
+  background: #888 !important;
+  border-radius: 3px !important;
+}
+
+.product-image-section .thumbnails-scroll::-webkit-scrollbar-thumb:hover {
+  background: #555 !important;
+}
+
+.product-image-section .thumbnails-wrapper {
+  overflow: hidden !important;
+  position: relative !important;
+  /* Giới hạn viewport để chỉ hiển thị 5 ảnh */
+  width: calc(5 * (80px + 12px) - 12px) !important; /* 5 thumbnails + gaps */
+  max-width: calc(5 * (80px + 12px) - 12px) !important;
+  margin: 0 auto !important; /* Căn giữa */
+}
+
+.product-image-section .thumbnail-nav-btn {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 32px !important;
+  height: 32px !important;
+  flex-shrink: 0 !important;
+}
+
+.product-image-section .thumbnail-nav-prev {
+  margin-right: 8px !important;
+}
+
+.product-image-section .thumbnail-nav-next {
+  margin-left: 8px !important;
+}
+
+.product-image-section .thumbnail-item {
+  flex-shrink: 0 !important;
+  width: 80px !important;
+  height: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  overflow: hidden !important;
 }
 
 .product-image-section .thumbnail {
   width: 80px !important;
   height: 80px !important;
   overflow: hidden !important;
+  display: block !important;
 }
 
 /* Force thumbnails to only show images */

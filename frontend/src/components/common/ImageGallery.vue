@@ -40,28 +40,50 @@
     </div>
 
     <!-- Thumbnail Navigation -->
-    <div v-if="showThumbnails && images.length > 1" class="thumbnails-container" :class="thumbnailsClass">
-      <div class="thumbnails-scroll" ref="thumbnailsScroll">
-        <div 
-          v-for="(image, index) in images" 
-          :key="index"
-          class="thumbnail-item"
-          :class="{ active: index === currentIndex }"
-          @click="selectImage(index)"
-        >
-          <LazyImage
-            :src="image.src"
-            :alt="image.alt"
-            :width="thumbnailWidth"
-            :height="thumbnailHeight"
-            :quality="70"
-            :webp="true"
-            :lazy="true"
-            container-class="thumbnail"
-            image-class="thumbnail-img"
-          />
+    <div style="padding-right: 5px; padding-left: 5px;" v-if="showThumbnails && images.length > 1" class="thumbnails-container" :class="thumbnailsClass">
+      <!-- Previous Button -->
+      <button 
+        class="thumbnail-nav-btn thumbnail-nav-prev"
+        @click="scrollThumbnails('prev')"
+        :disabled="!canScrollPrev"
+        aria-label="Previous thumbnails"
+      >
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      
+      <div class="thumbnails-wrapper">
+        <div class="thumbnails-scroll" ref="thumbnailsScroll">
+          <div 
+            v-for="(image, index) in images" 
+            :key="index"
+            class="thumbnail-item"
+            :class="{ active: index === currentIndex }"
+            @click="selectImage(index)"
+          >
+            <LazyImage
+              :src="image.src"
+              :alt="image.alt"
+              :width="thumbnailWidth"
+              :height="thumbnailHeight"
+              :quality="70"
+              :webp="true"
+              :lazy="true"
+              container-class="thumbnail"
+              image-class="thumbnail-img"
+            />
+          </div>
         </div>
       </div>
+      
+      <!-- Next Button -->
+      <button
+        class="thumbnail-nav-btn thumbnail-nav-next"
+        @click="scrollThumbnails('next')"
+        :disabled="!canScrollNext"
+        aria-label="Next thumbnails"
+      >
+        <i class="bi bi-chevron-right"></i>
+      </button>
     </div>
 
     <!-- Lightbox Modal - Using Teleport to body -->
@@ -186,16 +208,30 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['imageChange', 'lightboxOpen', 'lightboxClose'])
+const emit = defineEmits(['imageChange', 'lightboxOpen', 'lightboxClose', 'nearEnd'])
 
 // Reactive state
 const currentIndex = ref(props.initialIndex)
 const showLightbox = ref(false)
 const thumbnailsScroll = ref(null)
+const thumbnailScrollIndex = ref(0) // Index của ảnh đầu tiên hiển thị trong viewport
+const thumbnailsPerView = 5 // Số lượng ảnh hiển thị trong viewport
 
 // Computed
 const currentImage = computed(() => {
   return props.images[currentIndex.value] || props.images[0]
+})
+
+const maxThumbnailScrollIndex = computed(() => {
+  return Math.max(0, props.images.length - thumbnailsPerView)
+})
+
+const canScrollPrev = computed(() => {
+  return props.images.length > thumbnailsPerView && thumbnailScrollIndex.value > 0
+})
+
+const canScrollNext = computed(() => {
+  return props.images.length > thumbnailsPerView && thumbnailScrollIndex.value < maxThumbnailScrollIndex.value
 })
 
 // Methods
@@ -214,7 +250,12 @@ const previousImage = () => {
 
 const nextImage = () => {
   if (currentIndex.value < props.images.length - 1) {
-    selectImage(currentIndex.value + 1)
+    const newIndex = currentIndex.value + 1
+    selectImage(newIndex)
+    // Emit event để parent component có thể load thêm ảnh nếu cần
+    if (newIndex >= props.images.length - 2) {
+      emit('nearEnd', { index: newIndex, total: props.images.length })
+    }
   }
 }
 
@@ -503,8 +544,46 @@ const scrollThumbnailIntoView = () => {
         block: 'nearest',
         inline: 'center'
       })
+      
+      // Cập nhật thumbnailScrollIndex để đảm bảo ảnh active nằm trong viewport
+      const thumbnailIndex = currentIndex.value
+      if (thumbnailIndex < thumbnailScrollIndex.value) {
+        thumbnailScrollIndex.value = Math.max(0, thumbnailIndex)
+      } else if (thumbnailIndex >= thumbnailScrollIndex.value + thumbnailsPerView) {
+        thumbnailScrollIndex.value = Math.min(maxThumbnailScrollIndex.value, thumbnailIndex - thumbnailsPerView + 1)
+      }
     }
   }
+}
+
+const scrollThumbnails = (direction) => {
+  if (direction === 'prev') {
+    if (thumbnailScrollIndex.value > 0) {
+      thumbnailScrollIndex.value = Math.max(0, thumbnailScrollIndex.value - thumbnailsPerView)
+      updateThumbnailScroll()
+    }
+  } else if (direction === 'next') {
+    if (thumbnailScrollIndex.value < maxThumbnailScrollIndex.value) {
+      thumbnailScrollIndex.value = Math.min(maxThumbnailScrollIndex.value, thumbnailScrollIndex.value + thumbnailsPerView)
+      updateThumbnailScroll()
+    }
+  }
+}
+
+const updateThumbnailScroll = () => {
+  // Scroll đến vị trí mới
+  nextTick(() => {
+    if (thumbnailsScroll.value) {
+      const firstVisibleThumbnail = thumbnailsScroll.value.querySelectorAll('.thumbnail-item')[thumbnailScrollIndex.value]
+      if (firstVisibleThumbnail) {
+        firstVisibleThumbnail.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'start'
+        })
+      }
+    }
+  })
 }
 
 // Keyboard navigation
@@ -537,6 +616,10 @@ watch(() => props.initialIndex, (newIndex) => {
   if (newIndex >= 0 && newIndex < props.images.length) {
     currentIndex.value = newIndex
   }
+})
+
+watch(thumbnailScrollIndex, () => {
+  updateThumbnailScroll()
 })
 
 // Lifecycle
@@ -685,15 +768,39 @@ onUnmounted(() => {
 .thumbnails-container {
   margin-top: 1.5rem;
   padding: 0;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.thumbnails-wrapper {
+  overflow: hidden;
+  position: relative;
+  /* Giới hạn viewport để chỉ hiển thị 5 ảnh */
+  width: calc(5 * (85px + 12px) - 12px); /* 5 thumbnails + gaps */
+  max-width: calc(5 * (85px + 12px) - 12px);
+  margin: 0 auto; /* Căn giữa */
 }
 
 .thumbnails-scroll {
   display: flex;
   gap: 12px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 8px 0;
-  scrollbar-width: thin;
-  scrollbar-color: #ccc transparent;
+  scrollbar-width: none; /* Ẩn scrollbar vì có nút navigation */
+  scroll-behavior: smooth;
+  max-width: 100%;
+  -ms-overflow-style: none; /* Ẩn scrollbar trên IE/Edge */
+}
+
+.thumbnails-scroll::-webkit-scrollbar {
+  display: none; /* Ẩn scrollbar trên Chrome/Safari */
 }
 
 .thumbnails-scroll::-webkit-scrollbar {
@@ -701,12 +808,57 @@ onUnmounted(() => {
 }
 
 .thumbnails-scroll::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f1f1f1;
+  border-radius: 3px;
 }
 
 .thumbnails-scroll::-webkit-scrollbar-thumb {
-  background: #ccc;
+  background: #888;
   border-radius: 3px;
+}
+
+.thumbnails-scroll::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Thumbnail Navigation Buttons */
+.thumbnail-nav-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  z-index: 10;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.thumbnail-nav-btn:hover:not(:disabled) {
+  background: rgba(220, 53, 69, 1);
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.thumbnail-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(108, 117, 125, 0.5);
+}
+
+.thumbnail-nav-prev {
+  margin-right: 8px;
+}
+
+.thumbnail-nav-next {
+  margin-left: 8px;
 }
 
 .thumbnail-item {
@@ -717,6 +869,11 @@ onUnmounted(() => {
   border: 3px solid transparent;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  /* Đảm bảo mỗi thumbnail có kích thước cố định */
+  width: 85px;
+  height: 85px;
+  min-width: 85px;
+  max-width: 85px;
 }
 
 .thumbnail-item:hover {
