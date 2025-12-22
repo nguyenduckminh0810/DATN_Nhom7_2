@@ -230,7 +230,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   initialImages: {
@@ -265,6 +265,25 @@ const uploadProgress = ref(0)
 const fileInput = ref(null)
 const draggedIndex = ref(null)
 const previewImage = ref(null)
+
+// Watch initialImages để reset khi prop thay đổi
+watch(() => props.initialImages, (newImages) => {
+  // Chỉ reset khi initialImages là mảng rỗng (khi mở modal thêm mới)
+  if (!newImages || (Array.isArray(newImages) && newImages.length === 0)) {
+    // Reset images về mảng rỗng
+    images.value = []
+    // Reset file input
+    if (fileInput.value) {
+      fileInput.value.value = ''
+    }
+    // Reset upload state
+    isUploading.value = false
+    uploadProgress.value = 0
+  } else if (Array.isArray(newImages) && newImages.length > 0) {
+    // Cập nhật images nếu có dữ liệu mới (khi edit)
+    images.value = newImages.map(img => ({ ...img }))
+  }
+}, { immediate: false })
 
 // Computed
 const hasImages = computed(() => images.value.length > 0)
@@ -446,11 +465,6 @@ const getColorNameByHex = (hex) => {
 // Emit updates
 const emitUpdate = () => {
   emit('update', images.value)
-}
-
-// Initialize
-if (props.initialImages && props.initialImages.length > 0) {
-  images.value = [...props.initialImages]
 }
 </script>
 

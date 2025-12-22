@@ -447,6 +447,7 @@
           <!-- Tab 2: Images -->
           <div v-show="activeTab === 'images'" class="tab-content">
             <ImageUploaderAdmin
+              :key="`image-uploader-${productForm.id || 'new'}-${showAddModal ? 'open' : 'closed'}`"
               :initial-images="productForm.images || []"
               :max-images="10"
               :max-file-size="2"
@@ -753,17 +754,26 @@ const viewProduct = (product) => {
 const closeModal = () => {
   showAddModal.value = false
   editingProduct.value = null
+  // Reset form về trạng thái ban đầu
   productForm.value = {
+    id: null,
     name: '',
-    sku: '',
+    sku: `SKU-${Date.now().toString().slice(-8)}`,
     categoryId: '',
     status: 'active',
     price: 0,
-    originalPrice: 0, // Đặt 0 thay vì null
+    originalPrice: 0,
     stock: 0,
     description: '',
     image: '',
+    images: [], // Reset images về mảng rỗng
+    variants: [],
+    variantColors: [],
+    material: '',
+    isNew: false,
+    tags: [],
   }
+  activeTab.value = 'basic'
 }
 
 const closeVariantModal = () => {
