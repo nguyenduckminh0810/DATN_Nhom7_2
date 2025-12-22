@@ -38,8 +38,8 @@
         <div class="row g-3">
           <div class="col-md-3">
             <label class="form-label">Danh mục</label>
-            <select class="form-select" v-model.number="selectedCategory">
-              <option :value="''">Tất cả danh mục</option>
+            <select class="form-select" v-model="selectedCategory">
+              <option :value="null">Tất cả danh mục</option>
               <option v-for="c in flatCategoryOptions" :key="c.id" :value="c.id">
                 {{ c.label }}
               </option>
@@ -53,63 +53,6 @@
               <option value="inactive">Ngừng bán</option>
               <option value="out-of-stock">Hết hàng</option>
             </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Khoảng giá</label>
-            <div class="price-range">
-              <input
-                type="number"
-                class="form-control"
-                placeholder="Từ"
-                v-model.number="priceRange.min"
-              />
-              <span class="range-separator">-</span>
-              <input
-                type="number"
-                class="form-control"
-                placeholder="Đến"
-                v-model.number="priceRange.max"
-              />
-            </div>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Tồn kho</label>
-            <select class="form-select" v-model="stockFilter">
-              <option value="">Tất cả</option>
-              <option value="in-stock">Còn hàng</option>
-              <option value="low-stock">Sắp hết hàng (&lt; 10)</option>
-              <option value="out-of-stock">Hết hàng</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Ngày tạo</label>
-            <input type="date" class="form-control" v-model="createdDate" />
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Sắp xếp</label>
-            <select class="form-select" v-model="sortBy">
-              <option value="newest">Mới nhất</option>
-              <option value="oldest">Cũ nhất</option>
-              <option value="name-asc">Tên A-Z</option>
-              <option value="name-desc">Tên Z-A</option>
-              <option value="price-low">Giá thấp nhất</option>
-              <option value="price-high">Giá cao nhất</option>
-              <option value="stock-low">Tồn kho ít nhất</option>
-              <option value="stock-high">Tồn kho nhiều nhất</option>
-            </select>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Thẻ</label>
-            <div class="tag-filters">
-              <span
-                v-for="tag in availableTags"
-                :key="tag"
-                :class="['tag-filter', { active: selectedTags.includes(tag) }]"
-                @click="toggleTag(tag)"
-              >
-                {{ tag }}
-              </span>
-            </div>
           </div>
         </div>
       </div>
@@ -504,14 +447,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import VariantManagerAdmin from '@/components/admin/VariantManagerAdmin.vue'
 import ImageUploaderAdmin from '@/components/admin/ImageUploaderAdmin.vue'
 import sanPhamService from '../../services/sanPhamService'
 
 // Reactive data
 const searchQuery = ref('')
-const selectedCategory = ref('')
+const selectedCategory = ref(null)
 const selectedStatus = ref('')
 const selectedProducts = ref([])
 const selectAll = ref(false)
@@ -624,7 +567,7 @@ const loadProducts = async (pageNumber = 0) => {
       page: pageNumber,
       size: itemsPerPage,
       search: searchQuery.value || undefined,
-      danhMucId: selectedCategory.value || undefined,
+      danhMucId: selectedCategory.value ? Number(selectedCategory.value) : undefined,
     }
     const res = await sanPhamService.page(params)
     // res is expected to be a Page<SanPhamResponse>
@@ -966,12 +909,13 @@ const filteredProducts = computed(() => {
     )
   }
 
-  // Category filter
-  if (selectedCategory.value) {
-    filtered = filtered.filter(
-      (product) => Number(product.categoryId) === Number(selectedCategory.value),
-    )
-  }
+  // Category filter (only apply if we're not using server-side filtering)
+  // Note: This is for client-side filtering only. Server-side filtering is handled in loadProducts
+  // if (selectedCategory.value) {
+  //   filtered = filtered.filter(
+  //     (product) => Number(product.categoryId) === Number(selectedCategory.value),
+  //   )
+  // }
 
   // Status filter
   if (selectedStatus.value) {
@@ -1072,13 +1016,16 @@ const getStockClass = (stock) => {
 
 const clearFilters = () => {
   searchQuery.value = ''
-  selectedCategory.value = ''
+  selectedCategory.value = null
   selectedStatus.value = ''
   priceRange.value = { min: null, max: null }
   stockFilter.value = ''
   createdDate.value = ''
   selectedTags.value = []
   sortBy.value = 'newest'
+  // Reset page and reload
+  currentPage.value = 1
+  loadProducts(0)
 }
 
 const toggleAdvancedFilters = () => {
@@ -1266,6 +1213,26 @@ const handleVariantsSave = (variantsData) => {
   // Đóng modal sau khi lưu thành công
   closeVariantModal()
 }
+
+// Watch for category filter changes and reload products
+watch(selectedCategory, (newCategory, oldCategory) => {
+  // Only reload if category actually changed (not on initial mount)
+  if (oldCategory !== undefined) {
+    // Reset to page 1 when filter changes
+    currentPage.value = 1
+    loadProducts(0)
+  }
+}, { immediate: false })
+
+// Watch for search query changes and reload products
+watch(searchQuery, (newQuery, oldQuery) => {
+  // Only reload if search actually changed (not on initial mount)
+  if (oldQuery !== undefined) {
+    // Reset to page 1 when search changes
+    currentPage.value = 1
+    loadProducts(0)
+  }
+}, { immediate: false })
 
 // Lifecycle
 onMounted(async () => {
