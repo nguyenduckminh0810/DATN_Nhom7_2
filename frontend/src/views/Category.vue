@@ -217,6 +217,19 @@ const fetchProductsByCategory = async (slug) => {
   isLoading.value = true
   error.value = null
   try {
+    // Lấy thông tin danh mục theo slug để lấy tên
+    try {
+      const categoryResp = await api.categories.getBySlug(slug)
+      if (categoryResp && categoryResp.ten) {
+        categoryName.value = categoryResp.ten
+      } else {
+        categoryName.value = toTitle(slug) // Fallback nếu không lấy được
+      }
+    } catch (e) {
+      console.warn('Không thể lấy thông tin danh mục:', e)
+      categoryName.value = toTitle(slug) // Fallback
+    }
+
     // lấy response thô (có thể là axios response hoặc service wrapper)
     const params = buildParams()
     console.log('📤 API Request:', { 
@@ -262,7 +275,6 @@ const fetchProductsByCategory = async (slug) => {
       }
       // KHÔNG update currentPage - giữ nguyên giá trị đã set bởi changePage
     }
-    categoryName.value = toTitle(slug)
     
     // Debug log
     console.log('📄 Category pagination:', {

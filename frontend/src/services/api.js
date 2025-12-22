@@ -314,6 +314,7 @@ class ApiService {
   categories = {
     getAll: () => this.get('/danh-muc'),
     getById: (id) => this.get(`/danh-muc/${id}`),
+    getBySlug: (slug) => this.get(`/danh-muc/slug/${slug}`),
     getProducts: (id, params = {}) => this.get(`/danh-muc/${id}/san-pham`, { params }),
     create: (data) => this.post('/danh-muc/create', data),
   }
