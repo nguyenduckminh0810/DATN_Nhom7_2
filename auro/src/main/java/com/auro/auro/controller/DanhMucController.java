@@ -110,6 +110,18 @@ public class DanhMucController {
         return ResponseEntity.ok(res);
     }
 
+    @GetMapping("/slug/{slug}")
+    public ResponseEntity<DanhMucResponse> getBySlug(@PathVariable String slug) {
+        DanhMuc dm = danhMucRepository.findBySlug(slug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Danh mục không tồn tại: " + slug));
+        List<Long> ids = new ArrayList<>();
+        ids.add(dm.getId());
+        collectDescendantIds(dm.getId(), ids);
+        DanhMucResponse res = map(dm);
+        res.setProductCount(sanPhamRepository.countByDanhMuc_IdIn(ids));
+        return ResponseEntity.ok(res);
+    }
+
     @GetMapping("/page")
     public ResponseEntity<Page<DanhMucResponse>> page(
             @RequestParam(defaultValue = "0") int page,
