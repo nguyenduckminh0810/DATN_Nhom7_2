@@ -151,9 +151,9 @@
                       {{ product.name || 'Sản phẩm không có tên' }}
                     </h6>
                   </router-link>
-                  <p class="card-text text-muted small flex-grow-1 mb-3">
+                  <!-- <p class="card-text text-muted small flex-grow-1 mb-3">
                     {{ product.description || '' }}
-                  </p>
+                  </p> -->
                   <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
                       <span class="price h5 mb-0 text-danger">{{
@@ -615,6 +615,9 @@ watch(sortBy, () => {
   overflow: hidden;
   transition: all 0.3s ease;
   background: white;
+  display: flex;          
+  flex-direction: column;   
+  height: 100%;
 }
 
 .product-card:hover {
@@ -744,5 +747,21 @@ watch(sortBy, () => {
 }
 .animate-on-scroll:nth-child(4) {
   transition-delay: 0.4s;
+}
+
+.product-card .card-body {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+
+.product-card .btn, 
+.product-card a.btn-dark,
+.product-card button { 
+    margin-top: auto !important;
+    width: 100%;                 
+    display: block;              
+    border-radius: 8px;          
 }
 </style>

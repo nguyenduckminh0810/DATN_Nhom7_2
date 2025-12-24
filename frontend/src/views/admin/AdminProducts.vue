@@ -54,6 +54,63 @@
               <option value="out-of-stock">Hết hàng</option>
             </select>
           </div>
+          <div class="col-md-3">
+            <label class="form-label">Khoảng giá</label>
+            <div class="price-range">
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Từ"
+                v-model.number="priceRange.min"
+              />
+              <span class="range-separator">-</span>
+              <input
+                type="number"
+                class="form-control"
+                placeholder="Đến"
+                v-model.number="priceRange.max"
+              />
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Tồn kho</label>
+            <select class="form-select" v-model="stockFilter">
+              <option value="">Tất cả</option>
+              <option value="in-stock">Còn hàng</option>
+              <option value="low-stock">Sắp hết hàng (&lt; 10)</option>
+              <option value="out-of-stock">Hết hàng</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Ngày tạo</label>
+            <input type="date" class="form-control" v-model="createdDate" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Sắp xếp</label>
+            <select class="form-select" v-model="sortBy">
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="name-asc">Tên A-Z</option>
+              <option value="name-desc">Tên Z-A</option>
+              <option value="price-low">Giá thấp nhất</option>
+              <option value="price-high">Giá cao nhất</option>
+              <option value="stock-low">Tồn kho ít nhất</option>
+              <option value="stock-high">Tồn kho nhiều nhất</option>
+            </select>
+          </div>
+          <!-- <div class="col-md-6">
+            <label class="form-label">Thẻ</label>
+            <div class="tag-filters">
+              <span
+                v-for="tag in availableTags"
+                :key="tag"
+                :class="['tag-filter', { active: selectedTags.includes(tag) }]"
+                @click="toggleTag(tag)"
+              >
+                {{ tag }}
+              </span>
+            </div>
+          </div> -->
         </div>
       </div>
     </div>

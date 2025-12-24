@@ -84,7 +84,6 @@
         </select>
         <select class="form-select" v-model="typeFilter" style="max-width: 200px;">
           <option value="">Tất cả loại</option>
-          <option value="percentage">Giảm %</option>
           <option value="fixed">Giảm cố định</option>
           <option value="freeship">Freeship</option>
         </select>
@@ -188,10 +187,6 @@
               <span>Đơn tối thiểu: {{ formatCurrency(promotion.donToiThieu) }}</span>
             </div>
 
-            <div class="detail-item">
-              <i class="bi bi-bar-chart"></i>
-              <span>Giới hạn: Không giới hạn</span>
-            </div>
           </div>
 
           <div class="promotion-actions">
