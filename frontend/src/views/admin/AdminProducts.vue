@@ -98,7 +98,7 @@
               <option value="stock-high">Tồn kho nhiều nhất</option>
             </select>
           </div>
-          <div class="col-md-6">
+          <!-- <div class="col-md-6">
             <label class="form-label">Thẻ</label>
             <div class="tag-filters">
               <span
@@ -110,7 +110,7 @@
                 {{ tag }}
               </span>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </div>

@@ -72,9 +72,9 @@
         >
           <div class="review-header">
             <div class="reviewer-info">
-              <div class="reviewer-avatar">
+              <!-- <div class="reviewer-avatar">
                 <img :src="review.avatar" :alt="review.name" />
-              </div>
+              </div> -->
               <div class="reviewer-details">
                 <h5 class="reviewer-name">{{ review.name }}</h5>
                 <div class="review-rating">
@@ -101,7 +101,7 @@
               </div>
             </div>
             
-            <div class="review-actions">
+            <!-- <div class="review-actions">
               <button class="action-btn helpful" @click="toggleHelpful(review.id)">
                 <i class="bi bi-hand-thumbs-up"></i>
                 Hữu ích ({{ review.helpfulCount || 0 }})
@@ -110,7 +110,7 @@
                 <i class="bi bi-chat-dots"></i>
                 Trả lời
               </button>
-            </div>
+            </div> -->
           </div>
         </div>
         

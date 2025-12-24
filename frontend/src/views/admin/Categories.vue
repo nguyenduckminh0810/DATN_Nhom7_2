@@ -410,9 +410,6 @@
                   <option value="bi bi-folder">Thư mục</option>
                   <option value="bi bi-tshirt">Áo</option>
                   <option value="bi bi-bag">Quần</option>
-                  <option value="bi bi-watch">Đồng hồ</option>
-                  <option value="bi bi-sunglasses">Kính</option>
-                  <option value="bi bi-shoe-prints">Giày</option>
                 </select>
               </div>
               <div class="col-md-6">
