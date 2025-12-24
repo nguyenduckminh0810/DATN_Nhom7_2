@@ -38,8 +38,8 @@
         <div class="row g-3">
           <div class="col-md-3">
             <label class="form-label">Danh mục</label>
-            <select class="form-select" v-model.number="selectedCategory">
-              <option :value="''">Tất cả danh mục</option>
+            <select class="form-select" v-model="selectedCategory">
+              <option :value="null">Tất cả danh mục</option>
               <option v-for="c in flatCategoryOptions" :key="c.id" :value="c.id">
                 {{ c.label }}
               </option>
@@ -447,6 +447,7 @@
           <!-- Tab 2: Images -->
           <div v-show="activeTab === 'images'" class="tab-content">
             <ImageUploaderAdmin
+              :key="`image-uploader-${productForm.id || 'new'}-${showAddModal ? 'open' : 'closed'}`"
               :initial-images="productForm.images || []"
               :max-images="10"
               :max-file-size="2"
@@ -503,14 +504,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import VariantManagerAdmin from '@/components/admin/VariantManagerAdmin.vue'
 import ImageUploaderAdmin from '@/components/admin/ImageUploaderAdmin.vue'
 import sanPhamService from '../../services/sanPhamService'
 
 // Reactive data
 const searchQuery = ref('')
-const selectedCategory = ref('')
+const selectedCategory = ref(null)
 const selectedStatus = ref('')
 const selectedProducts = ref([])
 const selectAll = ref(false)
@@ -623,7 +624,7 @@ const loadProducts = async (pageNumber = 0) => {
       page: pageNumber,
       size: itemsPerPage,
       search: searchQuery.value || undefined,
-      danhMucId: selectedCategory.value || undefined,
+      danhMucId: selectedCategory.value ? Number(selectedCategory.value) : undefined,
     }
     const res = await sanPhamService.page(params)
     // res is expected to be a Page<SanPhamResponse>
@@ -753,17 +754,26 @@ const viewProduct = (product) => {
 const closeModal = () => {
   showAddModal.value = false
   editingProduct.value = null
+  // Reset form về trạng thái ban đầu
   productForm.value = {
+    id: null,
     name: '',
-    sku: '',
+    sku: `SKU-${Date.now().toString().slice(-8)}`,
     categoryId: '',
     status: 'active',
     price: 0,
-    originalPrice: 0, // Đặt 0 thay vì null
+    originalPrice: 0,
     stock: 0,
     description: '',
     image: '',
+    images: [], // Reset images về mảng rỗng
+    variants: [],
+    variantColors: [],
+    material: '',
+    isNew: false,
+    tags: [],
   }
+  activeTab.value = 'basic'
 }
 
 const closeVariantModal = () => {
@@ -956,12 +966,13 @@ const filteredProducts = computed(() => {
     )
   }
 
-  // Category filter
-  if (selectedCategory.value) {
-    filtered = filtered.filter(
-      (product) => Number(product.categoryId) === Number(selectedCategory.value),
-    )
-  }
+  // Category filter (only apply if we're not using server-side filtering)
+  // Note: This is for client-side filtering only. Server-side filtering is handled in loadProducts
+  // if (selectedCategory.value) {
+  //   filtered = filtered.filter(
+  //     (product) => Number(product.categoryId) === Number(selectedCategory.value),
+  //   )
+  // }
 
   // Status filter
   if (selectedStatus.value) {
@@ -1062,13 +1073,16 @@ const getStockClass = (stock) => {
 
 const clearFilters = () => {
   searchQuery.value = ''
-  selectedCategory.value = ''
+  selectedCategory.value = null
   selectedStatus.value = ''
   priceRange.value = { min: null, max: null }
   stockFilter.value = ''
   createdDate.value = ''
   selectedTags.value = []
   sortBy.value = 'newest'
+  // Reset page and reload
+  currentPage.value = 1
+  loadProducts(0)
 }
 
 const toggleAdvancedFilters = () => {
@@ -1256,6 +1270,26 @@ const handleVariantsSave = (variantsData) => {
   // Đóng modal sau khi lưu thành công
   closeVariantModal()
 }
+
+// Watch for category filter changes and reload products
+watch(selectedCategory, (newCategory, oldCategory) => {
+  // Only reload if category actually changed (not on initial mount)
+  if (oldCategory !== undefined) {
+    // Reset to page 1 when filter changes
+    currentPage.value = 1
+    loadProducts(0)
+  }
+}, { immediate: false })
+
+// Watch for search query changes and reload products
+watch(searchQuery, (newQuery, oldQuery) => {
+  // Only reload if search actually changed (not on initial mount)
+  if (oldQuery !== undefined) {
+    // Reset to page 1 when search changes
+    currentPage.value = 1
+    loadProducts(0)
+  }
+}, { immediate: false })
 
 // Lifecycle
 onMounted(async () => {
